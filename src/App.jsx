@@ -482,6 +482,40 @@ export default function App() {
 
   return (
     <main className="min-h-screen bg-[#080d17] p-3 text-slate-100 md:p-5">
+      {/* Tailwind 미적용 환경에서도 카드 그리드와 상세 모달의 핵심 레이아웃이 유지되도록 하는 안전장치 */}
+      <style>{`
+        .conan-card-grid {
+          display: grid !important;
+          grid-template-columns: repeat(10, minmax(0, 1fr)) !important;
+          gap: 8px !important;
+          align-items: start;
+        }
+        .conan-card-grid > article { min-width: 0 !important; width: 100% !important; }
+        .conan-card-grid > article > button:first-child { display: block; width: 100%; min-width: 0; padding: 0; text-align: left; }
+        .conan-card-grid img { display: block; width: 100% !important; aspect-ratio: 3 / 4; object-fit: contain; }
+        .card-detail-overlay {
+          position: fixed !important; inset: 0 !important; z-index: 99999 !important;
+          display: flex !important; align-items: center !important; justify-content: center !important;
+          box-sizing: border-box; width: 100vw; height: 100vh; height: 100dvh;
+          padding: 12px !important; background: rgba(0, 0, 0, .82) !important;
+          backdrop-filter: blur(6px);
+        }
+        .card-detail-dialog {
+          display: flex !important; flex-direction: column !important;
+          width: min(100%, 1024px) !important; max-height: 94vh !important; max-height: 94dvh !important;
+          overflow: hidden !important; border: 1px solid rgba(255,255,255,.15);
+          border-radius: 16px; background: #111a2a; box-shadow: 0 24px 70px rgba(0,0,0,.65);
+        }
+        .card-detail-body { min-height: 0 !important; overflow-y: auto !important; padding: 16px; }
+        .card-detail-layout { display: grid !important; grid-template-columns: minmax(0, 1fr) !important; gap: 16px !important; }
+        .card-detail-layout > div:first-child { min-width: 0; }
+        .card-detail-layout > div:first-child > img { display: block; max-width: 220px; max-height: 58vh; width: 100%; height: auto; object-fit: contain; margin: 0 auto; }
+        @media (max-width: 1099px) { .conan-card-grid { grid-template-columns: repeat(8, minmax(0, 1fr)) !important; } }
+        @media (max-width: 799px) { .conan-card-grid { grid-template-columns: repeat(6, minmax(0, 1fr)) !important; } }
+        @media (max-width: 599px) { .conan-card-grid { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; gap: 6px !important; } .card-detail-body { padding: 10px; } }
+        @media (max-width: 419px) { .conan-card-grid { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; } }
+        @media (min-width: 640px) { .card-detail-layout { grid-template-columns: 220px minmax(0, 1fr) !important; } }
+      `}</style>
       <header className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
         <h1 className="text-xl font-black tracking-tight md:text-2xl">명탐정 코난 TCG 도감</h1>
         <div className="flex flex-wrap items-center gap-2">
@@ -510,7 +544,7 @@ export default function App() {
           </div>
 
           {visibleCards.length === 0 ? <p className="rounded-xl border border-dashed border-white/15 p-8 text-center text-sm text-slate-400">조건에 맞는 카드가 없어요.</p> : (
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 2xl:grid-cols-10">
+            <div className="conan-card-grid grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 2xl:grid-cols-10">
               {visibleCards.map((card) => {
                 const count = Number(deck[card.key] || 0);
                 const isPartner = partnerId === card.key;
@@ -587,14 +621,14 @@ export default function App() {
       )}
 
       {selectedCard && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-2 backdrop-blur-sm sm:p-4" onMouseDown={(event) => { if (event.target === event.currentTarget) setSelectedCard(null); }}>
-          <section role="dialog" aria-modal="true" aria-label={`${selectedCard.name} 상세 정보`} className="flex max-h-[94dvh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-white/15 bg-[#111a2a] shadow-2xl shadow-black/60">
+        <div className="card-detail-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-2 backdrop-blur-sm sm:p-4" onMouseDown={(event) => { if (event.target === event.currentTarget) setSelectedCard(null); }}>
+          <section role="dialog" aria-modal="true" aria-label={`${selectedCard.name} 상세 정보`} className="card-detail-dialog flex max-h-[94dvh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-white/15 bg-[#111a2a] shadow-2xl shadow-black/60">
             <div className="flex shrink-0 items-start justify-between gap-3 border-b border-white/10 px-4 py-3 sm:px-5">
               <div className="min-w-0"><p className="mb-1 text-[10px] font-bold tracking-[0.18em] text-rose-300">CARD DETAIL</p><h2 className="break-keep text-lg font-black sm:text-xl">{selectedCard.name}</h2><p className="mt-1 text-[11px] text-slate-500">{selectedCard.cardId || '-'} {selectedCard.cardNum ? `· ${selectedCard.cardNum}` : ''}</p></div>
               <div className="flex shrink-0 items-center gap-1.5"><button onClick={() => moveSelectedCard(-1)} disabled={filteredCards.length < 2} aria-label="이전 카드" title="이전 카드 (←)" className="h-9 w-9 rounded-lg border border-white/10 text-lg text-slate-300 transition hover:bg-white/10 disabled:opacity-30">‹</button><button onClick={() => moveSelectedCard(1)} disabled={filteredCards.length < 2} aria-label="다음 카드" title="다음 카드 (→)" className="h-9 w-9 rounded-lg border border-white/10 text-lg text-slate-300 transition hover:bg-white/10 disabled:opacity-30">›</button><button onClick={() => setSelectedCard(null)} aria-label="상세 창 닫기" title="닫기 (Esc)" className="ml-1 h-9 rounded-lg bg-rose-600 px-3 text-xs font-bold text-white transition hover:bg-rose-500">닫기 ✕</button></div>
             </div>
-            <div className="min-h-0 overflow-y-auto p-3 sm:p-5">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-[220px_minmax(0,1fr)] sm:gap-5">
+            <div className="card-detail-body min-h-0 overflow-y-auto p-3 sm:p-5">
+              <div className="card-detail-layout grid grid-cols-1 gap-4 sm:grid-cols-[220px_minmax(0,1fr)] sm:gap-5">
                 <div className="flex flex-col items-center gap-3 sm:sticky sm:top-0 sm:self-start">
                   {selectedCard.imageUrl ? <img src={selectedCard.imageUrl} alt={selectedCard.name} className="max-h-[34vh] w-full max-w-[190px] rounded-xl bg-[#090f1b] object-contain sm:max-h-[58vh] sm:max-w-[220px]" /> : <div className="flex aspect-[3/4] w-full max-w-[190px] items-center justify-center rounded-xl bg-[#090f1b] text-sm text-slate-500">이미지 없음</div>}
                   <button onClick={() => addCard(selectedCard)} className="w-full max-w-[240px] rounded-xl bg-rose-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-rose-500">{getCardRole(selectedCard) === 'partner' ? (partnerId === selectedCard.key ? '파트너 선택 해제' : '파트너로 지정') : getCardRole(selectedCard) === 'event' ? (eventId === selectedCard.key ? '사건 카드 선택 해제' : '사건 카드로 지정') : `덱에 추가${Number(deck[selectedCard.key] || 0) ? ` · 현재 ${deck[selectedCard.key]}장` : ' +'}`}</button>
