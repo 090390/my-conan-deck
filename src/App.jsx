@@ -37,7 +37,7 @@ export default function App() {
         </div>
       </header>
 
-      {/* 카드 그리드 영역 (한 줄에 약 8~10개 배치되도록 촘촘한 반응형 그리드 적용) */}
+      {/* 카드 그리드 영역 (한 줄에 약 8~10개 배치) */}
       <main className="max-w-7xl mx-auto">
         <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2 md:gap-3">
           {filteredCards.map((card) => (
@@ -46,7 +46,6 @@ export default function App() {
               onClick={() => setSelectedCard(card)}
               className="group relative cursor-pointer bg-gray-800 rounded border border-gray-700 overflow-hidden hover:border-blue-400 hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-200"
             >
-              {/* 카드 이미지 */}
               <div className="aspect-[63/88] w-full bg-gray-900 overflow-hidden">
                 <img
                   src={card.imageUrl}
@@ -55,7 +54,6 @@ export default function App() {
                   loading="lazy"
                 />
               </div>
-              {/* 하단 미니 정보 */}
               <div className="p-1 bg-gray-900/90 text-[10px] truncate text-center">
                 <span className="text-gray-400 block">{card.cardNumber}</span>
                 <span className="font-medium text-gray-200 truncate block">
@@ -73,7 +71,7 @@ export default function App() {
         )}
       </main>
 
-      {/* 카드 클릭 시 나타나는 상세 오버레이(모달) 팝업 */}
+      {/* 상세 오버레이(모달) 팝업 */}
       {selectedCard && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
@@ -83,7 +81,6 @@ export default function App() {
             className="bg-gray-800 border border-gray-700 rounded-2xl max-w-2xl w-full p-6 relative shadow-2xl flex flex-col md:flex-row gap-6"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* 닫기 버튼 */}
             <button
               onClick={() => setSelectedCard(null)}
               className="absolute top-4 right-4 text-gray-400 hover:text-white bg-gray-700/50 hover:bg-gray-700 w-8 h-8 rounded-full flex items-center justify-center transition-colors"
@@ -91,7 +88,6 @@ export default function App() {
               ✕
             </button>
 
-            {/* 좌측: 확대된 카드 이미지 */}
             <div className="w-full md:w-1/2 flex justify-center items-center">
               <img
                 src={selectedCard.imageUrl}
@@ -100,7 +96,6 @@ export default function App() {
               />
             </div>
 
-            {/* 우측: 상세 정보 및 텍스트 */}
             <div className="w-full md:w-1/2 flex flex-col justify-between">
               <div>
                 <span className="text-xs font-semibold px-2 py-1 bg-blue-500/20 text-blue-400 rounded">
