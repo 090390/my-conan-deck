@@ -97,12 +97,46 @@ function normalizeColorKey(value) {
 
 // 실제 화면에 표시할 키워드 태그는 자동 추론하지 않습니다.
 // public/card-keyword-tags.json에 카드별로 검토 완료한 태그를 기록해 사용합니다.
+function getRecordIdentifiers(record) {
+  if (!record || typeof record !== 'object' || Array.isArray(record)) return [];
+  return ['databaseId', 'database_id', 'id', 'key', 'cardNum', 'card_num', 'cardId', 'card_id']
+    .map((key) => String(record[key] ?? '').trim())
+    .filter(Boolean);
+}
+
 function getKeywordTagRecord(tagData, identifiers = []) {
-  const root = tagData?.cards && typeof tagData.cards === 'object' ? tagData.cards : tagData;
-  if (!root || typeof root !== 'object') return null;
-  for (const identifier of identifiers) {
-    const key = String(identifier ?? '').trim();
-    if (key && Object.prototype.hasOwnProperty.call(root, key)) return root[key];
+  if (!tagData || typeof tagData !== 'object') return null;
+  const wanted = new Set(identifiers.map((value) => String(value ?? '').trim().toLocaleLowerCase()).filter(Boolean));
+  const containerNames = ['cards', 'data', 'items', 'records', 'entries', 'cardTags', 'tagsByCard'];
+  const roots = [tagData];
+  for (const name of containerNames) {
+    const container = tagData[name];
+    if (container && typeof container === 'object') roots.push(container);
+  }
+
+  for (const root of roots) {
+    if (Array.isArray(root)) {
+      const match = root.find((record) => getRecordIdentifiers(record).some((id) => wanted.has(id.toLocaleLowerCase())));
+      if (match) return match;
+      continue;
+    }
+    if (typeof root !== 'object' || !root) continue;
+
+    // 우선 카드 ID를 객체 키로 사용한 일반적인 맵 구조를 확인합니다(대소문자 차이도 허용).
+    for (const identifier of identifiers) {
+      const key = String(identifier ?? '').trim();
+      if (key && Object.prototype.hasOwnProperty.call(root, key)) return root[key];
+    }
+    const lowerKeyMap = new Map(Object.keys(root).map((key) => [key.toLocaleLowerCase(), key]));
+    for (const identifier of identifiers) {
+      const matchKey = lowerKeyMap.get(String(identifier ?? '').trim().toLocaleLowerCase());
+      if (matchKey) return root[matchKey];
+    }
+
+    // 배열이 아닌 레코드 목록에서도 레코드 안의 databaseId/cardNum 등으로 찾습니다.
+    for (const value of Object.values(root)) {
+      if (getRecordIdentifiers(value).some((id) => wanted.has(id.toLocaleLowerCase()))) return value;
+    }
   }
   return null;
 }
@@ -113,32 +147,43 @@ function normalizeTagValue(tag) {
 
 function tagFromReviewedCandidate(candidate) {
   if (!candidate || typeof candidate !== 'object') return '';
-  // 사용자가 검토 파일의 suggestedTag에 입력한 태그는 selected 여부와 관계없이 표시합니다.
-  const suggested = normalizeTagValue(candidate.suggestedTag);
+  // suggestedTag는 selected 여부와 관계없이 명시적으로 입력한 값이므로 우선 표시합니다.
+  const suggested = normalizeTagValue(candidate.suggestedTag ?? candidate.suggested_tag);
   if (suggested) return suggested;
   if (candidate.selected !== true) return '';
-  if (String(candidate.finalTag || '').trim()) return normalizeTagValue(candidate.finalTag);
+  const finalTag = normalizeTagValue(candidate.finalTag ?? candidate.final_tag);
+  if (finalTag) return finalTag;
   const keyword = String(candidate.keyword || '').trim();
   if (!['돌격', '신속', '질풍'].includes(keyword)) return '';
   if (candidate.classification !== 'self_gain' && candidate.classification !== 'grant_other') return '';
-  const conditionalPrefix = candidate.conditionalGuess === true ? '조건부 ' : '';
+  const conditionalPrefix = candidate.conditionalGuess === true || candidate.conditional_guess === true ? '조건부 ' : '';
   return `${conditionalPrefix}${keyword}${candidate.classification === 'grant_other' ? ' 부여' : ''}`;
 }
 
 function normalizeKeywordTagList(record) {
+  if (record === null || record === undefined) return [];
+  const recordObject = Array.isArray(record) ? null : record;
   const directValues = Array.isArray(record)
     ? record
     : [
-        ...(Array.isArray(record?.tags) ? record.tags : []),
-        ...(Array.isArray(record?.keywordTags) ? record.keywordTags : []),
-        ...(Array.isArray(record?.assignedTags) ? record.assignedTags : []),
-        ...(Array.isArray(record?.suggestedTags) ? record.suggestedTags : []),
-        ...(record?.suggestedTag ? [record.suggestedTag] : []),
+        ...(Array.isArray(recordObject?.tags) ? recordObject.tags : []),
+        ...(Array.isArray(recordObject?.keywordTags) ? recordObject.keywordTags : []),
+        ...(Array.isArray(recordObject?.keyword_tags) ? recordObject.keyword_tags : []),
+        ...(Array.isArray(recordObject?.assignedTags) ? recordObject.assignedTags : []),
+        ...(Array.isArray(recordObject?.suggestedTags) ? recordObject.suggestedTags : []),
+        ...(recordObject?.tag ? [recordObject.tag] : []),
+        ...(recordObject?.suggestedTag ? [recordObject.suggestedTag] : []),
+        ...(recordObject?.suggested_tag ? [recordObject.suggested_tag] : []),
       ];
-  // suggestedTag가 후보별로 저장된 검토 JSON과 tags 배열로 확정된 JSON을 모두 지원합니다.
-  const candidateTags = Array.isArray(record?.candidates)
-    ? record.candidates.map(tagFromReviewedCandidate).filter(Boolean)
-    : [];
+  // 검토 JSON(후보 안의 suggestedTag) 및 최종 태그 JSON(tags 배열) 모두 지원합니다.
+  const candidateLists = [
+    recordObject?.candidates,
+    recordObject?.keywordCandidates,
+    recordObject?.keyword_candidates,
+    recordObject?.review?.candidates,
+    recordObject?.analysis?.candidates,
+  ].filter(Array.isArray);
+  const candidateTags = candidateLists.flatMap((list) => list.map(tagFromReviewedCandidate)).filter(Boolean);
   return [...new Set([...directValues, ...candidateTags].map(normalizeTagValue).filter(Boolean))];
 }
 
@@ -277,8 +322,16 @@ function getDeckCardType(card) {
   return type || '카드';
 }
 
+function getDeckCardNameLine(card) {
+  return `${formatDeckCost(card?.cost)} ${card?.name || '이름 없음'}`;
+}
+
+function getDeckCardStatsLine(card) {
+  return `${getDeckCardType(card)} | ${formatNumber(card?.ap ?? card?.lp)}`;
+}
+
 function getDeckCardSummary(card) {
-  return `[${getDeckCardType(card)} | ${formatDeckCost(card?.cost)} ${card?.name || '이름 없음'} | ${formatNumber(card?.ap ?? card?.lp)}]`;
+  return `${getDeckCardNameLine(card)}\n${getDeckCardStatsLine(card)}`;
 }
 
 function loadSavedDeck() {
@@ -357,7 +410,7 @@ export default function App() {
           fetch('/card-translations.ko.json')
             .then((response) => response.ok ? response.json() : {})
             .catch(() => ({})),
-          fetch('/card-keyword-tags.json')
+          fetch('/card-keyword-tags.json', { cache: 'no-store' })
             .then((response) => response.ok ? response.json() : { version: 1, cards: {} })
             .catch(() => ({ version: 1, cards: {} })),
         ]);
@@ -796,7 +849,11 @@ export default function App() {
         .deck-empty-hint { margin: 8px 0 0 !important; color: #8190a7 !important; font-size: 11px !important; }
         .deck-footnote { margin-top: 12px !important; }
         .deck-topbar { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin: 0 0 16px !important; }
-        .deck-topbar-info { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; min-width: 0; }
+        .deck-topbar-info { display: block; min-width: 0; }
+        .deck-heading-copy { min-width: 0; }
+        .deck-title-row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .deck-title-row h2 { margin: 0; }
+        .deck-title-row .deck-count-pill { padding: 5px 9px; font-size: 11px; }
         .deck-count-pill { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; border: 1px solid rgba(251,113,133,.2); border-radius: 9px; padding: 7px 11px; color: #fecdd3; background: rgba(225,29,72,.11); font-size: 12px; line-height: 1.2; font-weight: 850; font-variant-numeric: tabular-nums; }
         .deck-action-buttons { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-left: auto; }
         .app-shell .deck-action-buttons .deck-reset-button { min-height: 36px; border: 1px solid #be123c !important; border-radius: 9px !important; padding: 8px 13px !important; color: #fff1f2 !important; background: #be123c !important; box-shadow: 0 5px 15px rgba(190,18,60,.15); font-size: 12px !important; font-weight: 800 !important; }
@@ -811,8 +868,11 @@ export default function App() {
         .deck-sort-select:focus, .deck-layout-select:focus { border-color: rgba(251,113,133,.7); }
         .app-shell .filters-reset-button { min-height: 30px; border: 1px solid #be123c !important; border-radius: 8px !important; padding: 6px 11px !important; color: #fff1f2 !important; background: #be123c !important; font-size: 11px !important; font-weight: 800 !important; transition: background .15s ease, border-color .15s ease; }
         .app-shell .filters-reset-button:hover { border-color: #f43f5e !important; background: #e11d48 !important; }
-        .deck-board-8x5 .deck-card-name, .deck-board-8x5 .deck-special-name { min-height: 4em; font-size: 10px; line-height: 1.35; }
-        .deck-card-name, .deck-special-name { min-height: 4.5em; font-size: 8px; line-height: 1.35; -webkit-line-clamp: 4; overflow-wrap: anywhere; word-break: normal; }
+        .deck-board-8x5 .deck-card-name, .deck-board-8x5 .deck-special-name { min-height: 3.8em; font-size: 11px; line-height: 1.4; }
+        .deck-card-name, .deck-special-name { display: flex; flex-direction: column; gap: 2px; min-height: 3.5em; margin: 0; padding: 5px 4px 4px; overflow: hidden; color: #cbd5e1; font-size: 9px; line-height: 1.4; overflow-wrap: anywhere; word-break: normal; }
+        .deck-card-primary { display: block; color: #f1f5f9; font-weight: 750; overflow-wrap: anywhere; }
+        .deck-card-secondary { display: block; color: #94a3b8; font-size: .92em; font-weight: 550; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .deck-empty-slot .deck-card-name { color: #64748b; }
         .deck-special-name { text-align: left; }
         @media (max-width: 600px) {
           .deck-board { min-width: 1000px; gap: 12px !important; }
@@ -926,8 +986,10 @@ export default function App() {
         <section className="app-panel deck-panel min-w-0 rounded-2xl border border-white/10 bg-[#101827] p-3 md:p-4">
           <div className="deck-topbar">
             <div className="deck-topbar-info">
-              <div><h2 className="text-base font-bold">내 덱 구성</h2><p className="mt-1 text-xs text-slate-400">메인 덱 최대 40장 · 같은 카드 최대 3장 · 파트너와 사건 카드는 별도 슬롯</p></div>
-              <span className="deck-count-pill">{mainDeckCount} / {MAIN_DECK_LIMIT}장</span>
+              <div className="deck-heading-copy">
+                <div className="deck-title-row"><h2 className="text-base font-bold">내 덱 구성</h2><span className="deck-count-pill">{mainDeckCount} / {MAIN_DECK_LIMIT}장</span></div>
+                <p className="mt-1 text-xs text-slate-400">메인 덱 최대 40장 · 같은 카드 최대 3장 · 파트너와 사건 카드는 별도 슬롯</p>
+              </div>
             </div>
             <div className="deck-action-buttons">
               <button onClick={clearDeck} className="deck-reset-button">덱 초기화</button>
@@ -946,7 +1008,7 @@ export default function App() {
                     <span className="deck-special-role">파트너</span>
                     <button onClick={() => setSelectedCard(partnerCard)} className="deck-special-open" title={getDeckCardSummary(partnerCard)}>
                       {partnerCard.imageUrl ? <img src={partnerCard.imageUrl} loading="lazy" alt={partnerCard.name} className="deck-special-image" /> : <div className="deck-special-image flex items-center justify-center text-[9px] text-slate-500">이미지 없음</div>}
-                      <div className="deck-special-name">{getDeckCardSummary(partnerCard)}</div>
+                      <div className="deck-special-name"><span className="deck-card-primary">{getDeckCardNameLine(partnerCard)}</span><span className="deck-card-secondary">{getDeckCardStatsLine(partnerCard)}</span></div>
                       <span className="deck-special-id">{partnerCard.cardId || partnerCard.cardNum || '파트너 카드'}</span>
                     </button>
                     <button onClick={() => setPartnerId('')} aria-label="파트너 카드 해제" title="파트너 해제" className="deck-special-remove">×</button>
@@ -964,7 +1026,7 @@ export default function App() {
                     <span className="deck-special-role is-event">사건</span>
                     <button onClick={() => setSelectedCard(eventCard)} className="deck-special-open" title={getDeckCardSummary(eventCard)}>
                       {eventCard.imageUrl ? <img src={eventCard.imageUrl} loading="lazy" alt={eventCard.name} className="deck-special-image" /> : <div className="deck-special-image flex items-center justify-center text-[9px] text-slate-500">이미지 없음</div>}
-                      <div className="deck-special-name">{getDeckCardSummary(eventCard)}</div>
+                      <div className="deck-special-name"><span className="deck-card-primary">{getDeckCardNameLine(eventCard)}</span><span className="deck-card-secondary">{getDeckCardStatsLine(eventCard)}</span></div>
                       <span className="deck-special-id">{eventCard.cardId || eventCard.cardNum || '사건 카드'}</span>
                     </button>
                     <button onClick={() => setEventId('')} aria-label="사건 카드 해제" title="사건 카드 해제" className="deck-special-remove">×</button>
@@ -1003,7 +1065,7 @@ export default function App() {
                     <article key={card.deckSlotKey} className="deck-card-slot">
                       <button onClick={() => setSelectedCard(card)} className="deck-card-open" title={getDeckCardSummary(card)}>
                         {card.imageUrl ? <img src={card.imageUrl} loading="lazy" alt={card.name} className="deck-card-image" /> : <div className="deck-card-image flex items-center justify-center text-[9px] text-slate-500">이미지 없음</div>}
-                        <div className="deck-card-name">{getDeckCardSummary(card)}</div>
+                        <div className="deck-card-name"><span className="deck-card-primary">{getDeckCardNameLine(card)}</span><span className="deck-card-secondary">{getDeckCardStatsLine(card)}</span></div>
                       </button>
                       <button onClick={() => removeCard(card.key)} aria-label={`${card.name} 한 장 제거`} title="한 장 제거" className="deck-card-remove">−</button>
                     </article>
