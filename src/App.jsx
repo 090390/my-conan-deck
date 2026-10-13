@@ -213,7 +213,7 @@ function formatAbilityText(value) {
 const TRAIT_TRANSLATIONS = {
   '高校生': '고등학생', '警察': '경찰', '探偵': '탐정', '黒ずくめの組織': '검은 조직',
   '警視庁': '경시청', '少年探偵団': '소년 탐정단', '毛利探偵事務所': '모리 탐정 사무소',
-  '赤井家': '아카이 일가', 'FBI': 'FBI', '空手家': '가라테가', 'YAIBA': 'YAIBA',
+  '赤井家': '아카이 일가', 'FBI': 'FBI', '空手家': '가라테 선수', 'YAIBA': 'YAIBA',
   '長野県警': '나가노현경', '科学者': '과학자', '怪盗': '괴도', '公安': '공안',
   '鈴木財閥': '스즈키 재벌', '喫茶ポアロ': '카페 포아로', '神奈川県警': '가나가와현경',
   '大阪府警': '오사카부경', 'マジシャン': '마술사', '執事': '집사', '大学院生': '대학원생',
@@ -503,13 +503,15 @@ function Pagination({ currentPage, totalPages, onChange }) {
   if (totalPages <= 1) return null;
   const items = getPageItems(currentPage, totalPages);
   return (
-    <nav aria-label="카드 목록 페이지" className="mt-5 flex flex-wrap items-center justify-center gap-1.5 border-t border-white/[0.08] pt-4">
-      <button onClick={() => onChange(Math.max(1, currentPage - 1))} disabled={currentPage === 1} className="rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-white/10 disabled:opacity-30">이전</button>
-      {items.map((item, index) => typeof item === 'number' ? (
-        <button key={item} aria-current={item === currentPage ? 'page' : undefined} onClick={() => onChange(item)} className={`h-9 min-w-9 rounded-lg border px-2 text-xs font-bold tabular-nums transition ${item === currentPage ? 'border-rose-400 bg-rose-600 text-white' : 'border-white/10 text-slate-300 hover:bg-white/10'}`}>{item}</button>
-      ) : <span key={`${item}-${index}`} className="px-1 text-xs text-slate-500">…</span>)}
-      <button onClick={() => onChange(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages} className="rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-white/10 disabled:opacity-30">다음</button>
-      <span className="ml-2 text-[11px] tabular-nums text-slate-500">{currentPage} / {totalPages} 페이지</span>
+    <nav aria-label="카드 목록 페이지" className="card-pagination-nav">
+      <div className="pagination-controls">
+        <button onClick={() => onChange(Math.max(1, currentPage - 1))} disabled={currentPage === 1} className="pagination-step">‹ 이전</button>
+        {items.map((item, index) => typeof item === 'number' ? (
+          <button key={item} aria-current={item === currentPage ? 'page' : undefined} onClick={() => onChange(item)} className={`pagination-number${item === currentPage ? ' is-active' : ''}`}>{item}</button>
+        ) : <span key={`${item}-${index}`} className="pagination-ellipsis">…</span>)}
+        <button onClick={() => onChange(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages} className="pagination-step">다음 ›</button>
+      </div>
+      <span className="pagination-current">{currentPage} / {totalPages} 페이지</span>
     </nav>
   );
 }
@@ -955,6 +957,17 @@ export default function App() {
         .card-list-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin: 0 0 14px !important; }
         .card-list-toolbar > div { display: flex; align-items: baseline; gap: 9px; }
         .card-list-toolbar h2, .deck-panel h2 { margin: 0; color: #f1f5f9; font-size: 16px; font-weight: 800; }
+
+        .card-pagination-nav { display: flex !important; flex-direction: column; align-items: center; justify-content: center !important; gap: 9px; width: 100%; margin-top: 22px; padding-top: 17px; border-top: 1px solid rgba(255,255,255,.085); text-align: center; }
+        .pagination-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px; width: 100%; }
+        .app-shell .pagination-controls .pagination-step, .app-shell .pagination-controls .pagination-number { display: inline-flex; align-items: center; justify-content: center; min-width: 36px; height: 36px; border: 1px solid rgba(148,163,184,.17); border-radius: 10px; padding: 0 11px; color: #cbd5e1; background: #111b2b; font-size: 12px; line-height: 1; font-weight: 750; font-variant-numeric: tabular-nums; transition: border-color .15s ease, color .15s ease, background .15s ease, transform .15s ease; }
+        .app-shell .pagination-controls .pagination-number { width: 36px; padding: 0; }
+        .app-shell .pagination-controls .pagination-step:hover:not(:disabled), .app-shell .pagination-controls .pagination-number:hover:not(.is-active) { border-color: rgba(251,113,133,.55); color: #fff; background: #1a2639; }
+        .app-shell .pagination-controls .pagination-number.is-active { border-color: #fb7185; color: #fff; background: #be123c; box-shadow: 0 5px 15px rgba(190,18,60,.22); }
+        .pagination-controls .pagination-step:disabled { opacity: .32; cursor: not-allowed; }
+        .pagination-ellipsis { display: inline-flex; align-items: center; justify-content: center; min-width: 16px; height: 34px; color: #64748b; font-size: 13px; }
+        .pagination-current { color: #8290a6; font-size: 11px; font-weight: 650; font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+
         .card-list-toolbar span { color: #9aa8bd; font-size: 12px; }
         .app-shell .app-panel button:not(.card-open-button):not(.card-tile-action) { border-radius: 8px; }
         .app-shell .card-list-toolbar > button { border: 1px solid rgba(255,255,255,.12); padding: 7px 11px; color: #d1d9e6; background: #151f30; font-size: 12px; font-weight: 650; }
@@ -1011,9 +1024,9 @@ export default function App() {
         .card-detail-layout > div:first-child > p { margin: 0; color: #8190a7; font-size: 10px; }
         .card-detail-layout > div:nth-child(2) { min-width: 0; display: flex; flex-direction: column; gap: 12px; }
         .card-meta-grid { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 8px !important; margin: 0; }
-        .card-meta-item { min-width: 0; border: 1px solid rgba(255,255,255,.075) !important; border-radius: 9px !important; padding: 10px !important; background: #090f1b !important; }
+        .card-meta-item { min-width: 0; display: flex; flex-direction: column; border: 1px solid rgba(255,255,255,.075) !important; border-radius: 9px !important; padding: 10px !important; background: #090f1b !important; }
         .card-meta-item dt { color: #9aa8bd !important; font-size: 11px !important; font-weight: 600 !important; }
-        .card-meta-item dd { margin: 4px 0 0 !important; color: #f1f5f9 !important; font-size: 13px !important; font-weight: 650 !important; overflow-wrap: anywhere; }
+        .card-meta-item dd { display: flex; flex: 1 1 auto; align-items: center; min-height: 20px; margin: 4px 0 0 !important; color: #f1f5f9 !important; font-size: 13px !important; font-weight: 650 !important; overflow-wrap: anywhere; }
         .card-detail-layout > div:nth-child(2) > div:not(.card-meta-grid), .card-detail-layout > div:nth-child(2) > details { border: 1px solid rgba(255,255,255,.07) !important; border-radius: 10px !important; padding: 12px !important; background: #090f1b !important; color: #e2e8f0 !important; }
         .card-detail-layout > div:nth-child(2) h3 { margin: 0 0 8px !important; color: #dce5f2 !important; font-size: 13px !important; font-weight: 800 !important; }
         .card-detail-layout > div:nth-child(2) h4 { margin: 0 0 4px !important; color: #fcd34d; font-size: 12px; font-weight: 750; }
@@ -1032,6 +1045,7 @@ export default function App() {
         .effect-badge.conditional { border-style: dashed; opacity: .95; }
         .keyword-other { color: #c4b5fd; background: rgba(139,92,246,.12); border-color: rgba(167,139,250,.22); }
         .detail-keyword-badges { padding: 2px 0; }
+        .detail-keyword-badges .effect-badge { font-size: 11px !important; line-height: 1.4; padding: 3px 6px; font-weight: 700; }
         .keyword-tag-dots { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; min-height: 7px; margin-top: 4px; }
         .keyword-tag-dot { display: inline-block; width: 6px; height: 6px; flex: 0 0 6px; border-radius: 999px; box-shadow: 0 0 0 1px rgba(255,255,255,.18); }
         .keyword-dot-assault { background: #fb7185; }
