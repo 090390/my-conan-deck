@@ -105,53 +105,88 @@ function escapeRegExp(value) {
   return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function keywordPattern(aliases) {
-  return new RegExp(aliases.map(escapeRegExp).join('|'), 'iu');
+function keywordPattern(aliases, flags = 'iu') {
+  return new RegExp(aliases.map(escapeRegExp).join('|'), flags);
 }
 
-function hasKeywordDefinition(text, aliases) {
-  const names = `(?:${aliases.map(escapeRegExp).join('|')})`;
-  const explicitTag = new RegExp(`(?:【|\\[)\\s*${names}\\s*(?:】|\\])`, 'iu');
-  const gainedOrHeld = new RegExp(
-    `(?:${names}\\s*(?:을|를)?\\s*(?:얻|획득|부여|갖|보유|가진다|가집니다|갖는다|持つ|得る|得られ|獲得|付与)|(?:얻|획득|부여|갖게|받게|보유|得る|得られ|獲得|付与)[^.!?。\\n]{0,24}${names})`,
+// 카드가 키워드를 직접 보유/획득하는 문장만 감지하고, 다른 캐릭터를 설명하는 문장은 제외합니다.
+function getKeywordEvidence(text, aliases) {
+  const occurrencePattern = keywordPattern(aliases, 'giu');
+  const conditionPattern = /(?:조건(?:부)?|조건을 만족|경우|時|とき|場合|条件|後|以上|以下|ならば|なら|때|마다|후|이상|이하|있으면|있을 때|있을\s*시|(?:^|\s)시(?=\s|$)|하면|한다면|에 따라|시에|존재하면|있을 경우|중에)/iu;
+  const gainAfterPattern = new RegExp(
+    `^\\s*(?:(?:을|를|を)\\s*)?(?:얻(?:는다|음|습니다|게\\s*된다|을\\s*수\\s*있다|을\\s*수\\s*있음)?|획득(?:한다|함|하게\\s*된다)?|부여(?:한다|함)|받는다|받음|gain(?:s|ed)?|得る|得た|得られる|獲得する|付与する|与える)`,
     'iu',
   );
-  return explicitTag.test(text) || gainedOrHeld.test(text);
-}
+  const possessionAfterPattern = new RegExp(
+    `^\\s*(?:(?:을|를|を)\\s*)?(?:가진다|갖는다|보유한다|가지고\\s*있다|갖고\\s*있다|持つ|有する)(?!\\s*(?:캐릭터|캐릭터카드|카드|キャラ|キャラクター|カード))`,
+    'iu',
+  );
+  const refersToOtherCardAfterPattern = new RegExp(
+    `^\\s*(?:(?:을|를|を)\\s*)?(?:가진|갖고\\s*있는|가지고\\s*있는|보유한|持つ|持っている)\\s*(?:캐릭터|캐릭터\\s*카드|카드|キャラ|キャラクター|キャラカード|カード)`,
+    'iu',
+  );
+  const explicitTagBeforePattern = /(?:【|\[|［)\s*$/u;
+  const explicitTagAfterPattern = /^\s*(?:】|\]|］)/u;
+  const clauses = String(text || '')
+    .replace(/\r\n?/gu, '\n')
+    .split(/(?<=[.!?。！？；;])\s*|\n+/u)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const evidence = [];
 
-function isConditionalKeywordGain(text, aliases) {
-  const keyword = keywordPattern(aliases);
-  // 조건과 키워드 획득 표현이 같은 문장에 있을 때만 조건부로 표시합니다.
-  const gain = /(?:얻|획득|부여|갖게|받게|gain|得る|得られ|獲得|付与)/iu;
-  const condition = /(?:조건|場合|条件|때|마다|후|이상|이하|있으면|있을|하면|한다면|에 따라|시에|\b시\b|時|後|以上|以下|ならば|とき)/iu;
-  const sentences = String(text || '').split(/(?<=[.!?。！？])\s+|\n+/u);
-  return sentences.some((sentence) => {
-    const keywordIndex = sentence.search(keyword);
-    if (keywordIndex < 0 || !gain.test(sentence)) return false;
-    // '돌격을 얻은 후'처럼 키워드 획득 뒤의 후속 조건을 조건부 획득으로 오인하지 않습니다.
-    return condition.test(sentence.slice(0, keywordIndex));
-  });
+  for (const clause of clauses) {
+    for (const match of clause.matchAll(occurrencePattern)) {
+      const index = match.index ?? 0;
+      const keywordEnd = index + match[0].length;
+      const before = clause.slice(Math.max(0, index - 100), index);
+      const after = clause.slice(keywordEnd);
+      // 키워드가 【】/[] 안에 있다면 닫는 괄호를 벗긴 뒤 뒤따르는 서술을 판정합니다.
+      const afterKeyword = after.replace(/^(?:】|\]|］)\s*/u, '');
+      const previousContext = clause.slice(0, index);
+      const isExplicitTag = explicitTagBeforePattern.test(before) && explicitTagAfterPattern.test(after);
+      const refersToOtherCard = refersToOtherCardAfterPattern.test(afterKeyword);
+      const refersToKeywordConcept = /^(?:에\s*대해|에\s*관해|에\s*대한|은|는|이란|について|に関して|とは|という|に関する)/iu.test(afterKeyword);
+      const targetWasSelected = /(?:선택한|선택된|選んだ|選択した|対象の|対象として選んだ|캐릭터[^.!?。！？\n]{0,30}(?:선택하여|선택하고|선택해)|キャラ[^.!?。！？\n]{0,30}(?:選ぶ|選び|選択して))[^.!?。！？\n]{0,35}$/iu.test(previousContext);
+      const targetIsRecipient = /(?:상대(?:의)?\s*(?:캐릭터|캐릭터\s*카드)|(?:그|해당|선택한|선택된)\s*캐릭터|캐릭터[^.!?。！？\n]{0,22}(?:에게|에)|(?:キャラ|キャラクター)[^.!?。！？\n]{0,22}(?:に|へ|に対して))[^.!?。！？\n]{0,35}$/iu.test(previousContext);
+      const gainedByThisCard = gainAfterPattern.test(afterKeyword);
+      const heldByThisCard = possessionAfterPattern.test(afterKeyword);
+      const effectGrantsKeyword = /(?:^|\s)(?:부여|付与|与える)/iu.test(afterKeyword);
+
+      // 키워드를 가진 다른 캐릭터에 대한 설명, 키워드 자체에 대한 언급, 다른 대상에게 부여하는 효과는 제외합니다.
+      if (refersToOtherCard || refersToKeywordConcept || targetWasSelected || (targetIsRecipient && (isExplicitTag || gainedByThisCard || effectGrantsKeyword))) continue;
+      if (!(isExplicitTag || gainedByThisCard || heldByThisCard)) continue;
+
+      evidence.push({
+        conditional: conditionPattern.test(previousContext),
+        index,
+      });
+    }
+  }
+
+  return evidence;
 }
 
 function getKeywordBadges(card) {
-  const text = [card?.ability, card?.originalAbility, card?.hiramekiEffect, card?.cutInEffect]
-    .filter(Boolean)
-    .join('\n');
-  return KEYWORD_DEFINITIONS
-    .filter((definition) => hasKeywordDefinition(text, definition.aliases))
-    .map((definition) => ({
-      ...definition,
-      conditional: isConditionalKeywordGain(text, definition.aliases),
-    }));
+  // 번역문과 원문은 각각 분석합니다. 두 언어를 한 문자열로 합쳐 중복/문맥 오판이 생기지 않게 합니다.
+  const texts = [card?.ability, card?.originalAbility, card?.hiramekiEffect, card?.cutInEffect]
+    .filter((value) => String(value || '').trim());
+  return KEYWORD_DEFINITIONS.flatMap((definition) => {
+    const evidence = texts.flatMap((text) => getKeywordEvidence(text, definition.aliases));
+    if (!evidence.length) return [];
+    // 한 카드에 일반 획득도 있으면 조건부 배지보다 일반 배지를 우선합니다.
+    const conditional = evidence.every((item) => item.conditional);
+    return [{ ...definition, conditional }];
+  });
 }
 
 function formatAbilityText(value) {
   const text = String(value ?? '').replace(/\r\n?/gu, '\n').trim();
   if (!text) return '';
-  // 앞 효과가 끝난 뒤 다음 선언/자동/상시/기동 효과가 시작되면 새 줄에 표시합니다.
+  // 마침표 뒤에 새 선언/자동/상시/기동 헤더가 오면 그 능력부터 새 줄로 표시합니다.
+  // \s*는 일반 공백뿐 아니라 일본어 전각 공백도 처리합니다.
   return text
-    .replace(/([.!?。！？])[ \t]*(?=【(?:선언|자동|상시|기동|宣言|自動|常時|起動)(?:】|[ \t]))/gu, '$1\n')
-    .replace(/[ \t]+\n/gu, '\n')
+    .replace(/([.!?。！？])\s*(?=【(?:선언|자동|상시|기동|宣言|自動|常時|起動)(?:】|\s))/gu, '$1\n')
+    .replace(/[ \t　]+\n/gu, '\n')
     .replace(/\n{3,}/gu, '\n\n');
 }
 
@@ -417,6 +452,7 @@ export default function App() {
     return card ? Array.from({ length: Math.min(Number(count) || 0, SAME_CARD_LIMIT) }, (_, copyIndex) => ({ ...card, deckSlotKey: `${key}-${copyIndex}` })) : [];
   }).slice(0, MAIN_DECK_LIMIT);
   const deckSlots = Array.from({ length: MAIN_DECK_LIMIT }, (_, index) => deckCards[index] || null);
+  const selectedKeywordBadges = selectedCard ? getKeywordBadges(selectedCard) : [];
 
   // 모달 열림 상태에서는 배경 스크롤을 막고, Esc/좌우 방향키를 지원합니다.
   useEffect(() => {
@@ -667,6 +703,8 @@ export default function App() {
         .card-detail-layout > div:nth-child(2) h3 { margin: 0 0 8px !important; color: #dce5f2 !important; font-size: 13px !important; font-weight: 800 !important; }
         .card-detail-layout > div:nth-child(2) h4 { margin: 0 0 4px !important; color: #fcd34d; font-size: 12px; font-weight: 750; }
         .card-detail-layout > div:nth-child(2) p { margin: 0; color: #d4dceb !important; font-size: 12px !important; line-height: 1.75 !important; overflow-wrap: anywhere; }
+        .card-effect-text, .card-original-effect-text { white-space: pre-wrap !important; overflow-wrap: anywhere !important; word-break: normal; }
+        .detail-keyword-badges { margin: 0 0 2px !important; }
         .card-detail-layout > div:nth-child(2) summary { color: #d1d9e6; cursor: pointer; font-size: 12px; font-weight: 650; }
         .card-detail-layout > div:nth-child(2) details > div { margin-top: 10px; display: grid; gap: 10px; }
         .effect-badges { display: flex !important; flex-wrap: wrap !important; gap: 4px !important; margin-top: 6px !important; }
@@ -678,17 +716,20 @@ export default function App() {
         .keyword-gale { color: #7dd3fc; background: rgba(14,165,233,.12); border-color: rgba(56,189,248,.22); }
         .effect-badge.conditional { border-style: dashed; background-image: repeating-linear-gradient(135deg, rgba(255,255,255,.045) 0 3px, transparent 3px 6px); }
         .deck-board-scroll { width: 100%; overflow-x: auto; padding-bottom: 5px; }
-        .deck-board { display: grid !important; grid-template-columns: repeat(12, minmax(0, 1fr)) !important; gap: 8px !important; min-width: 930px; align-items: start; }
+        /* 왼쪽 특수 카드 폭은 오른쪽 10열 중 각 슬롯 폭과 맞춥니다. */
+        .deck-board { display: grid !important; grid-template-columns: minmax(64px, calc((100% - 62px) / 11)) minmax(0, 1fr) !important; gap: 8px !important; min-width: 1000px; align-items: start; }
+        .deck-specials-column { grid-column: 1; min-width: 0; display: grid !important; grid-template-columns: minmax(0, 1fr) !important; gap: 6px !important; align-content: start; }
+        .deck-main-column { grid-column: 2; min-width: 0; }
         .deck-board-heading { min-width: 0; min-height: 38px; display: flex; align-items: center; justify-content: space-between; gap: 5px; border-bottom: 1px solid rgba(255,255,255,.09); padding: 0 1px 7px; }
         .deck-board-heading strong { color: #e9eff9; font-size: 12px; font-weight: 800; line-height: 1.25; }
         .deck-board-heading small { display: block; margin-top: 2px; color: #8190a7; font-size: 9px; line-height: 1.35; }
-        .deck-main-heading { grid-column: span 10; }
-        .deck-partner-heading { grid-column: span 1; }
-        .deck-event-heading { grid-column: span 1; }
+        .deck-main-heading { margin-bottom: 6px; }
+        .deck-special-heading { margin-bottom: 0; }
+        .deck-special-heading small { max-width: 100%; }
         .deck-special-heading-copy { min-width: 0; }
         .deck-slot-status { display: inline-block; max-width: 100%; color: #9aa8bd; font-size: 8px; line-height: 1.25; overflow-wrap: anywhere; }
         .deck-slot-status.is-selected { color: #86efac; }
-        .deck-slots-grid { grid-column: span 10; display: grid !important; grid-template-columns: repeat(10, minmax(0, 1fr)) !important; gap: 6px !important; align-content: start; }
+        .deck-slots-grid { display: grid !important; grid-template-columns: repeat(10, minmax(0, 1fr)) !important; gap: 6px !important; align-content: start; }
         .deck-card-slot, .deck-special-card, .deck-empty-special { min-width: 0; width: 100%; overflow: hidden; position: relative; border: 1px solid rgba(148,163,184,.15); border-radius: 8px; background: #090f1b; }
         .deck-card-open, .deck-special-open { display: block !important; position: relative; width: 100% !important; min-width: 0; padding: 0 !important; border: 0 !important; border-radius: 0 !important; background: transparent !important; color: #e2e8f0 !important; text-align: left; }
         .deck-card-image, .deck-special-image, .deck-empty-special-image { display: block; width: 100% !important; height: auto !important; aspect-ratio: 3 / 4 !important; object-fit: contain !important; background: #0d1524; }
@@ -702,12 +743,14 @@ export default function App() {
         .deck-empty-special .deck-special-name { color: #8b9ab0; text-align: center; }
         .deck-special-card { align-self: start; }
         .deck-special-card .deck-special-name { color: #f1f5f9; font-weight: 750; }
-        .deck-special-card .deck-special-id { position: absolute; z-index: 2; top: 4px; left: 4px; display: block; max-width: calc(100% - 32px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: 4px; padding: 2px 4px; color: #e2e8f0; background: rgba(0,0,0,.8); font-size: 8px; line-height: 1.35; }
-        .deck-empty-hint { grid-column: span 10; margin: 4px 0 0 !important; color: #8190a7 !important; font-size: 11px !important; }
-        .deck-footnote { grid-column: 1 / -1; margin-top: 5px !important; }
+        .deck-special-id { position: absolute; z-index: 2; top: 4px; right: 4px; display: block; max-width: calc(100% - 48px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: 4px; padding: 2px 4px; color: #e2e8f0; background: rgba(0,0,0,.8); font-size: 8px; line-height: 1.35; }
+        .deck-special-role { position: absolute; z-index: 3; top: 4px; left: 4px; display: inline-block; border-radius: 4px; padding: 2px 4px; color: #0f172a; background: #fcd34d; font-size: 8px; line-height: 1.35; font-weight: 850; }
+        .deck-special-role.is-event { background: #7dd3fc; }
+        .deck-empty-hint { margin: 8px 0 0 !important; color: #8190a7 !important; font-size: 11px !important; }
+        .deck-footnote { margin-top: 12px !important; }
         @media (max-width: 600px) {
-          .deck-board { min-width: 930px; gap: 6px !important; }
-          .deck-slots-grid { gap: 5px !important; }
+          .deck-board { min-width: 1000px; gap: 8px !important; }
+          .deck-slots-grid, .deck-specials-column { gap: 6px !important; }
           .deck-board-heading strong { font-size: 11px; }
           .deck-board-heading small, .deck-slot-status { font-size: 8px; }
         }
@@ -800,7 +843,7 @@ export default function App() {
                       <div className="card-tile-caption p-1.5 sm:p-2">
                         <h3 className="card-tile-title line-clamp-2 min-h-[2.2rem] break-keep text-[11px] font-semibold leading-[1.1rem] text-slate-100 sm:text-xs">{card.name}</h3>
                         <div className="mt-1 flex min-w-0 items-center justify-between gap-1 text-[9px] text-slate-500 sm:text-[10px]"><span className="truncate">{card.rarity || card.type || '카드'}</span><span className="shrink-0">{formatNumber(card.cost)} / {formatNumber(card.lp)}</span></div>
-                        {(card.hiramekiEffect || card.cutInEffect || keywordBadges.length > 0) && <div className="effect-badges">{card.hiramekiEffect && <span className="effect-badge effect-badge-hirameki">히라메키</span>}{card.cutInEffect && <span className="effect-badge effect-badge-cutin">컷인</span>}{keywordBadges.map((badge) => <span key={badge.name} className={`effect-badge ${badge.className}${badge.conditional ? ' conditional' : ''}`}>{badge.conditional ? `(조건부) ${badge.name}` : badge.name}</span>)}</div>}
+                        {(card.hiramekiEffect || card.cutInEffect || keywordBadges.length > 0) && <div className="effect-badges">{card.hiramekiEffect && <span className="effect-badge effect-badge-hirameki">히라메키</span>}{card.cutInEffect && <span className="effect-badge effect-badge-cutin">컷인</span>}{keywordBadges.map((badge) => <span key={badge.name} className={`effect-badge ${badge.className}${badge.conditional ? ' conditional' : ''}`}>{badge.conditional ? `[(조건부)${badge.name}]` : `[${badge.name}]`}</span>)}</div>}
                       </div>
                     </button>
                     <button onClick={() => addCard(card)} aria-label={role === 'partner' ? `${card.name} 파트너 지정` : role === 'event' ? `${card.name} 사건 카드 지정` : `${card.name} 덱에 추가`} className={`card-tile-action mt-auto border-t border-white/[0.07] px-1 py-1.5 text-[10px] font-semibold transition sm:text-[11px] ${role === 'partner' ? 'bg-amber-300/10 text-amber-200 hover:bg-amber-300/20' : role === 'event' ? 'bg-sky-300/10 text-sky-200 hover:bg-sky-300/20' : 'bg-white/[0.025] text-slate-400 hover:bg-rose-500/10 hover:text-rose-200'}`}>
@@ -822,70 +865,73 @@ export default function App() {
 
           <div className="deck-board-scroll">
             <div className="deck-board">
-              <div className="deck-board-heading deck-main-heading">
-                <div><strong>메인 덱</strong><small>40칸 · 같은 카드 최대 3장</small></div>
-                <span className="text-[11px] tabular-nums text-slate-500">10 × 4 · 40칸</span>
-              </div>
-              <div className="deck-board-heading deck-partner-heading">
-                <div className="deck-special-heading-copy"><strong>파트너</strong><small className={`deck-slot-status ${partnerCard ? 'is-selected' : ''}`}>{partnerCard ? '선택 완료' : '필수 · 미선택'}</small></div>
-              </div>
-              <div className="deck-board-heading deck-event-heading">
-                <div className="deck-special-heading-copy"><strong>사건</strong><small className={`deck-slot-status ${eventCard ? 'is-selected' : ''}`}>{eventCard ? '선택 완료' : '필수 · 미선택'}</small></div>
-              </div>
-
-              <div className="deck-slots-grid">
-                {deckSlots.map((card, index) => card ? (
-                  <article key={card.deckSlotKey} className="deck-card-slot">
-                    <button onClick={() => setSelectedCard(card)} className="deck-card-open" title={`${card.name} 상세 정보`}>
-                      {card.imageUrl ? <img src={card.imageUrl} loading="lazy" alt={card.name} className="deck-card-image" /> : <div className="deck-card-image flex items-center justify-center text-[9px] text-slate-500">이미지 없음</div>}
-                      <div className="deck-card-name">{card.name}</div>
+              <aside className="deck-specials-column" aria-label="파트너와 사건 카드">
+                <div className="deck-board-heading deck-special-heading">
+                  <div className="deck-special-heading-copy"><strong>파트너 · 사건</strong><small>필수 카드 · 각 1장</small></div>
+                </div>
+                {partnerCard ? (
+                  <article className="deck-special-card">
+                    <span className="deck-special-role">파트너</span>
+                    <button onClick={() => setSelectedCard(partnerCard)} className="deck-special-open" title={`${partnerCard.name} 상세 정보`}>
+                      {partnerCard.imageUrl ? <img src={partnerCard.imageUrl} loading="lazy" alt={partnerCard.name} className="deck-special-image" /> : <div className="deck-special-image flex items-center justify-center text-[9px] text-slate-500">이미지 없음</div>}
+                      <div className="deck-special-name">{partnerCard.name}</div>
+                      <span className="deck-special-id">{partnerCard.cardId || partnerCard.cardNum || '파트너 카드'}</span>
                     </button>
-                    <button onClick={() => removeCard(card.key)} aria-label={`${card.name} 한 장 제거`} title="한 장 제거" className="deck-card-remove">−</button>
+                    <button onClick={() => setPartnerId('')} aria-label="파트너 카드 해제" title="파트너 해제" className="deck-special-remove">×</button>
                   </article>
                 ) : (
-                  <div key={`empty-${index}`} className="deck-empty-slot">
-                    <div className="deck-card-image flex items-center justify-center text-xs text-slate-700">{index + 1}</div>
-                    <div className="deck-card-name">빈 슬롯</div>
+                  <div className="deck-empty-special">
+                    <span className="deck-special-role">파트너</span>
+                    <div className="deck-empty-special-image">미선택</div>
+                    <div className="deck-special-name">카드 목록에서 지정</div>
                   </div>
-                ))}
+                )}
+
+                {eventCard ? (
+                  <article className="deck-special-card">
+                    <span className="deck-special-role is-event">사건</span>
+                    <button onClick={() => setSelectedCard(eventCard)} className="deck-special-open" title={`${eventCard.name} 상세 정보`}>
+                      {eventCard.imageUrl ? <img src={eventCard.imageUrl} loading="lazy" alt={eventCard.name} className="deck-special-image" /> : <div className="deck-special-image flex items-center justify-center text-[9px] text-slate-500">이미지 없음</div>}
+                      <div className="deck-special-name">{eventCard.name}</div>
+                      <span className="deck-special-id">{eventCard.cardId || eventCard.cardNum || '사건 카드'}</span>
+                    </button>
+                    <button onClick={() => setEventId('')} aria-label="사건 카드 해제" title="사건 카드 해제" className="deck-special-remove">×</button>
+                  </article>
+                ) : (
+                  <div className="deck-empty-special">
+                    <span className="deck-special-role is-event">사건</span>
+                    <div className="deck-empty-special-image">미선택</div>
+                    <div className="deck-special-name">카드 목록에서 지정</div>
+                  </div>
+                )}
+              </aside>
+
+              <div className="deck-main-column">
+                <div className="deck-board-heading deck-main-heading">
+                  <div><strong>메인 덱</strong><small>40칸 · 같은 카드 최대 3장</small></div>
+                  <span className="text-[11px] tabular-nums text-slate-500">10 × 4 · 40칸</span>
+                </div>
+                <div className="deck-slots-grid">
+                  {deckSlots.map((card, index) => card ? (
+                    <article key={card.deckSlotKey} className="deck-card-slot">
+                      <button onClick={() => setSelectedCard(card)} className="deck-card-open" title={`${card.name} 상세 정보`}>
+                        {card.imageUrl ? <img src={card.imageUrl} loading="lazy" alt={card.name} className="deck-card-image" /> : <div className="deck-card-image flex items-center justify-center text-[9px] text-slate-500">이미지 없음</div>}
+                        <div className="deck-card-name">{card.name}</div>
+                      </button>
+                      <button onClick={() => removeCard(card.key)} aria-label={`${card.name} 한 장 제거`} title="한 장 제거" className="deck-card-remove">−</button>
+                    </article>
+                  ) : (
+                    <div key={`empty-${index}`} className="deck-empty-slot">
+                      <div className="deck-card-image flex items-center justify-center text-xs text-slate-700">{index + 1}</div>
+                      <div className="deck-card-name">빈 슬롯</div>
+                    </div>
+                  ))}
+                </div>
+                {mainDeckCount === 0 && <p className="deck-empty-hint">카드를 추가하려면 ‘카드 목록’ 탭으로 이동해 원하는 카드에서 ‘덱에 추가’를 눌러 주세요.</p>}
               </div>
-
-              {partnerCard ? (
-                <article className="deck-special-card">
-                  <button onClick={() => setSelectedCard(partnerCard)} className="deck-special-open" title={`${partnerCard.name} 상세 정보`}>
-                    {partnerCard.imageUrl ? <img src={partnerCard.imageUrl} loading="lazy" alt={partnerCard.name} className="deck-special-image" /> : <div className="deck-special-image flex items-center justify-center text-[9px] text-slate-500">이미지 없음</div>}
-                    <div className="deck-special-name">{partnerCard.name}</div>
-                    <span className="deck-special-id">{partnerCard.cardId || partnerCard.cardNum || '파트너 카드'}</span>
-                  </button>
-                  <button onClick={() => setPartnerId('')} aria-label="파트너 카드 해제" title="파트너 해제" className="deck-special-remove">×</button>
-                </article>
-              ) : (
-                <div className="deck-empty-special">
-                  <div className="deck-empty-special-image">파트너 카드<br />미선택</div>
-                  <div className="deck-special-name">카드 목록에서 지정</div>
-                </div>
-              )}
-
-              {eventCard ? (
-                <article className="deck-special-card">
-                  <button onClick={() => setSelectedCard(eventCard)} className="deck-special-open" title={`${eventCard.name} 상세 정보`}>
-                    {eventCard.imageUrl ? <img src={eventCard.imageUrl} loading="lazy" alt={eventCard.name} className="deck-special-image" /> : <div className="deck-special-image flex items-center justify-center text-[9px] text-slate-500">이미지 없음</div>}
-                    <div className="deck-special-name">{eventCard.name}</div>
-                    <span className="deck-special-id">{eventCard.cardId || eventCard.cardNum || '사건 카드'}</span>
-                  </button>
-                  <button onClick={() => setEventId('')} aria-label="사건 카드 해제" title="사건 카드 해제" className="deck-special-remove">×</button>
-                </article>
-              ) : (
-                <div className="deck-empty-special">
-                  <div className="deck-empty-special-image">사건 카드<br />미선택</div>
-                  <div className="deck-special-name">카드 목록에서 지정</div>
-                </div>
-              )}
-
-              {mainDeckCount === 0 && <p className="deck-empty-hint">카드를 추가하려면 ‘카드 목록’ 탭으로 이동해 원하는 카드에서 ‘덱에 추가’를 눌러 주세요.</p>}
-              <p className="deck-footnote border-t border-white/[0.08] pt-3 text-[11px] leading-5 text-slate-500">덱 구성은 이 브라우저에 자동 저장돼요. 완성된 덱을 JSON으로 내보내려면 메인 덱 40장과 파트너 카드 1장, 사건 카드 1장을 모두 선택해야 해요.</p>
             </div>
           </div>
+          <p className="deck-footnote border-t border-white/[0.08] pt-3 text-[11px] leading-5 text-slate-500">덱 구성은 이 브라우저에 자동 저장돼요. 완성된 덱을 JSON으로 내보내려면 메인 덱 40장과 파트너 카드 1장, 사건 카드 1장을 모두 선택해야 해요.</p>
         </section>
       )}
 
@@ -905,10 +951,11 @@ export default function App() {
                 </div>
                 <div className="min-w-0 space-y-3">
                   <dl className="grid grid-cols-2 gap-2 sm:grid-cols-3">{[['종류', selectedCard.type], ['색상', selectedCard.color], ['레어도', selectedCard.rarity], ['코스트', formatNumber(selectedCard.cost)], ['LP', formatNumber(selectedCard.lp)], ['수록 제품', selectedCard.set]].map(([label, value]) => <div key={label} className="card-meta-item rounded-lg border border-white/[0.07] bg-[#090f1b] p-2.5"><dt className="text-[10px] font-medium text-slate-500">{label}</dt><dd className="mt-1 break-words text-xs font-semibold text-slate-200">{value || '-'}</dd></div>)}</dl>
+                  {selectedKeywordBadges.length > 0 && <div className="effect-badges detail-keyword-badges">{selectedKeywordBadges.map((badge) => <span key={badge.name} className={`effect-badge ${badge.className}${badge.conditional ? ' conditional' : ''}`}>{badge.conditional ? `[(조건부)${badge.name}]` : `[${badge.name}]`}</span>)}</div>}
                   {(selectedCard.hiramekiEffect || selectedCard.cutInEffect) && <div className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><h3 className="mb-3 text-xs font-bold">게임 시스템 효과</h3><div className="space-y-3">{selectedCard.hiramekiEffect && <div><h4 className="mb-1 text-xs font-bold text-amber-300">히라메키</h4><p className="whitespace-pre-wrap break-words text-xs leading-5 text-slate-200">{selectedCard.hiramekiEffect}</p></div>}{selectedCard.cutInEffect && <div><h4 className="mb-1 text-xs font-bold text-sky-300">컷인</h4><p className="whitespace-pre-wrap break-words text-xs leading-5 text-slate-200">{selectedCard.cutInEffect}</p></div>}</div></div>}
-                  <div className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><h3 className="mb-2 text-xs font-bold text-slate-300">카드 효과</h3><p className="whitespace-pre-wrap break-words text-xs leading-6 text-slate-200">{formatAbilityText(selectedCard.ability) || '효과 텍스트 없음'}</p></div>
+                  <div className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><h3 className="mb-2 text-xs font-bold text-slate-300">카드 효과</h3><div className="card-effect-text text-xs leading-6 text-slate-200">{formatAbilityText(selectedCard.ability) || '효과 텍스트 없음'}</div></div>
                   {selectedCard.flavor && <div className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><h3 className="mb-2 text-xs font-bold text-slate-300">플레이버 텍스트</h3><p className="whitespace-pre-wrap break-words text-xs leading-5 text-slate-300">{selectedCard.flavor}</p></div>}
-                  {(selectedCard.originalName !== selectedCard.name || selectedCard.originalAbility !== selectedCard.ability) && <details className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><summary className="cursor-pointer text-xs font-semibold text-slate-300">일본어 원문 보기</summary><div className="mt-3 space-y-3 text-xs leading-5"><p><span className="text-slate-500">이름: </span>{selectedCard.originalName || '-'}</p><p className="whitespace-pre-wrap break-words"><span className="text-slate-500">효과: </span>{formatAbilityText(selectedCard.originalAbility) || '-'}</p></div></details>}
+                  {(selectedCard.originalName !== selectedCard.name || selectedCard.originalAbility !== selectedCard.ability) && <details className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><summary className="cursor-pointer text-xs font-semibold text-slate-300">일본어 원문 보기</summary><div className="mt-3 space-y-3 text-xs leading-5"><p><span className="text-slate-500">이름: </span>{selectedCard.originalName || '-'}</p><p className="card-original-effect-text whitespace-pre-wrap break-words"><span className="text-slate-500">효과: </span>{formatAbilityText(selectedCard.originalAbility) || '-'}</p></div></details>}
                 </div>
               </div>
             </div>
