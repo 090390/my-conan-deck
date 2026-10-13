@@ -95,88 +95,179 @@ function normalizeColorKey(value) {
   return recognized.length === tags.size ? recognized.join('') : normalizeColor(value);
 }
 
-const KEYWORD_DEFINITIONS = [
-  { name: '돌격', aliases: ['돌격', '突撃'], className: 'keyword-assault' },
-  { name: '신속', aliases: ['신속', '迅速'], className: 'keyword-swift' },
-  { name: '질풍', aliases: ['질풍', '疾風'], className: 'keyword-gale' },
+// 실제 화면에 표시할 키워드 태그는 자동 추론하지 않습니다.
+// public/card-keyword-tags.json에 카드별로 검토 완료한 태그를 기록해 사용합니다.
+const KEYWORD_SCAN_DEFINITIONS = [
+  { name: '돌격', aliases: ['돌격', '突撃'] },
+  { name: '신속', aliases: ['신속', '迅速'] },
+  { name: '질풍', aliases: ['질풍', '疾風'] },
+];
+
+const KEYWORD_TAG_VALUES = [
+  '돌격', '조건부 돌격', '신속', '조건부 신속', '질풍', '조건부 질풍',
+  '돌격 부여', '조건부 돌격 부여', '신속 부여', '조건부 신속 부여', '질풍 부여', '조건부 질풍 부여',
 ];
 
 function escapeRegExp(value) {
   return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function keywordPattern(aliases, flags = 'iu') {
-  return new RegExp(aliases.map(escapeRegExp).join('|'), flags);
+function getKeywordTagRecord(tagData, identifiers = []) {
+  const root = tagData?.cards && typeof tagData.cards === 'object' ? tagData.cards : tagData;
+  if (!root || typeof root !== 'object') return null;
+  for (const identifier of identifiers) {
+    const key = String(identifier ?? '').trim();
+    if (key && Object.prototype.hasOwnProperty.call(root, key)) return root[key];
+  }
+  return null;
 }
 
-// 카드가 키워드를 직접 보유/획득하는 문장만 감지하고, 다른 캐릭터를 설명하는 문장은 제외합니다.
-function getKeywordEvidence(text, aliases) {
-  const occurrencePattern = keywordPattern(aliases, 'giu');
-  const conditionPattern = /(?:조건(?:부)?|조건을 만족|경우|時|とき|場合|条件|後|以上|以下|ならば|なら|때|마다|후|이상|이하|있으면|있을 때|있을\s*시|(?:^|\s)시(?=\s|$)|하면|한다면|에 따라|시에|존재하면|있을 경우|중에)/iu;
-  const gainAfterPattern = new RegExp(
-    `^\\s*(?:(?:을|를|を)\\s*)?(?:얻(?:는다|음|습니다|게\\s*된다|을\\s*수\\s*있다|을\\s*수\\s*있음)?|획득(?:한다|함|하게\\s*된다)?|부여(?:한다|함)|받는다|받음|gain(?:s|ed)?|得る|得た|得られる|獲得する|付与する|与える)`,
-    'iu',
-  );
-  const possessionAfterPattern = new RegExp(
-    `^\\s*(?:(?:을|를|を)\\s*)?(?:가진다|갖는다|보유한다|가지고\\s*있다|갖고\\s*있다|持つ|有する)(?!\\s*(?:캐릭터|캐릭터카드|카드|キャラ|キャラクター|カード))`,
-    'iu',
-  );
-  const refersToOtherCardAfterPattern = new RegExp(
-    `^\\s*(?:(?:을|를|を)\\s*)?(?:가진|갖고\\s*있는|가지고\\s*있는|보유한|持つ|持っている)\\s*(?:캐릭터|캐릭터\\s*카드|카드|キャラ|キャラクター|キャラカード|カード)`,
-    'iu',
-  );
-  const explicitTagBeforePattern = /(?:【|\[|［)\s*$/u;
-  const explicitTagAfterPattern = /^\s*(?:】|\]|］)/u;
-  const clauses = String(text || '')
+function normalizeTagValue(tag) {
+  return String(tag ?? '').trim().replace(/^[\[【]\s*|\s*[\]】]$/gu, '').trim();
+}
+
+function tagFromReviewedCandidate(candidate) {
+  if (!candidate || candidate.selected !== true) return '';
+  if (String(candidate.finalTag || '').trim()) return normalizeTagValue(candidate.finalTag);
+  const keyword = String(candidate.keyword || '').trim();
+  if (!['돌격', '신속', '질풍'].includes(keyword)) return '';
+  if (candidate.classification !== 'self_gain' && candidate.classification !== 'grant_other') return '';
+  const conditionalPrefix = candidate.conditionalGuess === true ? '조건부 ' : '';
+  return `${conditionalPrefix}${keyword}${candidate.classification === 'grant_other' ? ' 부여' : ''}`;
+}
+
+function normalizeKeywordTagList(record) {
+  const directValues = Array.isArray(record)
+    ? record
+    : Array.isArray(record?.tags)
+      ? record.tags
+      : Array.isArray(record?.keywordTags)
+        ? record.keywordTags
+        : Array.isArray(record?.assignedTags)
+          ? record.assignedTags
+          : [];
+  const selectedCandidateTags = Array.isArray(record?.candidates)
+    ? record.candidates.map(tagFromReviewedCandidate).filter(Boolean)
+    : [];
+  return [...new Set([...directValues, ...selectedCandidateTags].map(normalizeTagValue).filter(Boolean))];
+}
+
+function resolveKeywordTags(tagData, identifiers = []) {
+  return normalizeKeywordTagList(getKeywordTagRecord(tagData, identifiers));
+}
+
+function keywordTagClass(tag) {
+  const value = String(tag || '');
+  if (value.includes('돌격')) return 'keyword-assault';
+  if (value.includes('신속')) return 'keyword-swift';
+  if (value.includes('질풍')) return 'keyword-gale';
+  return 'keyword-other';
+}
+
+function splitEffectText(text) {
+  return String(text || '')
     .replace(/\r\n?/gu, '\n')
-    .split(/(?<=[.!?。！？；;])\s*|\n+/u)
+    .split(/\n+|(?<=[.!?。！？；;])\s*/u)
     .map((part) => part.trim())
     .filter(Boolean);
-  const evidence = [];
-
-  for (const clause of clauses) {
-    for (const match of clause.matchAll(occurrencePattern)) {
-      const index = match.index ?? 0;
-      const keywordEnd = index + match[0].length;
-      const before = clause.slice(Math.max(0, index - 100), index);
-      const after = clause.slice(keywordEnd);
-      // 키워드가 【】/[] 안에 있다면 닫는 괄호를 벗긴 뒤 뒤따르는 서술을 판정합니다.
-      const afterKeyword = after.replace(/^(?:】|\]|］)\s*/u, '');
-      const previousContext = clause.slice(0, index);
-      const isExplicitTag = explicitTagBeforePattern.test(before) && explicitTagAfterPattern.test(after);
-      const refersToOtherCard = refersToOtherCardAfterPattern.test(afterKeyword);
-      const refersToKeywordConcept = /^(?:에\s*대해|에\s*관해|에\s*대한|은|는|이란|について|に関して|とは|という|に関する)/iu.test(afterKeyword);
-      const targetWasSelected = /(?:선택한|선택된|選んだ|選択した|対象の|対象として選んだ|캐릭터[^.!?。！？\n]{0,30}(?:선택하여|선택하고|선택해)|キャラ[^.!?。！？\n]{0,30}(?:選ぶ|選び|選択して))[^.!?。！？\n]{0,35}$/iu.test(previousContext);
-      const targetIsRecipient = /(?:상대(?:의)?\s*(?:캐릭터|캐릭터\s*카드)|(?:그|해당|선택한|선택된)\s*캐릭터|캐릭터[^.!?。！？\n]{0,22}(?:에게|에)|(?:キャラ|キャラクター)[^.!?。！？\n]{0,22}(?:に|へ|に対して))[^.!?。！？\n]{0,35}$/iu.test(previousContext);
-      const gainedByThisCard = gainAfterPattern.test(afterKeyword);
-      const heldByThisCard = possessionAfterPattern.test(afterKeyword);
-      const effectGrantsKeyword = /(?:^|\s)(?:부여|付与|与える)/iu.test(afterKeyword);
-
-      // 키워드를 가진 다른 캐릭터에 대한 설명, 키워드 자체에 대한 언급, 다른 대상에게 부여하는 효과는 제외합니다.
-      if (refersToOtherCard || refersToKeywordConcept || targetWasSelected || (targetIsRecipient && (isExplicitTag || gainedByThisCard || effectGrantsKeyword))) continue;
-      if (!(isExplicitTag || gainedByThisCard || heldByThisCard)) continue;
-
-      evidence.push({
-        conditional: conditionPattern.test(previousContext),
-        index,
-      });
-    }
-  }
-
-  return evidence;
 }
 
-function getKeywordBadges(card) {
-  // 번역문과 원문은 각각 분석합니다. 두 언어를 한 문자열로 합쳐 중복/문맥 오판이 생기지 않게 합니다.
-  const texts = [card?.ability, card?.originalAbility, card?.hiramekiEffect, card?.cutInEffect]
-    .filter((value) => String(value || '').trim());
-  return KEYWORD_DEFINITIONS.flatMap((definition) => {
-    const evidence = texts.flatMap((text) => getKeywordEvidence(text, definition.aliases));
-    if (!evidence.length) return [];
-    // 한 카드에 일반 획득도 있으면 조건부 배지보다 일반 배지를 우선합니다.
-    const conditional = evidence.every((item) => item.conditional);
-    return [{ ...definition, conditional }];
-  });
+// 후보 분석은 JSON 검토 파일을 만들 때만 사용합니다. 이 결과가 바로 UI 태그가 되지는 않습니다.
+function analyzeKeywordCandidates(text, language) {
+  const candidates = [];
+  const source = String(text || '').replace(/\r\n?/gu, '\n');
+  if (!source.trim()) return candidates;
+
+  for (const definition of KEYWORD_SCAN_DEFINITIONS) {
+    const aliases = [...definition.aliases].sort((a, b) => b.length - a.length);
+    const pattern = new RegExp(aliases.map((alias) => escapeRegExp(alias)).join('|'), 'giu');
+    for (const clause of splitEffectText(source)) {
+      for (const match of clause.matchAll(pattern)) {
+        const index = match.index ?? 0;
+        const end = index + match[0].length;
+        const before = clause.slice(0, index);
+        const after = clause.slice(end).replace(/^[\s\]】］」』）)]+/u, '');
+        const phrase = `${before}${match[0]}${after}`;
+        const conditionPattern = /(?:조건(?:부)?|조건을 만족|경우|있을\s*시|있을\s*때|한\s*경우|하면|후|이상|이하|때|시|마다|ならば|なら|場合|条件|とき|時|後|以上|以下|限り|when|if|after|whenever)/iu;
+        const conditionalGuess = conditionPattern.test(phrase);
+
+        const mentionsOtherPossessor = new RegExp(
+          `(?:${escapeRegExp(match[0])})\\s*(?:을|를|이|가|の|を)?\\s*(?:가진|갖는|가지고\\s*있는|갖고\\s*있는|보유한|있는)\\s*(?:다른\\s*)?(?:캐릭터|캐릭터\\s*카드|캐릭터가|キャラ|キャラクター|カード)|(?:${escapeRegExp(match[0])})\\s*(?:を)?\\s*(?:持つ|持っている|有する)\\s*(?:キャラ|キャラクター|カード)`,
+          'iu',
+        ).test(clause.replace(/[\[\]【】［］]/gu, ''));
+        const conceptMention = /(?:에\s*대해|에\s*관해|에\s*대한|이란|뜻은|について|に関して|とは|に関する|という能力)/iu.test(after);
+        const explicitSelf = /(?:이\s*캐릭터|이\s*카드|이\s*캐릭터\s*자신|자신은|このキャラ|このキャラクター|このカード|このキャラ自身|このキャラクター自身|自身は)/iu.test(before);
+        const targetContext = /(?:다른\s*캐릭터|상대(?:의)?\s*캐릭터|자신의\s*캐릭터|선택한\s*캐릭터|선택된\s*캐릭터|캐릭터\s*\d*장|キャラ\s*\d*枚|キャラクター\s*\d*枚|選んだキャラ|選択したキャラ|対象のキャラ|相手のキャラ|自分のキャラ)[^.!?。！？；;]{0,35}(?:에게|에|은|는|이|가|に|へ|は|が|を選ぶ|を選択)/iu.test(clause)
+          || /(?:에게|に|へ)\s*[^.!?。！？；;]{0,24}$/iu.test(before);
+        const grantVerb = /(?:부여(?:한다|함|하며|하고|할|될)?|부여하|付与(?:する|した|される)?|与える|与え|grant(?:s|ed)?)/iu.test(after);
+        const gainVerb = /(?:얻(?:는다|음|습니다|게\s*된다|을\s*수\s*있다|을\s*수\s*있음)?|획득(?:한다|함|하게\s*된다)?|받는다|받음|得る|得た|得られる|獲得(?:する|した)?|取得する|gain(?:s|ed)?|acquire(?:s|d)?)/iu.test(after);
+        const possessionVerb = /(?:가진다|갖는다|보유한다|가지고\s*있다|갖고\s*있다|持つ|有する)/iu.test(after);
+
+        let classification = 'uncertain';
+        let confidence = 'low';
+        let reason = '문맥만으로 대상과 능력의 관계를 확정하기 어려움';
+        let suggestedTag = '';
+
+        if (mentionsOtherPossessor || conceptMention) {
+          classification = 'mention_only';
+          confidence = 'medium';
+          reason = mentionsOtherPossessor ? '해당 키워드를 가진 캐릭터를 설명하는 문장일 가능성' : '키워드 자체를 설명하거나 언급하는 문장일 가능성';
+        } else if (grantVerb && (targetContext || /(?:캐릭터|キャラ|キャラクター)/iu.test(clause))) {
+          classification = 'grant_other';
+          confidence = targetContext ? 'high' : 'medium';
+          reason = '캐릭터를 대상으로 키워드를 부여하는 표현이 감지됨';
+        } else if ((gainVerb || possessionVerb) && targetContext && !explicitSelf) {
+          classification = 'grant_other';
+          confidence = 'medium';
+          reason = '다른 캐릭터를 주어/대상으로 키워드를 얻거나 보유하게 하는 표현일 가능성';
+        } else if (gainVerb || (possessionVerb && explicitSelf)) {
+          classification = 'self_gain';
+          confidence = explicitSelf ? 'high' : 'medium';
+          reason = explicitSelf ? '이 캐릭터/카드가 직접 얻거나 보유한다는 표현' : '대상이 따로 지정되지 않은 획득 표현(카드 자신으로 추정)';
+        } else if (possessionVerb && targetContext) {
+          classification = 'mention_only';
+          confidence = 'medium';
+          reason = '키워드를 보유한 대상에 관한 서술로 보임';
+        }
+
+        if (classification === 'self_gain') suggestedTag = `${conditionalGuess ? '조건부 ' : ''}${definition.name}`;
+        if (classification === 'grant_other') suggestedTag = `${conditionalGuess ? '조건부 ' : ''}${definition.name} 부여`;
+
+        candidates.push({
+          keyword: definition.name,
+          matchedText: match[0],
+          language,
+          clause,
+          context: phrase.slice(0, 260),
+          classification,
+          classificationLabel: ({ self_gain: '이 카드가 획득/보유', grant_other: '다른 캐릭터에게 부여', mention_only: '단순 서술/언급', uncertain: '판정 불확실' })[classification],
+          confidence,
+          conditionalGuess,
+          suggestedTag,
+          reason,
+        });
+      }
+    }
+  }
+  return candidates;
+}
+
+function getCardKeywordCandidates(card) {
+  const texts = [
+    { language: 'ko', value: card?.ability },
+    { language: 'ja', value: card?.originalAbility },
+    { language: 'ko-hirameki', value: card?.hiramekiEffect },
+    { language: 'ko-cutin', value: card?.cutInEffect },
+  ];
+  const unique = new Map();
+  for (const source of texts) {
+    if (!String(source.value || '').trim()) continue;
+    for (const candidate of analyzeKeywordCandidates(source.value, source.language)) {
+      const key = [candidate.keyword, candidate.language, candidate.clause, candidate.classification].join('|');
+      if (!unique.has(key)) unique.set(key, candidate);
+    }
+  }
+  return [...unique.values()];
 }
 
 function formatAbilityText(value) {
@@ -190,15 +281,17 @@ function formatAbilityText(value) {
     .replace(/\n{3,}/gu, '\n\n');
 }
 
-function normalizeCard(card, translations) {
+function normalizeCard(card, translations, keywordTagData = {}) {
   const source = card?.sourceData && typeof card.sourceData === 'object'
     ? card.sourceData
     : card?.raw && typeof card.raw === 'object'
       ? card.raw
       : {};
   const objects = [card, source];
+  // key는 기존 로컬 덱 저장값과 호환되도록 기존 우선순위를 유지합니다.
   const id = String(firstValue(objects, ['id', 'databaseId', 'database_id', 'cardId', 'card_id', 'cardNum', 'card_num']));
-  const translated = translations?.[id] || {};
+  const databaseId = String(firstValue(objects, ['databaseId', 'database_id', 'id']) || id);
+  const translated = translations?.[id] || translations?.[databaseId] || {};
   const hiramekiEffect = String(translated.hirameki || '').replace(/^【히라메키】\s*/u, '');
   const cutInEffect = String(translated.cut_in || '').replace(/^【컷인】\s*/u, '');
   const originalName = String(firstValue(objects, ['nameJp', 'title', 'name', 'cardName', 'card_name']));
@@ -209,19 +302,18 @@ function normalizeCard(card, translations) {
   const originalFlavor = String(firstValue(objects, ['flavorJp', 'flavor_txt', 'flavor', 'flavorText', 'flavor_text']));
   const cardId = String(firstValue(objects, ['cardId', 'card_id']));
   const cardNum = String(firstValue(objects, ['cardNum', 'card_num']));
+  const keywordTags = resolveKeywordTags(keywordTagData, [databaseId, id, cardId, cardNum]);
   const rarity = String(translated.rarityKo || firstValue(objects, ['rarity', 'rarityJp', 'rare', 'rarity_code', 'rarityCode']));
   const cost = numericValue(firstValue(objects, ['cost', 'costValue', 'cost_value']));
   const lp = numericValue(firstValue(objects, ['lp', 'LP']));
-  const roleText = [
-    ...objects.map((object) => firstValue([object], [
-      'type', 'typeJp', 'typeKo', 'cardType', 'card_type', 'category1', 'category2', 'category3',
-      'category1Ko', 'category2Ko', 'category3Ko', 'cardCategory', 'card_category',
-    ])),
-  ].filter(Boolean).join(' ');
+  const roleText = objects.map((object) => firstValue([object], [
+    'type', 'typeJp', 'typeKo', 'cardType', 'card_type', 'category1', 'category2', 'category3',
+    'category1Ko', 'category2Ko', 'category3Ko', 'cardCategory', 'card_category',
+  ])).filter(Boolean).join(' ');
 
   return {
     key: id,
-    databaseId: id,
+    databaseId,
     cardId,
     cardNum,
     name: String(translated.nameKo || firstValue([card], ['nameKo', 'translatedName']) || originalName || cardId || cardNum || '이름 없음'),
@@ -241,11 +333,11 @@ function normalizeCard(card, translations) {
     originalAbility,
     hiramekiEffect,
     cutInEffect,
+    keywordTags,
     flavor: String(translated.flavorKo || firstValue([card], ['flavorKo']) || originalFlavor),
     imageUrl: getImageUrl(card, source),
   };
 }
-
 function getCardArray(input) {
   if (Array.isArray(input)) return input;
   if (Array.isArray(input?.data)) return input.data;
@@ -338,6 +430,7 @@ export default function App() {
   const [deck, setDeck] = useState(loadSavedDeck);
   const [partnerId, setPartnerId] = useState(() => localStorage.getItem(PARTNER_STORAGE_KEY) || '');
   const [eventId, setEventId] = useState(() => localStorage.getItem(EVENT_STORAGE_KEY) || '');
+  const [keywordTagData, setKeywordTagData] = useState({ version: 1, cards: {} });
 
   useEffect(() => {
     let cancelled = false;
@@ -345,7 +438,7 @@ export default function App() {
       setLoading(true);
       setLoadError('');
       try {
-        const [cardResponse, translations] = await Promise.all([
+        const [cardResponse, translations, loadedKeywordTagData] = await Promise.all([
           fetch('/cards.json').then((response) => {
             if (!response.ok) throw new Error(`cards.json 응답 오류 (${response.status})`);
             return response.json();
@@ -353,11 +446,17 @@ export default function App() {
           fetch('/card-translations.ko.json')
             .then((response) => response.ok ? response.json() : {})
             .catch(() => ({})),
+          fetch('/card-keyword-tags.json')
+            .then((response) => response.ok ? response.json() : { version: 1, cards: {} })
+            .catch(() => ({ version: 1, cards: {} })),
         ]);
         const rawCards = getCardArray(cardResponse);
         if (!rawCards.length) throw new Error('cards.json에서 카드 배열을 찾지 못했어요. JSON의 최상위 구조를 확인해 주세요.');
-        const normalized = rawCards.map((card) => normalizeCard(card, translations)).filter((card) => card.key && card.key !== 'undefined');
-        if (!cancelled) setCards(normalized);
+        const normalized = rawCards.map((card) => normalizeCard(card, translations, loadedKeywordTagData)).filter((card) => card.key && card.key !== 'undefined');
+        if (!cancelled) {
+          setKeywordTagData(loadedKeywordTagData || { version: 1, cards: {} });
+          setCards(normalized);
+        }
       } catch (error) {
         if (!cancelled) setLoadError(error instanceof Error ? error.message : String(error));
       } finally {
@@ -429,7 +528,7 @@ export default function App() {
         card.name, card.originalName, card.cardId, card.cardNum,
         card.type, card.originalType, card.color, card.colorKey, card.originalColor,
         card.ability, card.originalAbility, card.set, card.originalSet, card.rarity,
-        card.hiramekiEffect, card.cutInEffect,
+        card.hiramekiEffect, card.cutInEffect, ...(card.keywordTags || []),
       ].join(' ').toLocaleLowerCase();
       if (query && !searchable.includes(query)) return false;
       if (colorFilter && (card.colorKey || normalizeColorKey(card.color)) !== colorFilter) return false;
@@ -452,7 +551,6 @@ export default function App() {
     return card ? Array.from({ length: Math.min(Number(count) || 0, SAME_CARD_LIMIT) }, (_, copyIndex) => ({ ...card, deckSlotKey: `${key}-${copyIndex}` })) : [];
   }).slice(0, MAIN_DECK_LIMIT);
   const deckSlots = Array.from({ length: MAIN_DECK_LIMIT }, (_, index) => deckCards[index] || null);
-  const selectedKeywordBadges = selectedCard ? getKeywordBadges(selectedCard) : [];
 
   // 모달 열림 상태에서는 배경 스크롤을 막고, Esc/좌우 방향키를 지원합니다.
   useEffect(() => {
@@ -524,6 +622,47 @@ export default function App() {
     setRarityFilter('');
     setCostFilter('');
     setLpFilter('');
+  }
+
+  function exportKeywordReviewData() {
+    const cardsById = {};
+    for (const card of cards) {
+      const id = String(card.databaseId || card.key || card.cardId || card.cardNum);
+      if (!id || id === 'undefined') continue;
+      const existingRecord = getKeywordTagRecord(keywordTagData, [id, card.key, card.cardId, card.cardNum]);
+      const existingTags = normalizeKeywordTagList(existingRecord);
+      const rawCandidates = Array.isArray(existingRecord?.candidates) && existingRecord.candidates.length
+        ? existingRecord.candidates
+        : getCardKeywordCandidates(card);
+      const candidates = rawCandidates.map((candidate) => ({
+        ...candidate,
+        selected: candidate.selected === true,
+      }));
+      cardsById[id] = {
+        databaseId: id,
+        cardId: card.cardId || '',
+        cardNum: card.cardNum || '',
+        name: card.name || '',
+        abilityKo: card.ability || '',
+        abilityJp: card.originalAbility || '',
+        tags: existingTags,
+        reviewStatus: existingRecord?.reviewStatus || (existingTags.length ? 'reviewed' : candidates.length ? 'needs_review' : 'no_candidate'),
+        candidates,
+      };
+    }
+    const output = {
+      version: 1,
+      instructions: '각 cards[databaseId].candidates 항목을 검토하세요. 맞는 후보는 selected=true로 하고 classification을 self_gain(이 카드 획득), grant_other(다른 캐릭터에게 부여), mention_only(단순 언급), uncertain(불확실) 중 맞게 수정하세요. conditionalGuess도 필요하면 고치세요. selected 후보는 앱이 태그로 자동 변환해 databaseId 기준으로 일괄 연결합니다. 후보에 없는 태그는 cards[databaseId].tags에 직접 추가할 수 있습니다. 이 파일을 public/card-keyword-tags.json으로 저장하세요.',
+      allowedTags: KEYWORD_TAG_VALUES,
+      cards: cardsById,
+    };
+    const blob = new Blob([JSON.stringify(output, null, 2)], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'card-keyword-tags-review.json';
+    link.click();
+    URL.revokeObjectURL(url);
   }
 
   function exportDeck() {
@@ -714,10 +853,12 @@ export default function App() {
         .keyword-assault { color: #fda4af; background: rgba(244,63,94,.12); border-color: rgba(251,113,133,.22); }
         .keyword-swift { color: #86efac; background: rgba(34,197,94,.12); border-color: rgba(74,222,128,.22); }
         .keyword-gale { color: #7dd3fc; background: rgba(14,165,233,.12); border-color: rgba(56,189,248,.22); }
-        .effect-badge.conditional { border-style: dashed; background-image: repeating-linear-gradient(135deg, rgba(255,255,255,.045) 0 3px, transparent 3px 6px); }
+        .effect-badge.conditional { border-style: dashed; opacity: .95; }
+        .keyword-other { color: #c4b5fd; background: rgba(139,92,246,.12); border-color: rgba(167,139,250,.22); }
+        .detail-keyword-badges { padding: 2px 0; }
         .deck-board-scroll { width: 100%; overflow-x: auto; padding-bottom: 5px; }
         /* 왼쪽 특수 카드 폭은 오른쪽 10열 중 각 슬롯 폭과 맞춥니다. */
-        .deck-board { display: grid !important; grid-template-columns: minmax(64px, calc((100% - 62px) / 11)) minmax(0, 1fr) !important; gap: 8px !important; min-width: 1000px; align-items: start; }
+        .deck-board { display: grid !important; grid-template-columns: minmax(64px, calc((100% - 80px) / 11)) minmax(0, 1fr) !important; gap: 12px !important; min-width: 1000px; align-items: start; }
         .deck-specials-column { grid-column: 1; min-width: 0; display: grid !important; grid-template-columns: minmax(0, 1fr) !important; gap: 6px !important; align-content: start; }
         .deck-main-column { grid-column: 2; min-width: 0; }
         .deck-board-heading { min-width: 0; min-height: 38px; display: flex; align-items: center; justify-content: space-between; gap: 5px; border-bottom: 1px solid rgba(255,255,255,.09); padding: 0 1px 7px; }
@@ -729,6 +870,7 @@ export default function App() {
         .deck-special-heading-copy { min-width: 0; }
         .deck-slot-status { display: inline-block; max-width: 100%; color: #9aa8bd; font-size: 8px; line-height: 1.25; overflow-wrap: anywhere; }
         .deck-slot-status.is-selected { color: #86efac; }
+        .deck-slots-frame { border: 1px solid rgba(148,163,184,.23); border-radius: 12px; padding: 6px; background: rgba(4,9,18,.48); box-shadow: inset 0 1px 0 rgba(255,255,255,.025); }
         .deck-slots-grid { display: grid !important; grid-template-columns: repeat(10, minmax(0, 1fr)) !important; gap: 6px !important; align-content: start; }
         .deck-card-slot, .deck-special-card, .deck-empty-special { min-width: 0; width: 100%; overflow: hidden; position: relative; border: 1px solid rgba(148,163,184,.15); border-radius: 8px; background: #090f1b; }
         .deck-card-open, .deck-special-open { display: block !important; position: relative; width: 100% !important; min-width: 0; padding: 0 !important; border: 0 !important; border-radius: 0 !important; background: transparent !important; color: #e2e8f0 !important; text-align: left; }
@@ -749,7 +891,7 @@ export default function App() {
         .deck-empty-hint { margin: 8px 0 0 !important; color: #8190a7 !important; font-size: 11px !important; }
         .deck-footnote { margin-top: 12px !important; }
         @media (max-width: 600px) {
-          .deck-board { min-width: 1000px; gap: 8px !important; }
+          .deck-board { min-width: 1000px; gap: 12px !important; }
           .deck-slots-grid, .deck-specials-column { gap: 6px !important; }
           .deck-board-heading strong { font-size: 11px; }
           .deck-board-heading small, .deck-slot-status { font-size: 8px; }
@@ -810,7 +952,7 @@ export default function App() {
         <section id="card-list-top" className="app-panel card-list-panel min-w-0 rounded-2xl border border-white/10 bg-[#101827] p-3 md:p-4">
           <div className="card-list-toolbar mb-3 flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-baseline gap-2"><h2 className="text-base font-bold">카드 목록</h2><span className="text-xs tabular-nums text-slate-400">검색 결과 {filteredCards.length.toLocaleString()}장</span></div>
-            <button onClick={clearFilters} className="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-semibold text-slate-300 transition hover:border-rose-400/40 hover:bg-white/5">필터 초기화</button>
+            <div className="flex flex-wrap items-center gap-2"><button onClick={exportKeywordReviewData} title="키워드 후보와 근거 문장을 카드 ID별 JSON으로 내보냅니다. 검토 후 tags만 확정하세요." className="rounded-lg border border-sky-300/25 px-3 py-1.5 text-xs font-semibold text-sky-200 transition hover:border-sky-300/50 hover:bg-sky-300/10">키워드 태그 검토 JSON</button><button onClick={clearFilters} className="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-semibold text-slate-300 transition hover:border-rose-400/40 hover:bg-white/5">필터 초기화</button></div>
           </div>
 
           <div className="app-filters mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
@@ -829,7 +971,7 @@ export default function App() {
                 const isPartner = partnerId === card.key;
                 const isEvent = eventId === card.key;
                 const role = getCardRole(card);
-                const keywordBadges = getKeywordBadges(card);
+                const keywordBadges = card.keywordTags || [];
                 return (
                   <article key={card.key} className="card-tile group flex min-w-0 flex-col overflow-hidden rounded-lg border border-white/[0.08] bg-[#090f1b] transition duration-150 hover:-translate-y-0.5 hover:border-rose-400/50 hover:shadow-lg hover:shadow-black/20">
                     <button onClick={() => setSelectedCard(card)} className="card-open-button block w-full min-w-0 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-rose-400" title={`${card.name} 상세 정보 보기`} aria-label={`${card.name} 상세 정보 보기`}>
@@ -843,7 +985,7 @@ export default function App() {
                       <div className="card-tile-caption p-1.5 sm:p-2">
                         <h3 className="card-tile-title line-clamp-2 min-h-[2.2rem] break-keep text-[11px] font-semibold leading-[1.1rem] text-slate-100 sm:text-xs">{card.name}</h3>
                         <div className="mt-1 flex min-w-0 items-center justify-between gap-1 text-[9px] text-slate-500 sm:text-[10px]"><span className="truncate">{card.rarity || card.type || '카드'}</span><span className="shrink-0">{formatNumber(card.cost)} / {formatNumber(card.lp)}</span></div>
-                        {(card.hiramekiEffect || card.cutInEffect || keywordBadges.length > 0) && <div className="effect-badges">{card.hiramekiEffect && <span className="effect-badge effect-badge-hirameki">히라메키</span>}{card.cutInEffect && <span className="effect-badge effect-badge-cutin">컷인</span>}{keywordBadges.map((badge) => <span key={badge.name} className={`effect-badge ${badge.className}${badge.conditional ? ' conditional' : ''}`}>{badge.conditional ? `[(조건부)${badge.name}]` : `[${badge.name}]`}</span>)}</div>}
+                        {(card.hiramekiEffect || card.cutInEffect || keywordBadges.length > 0) && <div className="effect-badges">{card.hiramekiEffect && <span className="effect-badge effect-badge-hirameki">히라메키</span>}{card.cutInEffect && <span className="effect-badge effect-badge-cutin">컷인</span>}{keywordBadges.map((tag) => <span key={tag} className={`effect-badge ${keywordTagClass(tag)}${String(tag).startsWith('조건부 ') ? ' conditional' : ''}`}>[{tag}]</span>)}</div>}
                       </div>
                     </button>
                     <button onClick={() => addCard(card)} aria-label={role === 'partner' ? `${card.name} 파트너 지정` : role === 'event' ? `${card.name} 사건 카드 지정` : `${card.name} 덱에 추가`} className={`card-tile-action mt-auto border-t border-white/[0.07] px-1 py-1.5 text-[10px] font-semibold transition sm:text-[11px] ${role === 'partner' ? 'bg-amber-300/10 text-amber-200 hover:bg-amber-300/20' : role === 'event' ? 'bg-sky-300/10 text-sky-200 hover:bg-sky-300/20' : 'bg-white/[0.025] text-slate-400 hover:bg-rose-500/10 hover:text-rose-200'}`}>
@@ -911,7 +1053,8 @@ export default function App() {
                   <div><strong>메인 덱</strong><small>40칸 · 같은 카드 최대 3장</small></div>
                   <span className="text-[11px] tabular-nums text-slate-500">10 × 4 · 40칸</span>
                 </div>
-                <div className="deck-slots-grid">
+                <div className="deck-slots-frame">
+                  <div className="deck-slots-grid">
                   {deckSlots.map((card, index) => card ? (
                     <article key={card.deckSlotKey} className="deck-card-slot">
                       <button onClick={() => setSelectedCard(card)} className="deck-card-open" title={`${card.name} 상세 정보`}>
@@ -926,6 +1069,7 @@ export default function App() {
                       <div className="deck-card-name">빈 슬롯</div>
                     </div>
                   ))}
+                  </div>
                 </div>
                 {mainDeckCount === 0 && <p className="deck-empty-hint">카드를 추가하려면 ‘카드 목록’ 탭으로 이동해 원하는 카드에서 ‘덱에 추가’를 눌러 주세요.</p>}
               </div>
@@ -951,7 +1095,7 @@ export default function App() {
                 </div>
                 <div className="min-w-0 space-y-3">
                   <dl className="grid grid-cols-2 gap-2 sm:grid-cols-3">{[['종류', selectedCard.type], ['색상', selectedCard.color], ['레어도', selectedCard.rarity], ['코스트', formatNumber(selectedCard.cost)], ['LP', formatNumber(selectedCard.lp)], ['수록 제품', selectedCard.set]].map(([label, value]) => <div key={label} className="card-meta-item rounded-lg border border-white/[0.07] bg-[#090f1b] p-2.5"><dt className="text-[10px] font-medium text-slate-500">{label}</dt><dd className="mt-1 break-words text-xs font-semibold text-slate-200">{value || '-'}</dd></div>)}</dl>
-                  {selectedKeywordBadges.length > 0 && <div className="effect-badges detail-keyword-badges">{selectedKeywordBadges.map((badge) => <span key={badge.name} className={`effect-badge ${badge.className}${badge.conditional ? ' conditional' : ''}`}>{badge.conditional ? `[(조건부)${badge.name}]` : `[${badge.name}]`}</span>)}</div>}
+                  {selectedCard.keywordTags?.length > 0 && <div className="detail-keyword-badges effect-badges">{selectedCard.keywordTags.map((tag) => <span key={tag} className={`effect-badge ${keywordTagClass(tag)}${String(tag).startsWith('조건부 ') ? ' conditional' : ''}`}>[{tag}]</span>)}</div>}
                   {(selectedCard.hiramekiEffect || selectedCard.cutInEffect) && <div className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><h3 className="mb-3 text-xs font-bold">게임 시스템 효과</h3><div className="space-y-3">{selectedCard.hiramekiEffect && <div><h4 className="mb-1 text-xs font-bold text-amber-300">히라메키</h4><p className="whitespace-pre-wrap break-words text-xs leading-5 text-slate-200">{selectedCard.hiramekiEffect}</p></div>}{selectedCard.cutInEffect && <div><h4 className="mb-1 text-xs font-bold text-sky-300">컷인</h4><p className="whitespace-pre-wrap break-words text-xs leading-5 text-slate-200">{selectedCard.cutInEffect}</p></div>}</div></div>}
                   <div className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><h3 className="mb-2 text-xs font-bold text-slate-300">카드 효과</h3><div className="card-effect-text text-xs leading-6 text-slate-200">{formatAbilityText(selectedCard.ability) || '효과 텍스트 없음'}</div></div>
                   {selectedCard.flavor && <div className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><h3 className="mb-2 text-xs font-bold text-slate-300">플레이버 텍스트</h3><p className="whitespace-pre-wrap break-words text-xs leading-5 text-slate-300">{selectedCard.flavor}</p></div>}
