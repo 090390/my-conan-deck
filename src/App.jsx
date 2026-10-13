@@ -306,6 +306,7 @@ function normalizeCard(card, translations, keywordTagData = {}) {
   const rarity = String(translated.rarityKo || firstValue(objects, ['rarity', 'rarityJp', 'rare', 'rarity_code', 'rarityCode']));
   const cost = numericValue(firstValue(objects, ['cost', 'costValue', 'cost_value']));
   const lp = numericValue(firstValue(objects, ['lp', 'LP']));
+  const ap = numericValue(firstValue(objects, ['ap', 'AP', 'attackPower', 'attack_power', 'power']));
   const roleText = objects.map((object) => firstValue([object], [
     'type', 'typeJp', 'typeKo', 'cardType', 'card_type', 'category1', 'category2', 'category3',
     'category1Ko', 'category2Ko', 'category3Ko', 'cardCategory', 'card_category',
@@ -327,6 +328,7 @@ function normalizeCard(card, translations, keywordTagData = {}) {
     rarity,
     cost,
     lp,
+    ap,
     set: String(translated.setKo || firstValue([card], ['setKo']) || originalSet),
     originalSet,
     ability: String(translated.abilityKo || firstValue([card], ['abilityKo']) || originalAbility),
@@ -369,6 +371,30 @@ function uniqueOptions(values) {
 
 function formatNumber(value) {
   return value === null || value === undefined || value === '' ? '-' : value;
+}
+
+function formatDeckCost(value) {
+  const parsed = numericValue(value);
+  if (parsed === null) return '-';
+  if (Number.isInteger(parsed) && parsed >= 1 && parsed <= 20) {
+    return String.fromCodePoint(0x2460 + parsed - 1);
+  }
+  return String(parsed);
+}
+
+function getDeckCardType(card) {
+  const role = getCardRole(card);
+  if (role === 'event') return '이벤트';
+  if (role === 'partner') return '파트너';
+  const type = String(card?.type || card?.originalType || '').trim();
+  if (/キャラ|character/i.test(type)) return '캐릭터';
+  if (/事件|event/i.test(type)) return '이벤트';
+  if (/파트너|パートナー|partner/i.test(type)) return '파트너';
+  return type || '카드';
+}
+
+function getDeckCardSummary(card) {
+  return `[${getDeckCardType(card)} | ${formatDeckCost(card?.cost)} ${card?.name || '이름 없음'} | ${formatNumber(card?.ap ?? card?.lp)}]`;
 }
 
 function loadSavedDeck() {
@@ -428,6 +454,7 @@ export default function App() {
   const [selectedCard, setSelectedCard] = useState(null);
   const [activeView, setActiveView] = useState('cards');
   const [deck, setDeck] = useState(loadSavedDeck);
+  const [deckSort, setDeckSort] = useState('added');
   const [partnerId, setPartnerId] = useState(() => localStorage.getItem(PARTNER_STORAGE_KEY) || '');
   const [eventId, setEventId] = useState(() => localStorage.getItem(EVENT_STORAGE_KEY) || '');
   const [keywordTagData, setKeywordTagData] = useState({ version: 1, cards: {} });
@@ -550,7 +577,35 @@ export default function App() {
     const card = cards.find((item) => item.key === key);
     return card ? Array.from({ length: Math.min(Number(count) || 0, SAME_CARD_LIMIT) }, (_, copyIndex) => ({ ...card, deckSlotKey: `${key}-${copyIndex}` })) : [];
   }).slice(0, MAIN_DECK_LIMIT);
-  const deckSlots = Array.from({ length: MAIN_DECK_LIMIT }, (_, index) => deckCards[index] || null);
+  const sortedDeckCards = [...deckCards].sort((a, b) => {
+    if (deckSort === 'cost') {
+      const aCost = numericValue(a.cost);
+      const bCost = numericValue(b.cost);
+      return (aCost === null ? Number.POSITIVE_INFINITY : aCost) - (bCost === null ? Number.POSITIVE_INFINITY : bCost)
+        || String(a.name).localeCompare(String(b.name), 'ko', { numeric: true });
+    }
+    if (deckSort === 'color') {
+      const aColor = a.colorKey || normalizeColorKey(a.color) || '';
+      const bColor = b.colorKey || normalizeColorKey(b.color) || '';
+      const aRank = aColor ? COLOR_ORDER.findIndex((tag) => aColor.includes(tag)) : -1;
+      const bRank = bColor ? COLOR_ORDER.findIndex((tag) => bColor.includes(tag)) : -1;
+      const normalizedARank = aRank < 0 ? Number.POSITIVE_INFINITY : aRank;
+      const normalizedBRank = bRank < 0 ? Number.POSITIVE_INFINITY : bRank;
+      return normalizedARank - normalizedBRank
+        || aColor.localeCompare(bColor, 'ko', { numeric: true })
+        || ((numericValue(a.cost) ?? Number.POSITIVE_INFINITY) - (numericValue(b.cost) ?? Number.POSITIVE_INFINITY))
+        || String(a.name).localeCompare(String(b.name), 'ko', { numeric: true });
+    }
+    if (deckSort === 'ap') {
+      const aAp = numericValue(a.ap ?? a.lp);
+      const bAp = numericValue(b.ap ?? b.lp);
+      return (bAp === null ? Number.NEGATIVE_INFINITY : bAp) - (aAp === null ? Number.NEGATIVE_INFINITY : aAp)
+        || String(a.name).localeCompare(String(b.name), 'ko', { numeric: true });
+    }
+    return deckCards.findIndex((item) => item.deckSlotKey === a.deckSlotKey)
+      - deckCards.findIndex((item) => item.deckSlotKey === b.deckSlotKey);
+  });
+  const deckSlots = Array.from({ length: MAIN_DECK_LIMIT }, (_, index) => sortedDeckCards[index] || null);
 
   // 모달 열림 상태에서는 배경 스크롤을 막고, Esc/좌우 방향키를 지원합니다.
   useEffect(() => {
@@ -890,6 +945,21 @@ export default function App() {
         .deck-special-role.is-event { background: #7dd3fc; }
         .deck-empty-hint { margin: 8px 0 0 !important; color: #8190a7 !important; font-size: 11px !important; }
         .deck-footnote { margin-top: 12px !important; }
+        .deck-topbar { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin: 0 0 16px !important; }
+        .deck-topbar-info { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; min-width: 0; }
+        .deck-count-pill { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; border: 1px solid rgba(251,113,133,.2); border-radius: 9px; padding: 7px 11px; color: #fecdd3; background: rgba(225,29,72,.11); font-size: 12px; line-height: 1.2; font-weight: 850; font-variant-numeric: tabular-nums; }
+        .deck-action-buttons { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+        .app-shell .deck-action-buttons .deck-reset-button { min-height: 36px; border: 1px solid #be123c !important; border-radius: 9px !important; padding: 8px 13px !important; color: #fff1f2 !important; background: #be123c !important; box-shadow: 0 5px 15px rgba(190,18,60,.15); font-size: 12px !important; font-weight: 800 !important; }
+        .app-shell .deck-action-buttons .deck-reset-button:hover { border-color: #f43f5e !important; background: #e11d48 !important; }
+        .app-shell .deck-action-buttons .deck-export-button { min-height: 36px; border: 1px solid #3f4858 !important; border-radius: 9px !important; padding: 8px 13px !important; color: #f8fafc !important; background: #05070b !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.05); font-size: 12px !important; font-weight: 800 !important; }
+        .app-shell .deck-action-buttons .deck-export-button:hover { border-color: #64748b !important; background: #171c26 !important; }
+        .deck-main-heading { align-items: center; }
+        .deck-sort-tools { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 7px; min-width: 0; }
+        .deck-sort-tools label { color: #94a3b8; font-size: 10px; white-space: nowrap; }
+        .deck-sort-select { max-width: 145px; min-width: 100px; height: 30px; border: 1px solid rgba(255,255,255,.13); border-radius: 7px; padding: 4px 7px; color: #e2e8f0; background: #090f1b; font-size: 10px; outline: none; }
+        .deck-sort-select:focus { border-color: rgba(251,113,133,.7); }
+        .deck-card-name, .deck-special-name { min-height: 4.5em; font-size: 8px; line-height: 1.35; -webkit-line-clamp: 4; overflow-wrap: anywhere; word-break: normal; }
+        .deck-special-name { text-align: left; }
         @media (max-width: 600px) {
           .deck-board { min-width: 1000px; gap: 12px !important; }
           .deck-slots-grid, .deck-specials-column { gap: 6px !important; }
@@ -1000,9 +1070,15 @@ export default function App() {
         </section>
       ) : (
         <section className="app-panel deck-panel min-w-0 rounded-2xl border border-white/10 bg-[#101827] p-3 md:p-4">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <div><h2 className="text-base font-bold">내 덱 구성</h2><p className="mt-1 text-xs text-slate-400">메인 덱 최대 40장 · 같은 카드 최대 3장 · 파트너와 사건 카드는 별도 슬롯</p></div>
-            <div className="flex items-center gap-2"><span className={`rounded-lg px-3 py-2 text-xs font-black tabular-nums ${mainDeckCount === MAIN_DECK_LIMIT ? 'bg-emerald-500/15 text-emerald-300' : 'bg-rose-500/10 text-rose-200'}`}>{mainDeckCount} / {MAIN_DECK_LIMIT}장</span><button onClick={clearDeck} className="rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-white/5">덱 초기화</button><button onClick={exportDeck} className="rounded-lg bg-rose-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-rose-500">JSON 내보내기</button></div>
+          <div className="deck-topbar">
+            <div className="deck-topbar-info">
+              <div><h2 className="text-base font-bold">내 덱 구성</h2><p className="mt-1 text-xs text-slate-400">메인 덱 최대 40장 · 같은 카드 최대 3장 · 파트너와 사건 카드는 별도 슬롯</p></div>
+              <span className="deck-count-pill">{mainDeckCount} / {MAIN_DECK_LIMIT}장</span>
+            </div>
+            <div className="deck-action-buttons">
+              <button onClick={clearDeck} className="deck-reset-button">덱 초기화</button>
+              <button onClick={exportDeck} className="deck-export-button">JSON 내보내기</button>
+            </div>
           </div>
 
           <div className="deck-board-scroll">
@@ -1014,9 +1090,9 @@ export default function App() {
                 {partnerCard ? (
                   <article className="deck-special-card">
                     <span className="deck-special-role">파트너</span>
-                    <button onClick={() => setSelectedCard(partnerCard)} className="deck-special-open" title={`${partnerCard.name} 상세 정보`}>
+                    <button onClick={() => setSelectedCard(partnerCard)} className="deck-special-open" title={getDeckCardSummary(partnerCard)}>
                       {partnerCard.imageUrl ? <img src={partnerCard.imageUrl} loading="lazy" alt={partnerCard.name} className="deck-special-image" /> : <div className="deck-special-image flex items-center justify-center text-[9px] text-slate-500">이미지 없음</div>}
-                      <div className="deck-special-name">{partnerCard.name}</div>
+                      <div className="deck-special-name">{getDeckCardSummary(partnerCard)}</div>
                       <span className="deck-special-id">{partnerCard.cardId || partnerCard.cardNum || '파트너 카드'}</span>
                     </button>
                     <button onClick={() => setPartnerId('')} aria-label="파트너 카드 해제" title="파트너 해제" className="deck-special-remove">×</button>
@@ -1032,9 +1108,9 @@ export default function App() {
                 {eventCard ? (
                   <article className="deck-special-card">
                     <span className="deck-special-role is-event">사건</span>
-                    <button onClick={() => setSelectedCard(eventCard)} className="deck-special-open" title={`${eventCard.name} 상세 정보`}>
+                    <button onClick={() => setSelectedCard(eventCard)} className="deck-special-open" title={getDeckCardSummary(eventCard)}>
                       {eventCard.imageUrl ? <img src={eventCard.imageUrl} loading="lazy" alt={eventCard.name} className="deck-special-image" /> : <div className="deck-special-image flex items-center justify-center text-[9px] text-slate-500">이미지 없음</div>}
-                      <div className="deck-special-name">{eventCard.name}</div>
+                      <div className="deck-special-name">{getDeckCardSummary(eventCard)}</div>
                       <span className="deck-special-id">{eventCard.cardId || eventCard.cardNum || '사건 카드'}</span>
                     </button>
                     <button onClick={() => setEventId('')} aria-label="사건 카드 해제" title="사건 카드 해제" className="deck-special-remove">×</button>
@@ -1051,15 +1127,24 @@ export default function App() {
               <div className="deck-main-column">
                 <div className="deck-board-heading deck-main-heading">
                   <div><strong>메인 덱</strong><small>40칸 · 같은 카드 최대 3장</small></div>
-                  <span className="text-[11px] tabular-nums text-slate-500">10 × 4 · 40칸</span>
+                  <div className="deck-sort-tools">
+                    <label htmlFor="deck-sort-select">정렬</label>
+                    <select id="deck-sort-select" className="deck-sort-select" value={deckSort} onChange={(event) => setDeckSort(event.target.value)}>
+                      <option value="added">추가한 순서</option>
+                      <option value="cost">코스트 낮은순</option>
+                      <option value="color">색상별</option>
+                      <option value="ap">AP 높은순</option>
+                    </select>
+                    <span className="text-[10px] tabular-nums text-slate-500">10 × 4</span>
+                  </div>
                 </div>
                 <div className="deck-slots-frame">
                   <div className="deck-slots-grid">
                   {deckSlots.map((card, index) => card ? (
                     <article key={card.deckSlotKey} className="deck-card-slot">
-                      <button onClick={() => setSelectedCard(card)} className="deck-card-open" title={`${card.name} 상세 정보`}>
+                      <button onClick={() => setSelectedCard(card)} className="deck-card-open" title={getDeckCardSummary(card)}>
                         {card.imageUrl ? <img src={card.imageUrl} loading="lazy" alt={card.name} className="deck-card-image" /> : <div className="deck-card-image flex items-center justify-center text-[9px] text-slate-500">이미지 없음</div>}
-                        <div className="deck-card-name">{card.name}</div>
+                        <div className="deck-card-name">{getDeckCardSummary(card)}</div>
                       </button>
                       <button onClick={() => removeCard(card.key)} aria-label={`${card.name} 한 장 제거`} title="한 장 제거" className="deck-card-remove">−</button>
                     </article>
