@@ -210,6 +210,42 @@ function formatAbilityText(value) {
     .replace(/\n{3,}/gu, '\n\n');
 }
 
+const TRAIT_TRANSLATIONS = {
+  '高校生': '고등학생', '警察': '경찰', '探偵': '탐정', '黒ずくめの組織': '검은 조직',
+  '警視庁': '경시청', '少年探偵団': '소년 탐정단', '毛利探偵事務所': '모리 탐정 사무소',
+  '赤井家': '아카이 일가', 'FBI': 'FBI', '空手家': '가라테가', 'YAIBA': 'YAIBA',
+  '長野県警': '나가노현경', '科学者': '과학자', '怪盗': '괴도', '公安': '공안',
+  '鈴木財閥': '스즈키 재벌', '喫茶ポアロ': '카페 포아로', '神奈川県警': '가나가와현경',
+  '大阪府警': '오사카부경', 'マジシャン': '마술사', '執事': '집사', '大学院生': '대학원생',
+  '棋士': '기사', '女優': '여배우', 'ガジェット': '가젯', '小説家': '소설가', '犯人': '범인',
+  '発明家': '발명가', 'サッカー選手': '축구 선수', '医師': '의사', '弁護士': '변호사',
+  '教師': '교사', 'アイドル': '아이돌', 'CIA': 'CIA', 'ビッグジュエル': '빅 주얼',
+  '京都府警': '교토부경', '群馬県警': '군마현경', '赤魔術': '적마술', '魔女': '마녀',
+  'ヒーロー': '히어로', '寿司職人': '초밥 장인', '犬': '개', 'まじっく快斗': '매직 카이토',
+  '猫': '고양이', '大学生': '대학생', '秘書': '비서', '図書館館長': '도서관장', 'メイド': '메이드',
+  'アナウンサー': '아나운서', 'ボディガード': '보디가드', '静岡県警': '시즈오카현경',
+  'シマリス': '줄무늬다람쥐', '鷹': '매', '家政婦': '가정부', 'ラーメン小倉': '라멘 오구라',
+  '怪物': '괴물', '花見客': '꽃구경객', 'バーテンダー': '바텐더', '王女': '왕녀', '王子': '왕자',
+  '邪神': '사신', 'ロボット': '로봇', '証券会社社員': '증권회사 직원', 'CGクリエイター': 'CG 크리에이터',
+  'システムエンジニア': '시스템 엔지니어', '食品会社社員': '식품회사 직원', '大学教授': '대학 교수',
+  '政治家': '정치가', '怪人': '괴인', '泥参会': '도산회', '俳優': '배우', '消防士': '소방관',
+  '会社員': '회사원', 'NY市警': '뉴욕시경', '女流棋士': '여류 기사', '英語講師': '영어 강사',
+  'シャッフルロマンス': '셔플 로맨스', '婚活パーティー': '맞선 파티',
+  'お手伝い': '도우미', 'カメラマン': '카메라맨', 'デザイナー': '디자이너', '北海道警': '홋카이도경',
+  '医大生': '의대생', '医療関係者': '의료 관계자', '千葉県警': '지바현경', '女王': '여왕',
+  '絵描き': '화가', '酒屋': '주점',
+};
+
+function parseTraits(value) {
+  const raw = String(value ?? '').trim();
+  if (!raw) return [];
+  return [...new Set(raw.split(/[,，/、|｜]+/u).map((part) => part.trim()).filter(Boolean))];
+}
+
+function localizeTraits(value) {
+  return parseTraits(value).map((trait) => TRAIT_TRANSLATIONS[trait] || trait);
+}
+
 function normalizeCard(card, translations, keywordTagData = {}) {
   const source = card?.sourceData && typeof card.sourceData === 'object'
     ? card.sourceData
@@ -232,6 +268,8 @@ function normalizeCard(card, translations, keywordTagData = {}) {
   const cardId = String(firstValue(objects, ['cardId', 'card_id']));
   const cardNum = String(firstValue(objects, ['cardNum', 'card_num']));
   const keywordTags = resolveKeywordTags(keywordTagData, [databaseId, id, cardId, cardNum]);
+  const traitsSource = firstValue([translated, ...objects], ['traitsKo', 'traits_ko', 'traits', 'trait', 'featureTags', 'feature_tags']);
+  const traits = localizeTraits(traitsSource);
   const rarity = String(translated.rarityKo || firstValue(objects, ['rarity', 'rarityJp', 'rare', 'rarity_code', 'rarityCode']));
   const cost = numericValue(firstValue(objects, ['cost', 'costValue', 'cost_value']));
   const lp = numericValue(firstValue(objects, ['lp', 'LP']));
@@ -265,6 +303,7 @@ function normalizeCard(card, translations, keywordTagData = {}) {
     hiramekiEffect,
     cutInEffect,
     keywordTags,
+    traits,
     flavor: String(translated.flavorKo || firstValue([card], ['flavorKo']) || originalFlavor),
     imageUrl: getImageUrl(card, source),
   };
@@ -304,7 +343,7 @@ function formatNumber(value) {
 
 function formatDeckCost(value) {
   const parsed = numericValue(value);
-  if (parsed === null) return '-';
+  if (parsed === null) return '';
   if (Number.isInteger(parsed) && parsed >= 1 && parsed <= 20) {
     return String.fromCodePoint(0x2460 + parsed - 1);
   }
@@ -323,7 +362,8 @@ function getDeckCardType(card) {
 }
 
 function getDeckCardNameLine(card) {
-  return `${formatDeckCost(card?.cost)} ${card?.name || '이름 없음'}`;
+  const cost = formatDeckCost(card?.cost);
+  return `${cost ? `${cost} ` : ''}${card?.name || '이름 없음'}`;
 }
 
 function getDeckCardStatsLine(card) {
@@ -332,6 +372,103 @@ function getDeckCardStatsLine(card) {
 
 function getDeckCardSummary(card) {
   return `${getDeckCardNameLine(card)}\n${getDeckCardStatsLine(card)}`;
+}
+
+function loadImageForExport(src) {
+  return new Promise((resolve) => {
+    if (!src) return resolve(null);
+    const image = new Image();
+    let finished = false;
+    const finish = (result) => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timeout);
+      resolve(result);
+    };
+    const timeout = setTimeout(() => finish(null), 8000);
+    image.crossOrigin = 'anonymous';
+    image.onload = () => finish(image);
+    image.onerror = () => finish(null);
+    image.src = src;
+  });
+}
+
+function roundedCanvasRect(ctx, x, y, width, height, radius, fill, stroke = null) {
+  const r = Math.min(radius, width / 2, height / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + width, y, x + width, y + height, r);
+  ctx.arcTo(x + width, y + height, x, y + height, r);
+  ctx.arcTo(x, y + height, x, y, r);
+  ctx.arcTo(x, y, x + width, y, r);
+  ctx.closePath();
+  if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1.5; ctx.stroke(); }
+}
+
+function drawWrappedCanvasText(ctx, text, x, y, maxWidth, lineHeight, maxLines = 2) {
+  const characters = Array.from(String(text ?? ''));
+  const lines = [];
+  let line = '';
+  for (const char of characters) {
+    const candidate = line + char;
+    if (line && ctx.measureText(candidate).width > maxWidth) {
+      lines.push(line.trimEnd());
+      line = char.trimStart();
+    } else {
+      line = candidate;
+    }
+  }
+  if (line) lines.push(line.trimEnd());
+  let visible = lines.slice(0, maxLines);
+  if (lines.length > maxLines && visible.length) {
+    let last = visible[visible.length - 1];
+    while (last && ctx.measureText(`${last}…`).width > maxWidth) last = Array.from(last).slice(0, -1).join('');
+    visible[visible.length - 1] = `${last}…`;
+  }
+  visible.forEach((content, index) => ctx.fillText(content, x, y + index * lineHeight));
+  return visible.length;
+}
+
+function drawExportCard(ctx, card, image, x, y, width, options = {}) {
+  const scale = width / 165;
+  const imageHeight = width * 4 / 3;
+  const primaryFont = Math.max(12, 14 * scale);
+  const secondaryFont = Math.max(10, 11 * scale);
+  const captionHeight = Math.max(58, 62 * scale);
+  const height = imageHeight + captionHeight;
+  roundedCanvasRect(ctx, x, y, width, height, 10 * scale, '#090f1b', '#344256');
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x + 1, y + 1, width - 2, imageHeight - 1);
+  ctx.clip();
+  ctx.fillStyle = '#0d1524';
+  ctx.fillRect(x + 1, y + 1, width - 2, imageHeight - 1);
+  if (image && image.naturalWidth && image.naturalHeight) {
+    const padding = 4 * scale;
+    const fit = Math.min((width - padding * 2) / image.naturalWidth, (imageHeight - padding * 2) / image.naturalHeight);
+    const iw = image.naturalWidth * fit;
+    const ih = image.naturalHeight * fit;
+    ctx.drawImage(image, x + (width - iw) / 2, y + (imageHeight - ih) / 2, iw, ih);
+  } else {
+    ctx.fillStyle = '#182337';
+    ctx.fillRect(x + 8 * scale, y + 8 * scale, width - 16 * scale, imageHeight - 16 * scale);
+    ctx.fillStyle = '#fb7185';
+    ctx.fillRect(x + 8 * scale, y + 8 * scale, 4 * scale, imageHeight - 16 * scale);
+    ctx.fillStyle = '#e2e8f0';
+    ctx.textAlign = 'center';
+    ctx.font = `700 ${Math.max(11, 13 * scale)}px sans-serif`;
+    drawWrappedCanvasText(ctx, card?.name || '이미지 없음', x + width / 2, y + imageHeight / 2, width - 28 * scale, Math.max(16, 18 * scale), 4);
+    ctx.textAlign = 'left';
+  }
+  ctx.restore();
+  ctx.fillStyle = '#f1f5f9';
+  ctx.font = `750 ${primaryFont}px sans-serif`;
+  drawWrappedCanvasText(ctx, getDeckCardNameLine(card), x + 8 * scale, y + imageHeight + 19 * scale, width - 16 * scale, primaryFont * 1.25, 2);
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = `550 ${secondaryFont}px sans-serif`;
+  ctx.fillText(getDeckCardStatsLine(card), x + 8 * scale, y + height - 9 * scale);
+  return { width, height };
 }
 
 function loadSavedDeck() {
@@ -393,6 +530,8 @@ export default function App() {
   const [deck, setDeck] = useState(loadSavedDeck);
   const [deckSort, setDeckSort] = useState('added');
   const [deckLayout, setDeckLayout] = useState('10x4');
+  const [deckImageFormat, setDeckImageFormat] = useState('png');
+  const [exportingDeckImage, setExportingDeckImage] = useState(false);
   const [partnerId, setPartnerId] = useState(() => localStorage.getItem(PARTNER_STORAGE_KEY) || '');
   const [eventId, setEventId] = useState(() => localStorage.getItem(EVENT_STORAGE_KEY) || '');
 
@@ -621,28 +760,109 @@ export default function App() {
     setLpFilter('');
   }
 
-  function exportDeck() {
+  async function exportDeckImage() {
     if (!partnerCard || !eventCard || mainDeckCount !== MAIN_DECK_LIMIT) {
-      window.alert(`덱을 완성하려면 메인 덱 ${MAIN_DECK_LIMIT}장과 파트너 카드 1장, 사건 카드 1장이 필요해요.\n현재 메인 덱: ${mainDeckCount}/${MAIN_DECK_LIMIT}장 · 파트너: ${partnerCard ? '선택됨' : '미선택'} · 사건: ${eventCard ? '선택됨' : '미선택'}`);
+      window.alert(`이미지로 저장하려면 메인 덱 ${MAIN_DECK_LIMIT}장과 파트너 카드 1장, 사건 카드 1장이 필요해요.\n현재 메인 덱: ${mainDeckCount}/${MAIN_DECK_LIMIT}장 · 파트너: ${partnerCard ? '선택됨' : '미선택'} · 사건: ${eventCard ? '선택됨' : '미선택'}`);
       return;
     }
-    const output = {
-      exportedAt: new Date().toISOString(),
-      partner: { databaseId: partnerCard.databaseId, cardId: partnerCard.cardId, cardNum: partnerCard.cardNum, name: partnerCard.name },
-      event: { databaseId: eventCard.databaseId, cardId: eventCard.cardId, cardNum: eventCard.cardNum, name: eventCard.name },
-      mainDeckCount,
-      mainDeck: Object.entries(deck).map(([key, count]) => {
-        const card = cards.find((item) => item.key === key);
-        return card ? { databaseId: card.databaseId, cardId: card.cardId, cardNum: card.cardNum, name: card.name, count: Number(count) } : null;
-      }).filter(Boolean),
-    };
-    const blob = new Blob([JSON.stringify(output, null, 2)], { type: 'application/json;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'conan-deck.json';
-    link.click();
-    URL.revokeObjectURL(url);
+    if (exportingDeckImage) return;
+    setExportingDeckImage(true);
+    try {
+      const slots = deckSlots.filter(Boolean);
+      const imageUrls = [...new Set([partnerCard.imageUrl, eventCard.imageUrl, ...slots.map((card) => card.imageUrl)].filter(Boolean))];
+      const loadedImages = new Map();
+      await Promise.all(imageUrls.map(async (url) => loadedImages.set(url, await loadImageForExport(url))));
+
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('이미지 저장용 캔버스를 만들지 못했어요.');
+      const canvasWidth = 2050;
+      const margin = 50;
+      const columns = deckLayout === '8x5' ? 8 : 10;
+      const rows = deckLayout === '8x5' ? 5 : 4;
+      const gap = deckLayout === '8x5' ? 14 : 12;
+      const cardWidth = (canvasWidth - margin * 2 - 24 - (columns - 1) * gap) / (columns + 1);
+      const cardHeight = cardWidth * 4 / 3 + Math.max(58, 62 * (cardWidth / 165));
+      const headerHeight = 110;
+      const sectionHeight = 45;
+      const top = margin + headerHeight + 20;
+      const gridHeight = rows * cardHeight + (rows - 1) * gap;
+      const footerHeight = 58;
+      canvas.width = canvasWidth;
+      canvas.height = top + sectionHeight + gridHeight + margin + footerHeight;
+
+      ctx.fillStyle = '#080d17';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      // subtle header glow / panel
+      roundedCanvasRect(ctx, margin, margin, canvasWidth - margin * 2, headerHeight, 18, '#101827', '#263449');
+      ctx.fillStyle = '#fb7185';
+      ctx.fillRect(margin + 24, margin + 22, 5, 62);
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = '850 34px sans-serif';
+      ctx.fillText('내 덱 구성', margin + 44, margin + 49);
+      ctx.fillStyle = '#a7b4c8';
+      ctx.font = '600 16px sans-serif';
+      ctx.fillText('명탐정 코난 TCG 도감  ·  메인 덱 40장 + 파트너 + 사건', margin + 44, margin + 77);
+      ctx.textAlign = 'right';
+      ctx.fillStyle = mainDeckCount === MAIN_DECK_LIMIT ? '#86efac' : '#fda4af';
+      ctx.font = '800 22px sans-serif';
+      ctx.fillText(`${mainDeckCount} / ${MAIN_DECK_LIMIT}장`, canvasWidth - margin - 24, margin + 48);
+      ctx.fillStyle = '#8190a7';
+      ctx.font = '500 13px sans-serif';
+      ctx.fillText(new Date().toLocaleDateString('ko-KR'), canvasWidth - margin - 24, margin + 75);
+      ctx.textAlign = 'left';
+
+      const sideX = margin;
+      const gridX = margin + cardWidth + 24;
+      const labelY = top + 20;
+      ctx.fillStyle = '#e9eff9';
+      ctx.font = '800 17px sans-serif';
+      ctx.fillText('파트너 · 사건', sideX, labelY);
+      ctx.fillStyle = '#8190a7';
+      ctx.font = '500 11px sans-serif';
+      ctx.fillText('필수 카드 · 각 1장', sideX, labelY + 18);
+      ctx.fillStyle = '#e9eff9';
+      ctx.font = '800 17px sans-serif';
+      ctx.fillText('메인 덱', gridX, labelY);
+      ctx.fillStyle = '#8190a7';
+      ctx.font = '500 11px sans-serif';
+      ctx.fillText(`${columns} × ${rows} 배열 · ${deckSort === 'added' ? '추가한 순서' : deckSort === 'cost' ? '코스트 낮은순' : deckSort === 'cost-desc' ? '코스트 높은순' : deckSort === 'color' ? '색상별' : 'AP 높은순'}`, gridX, labelY + 18);
+
+      const cardStartY = top + sectionHeight;
+      drawExportCard(ctx, partnerCard, loadedImages.get(partnerCard.imageUrl), sideX, cardStartY, cardWidth);
+      drawExportCard(ctx, eventCard, loadedImages.get(eventCard.imageUrl), sideX, cardStartY + cardHeight + Math.max(14, gap), cardWidth);
+      slots.forEach((card, index) => {
+        const row = Math.floor(index / columns);
+        const col = index % columns;
+        drawExportCard(ctx, card, loadedImages.get(card.imageUrl), gridX + col * (cardWidth + gap), cardStartY + row * (cardHeight + gap), cardWidth);
+      });
+
+      const footerY = cardStartY + gridHeight + 30;
+      ctx.fillStyle = '#526176';
+      ctx.fillRect(margin, footerY, canvasWidth - margin * 2, 1);
+      ctx.fillStyle = '#8190a7';
+      ctx.font = '500 12px sans-serif';
+      ctx.fillText('Conan TCG Deck · 이 이미지는 현재 화면의 덱 정렬과 배열 설정을 반영합니다.', margin, footerY + 24);
+      const mimeType = deckImageFormat === 'jpeg' ? 'image/jpeg' : 'image/png';
+      const extension = deckImageFormat === 'jpeg' ? 'jpg' : 'png';
+      const blob = await new Promise((resolve, reject) => canvas.toBlob((result) => result ? resolve(result) : reject(new Error('이미지 파일을 생성하지 못했어요.')), mimeType, 0.94));
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `conan-deck.${extension}`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
+      if (imageUrls.some((url) => !loadedImages.get(url))) {
+        window.alert('이미지 파일을 저장했어요. 일부 카드 이미지는 원본 서버의 교차 출처 제한으로 불러오지 못해 카드명 표시로 대체했어요.');
+      }
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : '이미지 저장 중 문제가 발생했어요.');
+    } finally {
+      setExportingDeckImage(false);
+    }
   }
 
   function moveSelectedCard(step) {
@@ -812,6 +1032,16 @@ export default function App() {
         .effect-badge.conditional { border-style: dashed; opacity: .95; }
         .keyword-other { color: #c4b5fd; background: rgba(139,92,246,.12); border-color: rgba(167,139,250,.22); }
         .detail-keyword-badges { padding: 2px 0; }
+        .keyword-tag-dots { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; min-height: 7px; margin-top: 4px; }
+        .keyword-tag-dot { display: inline-block; width: 6px; height: 6px; flex: 0 0 6px; border-radius: 999px; box-shadow: 0 0 0 1px rgba(255,255,255,.18); }
+        .keyword-dot-assault { background: #fb7185; }
+        .keyword-dot-swift { background: #4ade80; }
+        .keyword-dot-gale { background: #38bdf8; }
+        .keyword-dot-other { background: #a78bfa; }
+        .card-meta-item-traits { grid-column: 1 / -1; }
+        .card-trait-list { display: flex; flex-wrap: wrap; gap: 5px; }
+        .card-trait-chip { display: inline-flex; align-items: center; border: 1px solid rgba(148,163,184,.18); border-radius: 5px; background: rgba(148,163,184,.08); padding: 3px 6px; color: #dbe5f2; font-size: 11px; font-weight: 650; line-height: 1.4; }
+        .deck-image-export-format { min-height: 36px; max-width: 88px; border: 1px solid #303b4d; border-radius: 9px; background: #111827; color: #e2e8f0; padding: 7px 9px; font-size: 12px; font-weight: 700; }
         .deck-board-scroll { width: 100%; overflow-x: auto; padding-bottom: 5px; }
         /* 왼쪽 특수 카드 폭은 오른쪽 10열 중 각 슬롯 폭과 맞춥니다. */
         .deck-board { display: grid !important; grid-template-columns: minmax(64px, calc((100% - 80px) / 11)) minmax(0, 1fr) !important; gap: 12px !important; min-width: 1000px; align-items: start; }
@@ -860,6 +1090,7 @@ export default function App() {
         .app-shell .deck-action-buttons .deck-reset-button:hover { border-color: #f43f5e !important; background: #e11d48 !important; }
         .app-shell .deck-action-buttons .deck-export-button { min-height: 36px; border: 1px solid #3f4858 !important; border-radius: 9px !important; padding: 8px 13px !important; color: #f8fafc !important; background: #05070b !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.05); font-size: 12px !important; font-weight: 800 !important; }
         .app-shell .deck-action-buttons .deck-export-button:hover { border-color: #64748b !important; background: #171c26 !important; }
+        .app-shell .deck-action-buttons .deck-export-button:disabled { cursor: wait; opacity: .65; }
         .deck-main-heading { align-items: center; }
         .deck-sort-tools { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 7px; min-width: 0; }
         .deck-sort-tools label { color: #94a3b8; font-size: 10px; white-space: nowrap; }
@@ -968,8 +1199,9 @@ export default function App() {
                       </div>
                       <div className="card-tile-caption p-1.5 sm:p-2">
                         <h3 className="card-tile-title line-clamp-2 min-h-[2.2rem] break-keep text-[11px] font-semibold leading-[1.1rem] text-slate-100 sm:text-xs">{card.name}</h3>
-                        <div className="mt-1 flex min-w-0 items-center justify-between gap-1 text-[9px] text-slate-500 sm:text-[10px]"><span className="truncate">{card.rarity || card.type || '카드'}</span><span className="shrink-0">{formatNumber(card.cost)} / {formatNumber(card.lp)}</span></div>
-                        {(card.hiramekiEffect || card.cutInEffect || keywordBadges.length > 0) && <div className="effect-badges">{card.hiramekiEffect && <span className="effect-badge effect-badge-hirameki">히라메키</span>}{card.cutInEffect && <span className="effect-badge effect-badge-cutin">컷인</span>}{keywordBadges.map((tag) => <span key={tag} className={`effect-badge ${keywordTagClass(tag)}${String(tag).startsWith('조건부 ') ? ' conditional' : ''}`}>[{tag}]</span>)}</div>}
+                        {keywordBadges.length > 0 && <div className="keyword-tag-dots" aria-label={`키워드 태그: ${keywordBadges.join(', ')}`}>{keywordBadges.map((tag) => <span key={tag} className={`keyword-tag-dot keyword-dot-${keywordTagClass(tag).replace('keyword-', '')}`} title={tag} aria-label={tag} />)}</div>}
+                        <div className="mt-1 flex min-w-0 items-center justify-between gap-1 text-[9px] text-slate-500 sm:text-[10px]"><span className="truncate">{card.rarity || card.type || '카드'}</span><span className="shrink-0">{card.cost === null || card.cost === undefined ? formatNumber(card.lp) : `${formatNumber(card.cost)} / ${formatNumber(card.lp)}`}</span></div>
+                        {(card.hiramekiEffect || card.cutInEffect) && <div className="effect-badges">{card.hiramekiEffect && <span className="effect-badge effect-badge-hirameki">히라메키</span>}{card.cutInEffect && <span className="effect-badge effect-badge-cutin">컷인</span>}</div>}
                       </div>
                     </button>
                     <button onClick={() => addCard(card)} aria-label={role === 'partner' ? `${card.name} 파트너 지정` : role === 'event' ? `${card.name} 사건 카드 지정` : `${card.name} 덱에 추가`} className={`card-tile-action mt-auto border-t border-white/[0.07] px-1 py-1.5 text-[10px] font-semibold transition sm:text-[11px] ${role === 'partner' ? 'bg-amber-300/10 text-amber-200 hover:bg-amber-300/20' : role === 'event' ? 'bg-sky-300/10 text-sky-200 hover:bg-sky-300/20' : 'bg-white/[0.025] text-slate-400 hover:bg-rose-500/10 hover:text-rose-200'}`}>
@@ -993,7 +1225,8 @@ export default function App() {
             </div>
             <div className="deck-action-buttons">
               <button onClick={clearDeck} className="deck-reset-button">덱 초기화</button>
-              <button onClick={exportDeck} className="deck-export-button">JSON 내보내기</button>
+              <select className="deck-image-export-format" value={deckImageFormat} onChange={(event) => setDeckImageFormat(event.target.value)} aria-label="이미지 파일 형식"><option value="png">PNG</option><option value="jpeg">JPG</option></select>
+              <button onClick={exportDeckImage} disabled={exportingDeckImage} className="deck-export-button">{exportingDeckImage ? '이미지 생성 중…' : '이미지 저장'}</button>
             </div>
           </div>
 
@@ -1081,7 +1314,7 @@ export default function App() {
               </div>
             </div>
           </div>
-          <p className="deck-footnote border-t border-white/[0.08] pt-3 text-[11px] leading-5 text-slate-500">덱 구성은 이 브라우저에 자동 저장돼요. 완성된 덱을 JSON으로 내보내려면 메인 덱 40장과 파트너 카드 1장, 사건 카드 1장을 모두 선택해야 해요.</p>
+          <p className="deck-footnote border-t border-white/[0.08] pt-3 text-[11px] leading-5 text-slate-500">덱 구성은 이 브라우저에 자동 저장돼요. 덱 이미지를 저장하려면 메인 덱 40장과 파트너 카드 1장, 사건 카드 1장을 모두 선택해야 해요.</p>
         </section>
       )}
 
@@ -1100,8 +1333,8 @@ export default function App() {
                   {filteredCards.length > 1 && <p className="text-[10px] text-slate-600">← → 키로 다른 카드 확인</p>}
                 </div>
                 <div className="min-w-0 space-y-3">
-                  <dl className="grid grid-cols-2 gap-2 sm:grid-cols-3">{[['종류', selectedCard.type], ['색상', selectedCard.color], ['레어도', selectedCard.rarity], ['코스트', formatNumber(selectedCard.cost)], ['LP', formatNumber(selectedCard.lp)], ['수록 제품', selectedCard.set]].map(([label, value]) => <div key={label} className="card-meta-item rounded-lg border border-white/[0.07] bg-[#090f1b] p-2.5"><dt className="text-[10px] font-medium text-slate-500">{label}</dt><dd className="mt-1 break-words text-xs font-semibold text-slate-200">{value || '-'}</dd></div>)}</dl>
-                  {selectedCard.keywordTags?.length > 0 && <div className="detail-keyword-badges effect-badges">{selectedCard.keywordTags.map((tag) => <span key={tag} className={`effect-badge ${keywordTagClass(tag)}${String(tag).startsWith('조건부 ') ? ' conditional' : ''}`}>[{tag}]</span>)}</div>}
+                  <dl className="card-meta-grid grid grid-cols-2 gap-2 sm:grid-cols-3">{[['종류', selectedCard.type], ['색상', selectedCard.color], ['레어도', selectedCard.rarity], ['코스트', selectedCard.cost === null || selectedCard.cost === undefined ? '' : selectedCard.cost], ['LP', formatNumber(selectedCard.lp)], ['수록 제품', selectedCard.set]].map(([label, value]) => <div key={label} className="card-meta-item rounded-lg border border-white/[0.07] bg-[#090f1b] p-2.5"><dt className="text-[10px] font-medium text-slate-500">{label}</dt><dd className="mt-1 break-words text-xs font-semibold text-slate-200">{label === '코스트' && (value === '' || value === null || value === undefined) ? '' : (value ?? '-')}</dd></div>)}<div className="card-meta-item card-meta-item-traits rounded-lg border border-white/[0.07] bg-[#090f1b] p-2.5"><dt className="text-[10px] font-medium text-slate-500">특징</dt><dd className="mt-1">{selectedCard.traits?.length ? <div className="card-trait-list">{selectedCard.traits.map((trait) => <span key={trait} className="card-trait-chip">{trait}</span>)}</div> : <span className="text-xs font-semibold text-slate-500">없음</span>}</dd></div></dl>
+                  {selectedCard.keywordTags?.length > 0 && <div className="detail-keyword-badges effect-badges">{selectedCard.keywordTags.map((tag) => <span key={tag} className={`effect-badge ${keywordTagClass(tag)}${String(tag).startsWith('조건부 ') ? ' conditional' : ''}`}>{tag}</span>)}</div>}
                   {(selectedCard.hiramekiEffect || selectedCard.cutInEffect) && <div className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><h3 className="mb-3 text-xs font-bold">게임 시스템 효과</h3><div className="space-y-3">{selectedCard.hiramekiEffect && <div><h4 className="mb-1 text-xs font-bold text-amber-300">히라메키</h4><p className="whitespace-pre-wrap break-words text-xs leading-5 text-slate-200">{selectedCard.hiramekiEffect}</p></div>}{selectedCard.cutInEffect && <div><h4 className="mb-1 text-xs font-bold text-sky-300">컷인</h4><p className="whitespace-pre-wrap break-words text-xs leading-5 text-slate-200">{selectedCard.cutInEffect}</p></div>}</div></div>}
                   <div className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><h3 className="mb-2 text-xs font-bold text-slate-300">카드 효과</h3><div className="card-effect-text text-xs leading-6 text-slate-200">{formatAbilityText(selectedCard.ability) || '효과 텍스트 없음'}</div></div>
                   {selectedCard.flavor && <div className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><h3 className="mb-2 text-xs font-bold text-slate-300">플레이버 텍스트</h3><p className="whitespace-pre-wrap break-words text-xs leading-5 text-slate-300">{selectedCard.flavor}</p></div>}
