@@ -39,75 +39,61 @@ function numericValue(value) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-// 색상 필터 수정용 시작 //
-const COLOR_TOKEN_RE =
-  /파란색|파랑색|파란|파랑|청색|青色|青|blue|빨간색|빨강색|빨간|빨강|적색|赤色|赤|red|노란색|노랑색|노란|노랑|황색|黄色|黄|yellow|초록색|초록|녹색|緑色|緑|green|검정색|검은색|검정|흑색|黒色|黒|black|하얀색|흰색|백색|白色|白|white/giu;
+// 카드 색상 표기를 한 글자 태그로 통일합니다. 조합 색상은 표시 순서를 보존하되,
+// 필터용 colorKey는 고정 순서로 만들어 '황흑'과 '흑황'을 같은 색 조합으로 취급합니다.
+const COLOR_ORDER = ['청', '적', '황', '녹', '흑', '백'];
+const COLOR_DEFINITIONS = [
+  { tag: '청', aliases: ['청', '파랑', '파란색', '파랑색', '푸른색', '青色', '青', 'ブルー', 'blue'] },
+  { tag: '적', aliases: ['적', '빨강', '빨간색', '빨강색', '赤色', '赤', 'レッド', 'red'] },
+  { tag: '황', aliases: ['황', '노랑', '노란색', '노랑색', '黄色', '黄', 'イエロー', 'yellow'] },
+  { tag: '녹', aliases: ['녹', '녹색', '초록', '초록색', '緑色', '緑', 'グリーン', 'green'] },
+  { tag: '흑', aliases: ['흑', '검정', '검정색', '검은색', '黒色', '黒', '黑', 'ブラック', 'black'] },
+  { tag: '백', aliases: ['백', '흰색', '하양', '하얀색', '白色', '白', 'ホワイト', 'white'] },
+];
+const COLOR_ALIAS_LOOKUP = COLOR_DEFINITIONS
+  .flatMap(({ tag, aliases }) => aliases.map((alias) => ({ tag, alias: alias.toLocaleLowerCase() })))
+  .sort((a, b) => b.alias.length - a.alias.length);
+const COLOR_SPLIT_RE = /[\s,，、/&＋+・·|｜]+/u;
 
-const COLOR_CANONICAL = {
-  'blue': '청',
-  '청색': '청',
-  '파란색': '청',
-  '파랑색': '청',
-  '파란': '청',
-  '파랑': '청',
-  '青色': '청',
-  '青': '청',
+function parseColorToken(token) {
+  const normalized = String(token).toLocaleLowerCase();
+  const exact = COLOR_ALIAS_LOOKUP.find((entry) => entry.alias === normalized);
+  if (exact) return [exact.tag];
 
-  'red': '적',
-  '적색': '적',
-  '빨간색': '적',
-  '빨강색': '적',
-  '빨간': '적',
-  '빨강': '적',
-  '赤色': '적',
-  '赤': '적',
-
-  'yellow': '황',
-  '황색': '황',
-  '노란색': '황',
-  '노랑색': '황',
-  '노란': '황',
-  '노랑': '황',
-  '黄色': '황',
-  '黄': '황',
-
-  'green': '녹',
-  '녹색': '녹',
-  '초록색': '녹',
-  '초록': '녹',
-  '緑色': '녹',
-  '緑': '녹',
-
-  'black': '흑',
-  '흑색': '흑',
-  '검정색': '흑',
-  '검은색': '흑',
-  '검정': '흑',
-  '黒色': '흑',
-  '黒': '흑',
-
-  'white': '백',
-  '백색': '백',
-  '하얀색': '백',
-  '흰색': '백',
-  '白色': '백',
-  '白': '백',
-};
+  // 구분 기호 없이 이어진 원문 표기(예: 赤黄, 黄黒)도 처리합니다.
+  let remainder = normalized;
+  const tags = [];
+  while (remainder) {
+    const match = COLOR_ALIAS_LOOKUP.find((entry) => remainder.startsWith(entry.alias));
+    if (!match) return null;
+    tags.push(match.tag);
+    remainder = remainder.slice(match.alias.length);
+  }
+  return tags;
+}
 
 function normalizeColor(value) {
-  const text = String(value ?? '').trim();
-  if (!text) return '';
+  const raw = String(value ?? '').trim();
+  if (!raw) return '';
+  const cleaned = raw.replace(/[【】\[\]()（）]/gu, '').trim();
+  const tokens = cleaned.split(COLOR_SPLIT_RE).filter(Boolean);
+  if (!tokens.length) return '';
 
-  const colors = [...text.matchAll(COLOR_TOKEN_RE)]
-    .map(([token]) => COLOR_CANONICAL[token.toLowerCase()])
-    .filter(Boolean);
-
-  // 원문에서 발견한 순서를 유지하고, 같은 색은 중복 제거
-  return colors.length > 0
-    ? [...new Set(colors)].join('')
-    : text;
+  const tags = [];
+  for (const token of tokens) {
+    const parsed = parseColorToken(token);
+    // 예상하지 못한 표기는 데이터가 손실되지 않도록 원래 표기를 보존합니다.
+    if (!parsed) return cleaned;
+    tags.push(...parsed);
+  }
+  return [...new Set(tags)].join('');
 }
-// 색상 필터 수정용 끝 //
+
+function normalizeColorKey(value) {
+  const tags = new Set(normalizeColor(value).split(''));
+  const recognized = COLOR_ORDER.filter((tag) => tags.has(tag));
+  return recognized.length === tags.size ? recognized.join('') : normalizeColor(value);
+}
 
 function normalizeCard(card, translations) {
   const source = card?.sourceData && typeof card.sourceData === 'object'
@@ -149,6 +135,7 @@ function normalizeCard(card, translations) {
     originalType,
     roleText,
     color: normalizeColor(translated.colorKo || firstValue([card], ['colorKo']) || originalColor),
+    colorKey: normalizeColorKey(translated.colorKo || firstValue([card], ['colorKo']) || originalColor),
     originalColor,
     rarity,
     cost,
@@ -325,7 +312,16 @@ export default function App() {
 
   useEffect(() => { setPage(1); }, [searchTerm, colorFilter, typeFilter, rarityFilter, costFilter, lpFilter]);
 
-  const colorOptions = useMemo(() => uniqueOptions(cards.map((card) => card.color)), [cards]);
+  const colorOptions = useMemo(() => {
+    // 표시 순서가 다른 조합(예: 황흑/흑황)은 하나의 필터 선택지로 합칩니다.
+    const optionsByKey = new Map();
+    for (const card of cards) {
+      if (!card.color) continue;
+      const value = card.colorKey || normalizeColorKey(card.color);
+      if (!optionsByKey.has(value)) optionsByKey.set(value, { value, label: card.color });
+    }
+    return [...optionsByKey.values()].sort((a, b) => a.label.localeCompare(b.label, 'ko', { numeric: true }));
+  }, [cards]);
   const typeOptions = useMemo(() => uniqueOptions(cards.map((card) => card.type)), [cards]);
   const rarityOptions = useMemo(() => uniqueOptions(cards.map((card) => card.rarity)), [cards]);
   const costOptions = useMemo(() => uniqueOptions(cards.map((card) => card.cost)), [cards]);
@@ -336,12 +332,12 @@ export default function App() {
     return cards.filter((card) => {
       const searchable = [
         card.name, card.originalName, card.cardId, card.cardNum,
-        card.type, card.originalType, card.color, card.originalColor,
+        card.type, card.originalType, card.color, card.colorKey, card.originalColor,
         card.ability, card.originalAbility, card.set, card.originalSet, card.rarity,
         card.hiramekiEffect, card.cutInEffect,
       ].join(' ').toLocaleLowerCase();
       if (query && !searchable.includes(query)) return false;
-      if (colorFilter && card.color !== colorFilter) return false;
+      if (colorFilter && (card.colorKey || normalizeColorKey(card.color)) !== colorFilter) return false;
       if (typeFilter && card.type !== typeFilter) return false;
       if (rarityFilter && card.rarity !== rarityFilter) return false;
       if (costFilter !== '' && String(card.cost) !== costFilter) return false;
@@ -506,7 +502,7 @@ export default function App() {
 
           <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
             <input value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder="이름 · 효과 · 카드 ID" aria-label="카드 검색" className="min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-3 py-2 text-sm outline-none transition placeholder:text-slate-600 focus:border-rose-400/70" />
-            <select aria-label="색상 필터" value={colorFilter} onChange={(event) => setColorFilter(event.target.value)} className="min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 색상</option>{colorOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select>
+            <select aria-label="색상 필터" value={colorFilter} onChange={(event) => setColorFilter(event.target.value)} className="min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 색상</option>{colorOptions.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}</select>
             <select aria-label="종류 필터" value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} className="min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 종류</option>{typeOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select>
             <select aria-label="레어도 필터" value={rarityFilter} onChange={(event) => setRarityFilter(event.target.value)} className="min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 레어도</option>{rarityOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select>
             <select aria-label="코스트 필터" value={costFilter} onChange={(event) => setCostFilter(event.target.value)} className="min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 코스트</option>{costOptions.map((value) => <option key={String(value)} value={String(value)}>{value}</option>)}</select>
