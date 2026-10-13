@@ -1,13 +1,20 @@
 {
-  "name": "my-deck-app",
+  "name": "my-conan-deck",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "setup:scraper": "playwright install chromium",
+    "scrape:cards": "node scripts/scrape-cards.mjs",
+    "scrape:cards:remote": "node scripts/scrape-cards.mjs",
+    "translate:cards": "node scripts/translate-cards.mjs",
+    "scrape:cards:local-images": "node scripts/scrape-cards.mjs --download-images",
+    "sync:cards": "npm run scrape:cards && npm run translate:cards",
+    "sync:cards:local-images": "npm run scrape:cards:local-images && npm run translate:cards"
   },
   "dependencies": {
     "react": "^19.2.8",
@@ -18,13 +25,13 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
-    "autoprefixer": "^10.6.1",
     "eslint": "^10.10.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.6",
     "globals": "^17.12.0",
     "postcss": "^8.5.30",
     "tailwindcss": "^3.4.19",
-    "vite": "^8.3.0"
+    "vite": "^8.3.0",
+    "playwright": "^1.54.0"
   }
 }
