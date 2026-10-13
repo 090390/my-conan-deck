@@ -290,6 +290,7 @@ export default function App() {
         <a className="text-sm text-sky-300 underline" href="https://www.takaratomy.co.jp/products/conan-cardgame/cardlist/" target="_blank" rel="noreferrer">일본 공식 카드 목록</a>
       </header>
 
+<<<<<<< HEAD
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
         <section className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900 p-3 md:p-4">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -303,8 +304,41 @@ export default function App() {
             <select value={rarityFilter} onChange={(event) => setRarityFilter(event.target.value)} className="rounded-lg border border-slate-700 bg-slate-950 px-2 py-2 text-sm"><option value="">모든 레어도</option>{rarityOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select>
             <select value={costFilter} onChange={(event) => setCostFilter(event.target.value)} className="rounded-lg border border-slate-700 bg-slate-950 px-2 py-2 text-sm"><option value="">모든 코스트</option>{costOptions.map((value) => <option key={value} value={value}>코스트 {value}</option>)}</select>
             <select value={lpFilter} onChange={(event) => setLpFilter(event.target.value)} className="rounded-lg border border-slate-700 bg-slate-950 px-2 py-2 text-sm"><option value="">모든 LP</option>{lpOptions.map((value) => <option key={value} value={value}>LP {value}</option>)}</select>
+=======
+      {/* 카드 그리드 영역 (한 줄에 약 8~10개 배치) */}
+      <main className="max-w-7xl mx-auto">
+        <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2 md:gap-3">
+          {filteredCards.map((card) => (
+            <div
+              key={card.id}
+              onClick={() => setSelectedCard(card)}
+              className="group relative cursor-pointer bg-gray-800 rounded border border-gray-700 overflow-hidden hover:border-blue-400 hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-200"
+            >
+              <div className="aspect-[63/88] w-full bg-gray-900 overflow-hidden">
+                <img
+                  src={card.imageUrl}
+                  alt={card.name.ko}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                  loading="lazy"
+                />
+              </div>
+              <div className="p-1 bg-gray-900/90 text-[10px] truncate text-center">
+                <span className="text-gray-400 block">{card.cardNumber}</span>
+                <span className="font-medium text-gray-200 truncate block">
+                  {card.name.ko}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {filteredCards.length === 0 && (
+          <div className="text-center py-20 text-gray-500">
+            검색 결과가 없습니다.
+>>>>>>> 908c2c245fced6f2d37bb2a264697e0da214b453
           </div>
 
+<<<<<<< HEAD
           {visibleCards.length === 0 ? <p className="rounded-xl border border-dashed border-slate-700 p-8 text-center text-slate-400">조건에 맞는 카드가 없어요.</p> : (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
               {visibleCards.map((card) => (
@@ -322,11 +356,37 @@ export default function App() {
                   <button onClick={() => addCard(card)} className="mt-auto border-t border-slate-800 bg-slate-900 px-2 py-2 text-xs font-semibold text-sky-300 hover:bg-slate-800">{isPartnerCard(card) ? (partnerId === card.key ? '파트너로 지정됨' : '파트너로 지정') : '메인 덱에 추가 +'}</button>
                 </article>
               ))}
+=======
+      {/* 상세 오버레이(모달) 팝업 */}
+      {selectedCard && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+          onClick={() => setSelectedCard(null)}
+        >
+          <div
+            className="bg-gray-800 border border-gray-700 rounded-2xl max-w-2xl w-full p-6 relative shadow-2xl flex flex-col md:flex-row gap-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setSelectedCard(null)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white bg-gray-700/50 hover:bg-gray-700 w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+            >
+              ✕
+            </button>
+
+            <div className="w-full md:w-1/2 flex justify-center items-center">
+              <img
+                src={selectedCard.imageUrl}
+                alt={selectedCard.name.ko}
+                className="max-h-[400px] rounded-lg shadow-md object-contain"
+              />
+>>>>>>> 908c2c245fced6f2d37bb2a264697e0da214b453
             </div>
           )}
           {visibleCards.length < filteredCards.length && <div className="mt-5 text-center"><button onClick={() => setPage((current) => current + 1)} className="rounded-xl border border-slate-700 px-5 py-2 text-sm hover:bg-slate-800">더 보기 ({visibleCards.length.toLocaleString()} / {filteredCards.length.toLocaleString()})</button></div>}
         </section>
 
+<<<<<<< HEAD
         <aside className="flex min-w-0 flex-col rounded-2xl border border-slate-800 bg-slate-900 p-3 md:p-4 xl:sticky xl:top-4 xl:max-h-[calc(100vh-2rem)]">
           <div className="mb-3 flex items-center justify-between gap-2"><h2 className="text-lg font-bold">내 덱</h2><span className={`rounded-full px-2.5 py-1 text-xs font-bold ${mainDeckCount === MAIN_DECK_LIMIT ? 'bg-emerald-900 text-emerald-200' : 'bg-slate-800 text-amber-200'}`}>{mainDeckCount} / {MAIN_DECK_LIMIT}장</span></div>
           <div className="mb-3 rounded-xl border border-slate-800 bg-slate-950 p-3">
@@ -344,6 +404,19 @@ export default function App() {
           <p className="mt-2 text-[11px] leading-4 text-slate-500">메인 덱은 최대 40장, 같은 카드는 최대 4장으로 설정했어요. 덱 구성은 현재 브라우저에 자동 저장돼요.</p>
         </aside>
       </div>
+=======
+            <div className="w-full md:w-1/2 flex flex-col justify-between">
+              <div>
+                <span className="text-xs font-semibold px-2 py-1 bg-blue-500/20 text-blue-400 rounded">
+                  {selectedCard.cardNumber}
+                </span>
+                <h2 className="text-xl font-bold mt-2 text-white">
+                  {selectedCard.name.ko}
+                </h2>
+                <p className="text-sm text-gray-400 mb-4">
+                  {selectedCard.name.ja}
+                </p>
+>>>>>>> 908c2c245fced6f2d37bb2a264697e0da214b453
 
       {selectedCard && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3" onMouseDown={(event) => { if (event.target === event.currentTarget) setSelectedCard(null); }}>
         <section role="dialog" aria-modal="true" aria-label="카드 상세 정보" className="max-h-[94vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-slate-700 bg-slate-900 p-4 shadow-2xl md:p-5">
