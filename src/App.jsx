@@ -43,6 +43,77 @@ function numericValue(value) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
 }
+
+// 색상 필터 수정용 시작 //
+const COLOR_TOKEN_RE =
+  /파란색|파랑색|파란|파랑|청색|青色|青|blue|빨간색|빨강색|빨간|빨강|적색|赤色|赤|red|노란색|노랑색|노란|노랑|황색|黄色|黄|yellow|초록색|초록|녹색|緑色|緑|green|검정색|검은색|검정|흑색|黒色|黒|black|하얀색|흰색|백색|白色|白|white/giu;
+
+const COLOR_CANONICAL = {
+  'blue': '청',
+  '청색': '청',
+  '파란색': '청',
+  '파랑색': '청',
+  '파란': '청',
+  '파랑': '청',
+  '青色': '청',
+  '青': '청',
+
+  'red': '적',
+  '적색': '적',
+  '빨간색': '적',
+  '빨강색': '적',
+  '빨간': '적',
+  '빨강': '적',
+  '赤色': '적',
+  '赤': '적',
+
+  'yellow': '황',
+  '황색': '황',
+  '노란색': '황',
+  '노랑색': '황',
+  '노란': '황',
+  '노랑': '황',
+  '黄色': '황',
+  '黄': '황',
+
+  'green': '녹',
+  '녹색': '녹',
+  '초록색': '녹',
+  '초록': '녹',
+  '緑色': '녹',
+  '緑': '녹',
+
+  'black': '흑',
+  '흑색': '흑',
+  '검정색': '흑',
+  '검은색': '흑',
+  '검정': '흑',
+  '黒色': '흑',
+  '黒': '흑',
+
+  'white': '백',
+  '백색': '백',
+  '하얀색': '백',
+  '흰색': '백',
+  '白色': '백',
+  '白': '백',
+};
+
+function normalizeColor(value) {
+  const text = String(value ?? '').trim();
+  if (!text) return '';
+
+  const colors = [...text.matchAll(COLOR_TOKEN_RE)]
+    .map(([token]) => COLOR_CANONICAL[token.toLowerCase()])
+    .filter(Boolean);
+
+  // 원문에서 발견한 순서를 유지하고, 같은 색은 중복 제거
+  return colors.length > 0
+    ? [...new Set(colors)].join('')
+    : text;
+}
+// 색상 필터 수정용 끝 //
+
 function normalizeCard(card, translations) {
   const source = card?.sourceData && typeof card.sourceData === 'object'
     ? card.sourceData
@@ -78,7 +149,7 @@ function normalizeCard(card, translations) {
     originalName,
     type: String(translated.typeKo || firstValue([card], ['typeKo']) || originalType),
     originalType,
-    color: String(translated.colorKo || firstValue([card], ['colorKo']) || originalColor),
+    color: normalizeColor(translated.colorKo || firstValue([card], ['colorKo']) || originalColor),
     originalColor,
     rarity,
     cost,
