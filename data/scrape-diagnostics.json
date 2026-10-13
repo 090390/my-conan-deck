@@ -7,948 +7,253 @@
     "data-total": "2292",
     "data-query": ""
   },
-  "itemCount": 50,
-  "lastCards": [
-    "<li data-index=\"47\">\n\t\t\t<a class=\"popup-modal\">\n\t\t\t\t\t\t\t\t<img src=\"https://www.takaratomy.co.jp/products/conan-cardgame/storage/card/1714013000990927.jpg\" data=\"{&quot;id&quot;:48,&quot;card_id&quot;:&quot;0024&quot;,&quot;title&quot;:&quot;\\u5927\\u5ca1\\u7d05\\u8449&quot;,&quot;card_num&quot;:&quot;B01030&quot;,&quot;show_hide&quot;:&quot;\\u8868\\u793a&quot;,&quot;date&quot;:&quot;2024-03-01 10:00:00&quot;,&quot;package&quot;:&quot;CT-P01 Case-Booster 01 \\u63a2\\u5075\\u305f\\u3061\\u306e\\u5207\\u672d\\uff08\\u30b8\\u30e7\\u30fc\\u30ab\\u30fc\\uff09&quot;,&quot;category1&quot;:&quot;\\u9ad8\\u6821\\u751f&quot;,&quot;category2&quot;:null,&quot;category3&quot;:null,&quot;region&quot;:&quot;\\u65e5\\u672c&quot;,&quot;main_thumb&quot;:&quot;B01030.jpg&quot;,&quot;main_path&quot;:&quot;1714013000990927.jpg&quot;,&quot;sub_thumb&quot;:&quot;sub_B01030.jpg&quot;,&quot;sub_path&quot;:&quot;1734393755566968.jpg&quot;,&quot;color&quot;:&quot;\\u7dd1&quot;,&quot;type&quot;:&quot;\\u30ad\\u30e3\\u30e9&quot;,&quot;rarity&quot;:&quot;R&quot;,&quot;cost&quot;:&quot;5&quot;,&quot;ap&quot;:&quot;4000&quot;,&quot;lp&quot;:&quot;1&quot;,&quot;feature&quot;:&quot;\\u3010\\u30bf\\u30fc\\u30f31\\u3011\\u76f8\\u624b\\u306e\\u73fe\\u5834\\",
-    "<li data-index=\"48\">\n\t\t\t<a class=\"popup-modal\">\n\t\t\t\t\t\t\t\t<img src=\"https://www.takaratomy.co.jp/products/conan-cardgame/storage/card/1714013000993481.jpg\" data=\"{&quot;id&quot;:49,&quot;card_id&quot;:&quot;0024&quot;,&quot;title&quot;:&quot;\\u5927\\u5ca1\\u7d05\\u8449&quot;,&quot;card_num&quot;:&quot;B01030P&quot;,&quot;show_hide&quot;:&quot;\\u8868\\u793a&quot;,&quot;date&quot;:&quot;2024-03-01 10:00:00&quot;,&quot;package&quot;:&quot;CT-P01 Case-Booster 01 \\u63a2\\u5075\\u305f\\u3061\\u306e\\u5207\\u672d\\uff08\\u30b8\\u30e7\\u30fc\\u30ab\\u30fc\\uff09&quot;,&quot;category1&quot;:&quot;\\u9ad8\\u6821\\u751f&quot;,&quot;category2&quot;:null,&quot;category3&quot;:null,&quot;region&quot;:&quot;\\u65e5\\u672c&quot;,&quot;main_thumb&quot;:&quot;B01030P.jpg&quot;,&quot;main_path&quot;:&quot;1714013000993481.jpg&quot;,&quot;sub_thumb&quot;:&quot;sub_B01030P.jpg&quot;,&quot;sub_path&quot;:&quot;1734393755570581.jpg&quot;,&quot;color&quot;:&quot;\\u7dd1&quot;,&quot;type&quot;:&quot;\\u30ad\\u30e3\\u30e9&quot;,&quot;rarity&quot;:&quot;RP&quot;,&quot;cost&quot;:&quot;5&quot;,&quot;ap&quot;:&quot;4000&quot;,&quot;lp&quot;:&quot;1&quot;,&quot;feature&quot;:&quot;\\u3010\\u30bf\\u30fc\\u30f31\\u3011\\u76f8\\u624b\\u306e\\u73fe\\u5",
-    "<li data-index=\"49\">\n\t\t\t<a class=\"popup-modal\">\n\t\t\t\t\t\t\t\t<img src=\"https://www.takaratomy.co.jp/products/conan-cardgame/storage/card/1714013000996254.jpg\" data=\"{&quot;id&quot;:50,&quot;card_id&quot;:&quot;0025&quot;,&quot;title&quot;:&quot;\\u4f0a\\u7e54\\u7121\\u6211&quot;,&quot;card_num&quot;:&quot;B01031&quot;,&quot;show_hide&quot;:&quot;\\u8868\\u793a&quot;,&quot;date&quot;:&quot;2024-03-01 10:00:00&quot;,&quot;package&quot;:&quot;CT-P01 Case-Booster 01 \\u63a2\\u5075\\u305f\\u3061\\u306e\\u5207\\u672d\\uff08\\u30b8\\u30e7\\u30fc\\u30ab\\u30fc\\uff09&quot;,&quot;category1&quot;:&quot;\\u57f7\\u4e8b&quot;,&quot;category2&quot;:null,&quot;category3&quot;:null,&quot;region&quot;:&quot;\\u65e5\\u672c&quot;,&quot;main_thumb&quot;:&quot;B01031.jpg&quot;,&quot;main_path&quot;:&quot;1714013000996254.jpg&quot;,&quot;sub_thumb&quot;:&quot;sub_B01031.jpg&quot;,&quot;sub_path&quot;:&quot;1734393755574023.jpg&quot;,&quot;color&quot;:&quot;\\u7dd1&quot;,&quot;type&quot;:&quot;\\u30ad\\u30e3\\u30e9&quot;,&quot;rarity&quot;:&quot;R&quot;,&quot;cost&quot;:&quot;6&quot;,&quot;ap&quot;:&quot;5000&quot;,&quot;lp&quot;:&quot;1&quot;,&quot;feature&quot;:&quot;\\u76f8\\u624b\\u306e\\u73fe\\u5834\\u306b\\u3044\\u308b\\u30ad\\u30e3\\u30e9\\u"
-  ],
-  "pageElements": [
+  "itemCount": 500,
+  "firstIndex": "0",
+  "lastIndex": "499",
+  "documentScroll": {
+    "y": 28231,
+    "innerHeight": 1000,
+    "scrollHeight": 30346
+  },
+  "scrollables": [],
+  "possiblePagingControls": [
     {
       "tag": "A",
+      "text": "タカラトミー公式SNS一覧",
+      "id": "",
+      "className": "c-list-sns__more",
+      "href": "https://www.takaratomy.co.jp/sns/accounts/",
+      "aria": "",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "text": "ページの先頭へ戻る",
       "id": "",
       "className": "c-pagetop _show",
-      "text": "ページの先頭へ戻る",
-      "html": "<a href=\"#\" class=\"c-pagetop _show\" data-trigger=\"pagetop\"><span class=\"u-screen-text\">ページの先頭へ戻る</span></a>"
-    }
-  ],
-  "scripts": [
-    {
-      "src": "https://dmp.im-apps.net/sdk/log.js",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://www.googletagmanager.com/gtm.js?id=GTM-594QZHSG&l=itm_dl1_1023645",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://cdn.hera.d2c.ne.jp/1.0/index.js",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://dmp.im-apps.net/js/1023645/0001/itm.js",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://tag.flvcdn.net/ltag.js",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://connect.facebook.net/signals/config/2151248982089710?v=2.9.419&r=stable&domain=www.takaratomy.co.jp&hme=7459fa3e38c2784dbaf309537bed5fa7e8560fab51fb61e53e5ffafeb46a02a9&ex_m=118%2C241%2C171%2C27%2C82%2C83%2C162%2C78%2C77%2C11%2C181%2C102%2C20%2C153%2C141%2C46%2C85%2C90%2C149%2C176%2C183%2C8%2C4%2C5%2C7%2C6%2C3%2C103%2C115%2C32%2C17%2C31%2C18%2C33%2C34%2C35%2C37%2C55%2C163%2C87%2C126%2C22%2C24%2C51%2C47%2C49%2C48%2C95%2C104%2C108%2C124%2C160%2C164%2C53%2C125%2C29%2C26%2C133%2C79%2C43%2C166%2C165%2C167%2C157%2C155%2C30%2C42%2C66%2C123%2C178%2C80%2C21%2C128%2C93%2C76%2C23%2C97%2C98%2C130%2C96%2C151%2C150%2C154%2C109%2C177%2C180%2C41%2C56%2C127%2C54%2C161%2C72%2C185%2C110%2C184%2C210%2C255%2C84%2C274%2C273%2C272%2C14%2C25%2C28%2C40%2C62%2C117%2C68%2C10%2C73%2C111%2C112%2C113%2C119%2C144%2C38%2C36%2C146%2C147%2C148%2C143%2C142%2C172%2C86%2C175%2C173%2C174%2C57%2C69%2C67%2C137%2C19%2C179%2C52%2C324%2C325%2C326%2C323%2C339%2C361%2C248%2C237%2C70%2C238%2C236%2C364%2C355%2C59%2C249%2C121%2C145%2C92%2C135%2C61%2C134%2C140%2C139%2C65%2C74%2C168%2C88%2C89%2C129%2C44%2C39%2C60%2C63%2C114%2C182%2C1%2C138%2C16%2C136%2C12%2C2%2C64%2C105%2C15%2C75%2C71%2C132%2C101%2C100%2C187%2C188%2C106%2C107%2C9%2C116%2C186%2C58%2C158%2C99%2C91%2C81%2C131%2C120%2C169%2C50%2C159%2C0%2C94%2C152%2C156%2C170%2C45%2C122%2C13%2C189%2C268%2C266%2C261%2C263%2C264%2C265%2C262%2C260%2C247%2C267%2C269%2C259%2C217%2C218%2C270%2C271%2C258%2C257%2C353%2C354%2C230%2C225%2C228%2C229%2C207%2C223%2C389%2C206%2C226%2C227%2C251%2C224%2C222%2C278%2C242%2C215%2C216%2C212%2C213%2C214%2C211%2C209%2C220%2C221%2C219%2C327%2C382%2C347%2C348%2C350%2C351%2C349%2C346%2C345%2C231%2C281%2C288%2C289%2C282%2C284%2C287%2C285%2C286%2C283%2C280%2C299%2C293%2C296%2C292%2C300%2C297%2C291%2C295%2C298%2C294%2C290%2C341%2C358%2C304%2C308%2C312%2C313%2C314%2C309%2C315%2C307%2C302%2C317%2C318%2C306%2C316%2C320%2C310%2C305%2C311%2C319%2C321%2C303%2C240%2C301%2C380",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://connect.facebook.net/signals/config/1493678122411650?v=2.9.419&r=stable&domain=www.takaratomy.co.jp&hme=7459fa3e38c2784dbaf309537bed5fa7e8560fab51fb61e53e5ffafeb46a02a9&ex_m=118%2C241%2C171%2C27%2C82%2C83%2C162%2C78%2C77%2C11%2C181%2C102%2C20%2C153%2C141%2C46%2C85%2C90%2C149%2C176%2C183%2C8%2C4%2C5%2C7%2C6%2C3%2C103%2C115%2C32%2C17%2C31%2C18%2C33%2C34%2C35%2C37%2C55%2C163%2C87%2C126%2C22%2C24%2C51%2C47%2C49%2C48%2C95%2C104%2C108%2C124%2C160%2C164%2C53%2C125%2C29%2C26%2C133%2C79%2C43%2C166%2C165%2C167%2C157%2C155%2C30%2C42%2C66%2C123%2C178%2C80%2C21%2C128%2C93%2C76%2C23%2C97%2C98%2C130%2C96%2C151%2C150%2C154%2C109%2C177%2C180%2C41%2C56%2C127%2C54%2C161%2C72%2C185%2C110%2C184%2C210%2C255%2C84%2C274%2C273%2C272%2C14%2C25%2C28%2C40%2C62%2C117%2C68%2C10%2C73%2C111%2C112%2C113%2C119%2C144%2C38%2C36%2C146%2C147%2C148%2C143%2C142%2C172%2C86%2C175%2C173%2C174%2C57%2C69%2C67%2C137%2C19%2C179%2C52%2C324%2C325%2C326%2C323%2C339%2C361%2C248%2C237%2C70%2C238%2C236%2C364%2C355%2C59%2C249%2C121%2C145%2C92%2C135%2C61%2C134%2C140%2C139%2C65%2C74%2C168%2C88%2C89%2C129%2C44%2C39%2C60%2C63%2C114%2C182%2C1%2C138%2C16%2C136%2C12%2C2%2C64%2C105%2C15%2C75%2C71%2C132%2C101%2C100%2C187%2C188%2C106%2C107%2C9%2C116%2C186%2C58%2C158%2C99%2C91%2C81%2C131%2C120%2C169%2C50%2C159%2C0%2C94%2C152%2C156%2C170%2C45%2C122%2C13%2C189%2C268%2C266%2C261%2C263%2C264%2C265%2C262%2C260%2C247%2C267%2C269%2C259%2C217%2C218%2C270%2C271%2C258%2C257%2C353%2C354%2C230%2C225%2C228%2C229%2C207%2C223%2C389%2C206%2C226%2C227%2C251%2C224%2C222%2C278%2C242%2C215%2C216%2C212%2C213%2C214%2C211%2C209%2C220%2C221%2C219%2C327%2C382%2C347%2C348%2C350%2C351%2C349%2C346%2C345%2C231%2C281%2C288%2C289%2C282%2C284%2C287%2C285%2C286%2C283%2C280%2C299%2C293%2C296%2C292%2C300%2C297%2C291%2C295%2C298%2C294%2C290%2C341%2C358",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://connect.facebook.net/signals/config/467211000683318?v=2.9.419&r=stable&domain=www.takaratomy.co.jp&hme=7459fa3e38c2784dbaf309537bed5fa7e8560fab51fb61e53e5ffafeb46a02a9&ex_m=118%2C241%2C171%2C27%2C82%2C83%2C162%2C78%2C77%2C11%2C181%2C102%2C20%2C153%2C141%2C46%2C85%2C90%2C149%2C176%2C183%2C8%2C4%2C5%2C7%2C6%2C3%2C103%2C115%2C32%2C17%2C31%2C18%2C33%2C34%2C35%2C37%2C55%2C163%2C87%2C126%2C22%2C24%2C51%2C47%2C49%2C48%2C95%2C104%2C108%2C124%2C160%2C164%2C53%2C125%2C29%2C26%2C133%2C79%2C43%2C166%2C165%2C167%2C157%2C155%2C30%2C42%2C66%2C123%2C178%2C80%2C21%2C128%2C93%2C76%2C23%2C97%2C98%2C130%2C96%2C151%2C150%2C154%2C109%2C177%2C180%2C41%2C56%2C127%2C54%2C161%2C72%2C185%2C110%2C184%2C210%2C255%2C84%2C274%2C273%2C272%2C14%2C25%2C28%2C40%2C62%2C117%2C68%2C10%2C73%2C111%2C112%2C113%2C119%2C144%2C38%2C36%2C146%2C147%2C148%2C143%2C142%2C172%2C86%2C175%2C173%2C174%2C57%2C69%2C67%2C137%2C19%2C179%2C52%2C324%2C325%2C326%2C323%2C339%2C361%2C248%2C237%2C70%2C238%2C236%2C364%2C355%2C59%2C249%2C121%2C145%2C92%2C135%2C61%2C134%2C140%2C139%2C65%2C74%2C168%2C88%2C89%2C129%2C44%2C39%2C60%2C63%2C114%2C182%2C1%2C138%2C16%2C136%2C12%2C2%2C64%2C105%2C15%2C75%2C71%2C132%2C101%2C100%2C187%2C188%2C106%2C107%2C9%2C116%2C186%2C58%2C158%2C99%2C91%2C81%2C131%2C120%2C169%2C50%2C159%2C0%2C94%2C152%2C156%2C170%2C45%2C122%2C13%2C189",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://connect.facebook.net/en_US/fbevents.js",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://www.googletagmanager.com/gtag/destination?id=AW-10905185409&cx=c&gtm=4e6a91h1",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://www.googletagmanager.com/gtag/destination?id=AW-819406378&cx=c&gtm=4e6a91h1",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://www.googletagmanager.com/gtag/destination?id=AW-974005833&cx=c&gtm=4e6a91h1",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://www.googletagmanager.com/gtag/destination?id=AW-802931862&cx=c&gtm=4e6a91h1",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://scripts.clarity.ms/0.8.72-beta/clarity.js",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://d.line-scdn.net/n/line_tag/public/release/v1/lt.js",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://static.ads-twitter.com/uwt.js",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://www.clarity.ms/tag/o3vh4jyo99",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://s.yimg.jp/images/listing/tool/cv/ytag.js",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://cdn.treasuredata.com/sdk/3.0/td.min.js",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://www.clarity.ms/tag/u8h762l1mt?ref=gtm",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://s.yimg.jp/images/listing/tool/cv/ytag.js",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://s.yimg.jp/images/listing/tool/cv/ytag.js",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://www.googletagmanager.com/gtag/js?id=AW-11357954767&cx=c&gtm=4e6a91h1",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://www.googletagmanager.com/gtag/js?id=DC-15475317&cx=c&gtm=4e6a91h1",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://www.googletagmanager.com/gtag/js?id=AW-739577347&cx=c&gtm=4e6a91h1",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://www.googletagmanager.com/gtag/js?id=AW-11130805343&cx=c&gtm=4e6a91h1",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://www.googletagmanager.com/gtag/js?id=AW-11208182015&cx=c&gtm=4e6a91h1",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://www.googletagmanager.com/gtag/js?id=AW-354164792&cx=c&gtm=4e6a91h1",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://www.googletagmanager.com/gtag/js?id=AW-654175835&cx=c&gtm=4e6a91h1",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://www.googletagmanager.com/gtag/js?id=AW-869404370&cx=c&gtm=4e6a91h1",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://www.googletagmanager.com/gtag/js?id=AW-16513460532&cx=c&gtm=4e6a91h1",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://www.googletagmanager.com/gtag/js?id=AW-16624922462&cx=c&gtm=4e6a91h1",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://www.googletagmanager.com/gtag/js?id=AW-16683663666&cx=c&gtm=4e6a91h1",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://www.googletagmanager.com/gtag/js?id=AW-946006455&cx=c&gtm=4e6a91h1",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://www.googletagmanager.com/gtag/js?id=AW-10860374497&cx=c&gtm=4e6a91h1",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://www.googletagmanager.com/gtag/js?id=G-NKBQEML43B&cx=c&gtm=4e6a91h1",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://www.googletagmanager.com/gtag/js?id=G-QYYHLZZDGR&cx=c&gtm=4e6a91h1",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://www.googletagmanager.com/gtm.js?id=GTM-MS636N",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://j.wovn.io/1",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://www.takaratomy.co.jp/common/2021/js/common.js",
-      "type": "text/javascript",
-      "async": false,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://www.takaratomy.co.jp/common/2021/js/jquery-3.5.1.min.js?20250319",
-      "type": "text/javascript",
-      "async": false,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://www.takaratomy.co.jp/common/js/common2.js?20250319",
-      "type": "text/javascript",
-      "async": false,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://kit.fontawesome.com/8c275079a4.js",
-      "type": "text/javascript",
-      "async": false,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://b99.yahoo.co.jp/pagead/conversion_async.js",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://googleads.g.doubleclick.net/pagead/viewthroughconversion/946006455/?random=1791892915407&cv=11&fst=1791892915407&bg=ffffff&guid=ON&async=1&en=gtag.config&gtm=45be6a91h1v9186470610za20ozb72047931zd72047931xecxf1&gcd=13l3l3l3l1l1&dma=0&tag_exp=115938466~115938468~117776796~118897920~118897930~120213116~120385423~120469145~120469153~121046263~121046271~121246026~121246034~123235076&u_w=1440&u_h=1000&url=https%3A%2F%2Fwww.takaratomy.co.jp%2Fproducts%2Fconan-cardgame%2Fcardlist%2F&rcb=17&frm=0&tiba=%E3%82%AB%E3%83%BC%E3%83%89%E6%A4%9C%E7%B4%A2%EF%BD%9C%E5%90%8D%E6%8E%A2%E5%81%B5%E3%82%B3%E3%83%8A%E3%83%B3%E3%83%88%E3%83%AC%E3%83%BC%E3%83%87%E3%82%A3%E3%83%B3%E3%82%B0%E3%82%AB%E3%83%BC%E3%83%89%E3%82%B2%E3%83%BC%E3%83%A0%EF%BD%9C%E3%82%BF%E3%82%AB&hn=www.googleadservices.com&npa=0&pscdl=noapi&auid=260838648.1791892915&uaa=x86&uab=64&uafvl=Not%253AA-Brand%3B8.0.0.0%7CChromium%3B156.0.8078.4%7CHeadlessChrome%3B156.0.8078.4&uamb=0&uam=&uap=Windows&uapv=10.0.0&uaw=0&data=event%3Dgtag.config&ept=9&rfmt=3&fmt=4",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://googleads.g.doubleclick.net/pagead/viewthroughconversion/16624922462/?random=1791892915582&cv=11&fst=1791892915582&bg=ffffff&guid=ON&async=1&en=gtag.config&gtm=45be6a91h1v9214620912za20ozb72047931zd72047931xecxf1&gcd=13l3l3l3l1l1&dma=0&tag_exp=100940058~115938466~115938469~117776796~118897920~118897930~120213116~120385423~120469145~120469153~121046263~121046271~121246026~121246034~123235077&u_w=1440&u_h=1000&url=https%3A%2F%2Fwww.takaratomy.co.jp%2Fproducts%2Fconan-cardgame%2Fcardlist%2F&rcb=8&frm=0&tiba=%E3%82%AB%E3%83%BC%E3%83%89%E6%A4%9C%E7%B4%A2%EF%BD%9C%E5%90%8D%E6%8E%A2%E5%81%B5%E3%82%B3%E3%83%8A%E3%83%B3%E3%83%88%E3%83%AC%E3%83%BC%E3%83%87%E3%82%A3%E3%83%B3%E3%82%B0%E3%82%AB%E3%83%BC%E3%83%89%E3%82%B2%E3%83%BC%E3%83%A0%EF%BD%9C%E3%82%BF%E3%82%AB&hn=www.googleadservices.com&npa=0&pscdl=noapi&auid=260838648.1791892915&uaa=x86&uab=64&uafvl=Not%253AA-Brand%3B8.0.0.0%7CChromium%3B156.0.8078.4%7CHeadlessChrome%3B156.0.8078.4&uamb=0&uam=&uap=Windows&uapv=10.0.0&uaw=0&data=event%3Dgtag.config&ept=9&rfmt=3&fmt=4",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://googleads.g.doubleclick.net/pagead/viewthroughconversion/10860374497/?random=1791892915672&cv=11&fst=1791892915672&bg=ffffff&guid=ON&async=1&en=gtag.config&gtm=45be6a91h1v879828083za20ozb72047931zd72047931xecxf1&gcd=13l3l3l3l1l1&dma=0&tag_exp=115938466~115938468~117776796~118897920~118897930~120213116~120385423~120469145~120469153~121046263~121046271~121246026~121246034&u_w=1440&u_h=1000&url=https%3A%2F%2Fwww.takaratomy.co.jp%2Fproducts%2Fconan-cardgame%2Fcardlist%2F&rcb=17&frm=0&tiba=%E3%82%AB%E3%83%BC%E3%83%89%E6%A4%9C%E7%B4%A2%EF%BD%9C%E5%90%8D%E6%8E%A2%E5%81%B5%E3%82%B3%E3%83%8A%E3%83%B3%E3%83%88%E3%83%AC%E3%83%BC%E3%83%87%E3%82%A3%E3%83%B3%E3%82%B0%E3%82%AB%E3%83%BC%E3%83%89%E3%82%B2%E3%83%BC%E3%83%A0%EF%BD%9C%E3%82%BF%E3%82%AB&hn=www.googleadservices.com&npa=0&pscdl=noapi&auid=260838648.1791892915&uaa=x86&uab=64&uafvl=Not%253AA-Brand%3B8.0.0.0%7CChromium%3B156.0.8078.4%7CHeadlessChrome%3B156.0.8078.4&uamb=0&uam=&uap=Windows&uapv=10.0.0&uaw=0&data=event%3Dgtag.config&ept=9&rfmt=3&fmt=4",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://googleads.g.doubleclick.net/pagead/viewthroughconversion/10860374497/?random=1791892915696&cv=11&fst=1791892915696&bg=ffffff&guid=ON&async=1&gtm=45be6a91h1v879828083z872047931za20gzb72047931zd72047931xeaxf1&gcd=13l3l3l3l1l1&dma=0&tag_exp=115938466~115938468~117776796~118897920~118897930~120213116~120385423~120469145~120469153~121046263~121046271~121246026~121246034&u_w=1440&u_h=1000&url=https%3A%2F%2Fwww.takaratomy.co.jp%2Fproducts%2Fconan-cardgame%2Fcardlist%2F&rcb=17&frm=0&tiba=%E3%82%AB%E3%83%BC%E3%83%89%E6%A4%9C%E7%B4%A2%EF%BD%9C%E5%90%8D%E6%8E%A2%E5%81%B5%E3%82%B3%E3%83%8A%E3%83%B3%E3%83%88%E3%83%AC%E3%83%BC%E3%83%87%E3%82%A3%E3%83%B3%E3%82%B0%E3%82%AB%E3%83%BC%E3%83%89%E3%82%B2%E3%83%BC%E3%83%A0%EF%BD%9C%E3%82%BF%E3%82%AB&hn=www.googleadservices.com&npa=0&pscdl=noapi&auid=260838648.1791892915&uaa=x86&uab=64&uafvl=Not%253AA-Brand%3B8.0.0.0%7CChromium%3B156.0.8078.4%7CHeadlessChrome%3B156.0.8078.4&uamb=0&uam=&uap=Windows&uapv=10.0.0&uaw=0&_tu=CA&ept=9&rfmt=3&fmt=4",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://googleads.g.doubleclick.net/pagead/viewthroughconversion/16513460532/?random=1791892915768&cv=11&fst=1791892915768&bg=ffffff&guid=ON&async=1&en=gtag.config&gtm=45be6a91h1v9194135345za20ozb72047931zd72047931xecxf1&gcd=13l3l3l3l1l1&dma=0&tag_exp=100940058~115938466~115938469~117776796~118897920~118897930~120213116~120385423~120469145~120469153~121046263~121046271~121246026~121246034&u_w=1440&u_h=1000&url=https%3A%2F%2Fwww.takaratomy.co.jp%2Fproducts%2Fconan-cardgame%2Fcardlist%2F&rcb=11&frm=0&tiba=%E3%82%AB%E3%83%BC%E3%83%89%E6%A4%9C%E7%B4%A2%EF%BD%9C%E5%90%8D%E6%8E%A2%E5%81%B5%E3%82%B3%E3%83%8A%E3%83%B3%E3%83%88%E3%83%AC%E3%83%BC%E3%83%87%E3%82%A3%E3%83%B3%E3%82%B0%E3%82%AB%E3%83%BC%E3%83%89%E3%82%B2%E3%83%BC%E3%83%A0%EF%BD%9C%E3%82%BF%E3%82%AB&hn=www.googleadservices.com&npa=0&pscdl=noapi&auid=260838648.1791892915&uaa=x86&uab=64&uafvl=Not%253AA-Brand%3B8.0.0.0%7CChromium%3B156.0.8078.4%7CHeadlessChrome%3B156.0.8078.4&uamb=0&uam=&uap=Windows&uapv=10.0.0&uaw=0&data=event%3Dgtag.config&ept=9&rfmt=3&fmt=4",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://googleads.g.doubleclick.net/pagead/viewthroughconversion/16513460532/?random=1791892915793&cv=11&fst=1791892915793&bg=ffffff&guid=ON&async=1&gtm=45be6a91h1v9194135345z872047931za20gzb72047931zd72047931xeaxf1&gcd=13l3l3l3l1l1&dma=0&tag_exp=100940058~115938466~115938469~117776796~118897920~118897930~120213116~120385423~120469145~120469153~121046263~121046271~121246026~121246034&u_w=1440&u_h=1000&url=https%3A%2F%2Fwww.takaratomy.co.jp%2Fproducts%2Fconan-cardgame%2Fcardlist%2F&rcb=11&frm=0&tiba=%E3%82%AB%E3%83%BC%E3%83%89%E6%A4%9C%E7%B4%A2%EF%BD%9C%E5%90%8D%E6%8E%A2%E5%81%B5%E3%82%B3%E3%83%8A%E3%83%B3%E3%83%88%E3%83%AC%E3%83%BC%E3%83%87%E3%82%A3%E3%83%B3%E3%82%B0%E3%82%AB%E3%83%BC%E3%83%89%E3%82%B2%E3%83%BC%E3%83%A0%EF%BD%9C%E3%82%BF%E3%82%AB&hn=www.googleadservices.com&npa=0&pscdl=noapi&auid=260838648.1791892915&uaa=x86&uab=64&uafvl=Not%253AA-Brand%3B8.0.0.0%7CChromium%3B156.0.8078.4%7CHeadlessChrome%3B156.0.8078.4&uamb=0&uam=&uap=Windows&uapv=10.0.0&uaw=0&_tu=CA&ept=9&rfmt=3&fmt=4",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://googleads.g.doubleclick.net/pagead/viewthroughconversion/16683663666/?random=1791892915854&cv=11&fst=1791892915854&bg=ffffff&guid=ON&async=1&en=gtag.config&gtm=45be6a91h1v9194031716za20ozb72047931zd72047931xecxf1&gcd=13l3l3l3l1l1&dma=0&tag_exp=115938466~115938468~117776796~118897920~118897930~120213116~120385422~120469145~120469153~121046263~121046271~121246026~121246034&u_w=1440&u_h=1000&url=https%3A%2F%2Fwww.takaratomy.co.jp%2Fproducts%2Fconan-cardgame%2Fcardlist%2F&rcb=12&frm=0&tiba=%E3%82%AB%E3%83%BC%E3%83%89%E6%A4%9C%E7%B4%A2%EF%BD%9C%E5%90%8D%E6%8E%A2%E5%81%B5%E3%82%B3%E3%83%8A%E3%83%B3%E3%83%88%E3%83%AC%E3%83%BC%E3%83%87%E3%82%A3%E3%83%B3%E3%82%B0%E3%82%AB%E3%83%BC%E3%83%89%E3%82%B2%E3%83%BC%E3%83%A0%EF%BD%9C%E3%82%BF%E3%82%AB&hn=www.googleadservices.com&npa=0&pscdl=noapi&auid=260838648.1791892915&uaa=x86&uab=64&uafvl=Not%253AA-Brand%3B8.0.0.0%7CChromium%3B156.0.8078.4%7CHeadlessChrome%3B156.0.8078.4&uamb=0&uam=&uap=Windows&uapv=10.0.0&uaw=0&data=event%3Dgtag.config&ept=9&rfmt=3&fmt=4",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://googleads.g.doubleclick.net/pagead/viewthroughconversion/869404370/?random=1791892915956&cv=11&fst=1791892915956&bg=ffffff&guid=ON&async=1&en=gtag.config&gtm=45be6a91h1v9209485507za20ozb72047931zd72047931xecxf1&gcd=13l3l3l3l1l1&dma=0&tag_exp=100940058~115616985~115938466~115938469~117776796~118897920~118897930~120213116~120385422~120412527~120469145~120469153~121046263~121046271~121246026~121246034~123235077&u_w=1440&u_h=1000&url=https%3A%2F%2Fwww.takaratomy.co.jp%2Fproducts%2Fconan-cardgame%2Fcardlist%2F&rcb=10&frm=0&tiba=%E3%82%AB%E3%83%BC%E3%83%89%E6%A4%9C%E7%B4%A2%EF%BD%9C%E5%90%8D%E6%8E%A2%E5%81%B5%E3%82%B3%E3%83%8A%E3%83%B3%E3%83%88%E3%83%AC%E3%83%BC%E3%83%87%E3%82%A3%E3%83%B3%E3%82%B0%E3%82%AB%E3%83%BC%E3%83%89%E3%82%B2%E3%83%BC%E3%83%A0%EF%BD%9C%E3%82%BF%E3%82%AB&hn=www.googleadservices.com&npa=0&pscdl=noapi&auid=260838648.1791892915&uaa=x86&uab=64&uafvl=Not%253AA-Brand%3B8.0.0.0%7CChromium%3B156.0.8078.4%7CHeadlessChrome%3B156.0.8078.4&uamb=0&uam=&uap=Windows&uapv=10.0.0&uaw=0&data=event%3Dgtag.config&ept=9&rfmt=3&fmt=4",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://googleads.g.doubleclick.net/pagead/viewthroughconversion/11130805343/?random=1791892916037&cv=11&fst=1791892916037&bg=ffffff&guid=ON&async=1&en=gtag.config&gtm=45be6a91h1v9179806222za20ozb72047931zd72047931xecxf1&gcd=13l3l3l3l1l1&dma=0&tag_exp=115938466~115938468~117776796~118897920~118897930~120213116~120385422~120469145~120469153~121046263~121046271~121246026~121246034&u_w=1440&u_h=1000&url=https%3A%2F%2Fwww.takaratomy.co.jp%2Fproducts%2Fconan-cardgame%2Fcardlist%2F&rcb=14&frm=0&tiba=%E3%82%AB%E3%83%BC%E3%83%89%E6%A4%9C%E7%B4%A2%EF%BD%9C%E5%90%8D%E6%8E%A2%E5%81%B5%E3%82%B3%E3%83%8A%E3%83%B3%E3%83%88%E3%83%AC%E3%83%BC%E3%83%87%E3%82%A3%E3%83%B3%E3%82%B0%E3%82%AB%E3%83%BC%E3%83%89%E3%82%B2%E3%83%BC%E3%83%A0%EF%BD%9C%E3%82%BF%E3%82%AB&hn=www.googleadservices.com&npa=0&pscdl=noapi&auid=260838648.1791892915&uaa=x86&uab=64&uafvl=Not%253AA-Brand%3B8.0.0.0%7CChromium%3B156.0.8078.4%7CHeadlessChrome%3B156.0.8078.4&uamb=0&uam=&uap=Windows&uapv=10.0.0&uaw=0&data=event%3Dgtag.config&ept=9&rfmt=3&fmt=4",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://googleads.g.doubleclick.net/pagead/viewthroughconversion/354164792/?random=1791892916136&cv=11&fst=1791892916136&bg=ffffff&guid=ON&async=1&en=gtag.config&gtm=45be6a91h1v894552077za20ozb72047931zd72047931xecxf1&gcd=13l3l3l3l1l1&dma=0&tag_exp=100940059~115616985~115938466~115938468~117776796~118897920~118897930~119793973~120213116~120385423~120469145~120469153~121046263~121046271~121246026~121246034&u_w=1440&u_h=1000&url=https%3A%2F%2Fwww.takaratomy.co.jp%2Fproducts%2Fconan-cardgame%2Fcardlist%2F&rcb=6&frm=0&tiba=%E3%82%AB%E3%83%BC%E3%83%89%E6%A4%9C%E7%B4%A2%EF%BD%9C%E5%90%8D%E6%8E%A2%E5%81%B5%E3%82%B3%E3%83%8A%E3%83%B3%E3%83%88%E3%83%AC%E3%83%BC%E3%83%87%E3%82%A3%E3%83%B3%E3%82%B0%E3%82%AB%E3%83%BC%E3%83%89%E3%82%B2%E3%83%BC%E3%83%A0%EF%BD%9C%E3%82%BF%E3%82%AB&hn=www.googleadservices.com&npa=0&pscdl=noapi&auid=260838648.1791892915&uaa=x86&uab=64&uafvl=Not%253AA-Brand%3B8.0.0.0%7CChromium%3B156.0.8078.4%7CHeadlessChrome%3B156.0.8078.4&uamb=0&uam=&uap=Windows&uapv=10.0.0&uaw=0&data=event%3Dgtag.config&ept=9&rfmt=3&fmt=4",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://googleads.g.doubleclick.net/pagead/viewthroughconversion/739577347/?random=1791892916207&cv=11&fst=1791892916207&bg=ffffff&guid=ON&async=1&en=gtag.config&gtm=45be6a91h1v886223745za20ozb72047931zd72047931xecxf1&gcd=13l3l3l3l1l1&dma=0&tag_exp=115938466~115938469~117776796~118897920~118897930~120213116~120385422~120469145~120469153~121046263~121046271~121246026~121246034&u_w=1440&u_h=1000&url=https%3A%2F%2Fwww.takaratomy.co.jp%2Fproducts%2Fconan-cardgame%2Fcardlist%2F&rcb=5&frm=0&tiba=%E3%82%AB%E3%83%BC%E3%83%89%E6%A4%9C%E7%B4%A2%EF%BD%9C%E5%90%8D%E6%8E%A2%E5%81%B5%E3%82%B3%E3%83%8A%E3%83%B3%E3%83%88%E3%83%AC%E3%83%BC%E3%83%87%E3%82%A3%E3%83%B3%E3%82%B0%E3%82%AB%E3%83%BC%E3%83%89%E3%82%B2%E3%83%BC%E3%83%A0%EF%BD%9C%E3%82%BF%E3%82%AB&hn=www.googleadservices.com&npa=0&pscdl=noapi&auid=260838648.1791892915&uaa=x86&uab=64&uafvl=Not%253AA-Brand%3B8.0.0.0%7CChromium%3B156.0.8078.4%7CHeadlessChrome%3B156.0.8078.4&uamb=0&uam=&uap=Windows&uapv=10.0.0&uaw=0&data=event%3Dgtag.config&ept=9&rfmt=3&fmt=4",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://googleads.g.doubleclick.net/pagead/viewthroughconversion/11208182015/?random=1791892916346&cv=11&fst=1791892916346&bg=ffffff&guid=ON&async=1&en=gtag.config&gtm=45be6a91h1v9127257081za20ozb72047931zd72047931xecxf1&gcd=13l3l3l3l1l1&dma=0&tag_exp=115938466~115938469~117776796~118897920~118897930~120213116~120385422~120469145~120469153~121046263~121046271~121246026~121246034&u_w=1440&u_h=1000&url=https%3A%2F%2Fwww.takaratomy.co.jp%2Fproducts%2Fconan-cardgame%2Fcardlist%2F&rcb=10&frm=0&tiba=%E3%82%AB%E3%83%BC%E3%83%89%E6%A4%9C%E7%B4%A2%EF%BD%9C%E5%90%8D%E6%8E%A2%E5%81%B5%E3%82%B3%E3%83%8A%E3%83%B3%E3%83%88%E3%83%AC%E3%83%BC%E3%83%87%E3%82%A3%E3%83%B3%E3%82%B0%E3%82%AB%E3%83%BC%E3%83%89%E3%82%B2%E3%83%BC%E3%83%A0%EF%BD%9C%E3%82%BF%E3%82%AB&hn=www.googleadservices.com&npa=0&pscdl=noapi&auid=260838648.1791892915&uaa=x86&uab=64&uafvl=Not%253AA-Brand%3B8.0.0.0%7CChromium%3B156.0.8078.4%7CHeadlessChrome%3B156.0.8078.4&uamb=0&uam=&uap=Windows&uapv=10.0.0&uaw=0&data=event%3Dgtag.config&ept=9&rfmt=3&fmt=4",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://googleads.g.doubleclick.net/pagead/viewthroughconversion/654175835/?random=1791892916429&cv=11&fst=1791892916429&bg=ffffff&guid=ON&async=1&en=gtag.config&gtm=45be6a91h1v878851194za20ozb72047931zd72047931xecxf1&gcd=13l3l3l3l1l1&dma=0&tag_exp=115616986~115938466~115938468~117776796~118897920~118897930~120213116~120385422~120469145~120469153~121046263~121046271~121246026~121246034&u_w=1440&u_h=1000&url=https%3A%2F%2Fwww.takaratomy.co.jp%2Fproducts%2Fconan-cardgame%2Fcardlist%2F&rcb=16&frm=0&tiba=%E3%82%AB%E3%83%BC%E3%83%89%E6%A4%9C%E7%B4%A2%EF%BD%9C%E5%90%8D%E6%8E%A2%E5%81%B5%E3%82%B3%E3%83%8A%E3%83%B3%E3%83%88%E3%83%AC%E3%83%BC%E3%83%87%E3%82%A3%E3%83%B3%E3%82%B0%E3%82%AB%E3%83%BC%E3%83%89%E3%82%B2%E3%83%BC%E3%83%A0%EF%BD%9C%E3%82%BF%E3%82%AB&hn=www.googleadservices.com&npa=0&pscdl=noapi&auid=260838648.1791892915&uaa=x86&uab=64&uafvl=Not%253AA-Brand%3B8.0.0.0%7CChromium%3B156.0.8078.4%7CHeadlessChrome%3B156.0.8078.4&uamb=0&uam=&uap=Windows&uapv=10.0.0&uaw=0&data=event%3Dgtag.config&ept=9&rfmt=3&fmt=4",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://googleads.g.doubleclick.net/pagead/viewthroughconversion/11357954767/?random=1791892916507&cv=11&fst=1791892916507&bg=ffffff&guid=ON&async=1&en=gtag.config&gtm=45be6a91h1v9210380570za20ozb72047931zd72047931xecxf1&gcd=13l3l3l3l1l1&dma=0&tag_exp=100940059~115616985~115938466~115938468~117776796~118897920~118897930~120213116~120385423~120469145~120469153~121046263~121046271~121246026~121246034~123235077&u_w=1440&u_h=1000&url=https%3A%2F%2Fwww.takaratomy.co.jp%2Fproducts%2Fconan-cardgame%2Fcardlist%2F&rcb=5&frm=0&tiba=%E3%82%AB%E3%83%BC%E3%83%89%E6%A4%9C%E7%B4%A2%EF%BD%9C%E5%90%8D%E6%8E%A2%E5%81%B5%E3%82%B3%E3%83%8A%E3%83%B3%E3%83%88%E3%83%AC%E3%83%BC%E3%83%87%E3%82%A3%E3%83%B3%E3%82%B0%E3%82%AB%E3%83%BC%E3%83%89%E3%82%B2%E3%83%BC%E3%83%A0%EF%BD%9C%E3%82%BF%E3%82%AB&hn=www.googleadservices.com&npa=0&pscdl=noapi&auid=260838648.1791892915&uaa=x86&uab=64&uafvl=Not%253AA-Brand%3B8.0.0.0%7CChromium%3B156.0.8078.4%7CHeadlessChrome%3B156.0.8078.4&uamb=0&uam=&uap=Windows&uapv=10.0.0&uaw=0&data=event%3Dgtag.config&ept=9&rfmt=3&fmt=4",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://googleads.g.doubleclick.net/pagead/viewthroughconversion/11357954767/?random=1791892916529&cv=11&fst=1791892916529&bg=ffffff&guid=ON&async=1&gtm=45be6a91h1v9210380570z872047931za20gzb72047931zd72047931xeaxf1&gcd=13l3l3l3l1l1&dma=0&tag_exp=100940059~115616985~115938466~115938468~117776796~118897920~118897930~120213116~120385423~120469145~120469153~121046263~121046271~121246026~121246034~123235077&u_w=1440&u_h=1000&url=https%3A%2F%2Fwww.takaratomy.co.jp%2Fproducts%2Fconan-cardgame%2Fcardlist%2F&rcb=5&frm=0&tiba=%E3%82%AB%E3%83%BC%E3%83%89%E6%A4%9C%E7%B4%A2%EF%BD%9C%E5%90%8D%E6%8E%A2%E5%81%B5%E3%82%B3%E3%83%8A%E3%83%B3%E3%83%88%E3%83%AC%E3%83%BC%E3%83%87%E3%82%A3%E3%83%B3%E3%82%B0%E3%82%AB%E3%83%BC%E3%83%89%E3%82%B2%E3%83%BC%E3%83%A0%EF%BD%9C%E3%82%BF%E3%82%AB&hn=www.googleadservices.com&npa=0&pscdl=noapi&auid=260838648.1791892915&uaa=x86&uab=64&uafvl=Not%253AA-Brand%3B8.0.0.0%7CChromium%3B156.0.8078.4%7CHeadlessChrome%3B156.0.8078.4&uamb=0&uam=&uap=Windows&uapv=10.0.0&uaw=0&_tu=CA&ept=9&rfmt=3&fmt=4",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://b99.yahoo.co.jp/pagead/conversion_async.js",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://googleads.g.doubleclick.net/pagead/viewthroughconversion/974005833/?random=1791892916814&cv=11&fst=1791892916814&bg=ffffff&guid=ON&async=1&gtm=45be6a91h1z872047931za20gzb72047931zd72047931xeaxf1&gcd=13l3l3l3l1l1&dma=0&tag_exp=115938466~115938469~117776796~118897920~118897930~120213116~120385423~120469145~120469153~121046263~121046271~121246026~121246034&u_w=1440&u_h=1000&url=https%3A%2F%2Fwww.takaratomy.co.jp%2Fproducts%2Fconan-cardgame%2Fcardlist%2F&rcb=6&frm=0&tiba=%E3%82%AB%E3%83%BC%E3%83%89%E6%A4%9C%E7%B4%A2%EF%BD%9C%E5%90%8D%E6%8E%A2%E5%81%B5%E3%82%B3%E3%83%8A%E3%83%B3%E3%83%88%E3%83%AC%E3%83%BC%E3%83%87%E3%82%A3%E3%83%B3%E3%82%B0%E3%82%AB%E3%83%BC%E3%83%89%E3%82%B2%E3%83%BC%E3%83%A0%EF%BD%9C%E3%82%BF%E3%82%AB&hn=www.googleadservices.com&npa=0&pscdl=noapi&auid=260838648.1791892915&uaa=x86&uab=64&uafvl=Not%253AA-Brand%3B8.0.0.0%7CChromium%3B156.0.8078.4%7CHeadlessChrome%3B156.0.8078.4&uamb=0&uam=&uap=Windows&uapv=10.0.0&uaw=0&_tu=CA&ept=9&rfmt=3&fmt=4",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://googleads.g.doubleclick.net/pagead/viewthroughconversion/802931862/?random=1791892916875&cv=11&fst=1791892916875&bg=ffffff&guid=ON&async=1&gtm=45be6a91h1z872047931za20gzb72047931zd72047931xeaxf1&gcd=13l3l3l3l1l1&dma=0&tag_exp=115616985~115938466~115938469~117776796~118897920~118897930~120213116~120385423~120469145~120469153~121046263~121046271~121246026~121246034&u_w=1440&u_h=1000&url=https%3A%2F%2Fwww.takaratomy.co.jp%2Fproducts%2Fconan-cardgame%2Fcardlist%2F&rcb=17&frm=0&tiba=%E3%82%AB%E3%83%BC%E3%83%89%E6%A4%9C%E7%B4%A2%EF%BD%9C%E5%90%8D%E6%8E%A2%E5%81%B5%E3%82%B3%E3%83%8A%E3%83%B3%E3%83%88%E3%83%AC%E3%83%BC%E3%83%87%E3%82%A3%E3%83%B3%E3%82%B0%E3%82%AB%E3%83%BC%E3%83%89%E3%82%B2%E3%83%BC%E3%83%A0%EF%BD%9C%E3%82%BF%E3%82%AB&hn=www.googleadservices.com&npa=0&pscdl=noapi&auid=260838648.1791892915&uaa=x86&uab=64&uafvl=Not%253AA-Brand%3B8.0.0.0%7CChromium%3B156.0.8078.4%7CHeadlessChrome%3B156.0.8078.4&uamb=0&uam=&uap=Windows&uapv=10.0.0&uaw=0&_tu=CA&ept=9&rfmt=3&fmt=4",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://googleads.g.doubleclick.net/pagead/viewthroughconversion/819406378/?random=1791892916934&cv=11&fst=1791892916934&bg=ffffff&guid=ON&async=1&gtm=45be6a91h1z872047931za20gzb72047931zd72047931xeaxf1&gcd=13l3l3l3l1l1&dma=0&tag_exp=115616985~115938466~115938469~117776796~118897920~118897930~120385423~120469145~120469153~121046263~121046271~121246026~121246034~123235076&u_w=1440&u_h=1000&url=https%3A%2F%2Fwww.takaratomy.co.jp%2Fproducts%2Fconan-cardgame%2Fcardlist%2F&rcb=18&frm=0&tiba=%E3%82%AB%E3%83%BC%E3%83%89%E6%A4%9C%E7%B4%A2%EF%BD%9C%E5%90%8D%E6%8E%A2%E5%81%B5%E3%82%B3%E3%83%8A%E3%83%B3%E3%83%88%E3%83%AC%E3%83%BC%E3%83%87%E3%82%A3%E3%83%B3%E3%82%B0%E3%82%AB%E3%83%BC%E3%83%89%E3%82%B2%E3%83%BC%E3%83%A0%EF%BD%9C%E3%82%BF%E3%82%AB&hn=www.googleadservices.com&npa=0&pscdl=noapi&auid=260838648.1791892915&uaa=x86&uab=64&uafvl=Not%253AA-Brand%3B8.0.0.0%7CChromium%3B156.0.8078.4%7CHeadlessChrome%3B156.0.8078.4&uamb=0&uam=&uap=Windows&uapv=10.0.0&uaw=0&_tu=CA&ept=9&rfmt=3&fmt=4",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://f1.zenclerk.com/publish/common/1790828041/body.js",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://googleads.g.doubleclick.net/pagead/viewthroughconversion/10905185409/?random=1791892916994&cv=11&fst=1791892916994&bg=ffffff&guid=ON&async=1&gtm=45be6a91h1z872047931za20gzb72047931zd72047931xeaxf1&gcd=13l3l3l3l1l1&dma=0&tag_exp=115938466~115938468~117776796~118897920~118897930~120213116~120385423~120469145~120469153~121046263~121046271~121246026~121246034&u_w=1440&u_h=1000&url=https%3A%2F%2Fwww.takaratomy.co.jp%2Fproducts%2Fconan-cardgame%2Fcardlist%2F&rcb=2&frm=0&tiba=%E3%82%AB%E3%83%BC%E3%83%89%E6%A4%9C%E7%B4%A2%EF%BD%9C%E5%90%8D%E6%8E%A2%E5%81%B5%E3%82%B3%E3%83%8A%E3%83%B3%E3%83%88%E3%83%AC%E3%83%BC%E3%83%87%E3%82%A3%E3%83%B3%E3%82%B0%E3%82%AB%E3%83%BC%E3%83%89%E3%82%B2%E3%83%BC%E3%83%A0%EF%BD%9C%E3%82%BF%E3%82%AB&hn=www.googleadservices.com&npa=0&pscdl=noapi&auid=260838648.1791892915&uaa=x86&uab=64&uafvl=Not%253AA-Brand%3B8.0.0.0%7CChromium%3B156.0.8078.4%7CHeadlessChrome%3B156.0.8078.4&uamb=0&uam=&uap=Windows&uapv=10.0.0&uaw=0&_tu=CA&ept=9&rfmt=3&fmt=4",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://js.api.nidan.d2c.ne.jp/id/nidan/pre?callback=d2c.nidan.ns&origin=https%3A%2F%2Fwww.takaratomy.co.jp&domain=www.takaratomy.co.jp&referrer=&nv=h2",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://nidan.addlv.smt.docomo.ne.jp/id/daisy/sync?callback=d2c.nidan.ds&origin=https%3A%2F%2Fwww.takaratomy.co.jp&domain=www.takaratomy.co.jp&referrer=",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "",
-      "type": "text/javascript",
-      "async": false,
-      "defer": false,
-      "inlineLength": 340
-    },
-    {
-      "src": "https://www.takaratomy.co.jp/products/conan-cardgame/js/jquery-3.7.1.min.js",
-      "type": "text/javascript",
-      "async": false,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://www.takaratomy.co.jp/products/conan-cardgame/js/slick.min.js",
-      "type": "text/javascript",
-      "async": false,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://www.takaratomy.co.jp/products/conan-cardgame/js/gsap/gsap.min.js",
-      "type": "text/javascript",
-      "async": false,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://www.takaratomy.co.jp/products/conan-cardgame/js/gsap/ScrollTrigger.min.js",
-      "type": "text/javascript",
-      "async": false,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://www.takaratomy.co.jp/products/conan-cardgame/js/gsap/EasePack.min.js",
-      "type": "text/javascript",
-      "async": false,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://www.takaratomy.co.jp/products/conan-cardgame/js/function2.js",
-      "type": "text/javascript",
-      "async": false,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://www.takaratomy.co.jp/products/conan-cardgame/js/common.js",
-      "type": "text/javascript",
-      "async": false,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://www.takaratomy.co.jp/products/conan-cardgame/cardlist/",
-      "type": "text/javascript",
-      "async": false,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "",
-      "type": "text/javascript",
-      "async": false,
-      "defer": false,
-      "inlineLength": 43
-    },
-    {
-      "src": "https://www.takaratomy.co.jp/products/conan-cardgame/cardlist/",
-      "type": "text/javascript",
-      "async": false,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://www.takaratomy.co.jp/products/conan-cardgame/cardlist/",
-      "type": "text/javascript",
-      "async": false,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://www.takaratomy.co.jp/products/conan-cardgame/js/overlay.js",
-      "type": "text/javascript",
-      "async": false,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "",
-      "type": "text/javascript",
-      "async": false,
-      "defer": false,
-      "inlineLength": 242
-    },
-    {
-      "src": "",
-      "type": "text/javascript",
-      "async": false,
-      "defer": false,
-      "inlineLength": 304
-    },
-    {
-      "src": "",
-      "type": "text/javascript",
-      "async": false,
-      "defer": false,
-      "inlineLength": 249
-    },
-    {
-      "src": "",
-      "type": "text/javascript",
-      "async": false,
-      "defer": false,
-      "inlineLength": 353
-    },
-    {
-      "src": "https://www.takaratomy.co.jp/products/conan-cardgame/js/cardlist.js",
-      "type": "text/javascript",
-      "async": false,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://cdn.tailwindcss.com/",
-      "type": "text/javascript",
-      "async": false,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "",
-      "type": "text/javascript",
-      "async": false,
-      "defer": false,
-      "inlineLength": 102
-    },
-    {
-      "src": "",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 115
-    },
-    {
-      "src": "https://s.yimg.jp/images/listing/tool/cv/conversion.js",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 171
-    },
-    {
-      "src": "https://b92.yahoo.co.jp/js/s_retargeting.js",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 422
-    },
-    {
-      "src": "",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 339
-    },
-    {
-      "src": "https://s.yimg.jp/images/listing/tool/cv/ytag.js",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 294
-    },
-    {
-      "src": "",
-      "type": "text/javascript",
-      "async": false,
-      "defer": false,
-      "inlineLength": 9395
-    },
-    {
-      "src": "",
-      "type": "text/javascript",
-      "async": false,
-      "defer": false,
-      "inlineLength": 100
-    },
-    {
-      "src": "https://cdn.d2-apps.net/js/tr.js",
-      "type": "text/javascript",
-      "async": false,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 312
-    },
-    {
-      "src": "https://jscdn.appier.net/aa.js?id=takaratomymall.jp",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://s.yimg.jp/images/listing/tool/cv/ytag.js",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 112
-    },
-    {
-      "src": "",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 192
-    },
-    {
-      "src": "",
-      "type": "text/javascript",
-      "async": false,
-      "defer": false,
-      "inlineLength": 266
-    },
-    {
-      "src": "",
-      "type": "text/javascript",
-      "async": false,
-      "defer": false,
-      "inlineLength": 323
-    },
-    {
-      "src": "https://s.yimg.jp/images/listing/tool/cv/ytag.js",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 151
-    },
-    {
-      "src": "",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 192
-    },
-    {
-      "src": "",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 323
-    },
-    {
-      "src": "",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 354
-    },
-    {
-      "src": "",
-      "type": "text/javascript",
-      "async": false,
-      "defer": false,
-      "inlineLength": 479
-    },
-    {
-      "src": "",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 581
-    },
-    {
-      "src": "",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 323
-    },
-    {
-      "src": "",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 423
-    },
-    {
-      "src": "",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 423
-    },
-    {
-      "src": "",
-      "type": "text/javascript",
-      "async": false,
-      "defer": false,
-      "inlineLength": 2803
-    },
-    {
-      "src": "https://s.yimg.jp/images/listing/tool/cv/ytag.js",
-      "type": "text/javascript",
-      "async": false,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://s.yimg.jp/images/listing/tool/cv/ytag.js",
-      "type": "text/javascript",
-      "async": false,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "https://pp.d2-apps.net/v1/impressions/log?client_id=620&site_url=https%3A%2F%2Fwww.takaratomy.co.jp%2Fproducts%2Fconan-cardgame%2Fcardlist%2F&referer=&__version=1.0.0&__ord=3911940843105&callback=__pfunc&viewport=1440x1000&language=ja-JP&first_party_uid=YzBxyYwqMJ09NMqWKbQMY2ASp8wogofI&local_storage_uid=3QIzpqf8oGymChZrbS2w07XGc59Lkatf&c_1=takaratomymall&c_2=ClientSite",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 0
-    },
-    {
-      "src": "",
-      "type": "text/javascript",
-      "async": false,
-      "defer": false,
-      "inlineLength": 192
-    },
-    {
-      "src": "",
-      "type": "text/javascript",
-      "async": false,
-      "defer": false,
-      "inlineLength": 294
-    },
-    {
-      "src": "",
-      "type": "text/javascript",
-      "async": false,
-      "defer": false,
-      "inlineLength": 514
-    },
-    {
-      "src": "",
-      "type": "text/javascript",
-      "async": false,
-      "defer": false,
-      "inlineLength": 528
-    },
-    {
-      "src": "",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 423
-    },
-    {
-      "src": "",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 27
-    },
-    {
-      "src": "",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 423
-    },
-    {
-      "src": "",
-      "type": "text/javascript",
-      "async": true,
-      "defer": false,
-      "inlineLength": 28
-    }
-  ],
-  "inlineMatches": [
-    "\n\t\tvar cardStorageUrl = 'https://www.takaratomy.co.jp/products/conan-cardgame/storage/card';\n\t\tvar cardNoImageUrl = 'https://www.takaratomy.co.jp/products/conan-cardgame/_image/noimage.jpg';\n\t\tvar cardlistCardsUrl = 'https://www.takaratomy.co.jp/products/conan-cardgame/cardlist/cards';\n\t\tvar cardlistPerPage = 50;\n\t\tvar cardlistPreloadThreshold = 20;\n\t"
-  ],
-  "sameOriginResources": [
-    "https://www.takaratomy.co.jp/common/2021/js/common.js",
-    "https://www.takaratomy.co.jp/products/conan-cardgame/js/jquery-3.7.1.min.js",
-    "https://www.takaratomy.co.jp/products/conan-cardgame/js/slick.min.js",
-    "https://www.takaratomy.co.jp/products/conan-cardgame/js/gsap/gsap.min.js",
-    "https://www.takaratomy.co.jp/products/conan-cardgame/js/gsap/ScrollTrigger.min.js",
-    "https://www.takaratomy.co.jp/products/conan-cardgame/js/gsap/EasePack.min.js",
-    "https://www.takaratomy.co.jp/products/conan-cardgame/js/function2.js",
-    "https://www.takaratomy.co.jp/products/conan-cardgame/js/common.js",
-    "https://www.takaratomy.co.jp/products/conan-cardgame/js/overlay.js",
-    "https://www.takaratomy.co.jp/products/conan-cardgame/js/cardlist.js",
-    "https://www.takaratomy.co.jp/common/2021/js/jquery-3.5.1.min.js?20250319",
-    "https://www.takaratomy.co.jp/common/js/common2.js?20250319"
-  ],
-  "forms": [
-    {
-      "action": "https://search.takaratomy.co.jp/search",
-      "method": "get",
-      "id": "SS_searchForm",
-      "className": "c-search-keyword__form"
+      "href": "#",
+      "aria": "",
+      "disabled": false
     },
     {
-      "action": "https://www.takaratomy.co.jp/products/conan-cardgame/cardlist/",
-      "method": "get",
+      "tag": "A",
+      "text": "タカラトミー公式SNS一覧",
       "id": "",
-      "className": ""
+      "className": "c-list-sns__more",
+      "href": "https://www.takaratomy.co.jp/sns/accounts/",
+      "aria": "",
+      "disabled": false
+    },
+    {
+      "tag": "A",
+      "text": "トップページ",
+      "id": "",
+      "className": "l-footer-sitemap__link",
+      "href": "https://www.takaratomy.co.jp/",
+      "aria": "",
+      "disabled": false
     }
   ],
-  "sameOriginRequests": [
+  "recentRequests": [
     {
-      "type": "document",
+      "method": "POST",
+      "type": "fetch",
+      "url": "https://www.google.com/rmkt/collect/11357954767/?random=1791906230549&cv=11&fst=1791906230549&fmt=8&bg=ffffff&guid=ON&async=1&gtm=45be6a91v9210380570z872047931za20gzb72047931zd72047931xeaxf1&gcd=13l3l3l3l1l1&dma=0&tag_exp=100940059~115938466~115938468~118131810~118897920~118897930~120213116~120385422~120469145~120469153~121046263~121046271~121246026~121246034~123235076&u_w=1440&u_h=1000&url=https%3A%2F%2Fwww.takaratomy.co.jp%2Fproducts%2Fconan-cardgame%2Fcardlist%2F&rcb=17&frm=0&tiba=%E3%82%AB%E3%83%BC%E3%83%89%E6%A4%9C%E7%B4%A2%EF%BD%9C%E5%90%8D%E6%8E%A2%E5%81%B5%E3%82%B3%E3%83%8A%E3%83%B3%E3%83%88%E3%83%AC%E3%83%BC%E3%83%87%E3%82%A3%E3%83%B3%E3%82%B0%E3%82%AB%E3%83%BC%E3%83%89%E3%82%B2%E3%83%BC%E3%83%A0%EF%BD%9C%E3%82%BF%E3%82%AB&hn=www.googleadservices.com&npa=0&pscdl=noapi&auid=644101330.1791906229&uaa=x86&uab=64&uafvl=Not%253AA-Brand%3B8.0.0.0%7CChromium%3B156.0.8078.4%7CHeadlessChrome%3B156.0.8078.4&uamb=0&uam=&uap=Windows&uapv=10.0.0&uaw=0&_tu=CA&ept=68&gcp=5"
+    },
+    {
+      "method": "POST",
+      "type": "fetch",
+      "url": "https://www.google.com/ccm/collect?rcb=17&frm=0&apvc=0&auid=644101330.1791906229&dt=%E3%82%AB%E3%83%BC%E3%83%89%E6%A4%9C%E7%B4%A2%EF%BD%9C%E5%90%8D%E6%8E%A2%E5%81%B5%E3%82%B3%E3%83%8A%E3%83%B3%E3%83%88%E3%83%AC%E3%83%BC%E3%83%87%E3%82%A3%E3%83%B3%E3%82%B0%E3%82%AB%E3%83%BC%E3%83%89%E3%82%B2%E3%83%BC%E3%83%A0%EF%BD%9C%E3%82%BF%E3%82%AB&tid=AW-11357954767&en=page_view&dl=https%3A%2F%2Fwww.takaratomy.co.jp%2Fproducts%2Fconan-cardgame%2Fcardlist%2F&scrsrc=www.googletagmanager.com&rnd=780317201.1791906229&navt=n&npa=0&gtm=45be6a91v9210380570za20ozb72047931zd72047931xecxf1&gcd=13l3l3l3l1l1&dma=0&tag_exp=100940059~115938466~115938468~118131810~118897920~118897930~120213116~120385422~120469145~120469153~121046263~121046271~121246026~121246034~123235076&tft=1791906230557&tfd=5658&tids=AW-11357954767&fmt=8"
+    },
+    {
+      "method": "POST",
+      "type": "fetch",
+      "url": "https://www.google.com/ccm/collect?rcb=17&frm=0&apvc=0&ae=g&auid=644101330.1791906229&dt=%E3%82%AB%E3%83%BC%E3%83%89%E6%A4%9C%E7%B4%A2%EF%BD%9C%E5%90%8D%E6%8E%A2%E5%81%B5%E3%82%B3%E3%83%8A%E3%83%B3%E3%83%88%E3%83%AC%E3%83%BC%E3%83%87%E3%82%A3%E3%83%B3%E3%82%B0%E3%82%AB%E3%83%BC%E3%83%89%E3%82%B2%E3%83%BC%E3%83%A0%EF%BD%9C%E3%82%BF%E3%82%AB&tid=AW-11357954767&dl=https%3A%2F%2Fwww.takaratomy.co.jp%2Fproducts%2Fconan-cardgame%2Fcardlist%2F&scrsrc=www.googletagmanager.com&rnd=780317201.1791906229&navt=n&npa=0&_tu=CA&gtm=45be6a91v9210380570z872047931za20gzb72047931zd72047931xeaxf1&gcd=13l3l3l3l1l1&dma=0&tag_exp=100940059~115938466~115938468~118131810~118897920~118897930~120213116~120385422~120469145~120469153~121046263~121046271~121246026~121246034~123235076&tft=1791906230558&tfd=5659&tids=AW-11357954767&fmt=8"
+    },
+    {
       "method": "GET",
-      "url": "https://www.takaratomy.co.jp/products/conan-cardgame/cardlist/"
+      "type": "fetch",
+      "url": "https://www.google.co.kr/pagead/1p-conversion/16624922462/?random=404875078&cv=11&fst=1791906229724&fmt=8&bg=ffffff&guid=ON&async=1&en=conversion&gtm=45be6a91v9214620912z872047931za20gzb72047931zd72047931xeaxf1&gcd=13l3l3l3l1l1&dma=0&tag_exp=115616986~115938466~115938468~118131810~118897920~118897930~120213116~120385423~120420416~120469145~120469153~121046263~121046271~121246026~121246034&u_w=1440&u_h=1000&url=https%3A%2F%2Fwww.takaratomy.co.jp%2Fproducts%2Fconan-cardgame%2Fcardlist%2F&rcb=15&label=ijYkCPfHzr0ZEN7esPc9&frm=0&tiba=%E3%82%AB%E3%83%BC%E3%83%89%E6%A4%9C%E7%B4%A2%EF%BD%9C%E5%90%8D%E6%8E%A2%E5%81%B5%E3%82%B3%E3%83%8A%E3%83%B3%E3%83%88%E3%83%AC%E3%83%BC%E3%83%87%E3%82%A3%E3%83%B3%E3%82%B0%E3%82%AB%E3%83%BC%E3%83%89%E3%82%B2%E3%83%BC%E3%83%A0%EF%BD%9C%E3%82%BF%E3%82%AB&value=0&hn=www.googleadservices.com&npa=0&pscdl=noapi&auid=644101330.1791906229&uaa=x86&uab=64&uafvl=Not%253AA-Brand%3B8.0.0.0%7CChromium%3B156.0.8078.4%7CHeadlessChrome%3B156.0.8078.4&uamb=0&uam=&uap=Windows&uapv=10.0.0&uaw=0&ec_mode=a&oidsrc=3&ecsid2=1269938640.1791906230&_tu=CBA&gcl_ctr=3~0~0~0&category=acrcp_v1_512&em=tv.1&emd=tvd.1&ept=5&ct_cookie_present=false&eoid=CkcKEAjwrbfWBhCk4t_BvI7L72MSMwAjvh6cQBYTeAdIgLvB4NnRZwx0e8nJOQCG_-TuJrJ6mnrkZv0pp1srMkNLjVhI_gA8ZfD_BwE&crd=CLTesQII8t-xAgit4bECCK_hsQIIobixAgixwbECCLDBsQIIscOxAgiKxbECCMLJsQII1-ixAgi0xrECCIfbsQII08WxAgjrzLECCO3OsQII1c-xAgiK8rECCPTasQII4uqxAgjo7rECCJLrsQIIyeOxAgiX1LECCMnbsQIIpt2xAgiw3rECCIDbsQIIzeGxAg&cerd=Cgi5674tnem3OA&fsk=ChEI8K231gYQqIrpndGEu9GiARIsAHC9fclYvA77PqwqojNG41_cV1JXmeVxD7VbY_d6AYO9GL_tShBwKleEJ9EaAiES&is_vtc=1&cid=CAQS4gEAQM4h3I7Q5oZ5aiHaYJyF7xIqA_LcOzrVynKF2617ZR6_w_AZnspckyF9Nx3ggF-bwW1s3Cps0PeAULxpJyINSs2JS-Y8HoiAn-JAWQKVY0rgHMbLjOboXbONpqD_v_LgDWVNqc1VEmoWX44ePPx3GAkRzxM_HDzmMKKRdfp_Yy53CRAcLWZcDRk0Je5wUJP4ay66hOiX9M8Ntah77Jx3CPldgJCteYm7_VuTj1cwv6jhzk_60y_9Rngw5kDa6vKr0SyuYTtW9G_Ltyjkn3yJ6R2QBLP_xe1rpiNenf8asaJz&eitems=ChEI8K231gYQ5Pz0w4XHtMjQARIdAFU5pDSP7HV7TFt5GyS8kKNETBox93mxPb-Uz50&random=2946295871&ipr=y&pscrd=IhMI-p2I8qq3lwMVW0BHAx0_uDabOh1odHRwczovL3d3dy50YWthcmF0b215LmNvLmpwL0JXQ2hFSThLMjMxZ1lReEx6NzdhamktN3luQVJJc0FKMkZlaHhHU2RBMTJMVC1YamVhNjd5RTV0U2x6MDRHSzk5aHVLSk1JYURxaDljQzd5QUZLZXFBSnM4egwICWIICAAQABgAIACCARNwAYgBAeIBAQLxAfhwJJhBeOw_"
+    },
+    {
+      "method": "POST",
+      "type": "fetch",
+      "url": "https://www.google.com/rmkt/collect/10905185409/?random=1791906230877&cv=11&fst=1791906230877&fmt=8&bg=ffffff&guid=ON&async=1&gtm=45be6a91z872047931za20gzb72047931zd72047931xeaxf1&gcd=13l3l3l3l1l1&dma=0&tag_exp=115616986~115938466~115938468~118131810~118897920~118897930~120213116~120385423~120469145~120469153~121046263~121046271~121246026~121246034&u_w=1440&u_h=1000&url=https%3A%2F%2Fwww.takaratomy.co.jp%2Fproducts%2Fconan-cardgame%2Fcardlist%2F&rcb=5&frm=0&tiba=%E3%82%AB%E3%83%BC%E3%83%89%E6%A4%9C%E7%B4%A2%EF%BD%9C%E5%90%8D%E6%8E%A2%E5%81%B5%E3%82%B3%E3%83%8A%E3%83%B3%E3%83%88%E3%83%AC%E3%83%BC%E3%83%87%E3%82%A3%E3%83%B3%E3%82%B0%E3%82%AB%E3%83%BC%E3%83%89%E3%82%B2%E3%83%BC%E3%83%A0%EF%BD%9C%E3%82%BF%E3%82%AB&hn=www.googleadservices.com&npa=0&pscdl=noapi&auid=644101330.1791906229&uaa=x86&uab=64&uafvl=Not%253AA-Brand%3B8.0.0.0%7CChromium%3B156.0.8078.4%7CHeadlessChrome%3B156.0.8078.4&uamb=0&uam=&uap=Windows&uapv=10.0.0&uaw=0&_tu=CA&ept=68&gcp=5"
+    },
+    {
+      "method": "POST",
+      "type": "fetch",
+      "url": "https://www.google.com/ccm/collect?rcb=5&frm=0&apvc=0&ae=g&auid=644101330.1791906229&dt=%E3%82%AB%E3%83%BC%E3%83%89%E6%A4%9C%E7%B4%A2%EF%BD%9C%E5%90%8D%E6%8E%A2%E5%81%B5%E3%82%B3%E3%83%8A%E3%83%B3%E3%83%88%E3%83%AC%E3%83%BC%E3%83%87%E3%82%A3%E3%83%B3%E3%82%B0%E3%82%AB%E3%83%BC%E3%83%89%E3%82%B2%E3%83%BC%E3%83%A0%EF%BD%9C%E3%82%BF%E3%82%AB&tid=AW-10905185409&dl=https%3A%2F%2Fwww.takaratomy.co.jp%2Fproducts%2Fconan-cardgame%2Fcardlist%2F&scrsrc=www.googletagmanager.com&rnd=780317201.1791906229&navt=n&npa=0&_tu=CA&gtm=45be6a91z872047931za20gzb72047931zd72047931xeaxf1&gcd=13l3l3l3l1l1&dma=0&tag_exp=115616986~115938466~115938468~118131810~118897920~118897930~120213116~120385423~120469145~120469153~121046263~121046271~121246026~121246034&tft=1791906230890&tfd=5991&tids=AW-10905185409&fmt=8"
+    },
+    {
+      "method": "POST",
+      "type": "xhr",
+      "url": "https://y.clarity.ms/collect"
+    },
+    {
+      "method": "POST",
+      "type": "fetch",
+      "url": "https://www.google.com/rmkt/collect/819406378/?random=1791906230954&cv=11&fst=1791906230954&fmt=8&bg=ffffff&guid=ON&async=1&gtm=45be6a91z872047931za20gzb72047931zd72047931xeaxf1&gcd=13l3l3l3l1l1&dma=0&tag_exp=115938466~115938468~118131810~118897920~118897930~120385422~120469145~120469153~121046263~121046271~121246026~121246034&u_w=1440&u_h=1000&url=https%3A%2F%2Fwww.takaratomy.co.jp%2Fproducts%2Fconan-cardgame%2Fcardlist%2F&rcb=15&frm=0&tiba=%E3%82%AB%E3%83%BC%E3%83%89%E6%A4%9C%E7%B4%A2%EF%BD%9C%E5%90%8D%E6%8E%A2%E5%81%B5%E3%82%B3%E3%83%8A%E3%83%B3%E3%83%88%E3%83%AC%E3%83%BC%E3%83%87%E3%82%A3%E3%83%B3%E3%82%B0%E3%82%AB%E3%83%BC%E3%83%89%E3%82%B2%E3%83%BC%E3%83%A0%EF%BD%9C%E3%82%BF%E3%82%AB&hn=www.googleadservices.com&npa=0&pscdl=noapi&auid=644101330.1791906229&uaa=x86&uab=64&uafvl=Not%253AA-Brand%3B8.0.0.0%7CChromium%3B156.0.8078.4%7CHeadlessChrome%3B156.0.8078.4&uamb=0&uam=&uap=Windows&uapv=10.0.0&uaw=0&_tu=CA&ept=68&gcp=5"
+    },
+    {
+      "method": "POST",
+      "type": "fetch",
+      "url": "https://www.google.com/ccm/collect?rcb=15&frm=0&apvc=0&ae=g&auid=644101330.1791906229&dt=%E3%82%AB%E3%83%BC%E3%83%89%E6%A4%9C%E7%B4%A2%EF%BD%9C%E5%90%8D%E6%8E%A2%E5%81%B5%E3%82%B3%E3%83%8A%E3%83%B3%E3%83%88%E3%83%AC%E3%83%BC%E3%83%87%E3%82%A3%E3%83%B3%E3%82%B0%E3%82%AB%E3%83%BC%E3%83%89%E3%82%B2%E3%83%BC%E3%83%A0%EF%BD%9C%E3%82%BF%E3%82%AB&tid=AW-819406378&dl=https%3A%2F%2Fwww.takaratomy.co.jp%2Fproducts%2Fconan-cardgame%2Fcardlist%2F&scrsrc=www.googletagmanager.com&rnd=780317201.1791906229&navt=n&npa=0&_tu=CA&gtm=45be6a91z872047931za20gzb72047931zd72047931xeaxf1&gcd=13l3l3l3l1l1&dma=0&tag_exp=115938466~115938468~118131810~118897920~118897930~120385422~120469145~120469153~121046263~121046271~121246026~121246034&tft=1791906230967&tfd=6068&tids=AW-819406378&fmt=8"
+    },
+    {
+      "method": "POST",
+      "type": "fetch",
+      "url": "https://www.google.com/rmkt/collect/974005833/?random=1791906231017&cv=11&fst=1791906231017&fmt=8&bg=ffffff&guid=ON&async=1&gtm=45be6a91z872047931za20gzb72047931zd72047931xeaxf1&gcd=13l3l3l3l1l1&dma=0&tag_exp=100940059~115938466~115938469~118131810~118897920~118897930~120213116~120385422~120469145~120469153~121046263~121046271~121246026~121246034&u_w=1440&u_h=1000&url=https%3A%2F%2Fwww.takaratomy.co.jp%2Fproducts%2Fconan-cardgame%2Fcardlist%2F&rcb=0&frm=0&tiba=%E3%82%AB%E3%83%BC%E3%83%89%E6%A4%9C%E7%B4%A2%EF%BD%9C%E5%90%8D%E6%8E%A2%E5%81%B5%E3%82%B3%E3%83%8A%E3%83%B3%E3%83%88%E3%83%AC%E3%83%BC%E3%83%87%E3%82%A3%E3%83%B3%E3%82%B0%E3%82%AB%E3%83%BC%E3%83%89%E3%82%B2%E3%83%BC%E3%83%A0%EF%BD%9C%E3%82%BF%E3%82%AB&hn=www.googleadservices.com&npa=0&pscdl=noapi&auid=644101330.1791906229&uaa=x86&uab=64&uafvl=Not%253AA-Brand%3B8.0.0.0%7CChromium%3B156.0.8078.4%7CHeadlessChrome%3B156.0.8078.4&uamb=0&uam=&uap=Windows&uapv=10.0.0&uaw=0&_tu=CA&ept=68&gcp=5"
+    },
+    {
+      "method": "POST",
+      "type": "fetch",
+      "url": "https://www.google.com/ccm/collect?rcb=0&frm=0&apvc=0&ae=g&auid=644101330.1791906229&dt=%E3%82%AB%E3%83%BC%E3%83%89%E6%A4%9C%E7%B4%A2%EF%BD%9C%E5%90%8D%E6%8E%A2%E5%81%B5%E3%82%B3%E3%83%8A%E3%83%B3%E3%83%88%E3%83%AC%E3%83%BC%E3%83%87%E3%82%A3%E3%83%B3%E3%82%B0%E3%82%AB%E3%83%BC%E3%83%89%E3%82%B2%E3%83%BC%E3%83%A0%EF%BD%9C%E3%82%BF%E3%82%AB&tid=AW-974005833&dl=https%3A%2F%2Fwww.takaratomy.co.jp%2Fproducts%2Fconan-cardgame%2Fcardlist%2F&scrsrc=www.googletagmanager.com&rnd=780317201.1791906229&navt=n&npa=0&_tu=CA&gtm=45be6a91z872047931za20gzb72047931zd72047931xeaxf1&gcd=13l3l3l3l1l1&dma=0&tag_exp=100940059~115938466~115938469~118131810~118897920~118897930~120213116~120385422~120469145~120469153~121046263~121046271~121246026~121246034&tft=1791906231030&tfd=6131&tids=AW-974005833&fmt=8"
+    },
+    {
+      "method": "POST",
+      "type": "fetch",
+      "url": "https://www.google.com/rmkt/collect/802931862/?random=1791906231082&cv=11&fst=1791906231082&fmt=8&bg=ffffff&guid=ON&async=1&gtm=45be6a91z872047931za20gzb72047931zd72047931xeaxf1&gcd=13l3l3l3l1l1&dma=0&tag_exp=115938466~115938469~118131810~118897920~118897930~120213116~120385422~120469145~120469153~121046263~121046271~121246026~121246034&u_w=1440&u_h=1000&url=https%3A%2F%2Fwww.takaratomy.co.jp%2Fproducts%2Fconan-cardgame%2Fcardlist%2F&rcb=4&frm=0&tiba=%E3%82%AB%E3%83%BC%E3%83%89%E6%A4%9C%E7%B4%A2%EF%BD%9C%E5%90%8D%E6%8E%A2%E5%81%B5%E3%82%B3%E3%83%8A%E3%83%B3%E3%83%88%E3%83%AC%E3%83%BC%E3%83%87%E3%82%A3%E3%83%B3%E3%82%B0%E3%82%AB%E3%83%BC%E3%83%89%E3%82%B2%E3%83%BC%E3%83%A0%EF%BD%9C%E3%82%BF%E3%82%AB&hn=www.googleadservices.com&npa=0&pscdl=noapi&auid=644101330.1791906229&uaa=x86&uab=64&uafvl=Not%253AA-Brand%3B8.0.0.0%7CChromium%3B156.0.8078.4%7CHeadlessChrome%3B156.0.8078.4&uamb=0&uam=&uap=Windows&uapv=10.0.0&uaw=0&_tu=CA&ept=68&gcp=5"
+    },
+    {
+      "method": "POST",
+      "type": "fetch",
+      "url": "https://www.google.com/ccm/collect?rcb=4&frm=0&apvc=0&ae=g&auid=644101330.1791906229&dt=%E3%82%AB%E3%83%BC%E3%83%89%E6%A4%9C%E7%B4%A2%EF%BD%9C%E5%90%8D%E6%8E%A2%E5%81%B5%E3%82%B3%E3%83%8A%E3%83%B3%E3%83%88%E3%83%AC%E3%83%BC%E3%83%87%E3%82%A3%E3%83%B3%E3%82%B0%E3%82%AB%E3%83%BC%E3%83%89%E3%82%B2%E3%83%BC%E3%83%A0%EF%BD%9C%E3%82%BF%E3%82%AB&tid=AW-802931862&dl=https%3A%2F%2Fwww.takaratomy.co.jp%2Fproducts%2Fconan-cardgame%2Fcardlist%2F&scrsrc=www.googletagmanager.com&rnd=780317201.1791906229&navt=n&npa=0&_tu=CA&gtm=45be6a91z872047931za20gzb72047931zd72047931xeaxf1&gcd=13l3l3l3l1l1&dma=0&tag_exp=115938466~115938469~118131810~118897920~118897930~120213116~120385422~120469145~120469153~121046263~121046271~121246026~121246034&tft=1791906231098&tfd=6199&tids=AW-802931862&fmt=8"
+    },
+    {
+      "method": "GET",
+      "type": "fetch",
+      "url": "https://apm.yahoo.co.jp/rt/?p=YVH4IJCR67&label=&ref=https%3A%2F%2Fwww.takaratomy.co.jp%2Fproducts%2Fconan-cardgame%2Fcardlist%2F&rref=&pt=&item=&cat=&price=&quantity=&et_optout=false&r=1791906231.5541153&pvid=aqc8ixo5dmkmv6upbna&su=607c9a41-3c5c-45d8-a229-92fede813c0a&__lt__cid_valid=true&_impl=ytag&brands=%22Not%3AA-Brand%22%3B%20v%3D%228.0.0.0%22%2C%20%22Chromium%22%3B%20v%3D%22156.0.8078.4%22%2C%20%22HeadlessChrome%22%3B%20v%3D%22156.0.8078.4%22&platform=%22Windows%22&platform_version=%2210.0.0%22"
+    },
+    {
+      "method": "POST",
+      "type": "xhr",
+      "url": "https://y.clarity.ms/collect"
+    },
+    {
+      "method": "GET",
+      "type": "xhr",
+      "url": "https://anylist.c.appier.net/r2?country=KR&enable_cookie_sync=1&url=https%3A%2F%2Fwww.takaratomy.co.jp%2Fproducts%2Fconan-cardgame%2Fcardlist%2F&referer=&ssid=ifPntglffgt8IXLL2JcuFd&sessidx=1&siteuid=nTQlw50eWjhbwHSp&appier_utmz={}&_t=1791906231408&_tz=9&uc=KR&tv=2.8.0&eqid=PIR3ejdEm7XFGhgb&site=takaratomymall.jp&fbp=fb.2.1791906231387.727291895460358559&lt=6509"
+    },
+    {
+      "method": "GET",
+      "type": "fetch",
+      "url": "https://apm.yahoo.co.jp/c?yahoo_ydn_conv_io=XlZbRDaSN9R0NL5uDzM_TA..&yahoo_ydn_conv_label=EE11N8G5Y3OIPIT0H01122521&yahoo_ydn_conv_transaction_id=&r=1791906231.6287174&ref=https%3A%2F%2Fwww.takaratomy.co.jp%2Fproducts%2Fconan-cardgame%2Fcardlist%2F&yahoo_ydn_conv_value=0&nc=0&ncr=0&su=607c9a41-3c5c-45d8-a229-92fede813c0a&_impl=ytag&brands=%22Not%3AA-Brand%22%3B+v%3D%228.0.0.0%22%2C+%22Chromium%22%3B+v%3D%22156.0.8078.4%22%2C+%22HeadlessChrome%22%3B+v%3D%22156.0.8078.4%22&platform=%22Windows%22&platform_version=%2210.0.0%22"
+    },
+    {
+      "method": "GET",
+      "type": "fetch",
+      "url": "https://apm.yahoo.co.jp/c?yahoo_ydn_conv_io=XlZbRDaSN9R0NL5uDzM_TA..&yahoo_ydn_conv_label=TZZG5Q764FD75HOXAN1236691&yahoo_ydn_conv_transaction_id=&r=1791906232.2994373&ref=https%3A%2F%2Fwww.takaratomy.co.jp%2Fproducts%2Fconan-cardgame%2Fcardlist%2F&yahoo_ydn_conv_value=0&nc=0&ncr=0&su=607c9a41-3c5c-45d8-a229-92fede813c0a&_impl=ytag&brands=%22Not%3AA-Brand%22%3B+v%3D%228.0.0.0%22%2C+%22Chromium%22%3B+v%3D%22156.0.8078.4%22%2C+%22HeadlessChrome%22%3B+v%3D%22156.0.8078.4%22&platform=%22Windows%22&platform_version=%2210.0.0%22"
+    },
+    {
+      "method": "GET",
+      "type": "xhr",
+      "url": "https://s.c.appier.net/aprcm?a_i=%2Fr2%3Fcountry%3DKR%26enable_cookie_sync%3D1%26url%3Dhttps%253A%252F%252Fwww.takaratomy.co.jp%252Fproducts%252Fconan-cardgame%252Fcardlist%252F%26referer%3D%26ssid%3DifPntglffgt8IXLL2JcuFd%26sessidx%3D1%26siteuid%3DnTQlw50eWjhbwHSp%26appier_utmz%3D%7B%7D%26_t%3D1791906231408%26_tz%3D9%26uc%3DKR%26tv%3D2.8.0%26eqid%3DPIR3ejdEm7XFGhgb%26site%3Dtakaratomymall.jp%26fbp%3Dfb.2.1791906231387.727291895460358559%26lt%3D6509&gdpr=0&gdpr_consent="
+    },
+    {
+      "method": "GET",
+      "type": "fetch",
+      "url": "https://b6.im-apps.net/topics"
+    },
+    {
+      "method": "GET",
+      "type": "xhr",
+      "url": "https://sync6.im-apps.net/1023645/uid"
+    },
+    {
+      "method": "GET",
+      "type": "xhr",
+      "url": "https://cdn.hera.d2c.ne.jp/v1/third-party/a4734-d5be1bcd-5758-49c8-ad68-a5910551eab3/pv/measure.js"
+    },
+    {
+      "method": "GET",
+      "type": "xhr",
+      "url": "https://anylist.c.appier.net/r2?country=KR&enable_cookie_sync=1&url=https%3A%2F%2Fwww.takaratomy.co.jp%2Fproducts%2Fconan-cardgame%2Fcardlist%2F&referer=&ssid=ifPntglffgt8IXLL2JcuFd&sessidx=1&siteuid=nTQlw50eWjhbwHSp&appier_utmz={}&_t=1791906231408&_tz=9&uc=KR&tv=2.8.0&eqid=PIR3ejdEm7XFGhgb&site=takaratomymall.jp&fbp=fb.2.1791906231387.727291895460358559&lt=6509&noredir=1"
+    },
+    {
+      "method": "GET",
+      "type": "xhr",
+      "url": "https://www.takaratomy.co.jp/products/conan-cardgame/cardlist/cards?page=2"
+    },
+    {
+      "method": "POST",
+      "type": "xhr",
+      "url": "https://y.clarity.ms/collect"
+    },
+    {
+      "method": "GET",
+      "type": "xhr",
+      "url": "https://www.takaratomy.co.jp/products/conan-cardgame/cardlist/cards?page=3"
+    },
+    {
+      "method": "POST",
+      "type": "xhr",
+      "url": "https://y.clarity.ms/collect"
+    },
+    {
+      "method": "GET",
+      "type": "xhr",
+      "url": "https://www.takaratomy.co.jp/products/conan-cardgame/cardlist/cards?page=4"
+    },
+    {
+      "method": "GET",
+      "type": "xhr",
+      "url": "https://www.takaratomy.co.jp/products/conan-cardgame/cardlist/cards?page=5"
+    },
+    {
+      "method": "POST",
+      "type": "xhr",
+      "url": "https://y.clarity.ms/collect"
+    },
+    {
+      "method": "GET",
+      "type": "xhr",
+      "url": "https://www.takaratomy.co.jp/products/conan-cardgame/cardlist/cards?page=6"
+    },
+    {
+      "method": "GET",
+      "type": "xhr",
+      "url": "https://www.takaratomy.co.jp/products/conan-cardgame/cardlist/cards?page=7"
+    },
+    {
+      "method": "POST",
+      "type": "xhr",
+      "url": "https://y.clarity.ms/collect"
+    },
+    {
+      "method": "GET",
+      "type": "xhr",
+      "url": "https://www.takaratomy.co.jp/products/conan-cardgame/cardlist/cards?page=8"
+    },
+    {
+      "method": "POST",
+      "type": "fetch",
+      "url": "https://analytics.google.com/g/collect?v=2&tid=G-NKBQEML43B&gtm=45je6a91v867868104za20gzb72047931zd72047931xf1&_p=1791906228341&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AEAAAGQC&ae=a&cid=1690709717.1791906229&frm=0&pscdl=noapi&rcb=17&sr=1440x1000&uaa=x86&uab=64&uafvl=Not%253AA-Brand%3B8.0.0.0%7CChromium%3B156.0.8078.4%7CHeadlessChrome%3B156.0.8078.4&uam=&uamb=0&uap=Windows&uapv=10.0.0&uaw=0&ul=ja-jp&gaf=2&_s=2&tag_exp=100940058~115616985~115938466~115938469~118897920~118897930~119793972~120213116~120385423~120469145~120469153~121046263~121046271~121246026~121246034&sid=1791906229&sct=1&seg=1&dl=https%3A%2F%2Fwww.takaratomy.co.jp%2Fproducts%2Fconan-cardgame%2Fcardlist%2F&dt=%E3%82%AB%E3%83%BC%E3%83%89%E6%A4%9C%E7%B4%A2%EF%BD%9C%E5%90%8D%E6%8E%A2%E5%81%B5%E3%82%B3%E3%83%8A%E3%83%B3%E3%83%88%E3%83%AC%E3%83%BC%E3%83%87%E3%82%A3%E3%83%B3%E3%82%B0%E3%82%AB%E3%83%BC%E3%83%89%E3%82%B2%E3%83%BC%E3%83%A0%EF%BD%9C%E3%82%BF%E3%82%AB%E3%83%A9%E3%83%88%E3%83%9F%E3%83%BC%E5%85%AC%E5%BC%8F&en=scroll&ep.page_type=other&epn.percent_scrolled=90&_et=17672&tfd=26962"
+    },
+    {
+      "method": "POST",
+      "type": "fetch",
+      "url": "https://analytics.google.com/g/collect?v=2&tid=G-QYYHLZZDGR&gtm=45je6a91v881592683za20gzb72047931zd72047931xf1&_p=1791906228341&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AEAAAGQC&ae=a&cid=1690709717.1791906229&frm=0&pscdl=noapi&rcb=10&sr=1440x1000&uaa=x86&uab=64&uafvl=Not%253AA-Brand%3B8.0.0.0%7CChromium%3B156.0.8078.4%7CHeadlessChrome%3B156.0.8078.4&uam=&uamb=0&uap=Windows&uapv=10.0.0&uaw=0&ul=ja-jp&gaf=2&_s=2&tag_exp=115938466~115938469~118897920~118897930~120213116~120385422~120469145~120469153~121046263~121046271~121246026~121246034&sid=1791906229&sct=1&seg=1&dl=https%3A%2F%2Fwww.takaratomy.co.jp%2Fproducts%2Fconan-cardgame%2Fcardlist%2F&dt=%E3%82%AB%E3%83%BC%E3%83%89%E6%A4%9C%E7%B4%A2%EF%BD%9C%E5%90%8D%E6%8E%A2%E5%81%B5%E3%82%B3%E3%83%8A%E3%83%B3%E3%83%88%E3%83%AC%E3%83%BC%E3%83%87%E3%82%A3%E3%83%B3%E3%82%B0%E3%82%AB%E3%83%BC%E3%83%89%E3%82%B2%E3%83%BC%E3%83%A0%EF%BD%9C%E3%82%BF%E3%82%AB%E3%83%A9%E3%83%88%E3%83%9F%E3%83%BC%E5%85%AC%E5%BC%8F&en=scroll&ep.page_type=other&ep.page_hostname_directory_1=www.takaratomy.co.jp%2Fproducts%2F&ep.page_hostname_directory_2=www.takaratomy.co.jp%2Fproducts%2Fconan-cardgame%2F&ep.page_hostname_directory_3=www.takaratomy.co.jp%2Fproducts%2Fconan-cardgame%2Fcardlist%2F&ep.page_hostname_directory_4=www.takaratomy.co.jp%2Fproducts%2Fconan-cardgame%2Fcardlist%2F&epn.percent_scrolled=90&_et=17596&tfd=26967"
+    },
+    {
+      "method": "GET",
+      "type": "xhr",
+      "url": "https://www.takaratomy.co.jp/products/conan-cardgame/cardlist/cards?page=9"
+    },
+    {
+      "method": "GET",
+      "type": "xhr",
+      "url": "https://www.takaratomy.co.jp/products/conan-cardgame/cardlist/cards?page=10"
+    },
+    {
+      "method": "POST",
+      "type": "xhr",
+      "url": "https://y.clarity.ms/collect"
+    },
+    {
+      "method": "POST",
+      "type": "xhr",
+      "url": "https://y.clarity.ms/collect"
     }
   ]
 }
