@@ -204,18 +204,34 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
   }, [room?.id, myPlayer?.is_ready, readyDeckSignature, deckSignature]);
 
   function makePrivateDeckPayload() {
-    return Object.entries(deck || {})
-      .map(([key, rawCount]) => {
-        const count = Math.floor(Number(rawCount) || 0);
-        if (count <= 0) return null;
-        const card = cardsByKey.get(String(key));
-        const identity = String(
-          card?.cardId ?? card?.sourceData?.card_id ?? card?.databaseId ?? card?.key ?? key
-        ).trim().toLocaleUpperCase();
-        return { key: String(key), count, limit_key: identity };
-      })
-      .filter(Boolean);
-  }
+  return Object.entries(deck || {})
+    .map(([key, rawCount]) => {
+      const count = Math.floor(Number(rawCount) || 0);
+      if (count <= 0) return null;
+      const card = cardsByKey.get(String(key));
+      const identity = String(
+        card?.cardId ?? card?.sourceData?.card_id ?? card?.databaseId ?? card?.key ?? key
+      ).trim().toLocaleUpperCase();
+      const typeText = `${card?.type || ""} ${card?.originalType || ""} ${card?.roleText || ""}`;
+      let cardType = "other";
+      if (/事件|사건/i.test(typeText)) cardType = "incident";
+      else if (/イベント|이벤트|(?:^|\s)event(?:\s|$)/i.test(typeText)) cardType = "event";
+      else if (/キャラ|キャラクター|캐릭터|character/i.test(typeText)) cardType = "character";
+      const cutInText = String(card?.cutInEffect ?? card?.sourceData?.cut_in ?? "");
+      const cutInBonus = /2000/.test(cutInText) ? 2000 : /1000/.test(cutInText) ? 1000 : 0;
+      return {
+        key: String(key),
+        count,
+        limit_key: identity,
+        card_type: cardType,
+        cost: Math.max(0, Number(card?.cost) || 0),
+        ap: Math.max(0, Number(card?.ap ?? card?.sourceData?.ap ?? card?.sourceData?.AP) || 0),
+        lp: Math.max(0, Number(card?.lp ?? card?.sourceData?.lp ?? card?.sourceData?.LP) || 0),
+        cut_in_bonus: cutInBonus,
+      };
+    })
+    .filter(Boolean);
+}
 
   async function markReady() {
     if (!room?.id || !canReady || loading) return;
