@@ -140,6 +140,7 @@ export default function DeckTransferControls({ cards = [], deck = {}, partnerId 
       alignItems: "stretch",
       justifyContent: "flex-start",
       gap: 2,
+      paddingTop: 8,
       width: 226,
       minWidth: 226,
       flex: "0 0 226px",
