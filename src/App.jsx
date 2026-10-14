@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react'; import RoomLobby from "./components/RoomLobby";
+import React, { useEffect, useMemo, useState } from 'react';
+import RoomLobby from "./components/RoomLobby";
 
 const PAGE_SIZE = 100;
 const MAIN_DECK_LIMIT = 40;
@@ -1685,6 +1686,8 @@ export default function App() {
         </div>
       </header>
 
+      <RoomLobby />
+      
       {activeView === 'cards' ? (
         <section id="card-list-top" className="app-panel card-list-panel min-w-0 rounded-2xl border border-white/10 bg-[#101827] p-3 md:p-4">
           <div className="card-list-toolbar mb-3 flex flex-wrap items-center justify-between gap-2">
