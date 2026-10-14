@@ -1029,6 +1029,7 @@ export default function App() {
         .card-meta-item { min-width: 0; display: flex; flex-direction: column; border: 1px solid rgba(255,255,255,.075) !important; border-radius: 9px !important; padding: 10px !important; background: #090f1b !important; }
         .card-meta-item dt { color: #9aa8bd !important; font-size: 11px !important; font-weight: 600 !important; }
         .card-meta-item dd { display: flex; flex: 1 1 auto; align-items: center; min-height: 20px; margin: 4px 0 0 !important; color: #f1f5f9 !important; font-size: 13px !important; font-weight: 650 !important; overflow-wrap: anywhere; }
+        .card-meta-item:not(.card-meta-item-traits) dd { justify-content: center !important; text-align: center !important; }
         .card-detail-layout > div:nth-child(2) > div:not(.card-meta-grid), .card-detail-layout > div:nth-child(2) > details { border: 1px solid rgba(255,255,255,.07) !important; border-radius: 10px !important; padding: 12px !important; background: #090f1b !important; color: #e2e8f0 !important; }
         .card-detail-layout > div:nth-child(2) h3 { margin: 0 0 8px !important; color: #dce5f2 !important; font-size: 13px !important; font-weight: 800 !important; }
         .card-detail-layout > div:nth-child(2) h4 { margin: 0 0 4px !important; color: #fcd34d; font-size: 12px; font-weight: 750; }
@@ -1083,6 +1084,7 @@ export default function App() {
         .deck-card-remove, .deck-special-remove { position: absolute; z-index: 3; top: 4px; right: 4px; display: flex !important; width: 19px !important; height: 19px !important; align-items: center; justify-content: center; padding: 0 !important; border: 1px solid rgba(255,255,255,.18) !important; border-radius: 50% !important; color: white !important; background: rgba(0,0,0,.82) !important; font-size: 14px !important; line-height: 1 !important; font-weight: 800 !important; }
         .deck-card-remove:hover, .deck-special-remove:hover { background: #e11d48 !important; }
         .deck-empty-slot { display: flex; min-width: 0; flex-direction: column; overflow: hidden; border: 1px solid rgba(148,163,184,.16); border-radius: 8px; background: rgba(255,255,255,.012); }
+        .deck-empty-slot .deck-card-image { display: flex !important; align-items: center !important; justify-content: center !important; box-sizing: border-box !important; padding: 12px !important; color: #64748b !important; font-size: 13px !important; line-height: 1 !important; text-align: center !important; }
         .deck-empty-slot .deck-card-name { color: #64748b; }
         .deck-empty-special { border-style: solid; border-color: rgba(148,163,184,.24); background: rgba(255,255,255,.015); }
         .deck-empty-special-image { display: flex; align-items: center; justify-content: center; padding: 5px; color: #64748b; font-size: 10px; text-align: center; }
