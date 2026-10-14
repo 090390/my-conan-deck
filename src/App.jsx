@@ -97,27 +97,46 @@ function normalizeColorKey(value) {
 
 // 실제 화면에 표시할 키워드 태그는 자동 추론하지 않습니다.
 // public/card-keyword-tags.json에 카드별로 검토 완료한 태그를 기록해 사용합니다.
-const KEYWORD_SCAN_DEFINITIONS = [
-  { name: '돌격', aliases: ['돌격', '突撃'] },
-  { name: '신속', aliases: ['신속', '迅速'] },
-  { name: '질풍', aliases: ['질풍', '疾風'] },
-];
-
-const KEYWORD_TAG_VALUES = [
-  '돌격', '조건부 돌격', '신속', '조건부 신속', '질풍', '조건부 질풍',
-  '돌격 부여', '조건부 돌격 부여', '신속 부여', '조건부 신속 부여', '질풍 부여', '조건부 질풍 부여',
-];
-
-function escapeRegExp(value) {
-  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+function getRecordIdentifiers(record) {
+  if (!record || typeof record !== 'object' || Array.isArray(record)) return [];
+  return ['databaseId', 'database_id', 'id', 'key', 'cardNum', 'card_num', 'cardId', 'card_id']
+    .map((key) => String(record[key] ?? '').trim())
+    .filter(Boolean);
 }
 
 function getKeywordTagRecord(tagData, identifiers = []) {
-  const root = tagData?.cards && typeof tagData.cards === 'object' ? tagData.cards : tagData;
-  if (!root || typeof root !== 'object') return null;
-  for (const identifier of identifiers) {
-    const key = String(identifier ?? '').trim();
-    if (key && Object.prototype.hasOwnProperty.call(root, key)) return root[key];
+  if (!tagData || typeof tagData !== 'object') return null;
+  const wanted = new Set(identifiers.map((value) => String(value ?? '').trim().toLocaleLowerCase()).filter(Boolean));
+  const containerNames = ['cards', 'data', 'items', 'records', 'entries', 'cardTags', 'tagsByCard'];
+  const roots = [tagData];
+  for (const name of containerNames) {
+    const container = tagData[name];
+    if (container && typeof container === 'object') roots.push(container);
+  }
+
+  for (const root of roots) {
+    if (Array.isArray(root)) {
+      const match = root.find((record) => getRecordIdentifiers(record).some((id) => wanted.has(id.toLocaleLowerCase())));
+      if (match) return match;
+      continue;
+    }
+    if (typeof root !== 'object' || !root) continue;
+
+    // 우선 카드 ID를 객체 키로 사용한 일반적인 맵 구조를 확인합니다(대소문자 차이도 허용).
+    for (const identifier of identifiers) {
+      const key = String(identifier ?? '').trim();
+      if (key && Object.prototype.hasOwnProperty.call(root, key)) return root[key];
+    }
+    const lowerKeyMap = new Map(Object.keys(root).map((key) => [key.toLocaleLowerCase(), key]));
+    for (const identifier of identifiers) {
+      const matchKey = lowerKeyMap.get(String(identifier ?? '').trim().toLocaleLowerCase());
+      if (matchKey) return root[matchKey];
+    }
+
+    // 배열이 아닌 레코드 목록에서도 레코드 안의 databaseId/cardNum 등으로 찾습니다.
+    for (const value of Object.values(root)) {
+      if (getRecordIdentifiers(value).some((id) => wanted.has(id.toLocaleLowerCase()))) return value;
+    }
   }
   return null;
 }
@@ -127,29 +146,45 @@ function normalizeTagValue(tag) {
 }
 
 function tagFromReviewedCandidate(candidate) {
-  if (!candidate || candidate.selected !== true) return '';
-  if (String(candidate.finalTag || '').trim()) return normalizeTagValue(candidate.finalTag);
+  if (!candidate || typeof candidate !== 'object') return '';
+  // suggestedTag는 selected 여부와 관계없이 명시적으로 입력한 값이므로 우선 표시합니다.
+  const suggested = normalizeTagValue(candidate.suggestedTag ?? candidate.suggested_tag);
+  if (suggested) return suggested;
+  if (candidate.selected !== true) return '';
+  const finalTag = normalizeTagValue(candidate.finalTag ?? candidate.final_tag);
+  if (finalTag) return finalTag;
   const keyword = String(candidate.keyword || '').trim();
   if (!['돌격', '신속', '질풍'].includes(keyword)) return '';
   if (candidate.classification !== 'self_gain' && candidate.classification !== 'grant_other') return '';
-  const conditionalPrefix = candidate.conditionalGuess === true ? '조건부 ' : '';
+  const conditionalPrefix = candidate.conditionalGuess === true || candidate.conditional_guess === true ? '조건부 ' : '';
   return `${conditionalPrefix}${keyword}${candidate.classification === 'grant_other' ? ' 부여' : ''}`;
 }
 
 function normalizeKeywordTagList(record) {
+  if (record === null || record === undefined) return [];
+  const recordObject = Array.isArray(record) ? null : record;
   const directValues = Array.isArray(record)
     ? record
-    : Array.isArray(record?.tags)
-      ? record.tags
-      : Array.isArray(record?.keywordTags)
-        ? record.keywordTags
-        : Array.isArray(record?.assignedTags)
-          ? record.assignedTags
-          : [];
-  const selectedCandidateTags = Array.isArray(record?.candidates)
-    ? record.candidates.map(tagFromReviewedCandidate).filter(Boolean)
-    : [];
-  return [...new Set([...directValues, ...selectedCandidateTags].map(normalizeTagValue).filter(Boolean))];
+    : [
+        ...(Array.isArray(recordObject?.tags) ? recordObject.tags : []),
+        ...(Array.isArray(recordObject?.keywordTags) ? recordObject.keywordTags : []),
+        ...(Array.isArray(recordObject?.keyword_tags) ? recordObject.keyword_tags : []),
+        ...(Array.isArray(recordObject?.assignedTags) ? recordObject.assignedTags : []),
+        ...(Array.isArray(recordObject?.suggestedTags) ? recordObject.suggestedTags : []),
+        ...(recordObject?.tag ? [recordObject.tag] : []),
+        ...(recordObject?.suggestedTag ? [recordObject.suggestedTag] : []),
+        ...(recordObject?.suggested_tag ? [recordObject.suggested_tag] : []),
+      ];
+  // 검토 JSON(후보 안의 suggestedTag) 및 최종 태그 JSON(tags 배열) 모두 지원합니다.
+  const candidateLists = [
+    recordObject?.candidates,
+    recordObject?.keywordCandidates,
+    recordObject?.keyword_candidates,
+    recordObject?.review?.candidates,
+    recordObject?.analysis?.candidates,
+  ].filter(Array.isArray);
+  const candidateTags = candidateLists.flatMap((list) => list.map(tagFromReviewedCandidate)).filter(Boolean);
+  return [...new Set([...directValues, ...candidateTags].map(normalizeTagValue).filter(Boolean))];
 }
 
 function resolveKeywordTags(tagData, identifiers = []) {
@@ -164,112 +199,6 @@ function keywordTagClass(tag) {
   return 'keyword-other';
 }
 
-function splitEffectText(text) {
-  return String(text || '')
-    .replace(/\r\n?/gu, '\n')
-    .split(/\n+|(?<=[.!?。！？；;])\s*/u)
-    .map((part) => part.trim())
-    .filter(Boolean);
-}
-
-// 후보 분석은 JSON 검토 파일을 만들 때만 사용합니다. 이 결과가 바로 UI 태그가 되지는 않습니다.
-function analyzeKeywordCandidates(text, language) {
-  const candidates = [];
-  const source = String(text || '').replace(/\r\n?/gu, '\n');
-  if (!source.trim()) return candidates;
-
-  for (const definition of KEYWORD_SCAN_DEFINITIONS) {
-    const aliases = [...definition.aliases].sort((a, b) => b.length - a.length);
-    const pattern = new RegExp(aliases.map((alias) => escapeRegExp(alias)).join('|'), 'giu');
-    for (const clause of splitEffectText(source)) {
-      for (const match of clause.matchAll(pattern)) {
-        const index = match.index ?? 0;
-        const end = index + match[0].length;
-        const before = clause.slice(0, index);
-        const after = clause.slice(end).replace(/^[\s\]】］」』）)]+/u, '');
-        const phrase = `${before}${match[0]}${after}`;
-        const conditionPattern = /(?:조건(?:부)?|조건을 만족|경우|있을\s*시|있을\s*때|한\s*경우|하면|후|이상|이하|때|시|마다|ならば|なら|場合|条件|とき|時|後|以上|以下|限り|when|if|after|whenever)/iu;
-        const conditionalGuess = conditionPattern.test(phrase);
-
-        const mentionsOtherPossessor = new RegExp(
-          `(?:${escapeRegExp(match[0])})\\s*(?:을|를|이|가|の|を)?\\s*(?:가진|갖는|가지고\\s*있는|갖고\\s*있는|보유한|있는)\\s*(?:다른\\s*)?(?:캐릭터|캐릭터\\s*카드|캐릭터가|キャラ|キャラクター|カード)|(?:${escapeRegExp(match[0])})\\s*(?:を)?\\s*(?:持つ|持っている|有する)\\s*(?:キャラ|キャラクター|カード)`,
-          'iu',
-        ).test(clause.replace(/[\[\]【】［］]/gu, ''));
-        const conceptMention = /(?:에\s*대해|에\s*관해|에\s*대한|이란|뜻은|について|に関して|とは|に関する|という能力)/iu.test(after);
-        const explicitSelf = /(?:이\s*캐릭터|이\s*카드|이\s*캐릭터\s*자신|자신은|このキャラ|このキャラクター|このカード|このキャラ自身|このキャラクター自身|自身は)/iu.test(before);
-        const targetContext = /(?:다른\s*캐릭터|상대(?:의)?\s*캐릭터|자신의\s*캐릭터|선택한\s*캐릭터|선택된\s*캐릭터|캐릭터\s*\d*장|キャラ\s*\d*枚|キャラクター\s*\d*枚|選んだキャラ|選択したキャラ|対象のキャラ|相手のキャラ|自分のキャラ)[^.!?。！？；;]{0,35}(?:에게|에|은|는|이|가|に|へ|は|が|を選ぶ|を選択)/iu.test(clause)
-          || /(?:에게|に|へ)\s*[^.!?。！？；;]{0,24}$/iu.test(before);
-        const grantVerb = /(?:부여(?:한다|함|하며|하고|할|될)?|부여하|付与(?:する|した|される)?|与える|与え|grant(?:s|ed)?)/iu.test(after);
-        const gainVerb = /(?:얻(?:는다|음|습니다|게\s*된다|을\s*수\s*있다|을\s*수\s*있음)?|획득(?:한다|함|하게\s*된다)?|받는다|받음|得る|得た|得られる|獲得(?:する|した)?|取得する|gain(?:s|ed)?|acquire(?:s|d)?)/iu.test(after);
-        const possessionVerb = /(?:가진다|갖는다|보유한다|가지고\s*있다|갖고\s*있다|持つ|有する)/iu.test(after);
-
-        let classification = 'uncertain';
-        let confidence = 'low';
-        let reason = '문맥만으로 대상과 능력의 관계를 확정하기 어려움';
-        let suggestedTag = '';
-
-        if (mentionsOtherPossessor || conceptMention) {
-          classification = 'mention_only';
-          confidence = 'medium';
-          reason = mentionsOtherPossessor ? '해당 키워드를 가진 캐릭터를 설명하는 문장일 가능성' : '키워드 자체를 설명하거나 언급하는 문장일 가능성';
-        } else if (grantVerb && (targetContext || /(?:캐릭터|キャラ|キャラクター)/iu.test(clause))) {
-          classification = 'grant_other';
-          confidence = targetContext ? 'high' : 'medium';
-          reason = '캐릭터를 대상으로 키워드를 부여하는 표현이 감지됨';
-        } else if ((gainVerb || possessionVerb) && targetContext && !explicitSelf) {
-          classification = 'grant_other';
-          confidence = 'medium';
-          reason = '다른 캐릭터를 주어/대상으로 키워드를 얻거나 보유하게 하는 표현일 가능성';
-        } else if (gainVerb || (possessionVerb && explicitSelf)) {
-          classification = 'self_gain';
-          confidence = explicitSelf ? 'high' : 'medium';
-          reason = explicitSelf ? '이 캐릭터/카드가 직접 얻거나 보유한다는 표현' : '대상이 따로 지정되지 않은 획득 표현(카드 자신으로 추정)';
-        } else if (possessionVerb && targetContext) {
-          classification = 'mention_only';
-          confidence = 'medium';
-          reason = '키워드를 보유한 대상에 관한 서술로 보임';
-        }
-
-        if (classification === 'self_gain') suggestedTag = `${conditionalGuess ? '조건부 ' : ''}${definition.name}`;
-        if (classification === 'grant_other') suggestedTag = `${conditionalGuess ? '조건부 ' : ''}${definition.name} 부여`;
-
-        candidates.push({
-          keyword: definition.name,
-          matchedText: match[0],
-          language,
-          clause,
-          context: phrase.slice(0, 260),
-          classification,
-          classificationLabel: ({ self_gain: '이 카드가 획득/보유', grant_other: '다른 캐릭터에게 부여', mention_only: '단순 서술/언급', uncertain: '판정 불확실' })[classification],
-          confidence,
-          conditionalGuess,
-          suggestedTag,
-          reason,
-        });
-      }
-    }
-  }
-  return candidates;
-}
-
-function getCardKeywordCandidates(card) {
-  const texts = [
-    { language: 'ko', value: card?.ability },
-    { language: 'ja', value: card?.originalAbility },
-    { language: 'ko-hirameki', value: card?.hiramekiEffect },
-    { language: 'ko-cutin', value: card?.cutInEffect },
-  ];
-  const unique = new Map();
-  for (const source of texts) {
-    if (!String(source.value || '').trim()) continue;
-    for (const candidate of analyzeKeywordCandidates(source.value, source.language)) {
-      const key = [candidate.keyword, candidate.language, candidate.clause, candidate.classification].join('|');
-      if (!unique.has(key)) unique.set(key, candidate);
-    }
-  }
-  return [...unique.values()];
-}
-
 function formatAbilityText(value) {
   const text = String(value ?? '').replace(/\r\n?/gu, '\n').trim();
   if (!text) return '';
@@ -278,7 +207,127 @@ function formatAbilityText(value) {
   return text
     .replace(/([.!?。！？])\s*(?=【(?:선언|자동|상시|기동|宣言|自動|常時|起動)(?:】|\s))/gu, '$1\n')
     .replace(/[ \t　]+\n/gu, '\n')
-    .replace(/\n{3,}/gu, '\n\n');
+    .replace(/\n{3,}/gu, '\n\n')
+    // 줄의 맨 앞에 태그가 붙으면 본문과의 간격을 공백 한 칸으로 통일합니다.
+    // 문장 중간에 들어간 태그는 기존 앞뒤 공백을 그대로 유지합니다.
+    .replace(/(^|\n)([ \t　]*(?:(?:【[^】]+】|\[FILE[0-9０-９]+\])[ \t　]*)+)(?=\S)/gu,
+      (_, lineBreak, tagRun) => `${lineBreak}${tagRun.replace(/[ \t　]+$/u, '')} `);
+}
+
+function abilityConditionClass(label) {
+  const value = String(label || '').replace(/[\s　]+/gu, '').toLocaleLowerCase();
+  if (/^file[0-9０-９]+$/iu.test(value)) return 'ability-condition-file';
+  if (/턴1|ターン1|ターン１/u.test(value)) return 'ability-condition-turn1';
+  if (/선언|宣言|등장시|登場時|현장리무브시|現場リムーブ時/u.test(value)) return 'ability-condition-blue';
+  if (/슬립|スリップ/u.test(value)) return 'ability-condition-slip';
+  if (/자신의?턴중|自分の?ターン中/u.test(value)) return 'ability-condition-own-turn';
+  if (/상대의?턴중|相手の?ターン中/u.test(value)) return 'ability-condition-opponent-turn';
+  if (/사건편|事件編|해결편|解決編|어시스트|アシスト|파트너|パートナー|partner/iu.test(value)) return 'ability-condition-black';
+  // 지정 색상이 없는 괄호형 헤더도 같은 태그 모양으로 통일합니다.
+  return 'ability-condition-neutral';
+}
+
+function canonicalAbilityColor(value) {
+  const normalized = normalizeColor(String(value ?? '').replace(/[()（）]/gu, '').trim());
+  return COLOR_ORDER.includes(normalized) ? normalized : '';
+}
+
+function abilityColorCircleClass(color) {
+  return `ability-color-circle ability-color-${({ '청': 'blue', '적': 'red', '황': 'yellow', '녹': 'green', '흑': 'black', '백': 'white' })[color] || 'unknown'}`;
+}
+
+function renderAbilityColorCircle(rawColor, key) {
+  const raw = String(rawColor ?? '').replace(/[()（）]/gu, '').trim();
+  const color = canonicalAbilityColor(raw);
+  if (!color) return rawColor;
+  return <span key={key} className={abilityColorCircleClass(color)} title={`${raw} 색상`} aria-label={`${raw} 색상`}>{raw}</span>;
+}
+
+function findPartnerColorMarker(label) {
+  if (!/(?:파트너|パートナー|partner)/iu.test(label)) return null;
+  const parenthetical = /[（(]\s*([^()（）]+?)\s*[）)]/gu;
+  for (const match of label.matchAll(parenthetical)) {
+    if (!canonicalAbilityColor(match[1])) continue;
+    return { start: match.index, end: match.index + match[0].length, rawColor: match[1].trim() };
+  }
+  const trimmed = label.trimEnd();
+  const lower = trimmed.toLocaleLowerCase();
+  for (const { alias } of COLOR_ALIAS_LOOKUP) {
+    if (!lower.endsWith(alias)) continue;
+    const start = trimmed.length - alias.length;
+    const before = trimmed.slice(0, start);
+    if (!/(?:파트너|パートナー|partner)[\s　]*$/iu.test(before)) continue;
+    if (!canonicalAbilityColor(trimmed.slice(start))) continue;
+    return { start, end: trimmed.length, rawColor: trimmed.slice(start) };
+  }
+  return null;
+}
+
+function renderConditionLabel(label, keyPrefix) {
+  const marker = findPartnerColorMarker(label);
+  if (!marker) return label;
+  return <>{label.slice(0, marker.start)}{renderAbilityColorCircle(marker.rawColor, `${keyPrefix}-color`)}{label.slice(marker.end)}</>;
+}
+
+function renderAbilityText(value) {
+  const formatted = formatAbilityText(value);
+  if (!formatted) return '';
+  // FILE 영역 태그는 [FILE1], 조건 태그는 【턴1】, 색상 토큰은 (녹) 형식으로 구분합니다.
+  // 색상 외의 일반 괄호는 원문을 그대로 유지합니다.
+  return formatted.split(/(【[^】]+】|\[FILE[0-9０-９]+\]|[（(][^()（）\n]{1,18}[）)])/gu).map((segment, index) => {
+    const bracketMatch = segment.match(/^【([^】]+)】$/u);
+    const fileMatch = segment.match(/^\[(FILE[0-9０-９]+)\]$/iu);
+    const colorMatch = segment.match(/^[（(]([^()（）\n]{1,18})[）)]$/u);
+    if (bracketMatch) {
+      const label = bracketMatch[1].trim();
+      return <span key={`ability-condition-${index}`} className={`ability-condition-badge ${abilityConditionClass(label)}`}>{renderConditionLabel(label, `ability-condition-${index}`)}</span>;
+    }
+    if (fileMatch) {
+      const label = fileMatch[1].trim();
+      return <span key={`ability-condition-${index}`} className={`ability-condition-badge ${abilityConditionClass(label)}`}>{label}</span>;
+    }
+    if (colorMatch) {
+      const rawColor = colorMatch[1].trim();
+      if (canonicalAbilityColor(rawColor)) return renderAbilityColorCircle(rawColor, `ability-color-${index}`);
+    }
+    return segment;
+  });
+}
+
+const TRAIT_TRANSLATIONS = {
+  '高校生': '고등학생', '警察': '경찰', '探偵': '탐정', '黒ずくめの組織': '검은 조직',
+  '警視庁': '경시청', '少年探偵団': '소년 탐정단', '毛利探偵事務所': '모리 탐정 사무소',
+  '赤井家': '아카이 일가', 'FBI': 'FBI', '空手家': '가라테 선수', 'YAIBA': 'YAIBA',
+  '長野県警': '나가노현경', '科学者': '과학자', '怪盗': '괴도', '公安': '공안',
+  '鈴木財閥': '스즈키 재벌', '喫茶ポアロ': '카페 포아로', '神奈川県警': '가나가와현경',
+  '大阪府警': '오사카부경', 'マジシャン': '마술사', '執事': '집사', '大学院生': '대학원생',
+  '棋士': '기사', '女優': '여배우', 'ガジェット': '가젯', '小説家': '소설가', '犯人': '범인',
+  '発明家': '발명가', 'サッカー選手': '축구 선수', '医師': '의사', '弁護士': '변호사',
+  '教師': '교사', 'アイドル': '아이돌', 'CIA': 'CIA', 'ビッグジュエル': '빅 주얼',
+  '京都府警': '교토부경', '群馬県警': '군마현경', '赤魔術': '적마술', '魔女': '마녀',
+  'ヒーロー': '히어로', '寿司職人': '초밥 장인', '犬': '개', 'まじっく快斗': '매직 카이토',
+  '猫': '고양이', '大学生': '대학생', '秘書': '비서', '図書館館長': '도서관장', 'メイド': '메이드',
+  'アナウンサー': '아나운서', 'ボディガード': '보디가드', '静岡県警': '시즈오카현경',
+  'シマリス': '줄무늬다람쥐', '鷹': '매', '家政婦': '가정부', 'ラーメン小倉': '라멘 오구라',
+  '怪物': '괴물', '花見客': '꽃구경객', 'バーテンダー': '바텐더', '王女': '왕녀', '王子': '왕자',
+  '邪神': '사신', 'ロボット': '로봇', '証券会社社員': '증권회사 직원', 'CGクリエイター': 'CG 크리에이터',
+  'システムエンジニア': '시스템 엔지니어', '食品会社社員': '식품회사 직원', '大学教授': '대학 교수',
+  '政治家': '정치가', '怪人': '괴인', '泥参会': '도산회', '俳優': '배우', '消防士': '소방관',
+  '会社員': '회사원', 'NY市警': '뉴욕시경', '女流棋士': '여류 기사', '英語講師': '영어 강사',
+  'シャッフルロマンス': '셔플 로맨스', '婚活パーティー': '맞선 파티',
+  'お手伝い': '도우미', 'カメラマン': '카메라맨', 'デザイナー': '디자이너', '北海道警': '홋카이도경',
+  '医大生': '의대생', '医療関係者': '의료 관계자', '千葉県警': '지바현경', '女王': '여왕',
+  '絵描き': '화가', '酒屋': '주점',
+};
+
+function parseTraits(value) {
+  const raw = String(value ?? '').trim();
+  if (!raw) return [];
+  return [...new Set(raw.split(/[,，/、|｜]+/u).map((part) => part.trim()).filter(Boolean))];
+}
+
+function localizeTraits(value) {
+  return parseTraits(value).map((trait) => TRAIT_TRANSLATIONS[trait] || trait);
 }
 
 function normalizeCard(card, translations, keywordTagData = {}) {
@@ -303,9 +352,12 @@ function normalizeCard(card, translations, keywordTagData = {}) {
   const cardId = String(firstValue(objects, ['cardId', 'card_id']));
   const cardNum = String(firstValue(objects, ['cardNum', 'card_num']));
   const keywordTags = resolveKeywordTags(keywordTagData, [databaseId, id, cardId, cardNum]);
+  const traitsSource = firstValue([translated, ...objects], ['traitsKo', 'traits_ko', 'traits', 'trait', 'featureTags', 'feature_tags']);
+  const traits = localizeTraits(traitsSource);
   const rarity = String(translated.rarityKo || firstValue(objects, ['rarity', 'rarityJp', 'rare', 'rarity_code', 'rarityCode']));
   const cost = numericValue(firstValue(objects, ['cost', 'costValue', 'cost_value']));
   const lp = numericValue(firstValue(objects, ['lp', 'LP']));
+  const ap = numericValue(firstValue(objects, ['ap', 'AP', 'attackPower', 'attack_power', 'power']));
   const roleText = objects.map((object) => firstValue([object], [
     'type', 'typeJp', 'typeKo', 'cardType', 'card_type', 'category1', 'category2', 'category3',
     'category1Ko', 'category2Ko', 'category3Ko', 'cardCategory', 'card_category',
@@ -327,6 +379,7 @@ function normalizeCard(card, translations, keywordTagData = {}) {
     rarity,
     cost,
     lp,
+    ap,
     set: String(translated.setKo || firstValue([card], ['setKo']) || originalSet),
     originalSet,
     ability: String(translated.abilityKo || firstValue([card], ['abilityKo']) || originalAbility),
@@ -334,6 +387,7 @@ function normalizeCard(card, translations, keywordTagData = {}) {
     hiramekiEffect,
     cutInEffect,
     keywordTags,
+    traits,
     flavor: String(translated.flavorKo || firstValue([card], ['flavorKo']) || originalFlavor),
     imageUrl: getImageUrl(card, source),
   };
@@ -371,6 +425,218 @@ function formatNumber(value) {
   return value === null || value === undefined || value === '' ? '-' : value;
 }
 
+function formatDeckCost(value) {
+  const parsed = numericValue(value);
+  if (parsed === null) return '';
+  if (Number.isInteger(parsed) && parsed >= 1 && parsed <= 20) {
+    return String.fromCodePoint(0x2460 + parsed - 1);
+  }
+  return String(parsed);
+}
+
+function getDeckCardType(card) {
+  const role = getCardRole(card);
+  if (role === 'event') return '이벤트';
+  if (role === 'partner') return '파트너';
+  const type = String(card?.type || card?.originalType || '').trim();
+  if (/キャラ|character/i.test(type)) return '캐릭터';
+  if (/事件|event/i.test(type)) return '이벤트';
+  if (/파트너|パートナー|partner/i.test(type)) return '파트너';
+  return type || '카드';
+}
+
+function getDeckCardNameLine(card) {
+  const cost = formatDeckCost(card?.cost);
+  return `${cost ? `${cost} ` : ''}${card?.name || '이름 없음'}`;
+}
+
+function getDeckCardStatsLine(card) {
+  const stat = card?.ap ?? card?.lp;
+  const type = getDeckCardType(card);
+  // 간단 카드 표시는 값이 없는 항목을 대시로 채우지 않고 해당 부분 자체를 생략합니다.
+  if (stat === null || stat === undefined || stat === '') return type;
+  return `${type} | ${stat}`;
+}
+
+function getDeckCardSummary(card) {
+  return `${getDeckCardNameLine(card)}\n${getDeckCardStatsLine(card)}`;
+}
+
+function loadImageSourceForExport(src, timeoutMs = 8000) {
+  return new Promise((resolve) => {
+    if (!src) return resolve(null);
+    const image = new Image();
+    let finished = false;
+    const finish = (result) => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timeout);
+      resolve(result);
+    };
+    const timeout = setTimeout(() => finish(null), timeoutMs);
+    // CORS를 명시해 캔버스에 그려도 저장이 막히지 않는 이미지인지 확인합니다.
+    image.crossOrigin = 'anonymous';
+    image.onload = () => finish(image.naturalWidth > 0 && image.naturalHeight > 0 ? image : null);
+    image.onerror = () => finish(null);
+    image.src = src;
+  });
+}
+
+async function loadImageForExport(src) {
+  if (!src) return null;
+  // 원본 서버가 CORS를 허용하면 직접 사용하고, 허용하지 않는 경우 CORS 헤더를 제공하는
+  // 이미지 프록시를 재시도해 캔버스 내보내기에서 카드 이미지가 빠지는 문제를 줄입니다.
+  const directImage = await loadImageSourceForExport(src, 5000);
+  if (directImage) return directImage;
+  const proxyUrl = `https://wsrv.nl/?url=${encodeURIComponent(src)}&output=png`;
+  return loadImageSourceForExport(proxyUrl, 10000);
+}
+
+function roundedCanvasRect(ctx, x, y, width, height, radius, fill, stroke = null) {
+  const r = Math.min(radius, width / 2, height / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + width, y, x + width, y + height, r);
+  ctx.arcTo(x + width, y + height, x, y + height, r);
+  ctx.arcTo(x, y + height, x, y, r);
+  ctx.arcTo(x, y, x + width, y, r);
+  ctx.closePath();
+  if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1.5; ctx.stroke(); }
+}
+
+function drawWrappedCanvasText(ctx, text, x, y, maxWidth, lineHeight, maxLines = 2) {
+  const characters = Array.from(String(text ?? ''));
+  const lines = [];
+  let line = '';
+  for (const char of characters) {
+    const candidate = line + char;
+    if (line && ctx.measureText(candidate).width > maxWidth) {
+      lines.push(line.trimEnd());
+      line = char.trimStart();
+    } else {
+      line = candidate;
+    }
+  }
+  if (line) lines.push(line.trimEnd());
+  let visible = lines.slice(0, maxLines);
+  if (lines.length > maxLines && visible.length) {
+    let last = visible[visible.length - 1];
+    while (last && ctx.measureText(`${last}…`).width > maxWidth) last = Array.from(last).slice(0, -1).join('');
+    visible[visible.length - 1] = `${last}…`;
+  }
+  visible.forEach((content, index) => ctx.fillText(content, x, y + index * lineHeight));
+  return visible.length;
+}
+
+function drawExportCard(ctx, card, image, x, y, width, options = {}) {
+  const scale = width / 165;
+  const imageHeight = width * 4 / 3;
+  const primaryFont = Math.max(12, 14 * scale);
+  const secondaryFont = Math.max(10, 11 * scale);
+  const captionHeight = Math.max(58, 62 * scale);
+  const showStats = options.showStats !== false;
+  const centerName = options.centerName === true;
+  const height = imageHeight + captionHeight;
+  roundedCanvasRect(ctx, x, y, width, height, 10 * scale, '#090f1b', '#344256');
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x + 1, y + 1, width - 2, imageHeight - 1);
+  ctx.clip();
+  ctx.fillStyle = '#0d1524';
+  ctx.fillRect(x + 1, y + 1, width - 2, imageHeight - 1);
+  if (image && image.naturalWidth && image.naturalHeight) {
+    const padding = 4 * scale;
+    const fit = Math.min((width - padding * 2) / image.naturalWidth, (imageHeight - padding * 2) / image.naturalHeight);
+    const iw = image.naturalWidth * fit;
+    const ih = image.naturalHeight * fit;
+    ctx.drawImage(image, x + (width - iw) / 2, y + (imageHeight - ih) / 2, iw, ih);
+  } else {
+    ctx.fillStyle = '#182337';
+    ctx.fillRect(x + 8 * scale, y + 8 * scale, width - 16 * scale, imageHeight - 16 * scale);
+    ctx.fillStyle = '#fb7185';
+    ctx.fillRect(x + 8 * scale, y + 8 * scale, 4 * scale, imageHeight - 16 * scale);
+    ctx.fillStyle = '#e2e8f0';
+    ctx.textAlign = 'center';
+    ctx.font = `700 ${Math.max(11, 13 * scale)}px sans-serif`;
+    drawWrappedCanvasText(ctx, card?.name || '이미지 없음', x + width / 2, y + imageHeight / 2, width - 28 * scale, Math.max(16, 18 * scale), 4);
+    ctx.textAlign = 'left';
+  }
+  ctx.restore();
+  ctx.fillStyle = '#f1f5f9';
+  ctx.font = `750 ${primaryFont}px sans-serif`;
+  ctx.textAlign = centerName ? 'center' : 'left';
+  const nameX = centerName ? x + width / 2 : x + 8 * scale;
+  const nameY = showStats
+    ? y + imageHeight + 19 * scale
+    : y + imageHeight + captionHeight / 2 + primaryFont * 0.35;
+  drawWrappedCanvasText(ctx, getDeckCardNameLine(card), nameX, nameY, width - 16 * scale, primaryFont * 1.25, 2);
+  if (showStats) {
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = `550 ${secondaryFont}px sans-serif`;
+    ctx.textAlign = 'left';
+    ctx.fillText(getDeckCardStatsLine(card), x + 8 * scale, y + height - 9 * scale);
+  }
+  ctx.textAlign = 'left';
+  return { width, height };
+}
+
+function drawExportEmptySlot(ctx, slotNumber, x, y, width) {
+  const scale = width / 165;
+  const imageHeight = width * 4 / 3;
+  const captionHeight = Math.max(58, 62 * scale);
+  const height = imageHeight + captionHeight;
+  const radius = 10 * scale;
+
+  // 실제 덱 화면의 빈 슬롯을 닮은 실선 테두리와 번호/라벨을 그립니다.
+  roundedCanvasRect(ctx, x, y, width, height, radius, '#090f1b', null);
+  ctx.fillStyle = '#0d1524';
+  ctx.fillRect(x + 1, y + 1, width - 2, imageHeight - 1);
+  ctx.fillStyle = '#64748b';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `600 ${Math.max(13, 16 * scale)}px sans-serif`;
+  ctx.fillText(String(slotNumber), x + width / 2, y + imageHeight / 2);
+  ctx.fillStyle = '#64748b';
+  ctx.font = `500 ${Math.max(10, 11 * scale)}px sans-serif`;
+  ctx.fillText('빈 슬롯', x + width / 2, y + imageHeight + captionHeight / 2);
+  ctx.textBaseline = 'alphabetic';
+  ctx.textAlign = 'left';
+  roundedCanvasRect(ctx, x, y, width, height, radius, null, '#344256');
+}
+
+function normalizeSearchAliasData(input) {
+  // 검색 별명은 브라우저 저장소가 아니라 public/card-search-aliases.json에서 읽습니다.
+  // 형식은 { version: 1, cards: { "카드 ID": ["별명1", "별명2"] } } 입니다.
+  const source = input && typeof input === 'object' && !Array.isArray(input)
+    ? (input.cards && typeof input.cards === 'object' && !Array.isArray(input.cards) ? input.cards : input)
+    : {};
+  const cleaned = {};
+  for (const [key, values] of Object.entries(source)) {
+    if (!Array.isArray(values)) continue;
+    const unique = [...new Map(values.map((value) => String(value ?? '').trim().replace(/^#+/u, '').trim())
+      .filter(Boolean).map((value) => [value.toLocaleLowerCase(), value])).values()];
+    if (key && unique.length) cleaned[key] = unique;
+  }
+  return cleaned;
+}
+
+function getCardSearchAliasKey(card) {
+  return String(card?.key || card?.databaseId || card?.cardId || card?.cardNum || '').trim();
+}
+
+function getCardSearchAliases(aliasMap, card) {
+  const key = getCardSearchAliasKey(card);
+  return key && Array.isArray(aliasMap?.[key]) ? aliasMap[key] : [];
+}
+
+function parseSearchAliasDraft(value) {
+  return [...new Map(String(value ?? '').split(/[\n,，;；]+/u)
+    .map((item) => item.trim().replace(/^#+/u, '').trim())
+    .filter(Boolean)
+    .map((item) => [item.toLocaleLowerCase(), item])).values()];
+}
+
 function loadSavedDeck() {
   try {
     const saved = JSON.parse(localStorage.getItem(DECK_STORAGE_KEY) || '{}');
@@ -403,13 +669,15 @@ function Pagination({ currentPage, totalPages, onChange }) {
   if (totalPages <= 1) return null;
   const items = getPageItems(currentPage, totalPages);
   return (
-    <nav aria-label="카드 목록 페이지" className="mt-5 flex flex-wrap items-center justify-center gap-1.5 border-t border-white/[0.08] pt-4">
-      <button onClick={() => onChange(Math.max(1, currentPage - 1))} disabled={currentPage === 1} className="rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-white/10 disabled:opacity-30">이전</button>
-      {items.map((item, index) => typeof item === 'number' ? (
-        <button key={item} aria-current={item === currentPage ? 'page' : undefined} onClick={() => onChange(item)} className={`h-9 min-w-9 rounded-lg border px-2 text-xs font-bold tabular-nums transition ${item === currentPage ? 'border-rose-400 bg-rose-600 text-white' : 'border-white/10 text-slate-300 hover:bg-white/10'}`}>{item}</button>
-      ) : <span key={`${item}-${index}`} className="px-1 text-xs text-slate-500">…</span>)}
-      <button onClick={() => onChange(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages} className="rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-white/10 disabled:opacity-30">다음</button>
-      <span className="ml-2 text-[11px] tabular-nums text-slate-500">{currentPage} / {totalPages} 페이지</span>
+    <nav aria-label="카드 목록 페이지" className="card-pagination-nav">
+      <div className="pagination-controls">
+        <button onClick={() => onChange(Math.max(1, currentPage - 1))} disabled={currentPage === 1} className="pagination-step">‹ 이전</button>
+        {items.map((item, index) => typeof item === 'number' ? (
+          <button key={item} aria-current={item === currentPage ? 'page' : undefined} onClick={() => onChange(item)} className={`pagination-number${item === currentPage ? ' is-active' : ''}`}>{item}</button>
+        ) : <span key={`${item}-${index}`} className="pagination-ellipsis">…</span>)}
+        <button onClick={() => onChange(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages} className="pagination-step">다음 ›</button>
+      </div>
+      <span className="pagination-current">{currentPage} / {totalPages} 페이지</span>
     </nav>
   );
 }
@@ -424,13 +692,21 @@ export default function App() {
   const [rarityFilter, setRarityFilter] = useState('');
   const [costFilter, setCostFilter] = useState('');
   const [lpFilter, setLpFilter] = useState('');
+  const [keywordFilter, setKeywordFilter] = useState('');
+  const [searchAliases, setSearchAliases] = useState({});
+  const [searchAliasEditingKey, setSearchAliasEditingKey] = useState('');
+  const [searchAliasDraft, setSearchAliasDraft] = useState('');
   const [page, setPage] = useState(1);
   const [selectedCard, setSelectedCard] = useState(null);
+  const [selectedCardSource, setSelectedCardSource] = useState('cards');
   const [activeView, setActiveView] = useState('cards');
   const [deck, setDeck] = useState(loadSavedDeck);
+  const [deckSort, setDeckSort] = useState('added');
+  const [deckLayout, setDeckLayout] = useState('10x4');
+  const [deckImageFormat, setDeckImageFormat] = useState('png');
+  const [exportingDeckImage, setExportingDeckImage] = useState(false);
   const [partnerId, setPartnerId] = useState(() => localStorage.getItem(PARTNER_STORAGE_KEY) || '');
   const [eventId, setEventId] = useState(() => localStorage.getItem(EVENT_STORAGE_KEY) || '');
-  const [keywordTagData, setKeywordTagData] = useState({ version: 1, cards: {} });
 
   useEffect(() => {
     let cancelled = false;
@@ -438,7 +714,7 @@ export default function App() {
       setLoading(true);
       setLoadError('');
       try {
-        const [cardResponse, translations, loadedKeywordTagData] = await Promise.all([
+        const [cardResponse, translations, loadedKeywordTagData, loadedSearchAliasData] = await Promise.all([
           fetch('/cards.json').then((response) => {
             if (!response.ok) throw new Error(`cards.json 응답 오류 (${response.status})`);
             return response.json();
@@ -446,7 +722,10 @@ export default function App() {
           fetch('/card-translations.ko.json')
             .then((response) => response.ok ? response.json() : {})
             .catch(() => ({})),
-          fetch('/card-keyword-tags.json')
+          fetch('/card-keyword-tags.json', { cache: 'no-store' })
+            .then((response) => response.ok ? response.json() : { version: 1, cards: {} })
+            .catch(() => ({ version: 1, cards: {} })),
+          fetch('/card-search-aliases.json', { cache: 'no-store' })
             .then((response) => response.ok ? response.json() : { version: 1, cards: {} })
             .catch(() => ({ version: 1, cards: {} })),
         ]);
@@ -454,8 +733,8 @@ export default function App() {
         if (!rawCards.length) throw new Error('cards.json에서 카드 배열을 찾지 못했어요. JSON의 최상위 구조를 확인해 주세요.');
         const normalized = rawCards.map((card) => normalizeCard(card, translations, loadedKeywordTagData)).filter((card) => card.key && card.key !== 'undefined');
         if (!cancelled) {
-          setKeywordTagData(loadedKeywordTagData || { version: 1, cards: {} });
           setCards(normalized);
+          setSearchAliases(normalizeSearchAliasData(loadedSearchAliasData));
         }
       } catch (error) {
         if (!cancelled) setLoadError(error instanceof Error ? error.message : String(error));
@@ -504,7 +783,7 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cards]);
 
-  useEffect(() => { setPage(1); }, [searchTerm, colorFilter, typeFilter, rarityFilter, costFilter, lpFilter]);
+  useEffect(() => { setPage(1); }, [searchTerm, colorFilter, typeFilter, rarityFilter, costFilter, lpFilter, keywordFilter, searchAliases]);
 
   const colorOptions = useMemo(() => {
     // 표시 순서가 다른 조합(예: 황흑/흑황)은 하나의 필터 선택지로 합칩니다.
@@ -520,17 +799,26 @@ export default function App() {
   const rarityOptions = useMemo(() => uniqueOptions(cards.map((card) => card.rarity)), [cards]);
   const costOptions = useMemo(() => uniqueOptions(cards.map((card) => card.cost)), [cards]);
   const lpOptions = useMemo(() => uniqueOptions(cards.map((card) => card.lp)), [cards]);
+  const keywordOptions = useMemo(() => uniqueOptions(cards.flatMap((card) => card.keywordTags || [])), [cards]);
 
   const filteredCards = useMemo(() => {
     const query = searchTerm.trim().toLocaleLowerCase();
+    // 검색창에 키워드 태그의 정확한 이름을 입력하면 '돌격'과 '조건부 돌격'을 구분합니다.
+    const exactKeywordQuery = query ? keywordOptions.find((tag) => tag.toLocaleLowerCase() === query) : '';
     return cards.filter((card) => {
+      const cardKeywordTags = card.keywordTags || [];
       const searchable = [
         card.name, card.originalName, card.cardId, card.cardNum,
         card.type, card.originalType, card.color, card.colorKey, card.originalColor,
         card.ability, card.originalAbility, card.set, card.originalSet, card.rarity,
-        card.hiramekiEffect, card.cutInEffect, ...(card.keywordTags || []),
+        card.hiramekiEffect, card.cutInEffect, ...getCardSearchAliases(searchAliases, card),
       ].join(' ').toLocaleLowerCase();
-      if (query && !searchable.includes(query)) return false;
+      if (query) {
+        if (exactKeywordQuery) {
+          if (!cardKeywordTags.some((tag) => tag.toLocaleLowerCase() === exactKeywordQuery.toLocaleLowerCase())) return false;
+        } else if (!searchable.includes(query)) return false;
+      }
+      if (keywordFilter && !cardKeywordTags.some((tag) => tag === keywordFilter)) return false;
       if (colorFilter && (card.colorKey || normalizeColorKey(card.color)) !== colorFilter) return false;
       if (typeFilter && card.type !== typeFilter) return false;
       if (rarityFilter && card.rarity !== rarityFilter) return false;
@@ -538,7 +826,7 @@ export default function App() {
       if (lpFilter !== '' && String(card.lp) !== lpFilter) return false;
       return true;
     });
-  }, [cards, searchTerm, colorFilter, typeFilter, rarityFilter, costFilter, lpFilter]);
+  }, [cards, searchTerm, colorFilter, typeFilter, rarityFilter, costFilter, lpFilter, keywordFilter, keywordOptions, searchAliases]);
 
   const totalPages = Math.max(1, Math.ceil(filteredCards.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -550,24 +838,73 @@ export default function App() {
     const card = cards.find((item) => item.key === key);
     return card ? Array.from({ length: Math.min(Number(count) || 0, SAME_CARD_LIMIT) }, (_, copyIndex) => ({ ...card, deckSlotKey: `${key}-${copyIndex}` })) : [];
   }).slice(0, MAIN_DECK_LIMIT);
-  const deckSlots = Array.from({ length: MAIN_DECK_LIMIT }, (_, index) => deckCards[index] || null);
+  const sortedDeckCards = [...deckCards].sort((a, b) => {
+    if (deckSort === 'cost') {
+      const aCost = numericValue(a.cost);
+      const bCost = numericValue(b.cost);
+      return (aCost === null ? Number.POSITIVE_INFINITY : aCost) - (bCost === null ? Number.POSITIVE_INFINITY : bCost)
+        || String(a.name).localeCompare(String(b.name), 'ko', { numeric: true });
+    }
+    if (deckSort === 'cost-desc') {
+      const aCost = numericValue(a.cost);
+      const bCost = numericValue(b.cost);
+      return (bCost === null ? Number.NEGATIVE_INFINITY : bCost) - (aCost === null ? Number.NEGATIVE_INFINITY : aCost)
+        || String(a.name).localeCompare(String(b.name), 'ko', { numeric: true });
+    }
+    if (deckSort === 'color') {
+      const aColor = a.colorKey || normalizeColorKey(a.color) || '';
+      const bColor = b.colorKey || normalizeColorKey(b.color) || '';
+      const aRank = aColor ? COLOR_ORDER.findIndex((tag) => aColor.includes(tag)) : -1;
+      const bRank = bColor ? COLOR_ORDER.findIndex((tag) => bColor.includes(tag)) : -1;
+      const normalizedARank = aRank < 0 ? Number.POSITIVE_INFINITY : aRank;
+      const normalizedBRank = bRank < 0 ? Number.POSITIVE_INFINITY : bRank;
+      return normalizedARank - normalizedBRank
+        || aColor.localeCompare(bColor, 'ko', { numeric: true })
+        || ((numericValue(a.cost) ?? Number.POSITIVE_INFINITY) - (numericValue(b.cost) ?? Number.POSITIVE_INFINITY))
+        || String(a.name).localeCompare(String(b.name), 'ko', { numeric: true });
+    }
+    if (deckSort === 'ap') {
+      const aAp = numericValue(a.ap ?? a.lp);
+      const bAp = numericValue(b.ap ?? b.lp);
+      return (bAp === null ? Number.NEGATIVE_INFINITY : bAp) - (aAp === null ? Number.NEGATIVE_INFINITY : aAp)
+        || String(a.name).localeCompare(String(b.name), 'ko', { numeric: true });
+    }
+    return deckCards.findIndex((item) => item.deckSlotKey === a.deckSlotKey)
+      - deckCards.findIndex((item) => item.deckSlotKey === b.deckSlotKey);
+  });
+  const deckSlots = Array.from({ length: MAIN_DECK_LIMIT }, (_, index) => sortedDeckCards[index] || null);
 
-  // 모달 열림 상태에서는 배경 스크롤을 막고, Esc/좌우 방향키를 지원합니다.
+  // 덱 화면에서 연 상세 창은 현재 덱 배열의 순서로, 카드 목록에서 연 창은 필터 결과 순서로 탐색합니다.
+  const modalNavigationCards = selectedCardSource === 'deck' ? sortedDeckCards : filteredCards;
+  const selectedCardAliasKey = selectedCard ? getCardSearchAliasKey(selectedCard) : '';
+  const selectedCardSearchAliases = selectedCard ? getCardSearchAliases(searchAliases, selectedCard) : [];
+  const editingSelectedAliases = Boolean(selectedCardAliasKey && searchAliasEditingKey === selectedCardAliasKey);
+
   useEffect(() => {
     if (!selectedCard) return undefined;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     function handleModalKeys(event) {
+      const target = event.target;
+      const isEditingField = target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement || target?.isContentEditable;
       if (event.key === 'Escape') {
+        if (target instanceof HTMLTextAreaElement && searchAliasEditingKey === getCardSearchAliasKey(selectedCard)) {
+          cancelSearchAliasEdit();
+          return;
+        }
         setSelectedCard(null);
-      } else if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
+      } else if ((event.key === 'ArrowRight' || event.key === 'ArrowLeft') && !isEditingField) {
         event.preventDefault();
+        setSearchAliasEditingKey('');
+        const step = event.key === 'ArrowRight' ? 1 : -1;
         setSelectedCard((current) => {
-          if (!current || filteredCards.length < 2) return current;
-          const index = filteredCards.findIndex((card) => card.key === current.key);
+          const navigationCards = selectedCardSource === 'deck' ? sortedDeckCards : filteredCards;
+          if (!current || navigationCards.length < 2) return current;
+          const index = navigationCards.findIndex((card) => selectedCardSource === 'deck'
+            ? card.deckSlotKey === current.deckSlotKey
+            : card.key === current.key);
           if (index < 0) return current;
-          const step = event.key === 'ArrowRight' ? 1 : -1;
-          return filteredCards[(index + step + filteredCards.length) % filteredCards.length];
+          return navigationCards[(index + step + navigationCards.length) % navigationCards.length];
         });
       }
     }
@@ -576,7 +913,12 @@ export default function App() {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener('keydown', handleModalKeys);
     };
-  }, [selectedCard, filteredCards]);
+  }, [selectedCard, selectedCardSource, filteredCards, sortedDeckCards, searchAliasEditingKey]);
+
+  function openCardDetail(card, source = 'cards') {
+    setSelectedCardSource(source);
+    setSelectedCard(card);
+  }
 
   function addCard(card) {
     const role = getCardRole(card);
@@ -615,6 +957,46 @@ export default function App() {
     });
   }
 
+  function startSearchAliasEdit(card) {
+    const key = getCardSearchAliasKey(card);
+    setSearchAliasEditingKey(key);
+    setSearchAliasDraft(getCardSearchAliases(searchAliases, card).join(', '));
+  }
+
+  function saveSearchAliasEdit(card) {
+    const key = getCardSearchAliasKey(card);
+    if (!key) return;
+    const aliases = parseSearchAliasDraft(searchAliasDraft);
+    const next = { ...searchAliases };
+    if (aliases.length) next[key] = aliases;
+    else delete next[key];
+    // 편집값은 현재 화면/검색에 즉시 반영합니다. 영구 보관용 JSON은 별도 내보내기 버튼으로 저장합니다.
+    setSearchAliases(next);
+    setSearchAliasEditingKey('');
+  }
+
+  function exportSearchAliasData() {
+    const payload = {
+      version: 1,
+      description: '카드별 검색 전용 별명. cards의 키는 cards.json에 있는 카드 ID이며, 값은 별명 문자열 배열입니다.',
+      cards: searchAliases,
+    };
+    const blob = new Blob([`${JSON.stringify(payload, null, 2)}\n`], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'card-search-aliases.json';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function cancelSearchAliasEdit() {
+    setSearchAliasEditingKey('');
+    setSearchAliasDraft('');
+  }
+
   function clearFilters() {
     setSearchTerm('');
     setColorFilter('');
@@ -622,78 +1004,128 @@ export default function App() {
     setRarityFilter('');
     setCostFilter('');
     setLpFilter('');
+    setKeywordFilter('');
   }
 
-  function exportKeywordReviewData() {
-    const cardsById = {};
-    for (const card of cards) {
-      const id = String(card.databaseId || card.key || card.cardId || card.cardNum);
-      if (!id || id === 'undefined') continue;
-      const existingRecord = getKeywordTagRecord(keywordTagData, [id, card.key, card.cardId, card.cardNum]);
-      const existingTags = normalizeKeywordTagList(existingRecord);
-      const rawCandidates = Array.isArray(existingRecord?.candidates) && existingRecord.candidates.length
-        ? existingRecord.candidates
-        : getCardKeywordCandidates(card);
-      const candidates = rawCandidates.map((candidate) => ({
-        ...candidate,
-        selected: candidate.selected === true,
-      }));
-      cardsById[id] = {
-        databaseId: id,
-        cardId: card.cardId || '',
-        cardNum: card.cardNum || '',
-        name: card.name || '',
-        abilityKo: card.ability || '',
-        abilityJp: card.originalAbility || '',
-        tags: existingTags,
-        reviewStatus: existingRecord?.reviewStatus || (existingTags.length ? 'reviewed' : candidates.length ? 'needs_review' : 'no_candidate'),
-        candidates,
-      };
-    }
-    const output = {
-      version: 1,
-      instructions: '각 cards[databaseId].candidates 항목을 검토하세요. 맞는 후보는 selected=true로 하고 classification을 self_gain(이 카드 획득), grant_other(다른 캐릭터에게 부여), mention_only(단순 언급), uncertain(불확실) 중 맞게 수정하세요. conditionalGuess도 필요하면 고치세요. selected 후보는 앱이 태그로 자동 변환해 databaseId 기준으로 일괄 연결합니다. 후보에 없는 태그는 cards[databaseId].tags에 직접 추가할 수 있습니다. 이 파일을 public/card-keyword-tags.json으로 저장하세요.',
-      allowedTags: KEYWORD_TAG_VALUES,
-      cards: cardsById,
-    };
-    const blob = new Blob([JSON.stringify(output, null, 2)], { type: 'application/json;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'card-keyword-tags-review.json';
-    link.click();
-    URL.revokeObjectURL(url);
-  }
-
-  function exportDeck() {
-    if (!partnerCard || !eventCard || mainDeckCount !== MAIN_DECK_LIMIT) {
-      window.alert(`덱을 완성하려면 메인 덱 ${MAIN_DECK_LIMIT}장과 파트너 카드 1장, 사건 카드 1장이 필요해요.\n현재 메인 덱: ${mainDeckCount}/${MAIN_DECK_LIMIT}장 · 파트너: ${partnerCard ? '선택됨' : '미선택'} · 사건: ${eventCard ? '선택됨' : '미선택'}`);
+  async function exportDeckImage() {
+    if (!partnerCard || !eventCard) {
+      window.alert(`이미지로 저장하려면 파트너 카드 1장과 사건 카드 1장이 필요해요.\n현재 메인 덱: ${mainDeckCount}/${MAIN_DECK_LIMIT}장 · 파트너: ${partnerCard ? '선택됨' : '미선택'} · 사건: ${eventCard ? '선택됨' : '미선택'}`);
       return;
     }
-    const output = {
-      exportedAt: new Date().toISOString(),
-      partner: { databaseId: partnerCard.databaseId, cardId: partnerCard.cardId, cardNum: partnerCard.cardNum, name: partnerCard.name },
-      event: { databaseId: eventCard.databaseId, cardId: eventCard.cardId, cardNum: eventCard.cardNum, name: eventCard.name },
-      mainDeckCount,
-      mainDeck: Object.entries(deck).map(([key, count]) => {
-        const card = cards.find((item) => item.key === key);
-        return card ? { databaseId: card.databaseId, cardId: card.cardId, cardNum: card.cardNum, name: card.name, count: Number(count) } : null;
-      }).filter(Boolean),
-    };
-    const blob = new Blob([JSON.stringify(output, null, 2)], { type: 'application/json;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'conan-deck.json';
-    link.click();
-    URL.revokeObjectURL(url);
+    if (exportingDeckImage) return;
+    setExportingDeckImage(true);
+    try {
+      const slots = deckSlots.filter(Boolean);
+      const imageUrls = [...new Set([partnerCard.imageUrl, eventCard.imageUrl, ...slots.map((card) => card.imageUrl)].filter(Boolean))];
+      const loadedImages = new Map();
+      await Promise.all(imageUrls.map(async (url) => loadedImages.set(url, await loadImageForExport(url))));
+
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('이미지 저장용 캔버스를 만들지 못했어요.');
+      const canvasWidth = 2050;
+      const margin = 50;
+      const columns = deckLayout === '8x5' ? 8 : 10;
+      const rows = deckLayout === '8x5' ? 5 : 4;
+      const gap = deckLayout === '8x5' ? 14 : 12;
+      const cardWidth = (canvasWidth - margin * 2 - 24 - (columns - 1) * gap) / (columns + 1);
+      const cardHeight = cardWidth * 4 / 3 + Math.max(58, 62 * (cardWidth / 165));
+      const headerHeight = 110;
+      const sectionHeight = 45;
+      const top = margin + headerHeight + 20;
+      const gridHeight = rows * cardHeight + (rows - 1) * gap;
+      const footerHeight = 58;
+      canvas.width = canvasWidth;
+      canvas.height = top + sectionHeight + gridHeight + margin + footerHeight;
+
+      ctx.fillStyle = '#080d17';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      // subtle header glow / panel
+      roundedCanvasRect(ctx, margin, margin, canvasWidth - margin * 2, headerHeight, 18, '#101827', '#263449');
+      ctx.fillStyle = '#fb7185';
+      ctx.fillRect(margin + 24, margin + 22, 5, 62);
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = '850 34px sans-serif';
+      ctx.fillText('내 덱 구성', margin + 44, margin + 49);
+      ctx.fillStyle = '#a7b4c8';
+      ctx.font = '600 16px sans-serif';
+      ctx.fillText('명탐정 코난 TCG 도감  ·  메인 덱 40장 + 파트너 + 사건', margin + 44, margin + 77);
+      ctx.textAlign = 'right';
+      ctx.fillStyle = mainDeckCount === MAIN_DECK_LIMIT ? '#86efac' : '#fda4af';
+      ctx.font = '800 22px sans-serif';
+      ctx.fillText(`${mainDeckCount} / ${MAIN_DECK_LIMIT}장`, canvasWidth - margin - 24, margin + 48);
+      ctx.fillStyle = '#8190a7';
+      ctx.font = '500 13px sans-serif';
+      ctx.fillText(new Date().toLocaleDateString('ko-KR'), canvasWidth - margin - 24, margin + 75);
+      ctx.textAlign = 'left';
+
+      const sideX = margin;
+      const gridX = margin + cardWidth + 24;
+      const labelY = top + 20;
+      ctx.fillStyle = '#e9eff9';
+      ctx.font = '800 17px sans-serif';
+      ctx.fillText('파트너 · 사건', sideX, labelY);
+      ctx.fillStyle = '#8190a7';
+      ctx.font = '500 11px sans-serif';
+      ctx.fillText('필수 카드 · 각 1장', sideX, labelY + 18);
+      ctx.fillStyle = '#e9eff9';
+      ctx.font = '800 17px sans-serif';
+      ctx.fillText('메인 덱', gridX, labelY);
+      ctx.fillStyle = '#8190a7';
+      ctx.font = '500 11px sans-serif';
+      ctx.fillText(`${columns} × ${rows} 배열 · ${deckSort === 'added' ? '추가한 순서' : deckSort === 'cost' ? '코스트 낮은순' : deckSort === 'cost-desc' ? '코스트 높은순' : deckSort === 'color' ? '색상별' : 'AP 높은순'}`, gridX, labelY + 18);
+
+      const cardStartY = top + sectionHeight;
+      drawExportCard(ctx, partnerCard, loadedImages.get(partnerCard.imageUrl), sideX, cardStartY, cardWidth, { showStats: false, centerName: true });
+      drawExportCard(ctx, eventCard, loadedImages.get(eventCard.imageUrl), sideX, cardStartY + cardHeight + Math.max(14, gap), cardWidth, { showStats: false, centerName: true });
+      deckSlots.forEach((card, index) => {
+        const row = Math.floor(index / columns);
+        const col = index % columns;
+        const cardX = gridX + col * (cardWidth + gap);
+        const cardY = cardStartY + row * (cardHeight + gap);
+        if (card) {
+          drawExportCard(ctx, card, loadedImages.get(card.imageUrl), cardX, cardY, cardWidth);
+        } else {
+          drawExportEmptySlot(ctx, index + 1, cardX, cardY, cardWidth);
+        }
+      });
+
+      const footerY = cardStartY + gridHeight + 30;
+      ctx.fillStyle = '#526176';
+      ctx.fillRect(margin, footerY, canvasWidth - margin * 2, 1);
+      ctx.fillStyle = '#8190a7';
+      ctx.font = '500 12px sans-serif';
+      ctx.fillText('Conan TCG Deck · 이 이미지는 현재 화면의 덱 정렬과 배열 설정을 반영합니다.', margin, footerY + 24);
+      const mimeType = deckImageFormat === 'jpeg' ? 'image/jpeg' : 'image/png';
+      const extension = deckImageFormat === 'jpeg' ? 'jpg' : 'png';
+      const blob = await new Promise((resolve, reject) => canvas.toBlob((result) => result ? resolve(result) : reject(new Error('이미지 파일을 생성하지 못했어요.')), mimeType, 0.94));
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `conan-deck.${extension}`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
+      if (imageUrls.some((url) => !loadedImages.get(url))) {
+        window.alert('이미지 파일은 저장했어요. 일부 카드 이미지는 원본 서버나 이미지 프록시의 접근 제한으로 불러오지 못해 카드명 표시로 대체했어요.');
+      }
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : '이미지 저장 중 문제가 발생했어요.');
+    } finally {
+      setExportingDeckImage(false);
+    }
   }
 
   function moveSelectedCard(step) {
-    if (!selectedCard || filteredCards.length < 2) return;
-    const index = filteredCards.findIndex((card) => card.key === selectedCard.key);
+    const navigationCards = selectedCardSource === 'deck' ? sortedDeckCards : filteredCards;
+    if (!selectedCard || navigationCards.length < 2) return;
+    const index = navigationCards.findIndex((card) => selectedCardSource === 'deck'
+      ? card.deckSlotKey === selectedCard.deckSlotKey
+      : card.key === selectedCard.key);
     if (index < 0) return;
-    setSelectedCard(filteredCards[(index + step + filteredCards.length) % filteredCards.length]);
+    setSelectedCard(navigationCards[(index + step + navigationCards.length) % navigationCards.length]);
   }
 
   function goToPage(nextPage) {
@@ -779,17 +1211,29 @@ export default function App() {
         .card-list-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin: 0 0 14px !important; }
         .card-list-toolbar > div { display: flex; align-items: baseline; gap: 9px; }
         .card-list-toolbar h2, .deck-panel h2 { margin: 0; color: #f1f5f9; font-size: 16px; font-weight: 800; }
+
+        .card-pagination-nav { display: flex !important; flex-direction: column; align-items: center; justify-content: center !important; gap: 9px; width: 100%; margin-top: 22px; padding-top: 17px; border-top: 1px solid rgba(255,255,255,.085); text-align: center; }
+        .pagination-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px; width: 100%; }
+        .app-shell .pagination-controls .pagination-step, .app-shell .pagination-controls .pagination-number { display: inline-flex; align-items: center; justify-content: center; min-width: 36px; height: 36px; border: 1px solid rgba(148,163,184,.17); border-radius: 10px; padding: 0 11px; color: #cbd5e1; background: #111b2b; font-size: 12px; line-height: 1; font-weight: 750; font-variant-numeric: tabular-nums; transition: border-color .15s ease, color .15s ease, background .15s ease, transform .15s ease; }
+        .app-shell .pagination-controls .pagination-number { width: 36px; padding: 0; }
+        .app-shell .pagination-controls .pagination-step:hover:not(:disabled), .app-shell .pagination-controls .pagination-number:hover:not(.is-active) { border-color: rgba(251,113,133,.55); color: #fff; background: #1a2639; }
+        .app-shell .pagination-controls .pagination-number.is-active { border-color: #fb7185; color: #fff; background: #be123c; box-shadow: 0 5px 15px rgba(190,18,60,.22); }
+        .pagination-controls .pagination-step:disabled { opacity: .32; cursor: not-allowed; }
+        .pagination-ellipsis { display: inline-flex; align-items: center; justify-content: center; min-width: 16px; height: 34px; color: #64748b; font-size: 13px; }
+        .pagination-current { color: #8290a6; font-size: 11px; font-weight: 650; font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+
         .card-list-toolbar span { color: #9aa8bd; font-size: 12px; }
         .app-shell .app-panel button:not(.card-open-button):not(.card-tile-action) { border-radius: 8px; }
         .app-shell .card-list-toolbar > button { border: 1px solid rgba(255,255,255,.12); padding: 7px 11px; color: #d1d9e6; background: #151f30; font-size: 12px; font-weight: 650; }
         .app-shell .card-list-toolbar > button:hover { border-color: rgba(251,113,133,.45); background: rgba(255,255,255,.04); }
-        .app-filters { display: grid !important; grid-template-columns: minmax(200px, 1.7fr) repeat(5, minmax(100px, 1fr)) !important; gap: 8px !important; margin: 0 0 15px !important; }
+        .app-filters { display: grid !important; grid-template-columns: minmax(200px, 1.7fr) repeat(6, minmax(100px, 1fr)) !important; gap: 8px !important; margin: 0 0 15px !important; }
         .app-control { min-width: 0; width: 100%; height: 37px; padding: 7px 10px !important; border: 1px solid rgba(255,255,255,.11) !important; border-radius: 8px !important; outline: none; background: #090f1b !important; color: #e2e8f0 !important; font-size: 12px !important; }
         .app-control:focus { border-color: rgba(251,113,133,.75) !important; box-shadow: 0 0 0 3px rgba(225,29,72,.12); }
         .app-control::placeholder { color: #718096; }
         .app-control option { color: #e2e8f0; background: #101827; }
         .conan-card-grid {
-          grid-template-columns: repeat(11, minmax(0, 1fr)) !important;
+          /* Desktop default: 100 cards in a clean 10 x 10 grid. */
+          grid-template-columns: repeat(10, minmax(0, 1fr)) !important;
           align-items: stretch; gap: 8px !important;
         }
         .card-tile {
@@ -808,7 +1252,9 @@ export default function App() {
         .card-role-partner { background: #fcd34d; }
         .card-role-event { background: #7dd3fc; }
         .card-tile-caption { min-width: 0; padding: 7px 7px 6px !important; }
-        .card-tile-title { display: -webkit-box; min-height: 2.35em !important; margin: 0; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; color: #f1f5f9 !important; font-size: 11px !important; font-weight: 750 !important; line-height: 1.4 !important; overflow-wrap: anywhere; }
+        .card-tile-title-row { display: flex !important; align-items: flex-start; justify-content: space-between; gap: 4px; min-width: 0; min-height: 2.35em; margin-top: 0 !important; color: inherit !important; font-size: inherit !important; }
+        .card-tile-caption > .card-tile-title-row { margin-top: 0 !important; }
+        .card-tile-title { display: -webkit-box; flex: 1 1 auto; min-width: 0; min-height: 2.35em !important; margin: 0; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; color: #f1f5f9 !important; font-size: 11px !important; font-weight: 750 !important; line-height: 1.4 !important; overflow-wrap: anywhere; }
         .card-tile-caption > div { display: flex; justify-content: space-between; gap: 4px; margin-top: 5px !important; color: #8b9ab0 !important; font-size: 9px !important; }
         .card-tile-caption > div > span { min-width: 0; }
         .card-tile-caption > div > span:last-child { flex-shrink: 0; }
@@ -835,30 +1281,85 @@ export default function App() {
         .card-detail-layout > div:first-child > p { margin: 0; color: #8190a7; font-size: 10px; }
         .card-detail-layout > div:nth-child(2) { min-width: 0; display: flex; flex-direction: column; gap: 12px; }
         .card-meta-grid { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 8px !important; margin: 0; }
-        .card-meta-item { min-width: 0; border: 1px solid rgba(255,255,255,.075) !important; border-radius: 9px !important; padding: 10px !important; background: #090f1b !important; }
+        .card-meta-item { min-width: 0; display: flex; flex-direction: column; border: 1px solid rgba(255,255,255,.075) !important; border-radius: 9px !important; padding: 10px !important; background: #090f1b !important; }
         .card-meta-item dt { color: #9aa8bd !important; font-size: 11px !important; font-weight: 600 !important; }
-        .card-meta-item dd { margin: 4px 0 0 !important; color: #f1f5f9 !important; font-size: 13px !important; font-weight: 650 !important; overflow-wrap: anywhere; }
-        .card-detail-layout > div:nth-child(2) > div:not(.card-meta-grid), .card-detail-layout > div:nth-child(2) > details { border: 1px solid rgba(255,255,255,.07) !important; border-radius: 10px !important; padding: 12px !important; background: #090f1b !important; color: #e2e8f0 !important; }
+        .card-meta-item dd { display: flex; flex: 1 1 auto; align-items: center; min-height: 20px; margin: 4px 0 0 !important; color: #f1f5f9 !important; font-size: 13px !important; font-weight: 650 !important; overflow-wrap: anywhere; }
+        .card-meta-item:not(.card-meta-item-traits) dd { justify-content: flex-start !important; text-align: left !important; padding-left: 8px !important; box-sizing: border-box !important; }
+        .card-meta-item.card-meta-item-set dd { padding-left: 8px !important; padding-right: 8px !important; box-sizing: border-box !important; }
+        .card-meta-item-traits > dd { padding-left: 8px !important; }
+        .card-effect-text, .card-original-effect-text, .card-original-name-text { padding-left: 8px !important; box-sizing: border-box !important; }
+        .card-detail-layout > div:nth-child(2) > div:not(.card-meta-grid):not(.card-search-alias-section), .card-detail-layout > div:nth-child(2) > details { border: 1px solid rgba(255,255,255,.07) !important; border-radius: 10px !important; padding: 12px !important; background: #090f1b !important; color: #e2e8f0 !important; }
         .card-detail-layout > div:nth-child(2) h3 { margin: 0 0 8px !important; color: #dce5f2 !important; font-size: 13px !important; font-weight: 800 !important; }
         .card-detail-layout > div:nth-child(2) h4 { margin: 0 0 4px !important; color: #fcd34d; font-size: 12px; font-weight: 750; }
+        .card-detail-layout > div:nth-child(2) .card-system-effect-item > .card-system-effect-label { display: inline-flex !important; align-items: center; width: fit-content; margin: 0 0 8px !important; padding: 3px 7px !important; border: 1px solid; border-radius: 5px; box-sizing: border-box; font-size: 11px !important; font-weight: 800 !important; line-height: 1.4; }
+        .card-detail-layout > div:nth-child(2) .card-system-effect-item > .card-system-effect-label-hirameki { color: #ffffff !important; background: rgba(226,88,34,.14) !important; border-color: #c62828 !important; }
+        .card-detail-layout > div:nth-child(2) .card-system-effect-item > .card-system-effect-label-cutin { color: #bae6fd !important; background: rgba(56,189,248,.12) !important; border-color: #38bdf8 !important; }
         .card-detail-layout > div:nth-child(2) p { margin: 0; color: #d4dceb !important; font-size: 12px !important; line-height: 1.75 !important; overflow-wrap: anywhere; }
-        .card-effect-text, .card-original-effect-text { white-space: pre-wrap !important; overflow-wrap: anywhere !important; word-break: normal; }
+        .card-effect-text, .card-original-effect-text, .card-system-effect-text { white-space: pre-wrap !important; overflow-wrap: anywhere !important; word-break: normal; }
+        .card-system-effect-item { padding-left: 8px !important; box-sizing: border-box !important; }
         .detail-keyword-badges { margin: 0 0 2px !important; }
         .card-detail-layout > div:nth-child(2) summary { color: #d1d9e6; cursor: pointer; font-size: 12px; font-weight: 650; }
         .card-detail-layout > div:nth-child(2) details > div { margin-top: 10px; display: grid; gap: 10px; }
         .effect-badges { display: flex !important; flex-wrap: wrap !important; gap: 4px !important; margin-top: 6px !important; }
         .effect-badge { display: inline-flex; align-items: center; border: 1px solid transparent; border-radius: 4px; padding: 2px 5px; font-size: 8px; line-height: 1.35; font-weight: 800; white-space: nowrap; }
+        .ability-condition-badge { display: inline-flex; align-items: center; vertical-align: baseline; margin: 0 2px 1px; padding: 1px 5px; border: 1px solid #64748b; border-radius: 4px; background: rgba(148,163,184,.10); color: #f1f5f9; font-size: .88em; font-weight: 800; line-height: 1.45; white-space: nowrap; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+        .ability-condition-turn1 { background: rgba(15,118,110,.18); border-color: #0f766e; color: #ccfbf1; }
+        .ability-condition-blue { background: rgba(29,78,216,.18); border-color: #1d4ed8; color: #dbeafe; }
+        .ability-condition-slip { background: rgba(109,40,217,.18); border-color: #6d28d9; color: #ede9fe; }
+        .ability-condition-own-turn { background: rgba(190,18,60,.18); border-color: #be123c; color: #ffe4e6; }
+        .ability-condition-opponent-turn { background: rgba(194,65,12,.18); border-color: #c2410c; color: #ffedd5; }
+        .ability-condition-black { background: rgba(17,24,39,.42); border-color: #374151; color: #f9fafb; }
+        .ability-condition-file { background: rgba(236,72,153,.16); border-color: #db2777; color: #fbcfe8; }
+        .ability-condition-neutral { background: rgba(51,65,85,.20); border-color: #64748b; color: #f1f5f9; }
+        .ability-color-circle { display: inline-flex; align-items: center; justify-content: center; vertical-align: -0.15em; width: 1.38em; min-width: 1.38em; height: 1.38em; margin: 0 .08em; padding: 0; border: 1px solid rgba(255,255,255,.24); border-radius: 999px; box-sizing: border-box; font-size: .78em; font-weight: 900; line-height: 1; white-space: nowrap; box-shadow: 0 0 0 1px rgba(0,0,0,.16); }
+        .ability-color-blue { background: #2563eb; border-color: #60a5fa; color: #fff; }
+        .ability-color-red { background: #dc2626; border-color: #f87171; color: #fff; }
+        .ability-color-yellow { background: #facc15; border-color: #fde047; color: #1f2937; }
+        .ability-color-green { background: #16a34a; border-color: #4ade80; color: #fff; }
+        .ability-color-black { background: #111827; border-color: #9ca3af; color: #f9fafb; }
+        .ability-color-white { background: #f8fafc; border-color: #94a3b8; color: #111827; }
         .effect-badge-hirameki { color: #fcd34d; background: rgba(251,191,36,.11); border-color: rgba(251,191,36,.18); }
         .effect-badge-cutin { color: #7dd3fc; background: rgba(56,189,248,.11); border-color: rgba(56,189,248,.18); }
         .keyword-assault { color: #fda4af; background: rgba(244,63,94,.12); border-color: rgba(251,113,133,.22); }
         .keyword-swift { color: #86efac; background: rgba(34,197,94,.12); border-color: rgba(74,222,128,.22); }
         .keyword-gale { color: #7dd3fc; background: rgba(14,165,233,.12); border-color: rgba(56,189,248,.22); }
-        .effect-badge.conditional { border-style: dashed; opacity: .95; }
+        .effect-badge.conditional { border-style: solid; opacity: .95; }
         .keyword-other { color: #c4b5fd; background: rgba(139,92,246,.12); border-color: rgba(167,139,250,.22); }
-        .detail-keyword-badges { padding: 2px 0; }
+        .detail-keyword-badges { padding: 2px 0 2px 8px !important; margin-left: 0 !important; }
+        .detail-keyword-badges .effect-badge { font-size: 11px !important; line-height: 1.4; padding: 3px 6px; font-weight: 700; }
+        .keyword-tag-dots { display: flex; align-items: center; justify-content: flex-end; flex: 0 0 auto; flex-wrap: nowrap; gap: 3px; max-width: 38%; min-height: 0; margin: 3px 0 0; overflow: hidden; }
+        .keyword-tag-dot { display: inline-block; width: 6px; height: 6px; flex: 0 0 6px; border-radius: 999px; box-shadow: 0 0 0 1px rgba(255,255,255,.18); }
+        .keyword-dot-assault { background: #fb7185; }
+        .keyword-dot-swift { background: #4ade80; }
+        .keyword-dot-gale { background: #38bdf8; }
+        .keyword-dot-other { background: #a78bfa; }
+        .deck-card-image-wrap { position: relative; width: 100%; overflow: hidden; background: #0d1524; }
+        .deck-feature-dots { position: absolute; z-index: 5; top: 50%; right: 7px; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; pointer-events: none; }
+        .deck-feature-dot { display: block; width: 7px; height: 7px; flex: 0 0 7px; border: 1px solid rgba(255,255,255,.30); border-radius: 999px; box-shadow: 0 1px 3px rgba(0,0,0,.5), 0 0 0 1px rgba(0,0,0,.25); }
+        .deck-feature-dot-hirameki { background: #e25822; border-color: #ff9a70; }
+        .deck-feature-dot-cutin { background: #38bdf8; border-color: #bae6fd; }
+        .card-search-alias-section { display: flex; flex-direction: column; gap: 6px; margin-top: 0; padding: 2px 8px 0; }
+        .card-search-alias-display { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+        .card-search-alias-tags { min-width: 0; margin: 0; color: #8b96a8; font-size: 10px; line-height: 1.6; overflow-wrap: anywhere; }
+        .card-detail-layout > div:nth-child(2) .card-search-alias-tags { color: #8b96a8 !important; font-size: 10px !important; }
+        .card-search-alias-empty { color: #68758a; font-style: italic; }
+        .card-search-alias-edit-button { flex: 0 0 auto; padding: 1px 5px; border: 1px solid rgba(148,163,184,.15); border-radius: 5px; color: #8793a7; background: rgba(148,163,184,.05); font-size: 9px; line-height: 1.5; }
+        .card-search-alias-edit-button:hover { border-color: rgba(148,163,184,.4); color: #dbe5f2; }
+        .card-search-alias-input { width: 100%; min-height: 60px; resize: vertical; border: 1px solid rgba(148,163,184,.22); border-radius: 7px; padding: 7px 8px; outline: none; color: #e2e8f0; background: #070c14; font-size: 11px; line-height: 1.5; }
+        .card-search-alias-input:focus { border-color: rgba(148,163,184,.55); }
+        .card-search-alias-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; }
+        .card-search-alias-help { color: #68758a; font-size: 9px; }
+        .card-search-alias-action-buttons { display: flex; gap: 5px; }
+        .card-search-alias-action-buttons button { border: 1px solid rgba(148,163,184,.2); border-radius: 5px; padding: 3px 7px; color: #9aa8bd; background: rgba(148,163,184,.06); font-size: 10px; }
+        .card-search-alias-action-buttons .save { border-color: rgba(244,114,182,.45); color: #fbcfe8; background: rgba(219,39,119,.12); }
+        .card-meta-item-traits { grid-column: 1 / -1; }
+        .card-trait-list { display: flex; flex-wrap: wrap; gap: 5px; }
+        .card-trait-chip { display: inline-flex; align-items: center; border: 1px solid rgba(148,163,184,.18); border-radius: 5px; background: rgba(148,163,184,.08); padding: 3px 6px; color: #dbe5f2; font-size: 11px; font-weight: 650; line-height: 1.4; }
+        .deck-image-export-format { min-height: 36px; max-width: 88px; border: 1px solid #303b4d; border-radius: 9px; background: #111827; color: #e2e8f0; padding: 7px 9px; font-size: 12px; font-weight: 700; }
         .deck-board-scroll { width: 100%; overflow-x: auto; padding-bottom: 5px; }
         /* 왼쪽 특수 카드 폭은 오른쪽 10열 중 각 슬롯 폭과 맞춥니다. */
         .deck-board { display: grid !important; grid-template-columns: minmax(64px, calc((100% - 80px) / 11)) minmax(0, 1fr) !important; gap: 12px !important; min-width: 1000px; align-items: start; }
+        .deck-board.deck-board-8x5 { grid-template-columns: minmax(90px, calc((100% - 66px) / 9)) minmax(0, 1fr) !important; }
         .deck-specials-column { grid-column: 1; min-width: 0; display: grid !important; grid-template-columns: minmax(0, 1fr) !important; gap: 6px !important; align-content: start; }
         .deck-main-column { grid-column: 2; min-width: 0; }
         .deck-board-heading { min-width: 0; min-height: 38px; display: flex; align-items: center; justify-content: space-between; gap: 5px; border-bottom: 1px solid rgba(255,255,255,.09); padding: 0 1px 7px; }
@@ -872,24 +1373,55 @@ export default function App() {
         .deck-slot-status.is-selected { color: #86efac; }
         .deck-slots-frame { border: 1px solid rgba(148,163,184,.23); border-radius: 12px; padding: 6px; background: rgba(4,9,18,.48); box-shadow: inset 0 1px 0 rgba(255,255,255,.025); }
         .deck-slots-grid { display: grid !important; grid-template-columns: repeat(10, minmax(0, 1fr)) !important; gap: 6px !important; align-content: start; }
+        .deck-board-8x5 .deck-slots-grid { grid-template-columns: repeat(8, minmax(0, 1fr)) !important; }
         .deck-card-slot, .deck-special-card, .deck-empty-special { min-width: 0; width: 100%; overflow: hidden; position: relative; border: 1px solid rgba(148,163,184,.15); border-radius: 8px; background: #090f1b; }
         .deck-card-open, .deck-special-open { display: block !important; position: relative; width: 100% !important; min-width: 0; padding: 0 !important; border: 0 !important; border-radius: 0 !important; background: transparent !important; color: #e2e8f0 !important; text-align: left; }
         .deck-card-image, .deck-special-image, .deck-empty-special-image { display: block; width: 100% !important; height: auto !important; aspect-ratio: 3 / 4 !important; object-fit: contain !important; background: #0d1524; }
         .deck-card-name, .deck-special-name { display: -webkit-box; min-height: 2.5em; margin: 0; padding: 5px 4px 4px; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; color: #cbd5e1; font-size: 9px; line-height: 1.25; overflow-wrap: anywhere; }
         .deck-card-remove, .deck-special-remove { position: absolute; z-index: 3; top: 4px; right: 4px; display: flex !important; width: 19px !important; height: 19px !important; align-items: center; justify-content: center; padding: 0 !important; border: 1px solid rgba(255,255,255,.18) !important; border-radius: 50% !important; color: white !important; background: rgba(0,0,0,.82) !important; font-size: 14px !important; line-height: 1 !important; font-weight: 800 !important; }
         .deck-card-remove:hover, .deck-special-remove:hover { background: #e11d48 !important; }
-        .deck-empty-slot { display: flex; min-width: 0; flex-direction: column; overflow: hidden; border: 1px dashed rgba(148,163,184,.16); border-radius: 8px; background: rgba(255,255,255,.012); }
+        .deck-empty-slot { display: flex; min-width: 0; flex-direction: column; overflow: hidden; border: 1px solid rgba(148,163,184,.16); border-radius: 8px; background: rgba(255,255,255,.012); }
+        .deck-empty-slot .deck-card-image { display: flex !important; align-items: center !important; justify-content: center !important; box-sizing: border-box !important; padding: 12px !important; color: #64748b !important; font-size: 13px !important; line-height: 1 !important; text-align: center !important; }
         .deck-empty-slot .deck-card-name { color: #64748b; }
-        .deck-empty-special { border-style: dashed; border-color: rgba(148,163,184,.24); background: rgba(255,255,255,.015); }
+        .deck-empty-special { border-style: solid; border-color: rgba(148,163,184,.24); background: rgba(255,255,255,.015); }
         .deck-empty-special-image { display: flex; align-items: center; justify-content: center; padding: 5px; color: #64748b; font-size: 10px; text-align: center; }
         .deck-empty-special .deck-special-name { color: #8b9ab0; text-align: center; }
         .deck-special-card { align-self: start; }
-        .deck-special-card .deck-special-name { color: #f1f5f9; font-weight: 750; }
+        .deck-special-card .deck-special-name { min-height: 2.4em; color: #f1f5f9; font-size: 10px; font-weight: 800; line-height: 1.35; }
         .deck-special-id { position: absolute; z-index: 2; top: 4px; right: 4px; display: block; max-width: calc(100% - 48px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: 4px; padding: 2px 4px; color: #e2e8f0; background: rgba(0,0,0,.8); font-size: 8px; line-height: 1.35; }
         .deck-special-role { position: absolute; z-index: 3; top: 4px; left: 4px; display: inline-block; border-radius: 4px; padding: 2px 4px; color: #0f172a; background: #fcd34d; font-size: 8px; line-height: 1.35; font-weight: 850; }
         .deck-special-role.is-event { background: #7dd3fc; }
         .deck-empty-hint { margin: 8px 0 0 !important; color: #8190a7 !important; font-size: 11px !important; }
         .deck-footnote { margin-top: 12px !important; }
+        .deck-topbar { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin: 0 0 16px !important; }
+        .deck-topbar-info { display: block; min-width: 0; }
+        .deck-heading-copy { min-width: 0; }
+        .deck-title-row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .deck-title-row h2 { margin: 0; }
+        .deck-title-row .deck-count-pill { padding: 5px 9px; font-size: 11px; }
+        .deck-count-pill { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; border: 1px solid rgba(251,113,133,.2); border-radius: 9px; padding: 7px 11px; color: #fecdd3; background: rgba(225,29,72,.11); font-size: 12px; line-height: 1.2; font-weight: 850; font-variant-numeric: tabular-nums; }
+        .deck-action-buttons { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+        .app-shell .deck-action-buttons .deck-reset-button { min-height: 36px; border: 1px solid #be123c !important; border-radius: 9px !important; padding: 8px 13px !important; color: #fff1f2 !important; background: #be123c !important; box-shadow: 0 5px 15px rgba(190,18,60,.15); font-size: 12px !important; font-weight: 800 !important; }
+        .app-shell .deck-action-buttons .deck-reset-button:hover { border-color: #f43f5e !important; background: #e11d48 !important; }
+        .app-shell .deck-action-buttons .deck-export-button { min-height: 36px; border: 1px solid #3f4858 !important; border-radius: 9px !important; padding: 8px 13px !important; color: #f8fafc !important; background: #05070b !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.05); font-size: 12px !important; font-weight: 800 !important; }
+        .app-shell .deck-action-buttons .deck-export-button:hover { border-color: #64748b !important; background: #171c26 !important; }
+        .app-shell .deck-action-buttons .deck-export-button:disabled { cursor: wait; opacity: .65; }
+        .deck-main-heading { align-items: center; }
+        .deck-sort-tools { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 7px; min-width: 0; }
+        .deck-sort-tools label { color: #94a3b8; font-size: 10px; white-space: nowrap; }
+        .deck-sort-select, .deck-layout-select { max-width: 145px; min-width: 100px; height: 30px; border: 1px solid rgba(255,255,255,.13); border-radius: 7px; padding: 4px 7px; color: #e2e8f0; background: #090f1b; font-size: 10px; outline: none; }
+        .deck-layout-select { min-width: 84px; max-width: 94px; }
+        .deck-sort-select:focus, .deck-layout-select:focus { border-color: rgba(251,113,133,.7); }
+        .app-shell .filters-reset-button { min-height: 30px; border: 1px solid #be123c !important; border-radius: 8px !important; padding: 6px 11px !important; color: #fff1f2 !important; background: #be123c !important; font-size: 11px !important; font-weight: 800 !important; transition: background .15s ease, border-color .15s ease; }
+        .app-shell .filters-reset-button:hover { border-color: #f43f5e !important; background: #e11d48 !important; }
+        .deck-board-8x5 .deck-card-name { min-height: 3.8em; font-size: 11px; line-height: 1.4; }
+        .deck-board-8x5 .deck-special-card .deck-special-name { min-height: 2.4em; font-size: 11px; line-height: 1.4; }
+        .deck-card-name, .deck-special-name { display: flex; flex-direction: column; gap: 2px; min-height: 3.5em; margin: 0; padding: 5px 4px 4px; overflow: hidden; color: #cbd5e1; font-size: 9px; line-height: 1.4; overflow-wrap: anywhere; word-break: normal; }
+        .deck-card-primary { display: block; color: #f1f5f9; font-weight: 750; overflow-wrap: anywhere; }
+        .deck-card-secondary { display: block; color: #94a3b8; font-size: .92em; font-weight: 550; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .deck-empty-slot .deck-card-name { color: #64748b; }
+        .deck-special-name { align-items: center; text-align: center; }
+        .deck-special-name .deck-card-primary { width: 100%; text-align: center; }
         @media (max-width: 600px) {
           .deck-board { min-width: 1000px; gap: 12px !important; }
           .deck-slots-grid, .deck-specials-column { gap: 6px !important; }
@@ -952,19 +1484,20 @@ export default function App() {
         <section id="card-list-top" className="app-panel card-list-panel min-w-0 rounded-2xl border border-white/10 bg-[#101827] p-3 md:p-4">
           <div className="card-list-toolbar mb-3 flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-baseline gap-2"><h2 className="text-base font-bold">카드 목록</h2><span className="text-xs tabular-nums text-slate-400">검색 결과 {filteredCards.length.toLocaleString()}장</span></div>
-            <div className="flex flex-wrap items-center gap-2"><button onClick={exportKeywordReviewData} title="키워드 후보와 근거 문장을 카드 ID별 JSON으로 내보냅니다. 검토 후 tags만 확정하세요." className="rounded-lg border border-sky-300/25 px-3 py-1.5 text-xs font-semibold text-sky-200 transition hover:border-sky-300/50 hover:bg-sky-300/10">키워드 태그 검토 JSON</button><button onClick={clearFilters} className="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-semibold text-slate-300 transition hover:border-rose-400/40 hover:bg-white/5">필터 초기화</button></div>
+            <div className="flex flex-wrap items-center gap-2"><button onClick={clearFilters} className="filters-reset-button">필터 초기화</button></div>
           </div>
 
-          <div className="app-filters mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+          <div className="app-filters mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-7">
             <input value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder="이름 · 효과 · 카드 ID" aria-label="카드 검색" className="app-control app-search-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-3 py-2 text-sm outline-none transition placeholder:text-slate-600 focus:border-rose-400/70" />
             <select aria-label="색상 필터" value={colorFilter} onChange={(event) => setColorFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 색상</option>{colorOptions.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}</select>
             <select aria-label="종류 필터" value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 종류</option>{typeOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select>
             <select aria-label="레어도 필터" value={rarityFilter} onChange={(event) => setRarityFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 레어도</option>{rarityOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select>
             <select aria-label="코스트 필터" value={costFilter} onChange={(event) => setCostFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 코스트</option>{costOptions.map((value) => <option key={String(value)} value={String(value)}>{value}</option>)}</select>
             <select aria-label="LP 필터" value={lpFilter} onChange={(event) => setLpFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 LP</option>{lpOptions.map((value) => <option key={String(value)} value={String(value)}>{value}</option>)}</select>
+            <select aria-label="특수 키워드 필터" value={keywordFilter} onChange={(event) => setKeywordFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 특수 키워드</option>{keywordOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select>
           </div>
 
-          {visibleCards.length === 0 ? <p className="rounded-xl border border-dashed border-white/15 p-8 text-center text-sm text-slate-400">조건에 맞는 카드가 없어요.</p> : (
+          {visibleCards.length === 0 ? <p className="rounded-xl border border-solid border-white/15 p-8 text-center text-sm text-slate-400">조건에 맞는 카드가 없어요.</p> : (
             <div className="conan-card-grid grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 2xl:grid-cols-10">
               {visibleCards.map((card) => {
                 const count = Number(deck[card.key] || 0);
@@ -974,7 +1507,7 @@ export default function App() {
                 const keywordBadges = card.keywordTags || [];
                 return (
                   <article key={card.key} className="card-tile group flex min-w-0 flex-col overflow-hidden rounded-lg border border-white/[0.08] bg-[#090f1b] transition duration-150 hover:-translate-y-0.5 hover:border-rose-400/50 hover:shadow-lg hover:shadow-black/20">
-                    <button onClick={() => setSelectedCard(card)} className="card-open-button block w-full min-w-0 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-rose-400" title={`${card.name} 상세 정보 보기`} aria-label={`${card.name} 상세 정보 보기`}>
+                    <button onClick={() => openCardDetail(card, 'cards')} className="card-open-button block w-full min-w-0 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-rose-400" title={`${card.name} 상세 정보 보기`} aria-label={`${card.name} 상세 정보 보기`}>
                       <div className="card-image-wrap relative overflow-hidden bg-[#0d1524]">
                         {card.imageUrl ? <img loading="lazy" decoding="async" src={card.imageUrl} alt={card.name} className="aspect-[3/4] w-full object-contain transition duration-200 group-hover:scale-[1.025]" /> : <div className="flex aspect-[3/4] items-center justify-center p-2 text-center text-[10px] text-slate-500">이미지 없음</div>}
                         <div className="card-id-badge absolute left-1 top-1 max-w-[calc(100%-8px)] truncate rounded bg-black/75 px-1.5 py-0.5 text-[9px] font-semibold text-white backdrop-blur">{card.cardId || card.cardNum || card.databaseId}</div>
@@ -983,9 +1516,12 @@ export default function App() {
                         {isEvent && <span className="card-role-badge card-role-event absolute bottom-1 left-1 rounded bg-sky-300 px-1.5 py-0.5 text-[9px] font-black text-slate-950">사건</span>}
                       </div>
                       <div className="card-tile-caption p-1.5 sm:p-2">
-                        <h3 className="card-tile-title line-clamp-2 min-h-[2.2rem] break-keep text-[11px] font-semibold leading-[1.1rem] text-slate-100 sm:text-xs">{card.name}</h3>
-                        <div className="mt-1 flex min-w-0 items-center justify-between gap-1 text-[9px] text-slate-500 sm:text-[10px]"><span className="truncate">{card.rarity || card.type || '카드'}</span><span className="shrink-0">{formatNumber(card.cost)} / {formatNumber(card.lp)}</span></div>
-                        {(card.hiramekiEffect || card.cutInEffect || keywordBadges.length > 0) && <div className="effect-badges">{card.hiramekiEffect && <span className="effect-badge effect-badge-hirameki">히라메키</span>}{card.cutInEffect && <span className="effect-badge effect-badge-cutin">컷인</span>}{keywordBadges.map((tag) => <span key={tag} className={`effect-badge ${keywordTagClass(tag)}${String(tag).startsWith('조건부 ') ? ' conditional' : ''}`}>[{tag}]</span>)}</div>}
+                        <div className="card-tile-title-row">
+                          <h3 className="card-tile-title line-clamp-2 min-h-[2.2rem] break-keep text-[11px] font-semibold leading-[1.1rem] text-slate-100 sm:text-xs">{card.name}</h3>
+                          {keywordBadges.length > 0 && <div className="keyword-tag-dots" aria-label={`키워드 태그: ${keywordBadges.join(', ')}`}>{keywordBadges.map((tag) => <span key={tag} className={`keyword-tag-dot keyword-dot-${keywordTagClass(tag).replace('keyword-', '')}`} title={tag} aria-label={tag} />)}</div>}
+                        </div>
+                        <div className="mt-1 flex min-w-0 items-center justify-between gap-1 text-[9px] text-slate-500 sm:text-[10px]"><span className="truncate">{card.rarity || card.type || '카드'}</span><span className="shrink-0">{`${formatNumber(card.cost)} / ${formatNumber(card.lp)}`}</span></div>
+                        {(card.hiramekiEffect || card.cutInEffect) && <div className="effect-badges">{card.hiramekiEffect && <span className="effect-badge effect-badge-hirameki">히라메키</span>}{card.cutInEffect && <span className="effect-badge effect-badge-cutin">컷인</span>}</div>}
                       </div>
                     </button>
                     <button onClick={() => addCard(card)} aria-label={role === 'partner' ? `${card.name} 파트너 지정` : role === 'event' ? `${card.name} 사건 카드 지정` : `${card.name} 덱에 추가`} className={`card-tile-action mt-auto border-t border-white/[0.07] px-1 py-1.5 text-[10px] font-semibold transition sm:text-[11px] ${role === 'partner' ? 'bg-amber-300/10 text-amber-200 hover:bg-amber-300/20' : role === 'event' ? 'bg-sky-300/10 text-sky-200 hover:bg-sky-300/20' : 'bg-white/[0.025] text-slate-400 hover:bg-rose-500/10 hover:text-rose-200'}`}>
@@ -1000,13 +1536,22 @@ export default function App() {
         </section>
       ) : (
         <section className="app-panel deck-panel min-w-0 rounded-2xl border border-white/10 bg-[#101827] p-3 md:p-4">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <div><h2 className="text-base font-bold">내 덱 구성</h2><p className="mt-1 text-xs text-slate-400">메인 덱 최대 40장 · 같은 카드 최대 3장 · 파트너와 사건 카드는 별도 슬롯</p></div>
-            <div className="flex items-center gap-2"><span className={`rounded-lg px-3 py-2 text-xs font-black tabular-nums ${mainDeckCount === MAIN_DECK_LIMIT ? 'bg-emerald-500/15 text-emerald-300' : 'bg-rose-500/10 text-rose-200'}`}>{mainDeckCount} / {MAIN_DECK_LIMIT}장</span><button onClick={clearDeck} className="rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-white/5">덱 초기화</button><button onClick={exportDeck} className="rounded-lg bg-rose-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-rose-500">JSON 내보내기</button></div>
+          <div className="deck-topbar">
+            <div className="deck-topbar-info">
+              <div className="deck-heading-copy">
+                <div className="deck-title-row"><h2 className="text-base font-bold">내 덱 구성</h2><span className="deck-count-pill">{mainDeckCount} / {MAIN_DECK_LIMIT}장</span></div>
+                <p className="mt-1 text-xs text-slate-400">메인 덱 최대 40장 · 같은 카드 최대 3장 · 파트너와 사건 카드는 별도 슬롯</p>
+              </div>
+            </div>
+            <div className="deck-action-buttons">
+              <button onClick={clearDeck} className="deck-reset-button">덱 초기화</button>
+              <select className="deck-image-export-format" value={deckImageFormat} onChange={(event) => setDeckImageFormat(event.target.value)} aria-label="이미지 파일 형식"><option value="png">PNG</option><option value="jpeg">JPG</option></select>
+              <button onClick={exportDeckImage} disabled={exportingDeckImage} className="deck-export-button">{exportingDeckImage ? '이미지 생성 중…' : '이미지 저장'}</button>
+            </div>
           </div>
 
           <div className="deck-board-scroll">
-            <div className="deck-board">
+            <div className={`deck-board ${deckLayout === '8x5' ? 'deck-board-8x5' : 'deck-board-10x4'}`}>
               <aside className="deck-specials-column" aria-label="파트너와 사건 카드">
                 <div className="deck-board-heading deck-special-heading">
                   <div className="deck-special-heading-copy"><strong>파트너 · 사건</strong><small>필수 카드 · 각 1장</small></div>
@@ -1014,9 +1559,16 @@ export default function App() {
                 {partnerCard ? (
                   <article className="deck-special-card">
                     <span className="deck-special-role">파트너</span>
-                    <button onClick={() => setSelectedCard(partnerCard)} className="deck-special-open" title={`${partnerCard.name} 상세 정보`}>
-                      {partnerCard.imageUrl ? <img src={partnerCard.imageUrl} loading="lazy" alt={partnerCard.name} className="deck-special-image" /> : <div className="deck-special-image flex items-center justify-center text-[9px] text-slate-500">이미지 없음</div>}
-                      <div className="deck-special-name">{partnerCard.name}</div>
+                    <button onClick={() => openCardDetail(partnerCard, 'cards')} className="deck-special-open" title={getDeckCardSummary(partnerCard)}>
+                      <div className="deck-card-image-wrap">
+                        {partnerCard.imageUrl ? <img src={partnerCard.imageUrl} loading="lazy" alt={partnerCard.name} className="deck-special-image" /> : <div className="deck-special-image flex items-center justify-center text-[9px] text-slate-500">이미지 없음</div>}
+                        {(partnerCard.keywordTags?.length > 0 || partnerCard.hiramekiEffect || partnerCard.cutInEffect) && <div className="deck-feature-dots" aria-label={`특성: ${(partnerCard.keywordTags || []).join(', ')}${partnerCard.hiramekiEffect ? ', 히라메키' : ''}${partnerCard.cutInEffect ? ', 컷인' : ''}`}>
+                          {(partnerCard.keywordTags || []).map((tag, dotIndex) => <span key={`partner-keyword-dot-${dotIndex}-${tag}`} className={`deck-feature-dot keyword-dot-${keywordTagClass(tag).replace('keyword-', '')}`} title={tag} />)}
+                          {partnerCard.hiramekiEffect && <span className="deck-feature-dot deck-feature-dot-hirameki" title="히라메키" />}
+                          {partnerCard.cutInEffect && <span className="deck-feature-dot deck-feature-dot-cutin" title="컷인" />}
+                        </div>}
+                      </div>
+                      <div className="deck-special-name"><span className="deck-card-primary">{getDeckCardNameLine(partnerCard)}</span></div>
                       <span className="deck-special-id">{partnerCard.cardId || partnerCard.cardNum || '파트너 카드'}</span>
                     </button>
                     <button onClick={() => setPartnerId('')} aria-label="파트너 카드 해제" title="파트너 해제" className="deck-special-remove">×</button>
@@ -1032,9 +1584,16 @@ export default function App() {
                 {eventCard ? (
                   <article className="deck-special-card">
                     <span className="deck-special-role is-event">사건</span>
-                    <button onClick={() => setSelectedCard(eventCard)} className="deck-special-open" title={`${eventCard.name} 상세 정보`}>
-                      {eventCard.imageUrl ? <img src={eventCard.imageUrl} loading="lazy" alt={eventCard.name} className="deck-special-image" /> : <div className="deck-special-image flex items-center justify-center text-[9px] text-slate-500">이미지 없음</div>}
-                      <div className="deck-special-name">{eventCard.name}</div>
+                    <button onClick={() => openCardDetail(eventCard, 'cards')} className="deck-special-open" title={getDeckCardSummary(eventCard)}>
+                      <div className="deck-card-image-wrap">
+                        {eventCard.imageUrl ? <img src={eventCard.imageUrl} loading="lazy" alt={eventCard.name} className="deck-special-image" /> : <div className="deck-special-image flex items-center justify-center text-[9px] text-slate-500">이미지 없음</div>}
+                        {(eventCard.keywordTags?.length > 0 || eventCard.hiramekiEffect || eventCard.cutInEffect) && <div className="deck-feature-dots" aria-label={`특성: ${(eventCard.keywordTags || []).join(', ')}${eventCard.hiramekiEffect ? ', 히라메키' : ''}${eventCard.cutInEffect ? ', 컷인' : ''}`}>
+                          {(eventCard.keywordTags || []).map((tag, dotIndex) => <span key={`event-keyword-dot-${dotIndex}-${tag}`} className={`deck-feature-dot keyword-dot-${keywordTagClass(tag).replace('keyword-', '')}`} title={tag} />)}
+                          {eventCard.hiramekiEffect && <span className="deck-feature-dot deck-feature-dot-hirameki" title="히라메키" />}
+                          {eventCard.cutInEffect && <span className="deck-feature-dot deck-feature-dot-cutin" title="컷인" />}
+                        </div>}
+                      </div>
+                      <div className="deck-special-name"><span className="deck-card-primary">{getDeckCardNameLine(eventCard)}</span></div>
                       <span className="deck-special-id">{eventCard.cardId || eventCard.cardNum || '사건 카드'}</span>
                     </button>
                     <button onClick={() => setEventId('')} aria-label="사건 카드 해제" title="사건 카드 해제" className="deck-special-remove">×</button>
@@ -1051,15 +1610,36 @@ export default function App() {
               <div className="deck-main-column">
                 <div className="deck-board-heading deck-main-heading">
                   <div><strong>메인 덱</strong><small>40칸 · 같은 카드 최대 3장</small></div>
-                  <span className="text-[11px] tabular-nums text-slate-500">10 × 4 · 40칸</span>
+                  <div className="deck-sort-tools">
+                    <label htmlFor="deck-sort-select">정렬</label>
+                    <select id="deck-sort-select" className="deck-sort-select" value={deckSort} onChange={(event) => setDeckSort(event.target.value)} aria-label="덱 정렬 기준">
+                      <option value="added">추가한 순서</option>
+                      <option value="cost">코스트 낮은순</option>
+                      <option value="cost-desc">코스트 높은순</option>
+                      <option value="color">색상별</option>
+                      <option value="ap">AP 높은순</option>
+                    </select>
+                    <label htmlFor="deck-layout-select">배열</label>
+                    <select id="deck-layout-select" className="deck-layout-select" value={deckLayout} onChange={(event) => setDeckLayout(event.target.value)} aria-label="덱 카드 배열">
+                      <option value="10x4">10 × 4</option>
+                      <option value="8x5">8 × 5</option>
+                    </select>
+                  </div>
                 </div>
                 <div className="deck-slots-frame">
                   <div className="deck-slots-grid">
                   {deckSlots.map((card, index) => card ? (
                     <article key={card.deckSlotKey} className="deck-card-slot">
-                      <button onClick={() => setSelectedCard(card)} className="deck-card-open" title={`${card.name} 상세 정보`}>
-                        {card.imageUrl ? <img src={card.imageUrl} loading="lazy" alt={card.name} className="deck-card-image" /> : <div className="deck-card-image flex items-center justify-center text-[9px] text-slate-500">이미지 없음</div>}
-                        <div className="deck-card-name">{card.name}</div>
+                      <button onClick={() => openCardDetail(card, 'deck')} className="deck-card-open" title={getDeckCardSummary(card)}>
+                        <div className="deck-card-image-wrap">
+                          {card.imageUrl ? <img src={card.imageUrl} loading="lazy" alt={card.name} className="deck-card-image" /> : <div className="deck-card-image flex items-center justify-center text-[9px] text-slate-500">이미지 없음</div>}
+                          {(card.keywordTags?.length > 0 || card.hiramekiEffect || card.cutInEffect) && <div className="deck-feature-dots" aria-label={`특성: ${(card.keywordTags || []).join(', ')}${card.hiramekiEffect ? ', 히라메키' : ''}${card.cutInEffect ? ', 컷인' : ''}`}>
+                            {(card.keywordTags || []).map((tag, dotIndex) => <span key={`keyword-dot-${dotIndex}-${tag}`} className={`deck-feature-dot keyword-dot-${keywordTagClass(tag).replace('keyword-', '')}`} title={tag} />)}
+                            {card.hiramekiEffect && <span className="deck-feature-dot deck-feature-dot-hirameki" title="히라메키" />}
+                            {card.cutInEffect && <span className="deck-feature-dot deck-feature-dot-cutin" title="컷인" />}
+                          </div>}
+                        </div>
+                        <div className="deck-card-name"><span className="deck-card-primary">{getDeckCardNameLine(card)}</span><span className="deck-card-secondary">{getDeckCardStatsLine(card)}</span></div>
                       </button>
                       <button onClick={() => removeCard(card.key)} aria-label={`${card.name} 한 장 제거`} title="한 장 제거" className="deck-card-remove">−</button>
                     </article>
@@ -1075,7 +1655,7 @@ export default function App() {
               </div>
             </div>
           </div>
-          <p className="deck-footnote border-t border-white/[0.08] pt-3 text-[11px] leading-5 text-slate-500">덱 구성은 이 브라우저에 자동 저장돼요. 완성된 덱을 JSON으로 내보내려면 메인 덱 40장과 파트너 카드 1장, 사건 카드 1장을 모두 선택해야 해요.</p>
+          <p className="deck-footnote border-t border-white/[0.08] pt-3 text-[11px] leading-5 text-slate-500">덱 구성은 이 브라우저에 자동 저장돼요. 메인 덱은 빈 슬롯을 포함해 이미지로 저장할 수 있어요. 파트너 카드와 사건 카드는 각각 선택해야 해요.</p>
         </section>
       )}
 
@@ -1084,22 +1664,34 @@ export default function App() {
           <section role="dialog" aria-modal="true" aria-label={`${selectedCard.name} 상세 정보`} className="card-detail-dialog flex max-h-[94dvh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-white/15 bg-[#111a2a] shadow-2xl shadow-black/60">
             <div className="card-detail-header flex shrink-0 items-start justify-between gap-3 border-b border-white/10 px-4 py-3 sm:px-5">
               <div className="min-w-0"><p className="mb-1 text-[10px] font-bold tracking-[0.18em] text-rose-300">CARD DETAIL</p><h2 className="break-keep text-lg font-black sm:text-xl">{selectedCard.name}</h2><p className="mt-1 text-[11px] text-slate-500">{selectedCard.cardId || '-'} {selectedCard.cardNum ? `· ${selectedCard.cardNum}` : ''}</p></div>
-              <div className="flex shrink-0 items-center gap-1.5"><button onClick={() => moveSelectedCard(-1)} disabled={filteredCards.length < 2} aria-label="이전 카드" title="이전 카드 (←)" className="h-9 w-9 rounded-lg border border-white/10 text-lg text-slate-300 transition hover:bg-white/10 disabled:opacity-30">‹</button><button onClick={() => moveSelectedCard(1)} disabled={filteredCards.length < 2} aria-label="다음 카드" title="다음 카드 (→)" className="h-9 w-9 rounded-lg border border-white/10 text-lg text-slate-300 transition hover:bg-white/10 disabled:opacity-30">›</button><button onClick={() => setSelectedCard(null)} aria-label="상세 창 닫기" title="닫기 (Esc)" className="ml-1 h-9 rounded-lg bg-rose-600 px-3 text-xs font-bold text-white transition hover:bg-rose-500">닫기 ✕</button></div>
+              <div className="flex shrink-0 items-center gap-1.5"><button onClick={() => moveSelectedCard(-1)} disabled={modalNavigationCards.length < 2} aria-label="이전 카드" title={selectedCardSource === 'deck' ? '덱에서 이전 카드 (←)' : '이전 카드 (←)'} className="h-9 w-9 rounded-lg border border-white/10 text-lg text-slate-300 transition hover:bg-white/10 disabled:opacity-30">‹</button><button onClick={() => moveSelectedCard(1)} disabled={modalNavigationCards.length < 2} aria-label="다음 카드" title={selectedCardSource === 'deck' ? '덱에서 다음 카드 (→)' : '다음 카드 (→)'} className="h-9 w-9 rounded-lg border border-white/10 text-lg text-slate-300 transition hover:bg-white/10 disabled:opacity-30">›</button><button onClick={() => setSelectedCard(null)} aria-label="상세 창 닫기" title="닫기 (Esc)" className="ml-1 h-9 rounded-lg bg-rose-600 px-3 text-xs font-bold text-white transition hover:bg-rose-500">닫기 ✕</button></div>
             </div>
             <div className="card-detail-body min-h-0 overflow-y-auto p-3 sm:p-5">
               <div className="card-detail-layout grid grid-cols-1 gap-4 sm:grid-cols-[220px_minmax(0,1fr)] sm:gap-5">
                 <div className="flex flex-col items-center gap-3 sm:sticky sm:top-0 sm:self-start">
                   {selectedCard.imageUrl ? <img src={selectedCard.imageUrl} alt={selectedCard.name} className="max-h-[34vh] w-full max-w-[190px] rounded-xl bg-[#090f1b] object-contain sm:max-h-[58vh] sm:max-w-[220px]" /> : <div className="flex aspect-[3/4] w-full max-w-[190px] items-center justify-center rounded-xl bg-[#090f1b] text-sm text-slate-500">이미지 없음</div>}
                   <button onClick={() => addCard(selectedCard)} className="w-full max-w-[240px] rounded-xl bg-rose-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-rose-500">{getCardRole(selectedCard) === 'partner' ? (partnerId === selectedCard.key ? '파트너 선택 해제' : '파트너로 지정') : getCardRole(selectedCard) === 'event' ? (eventId === selectedCard.key ? '사건 카드 선택 해제' : '사건 카드로 지정') : `덱에 추가${Number(deck[selectedCard.key] || 0) ? ` · 현재 ${deck[selectedCard.key]}장` : ' +'}`}</button>
-                  {filteredCards.length > 1 && <p className="text-[10px] text-slate-600">← → 키로 다른 카드 확인</p>}
+                  {modalNavigationCards.length > 1 && <p className="text-[10px] text-slate-600">← → 키로 {selectedCardSource === 'deck' ? '덱의 다른 카드' : '다른 카드'} 확인</p>}
                 </div>
                 <div className="min-w-0 space-y-3">
-                  <dl className="grid grid-cols-2 gap-2 sm:grid-cols-3">{[['종류', selectedCard.type], ['색상', selectedCard.color], ['레어도', selectedCard.rarity], ['코스트', formatNumber(selectedCard.cost)], ['LP', formatNumber(selectedCard.lp)], ['수록 제품', selectedCard.set]].map(([label, value]) => <div key={label} className="card-meta-item rounded-lg border border-white/[0.07] bg-[#090f1b] p-2.5"><dt className="text-[10px] font-medium text-slate-500">{label}</dt><dd className="mt-1 break-words text-xs font-semibold text-slate-200">{value || '-'}</dd></div>)}</dl>
-                  {selectedCard.keywordTags?.length > 0 && <div className="detail-keyword-badges effect-badges">{selectedCard.keywordTags.map((tag) => <span key={tag} className={`effect-badge ${keywordTagClass(tag)}${String(tag).startsWith('조건부 ') ? ' conditional' : ''}`}>[{tag}]</span>)}</div>}
-                  {(selectedCard.hiramekiEffect || selectedCard.cutInEffect) && <div className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><h3 className="mb-3 text-xs font-bold">게임 시스템 효과</h3><div className="space-y-3">{selectedCard.hiramekiEffect && <div><h4 className="mb-1 text-xs font-bold text-amber-300">히라메키</h4><p className="whitespace-pre-wrap break-words text-xs leading-5 text-slate-200">{selectedCard.hiramekiEffect}</p></div>}{selectedCard.cutInEffect && <div><h4 className="mb-1 text-xs font-bold text-sky-300">컷인</h4><p className="whitespace-pre-wrap break-words text-xs leading-5 text-slate-200">{selectedCard.cutInEffect}</p></div>}</div></div>}
-                  <div className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><h3 className="mb-2 text-xs font-bold text-slate-300">카드 효과</h3><div className="card-effect-text text-xs leading-6 text-slate-200">{formatAbilityText(selectedCard.ability) || '효과 텍스트 없음'}</div></div>
+                  <dl className="card-meta-grid grid grid-cols-2 gap-2 sm:grid-cols-3">{[['종류', selectedCard.type], ['색상', selectedCard.color], ['레어도', selectedCard.rarity], ['코스트', selectedCard.cost], ['LP', selectedCard.lp], ['수록 제품', selectedCard.set]].map(([label, value]) => <div key={label} className={`card-meta-item rounded-lg border border-white/[0.07] bg-[#090f1b] p-2.5${label === '수록 제품' ? ' card-meta-item-set' : ''}`}><dt className="text-[10px] font-medium text-slate-500">{label}</dt><dd className="mt-1 break-words text-xs font-semibold text-slate-200">{value === null || value === undefined || value === '' ? '-' : value}</dd></div>)}<div className="card-meta-item card-meta-item-traits rounded-lg border border-white/[0.07] bg-[#090f1b] p-2.5"><dt className="text-[10px] font-medium text-slate-500">특징</dt><dd className="mt-1">{selectedCard.traits?.length ? <div className="card-trait-list">{selectedCard.traits.map((trait) => <span key={trait} className="card-trait-chip">{trait}</span>)}</div> : <span className="text-xs font-semibold text-slate-500">없음</span>}</dd></div></dl>
+                  {selectedCard.keywordTags?.length > 0 && <div className="detail-keyword-badges effect-badges">{selectedCard.keywordTags.map((tag) => <span key={tag} className={`effect-badge ${keywordTagClass(tag)}${String(tag).startsWith('조건부 ') ? ' conditional' : ''}`}>{tag}</span>)}</div>}
+                  {(selectedCard.hiramekiEffect || selectedCard.cutInEffect) && <div className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><h3 className="mb-3 text-xs font-bold">게임 시스템 효과</h3><div className="space-y-3">{selectedCard.hiramekiEffect && <div className="card-system-effect-item"><h4 className="card-system-effect-label card-system-effect-label-hirameki">히라메키</h4><p className="card-system-effect-text whitespace-pre-wrap break-words text-xs leading-5 text-slate-200">{selectedCard.hiramekiEffect}</p></div>}{selectedCard.cutInEffect && <div className="card-system-effect-item"><h4 className="card-system-effect-label card-system-effect-label-cutin">컷인</h4><p className="card-system-effect-text whitespace-pre-wrap break-words text-xs leading-5 text-slate-200">{selectedCard.cutInEffect}</p></div>}</div></div>}
+                  <div className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><h3 className="mb-2 text-xs font-bold text-slate-300">카드 효과</h3><div className="card-effect-text text-xs leading-6 text-slate-200">{renderAbilityText(selectedCard.ability) || '효과 텍스트 없음'}</div></div>
                   {selectedCard.flavor && <div className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><h3 className="mb-2 text-xs font-bold text-slate-300">플레이버 텍스트</h3><p className="whitespace-pre-wrap break-words text-xs leading-5 text-slate-300">{selectedCard.flavor}</p></div>}
-                  {(selectedCard.originalName !== selectedCard.name || selectedCard.originalAbility !== selectedCard.ability) && <details className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><summary className="cursor-pointer text-xs font-semibold text-slate-300">일본어 원문 보기</summary><div className="mt-3 space-y-3 text-xs leading-5"><p><span className="text-slate-500">이름: </span>{selectedCard.originalName || '-'}</p><p className="card-original-effect-text whitespace-pre-wrap break-words"><span className="text-slate-500">효과: </span>{formatAbilityText(selectedCard.originalAbility) || '-'}</p></div></details>}
+                  {(selectedCard.originalName !== selectedCard.name || selectedCard.originalAbility !== selectedCard.ability) && <details className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><summary className="cursor-pointer text-xs font-semibold text-slate-300">일본어 원문 보기</summary><div className="mt-3 space-y-3 text-xs leading-5"><p className="card-original-name-text"><span className="text-slate-500">이름: </span>{selectedCard.originalName || '-'}</p><p className="card-original-effect-text whitespace-pre-wrap break-words"><span className="text-slate-500">효과: </span>{renderAbilityText(selectedCard.originalAbility) || '-'}</p></div></details>}
+                  <div className="card-search-alias-section" aria-label="검색용 별명 태그">
+                    {!editingSelectedAliases ? <div className="card-search-alias-display">
+                      <p className="card-search-alias-tags">{selectedCardSearchAliases.length ? selectedCardSearchAliases.map((alias) => <span key={alias}>#{alias} </span>) : <span className="card-search-alias-empty">검색 별명 태그 없음</span>}</p>
+                      <div className="card-search-alias-action-buttons">
+                        <button type="button" onClick={exportSearchAliasData}>JSON 내보내기</button>
+                        <button type="button" onClick={() => startSearchAliasEdit(selectedCard)} className="card-search-alias-edit-button">태그 편집</button>
+                      </div>
+                    </div> : <>
+                      <textarea className="card-search-alias-input" rows={2} value={searchAliasDraft} onChange={(event) => setSearchAliasDraft(event.target.value)} aria-label="검색용 별명 태그 편집" placeholder="예: 샤로마, 별명2" />
+                      <div className="card-search-alias-actions"><span className="card-search-alias-help">쉼표/줄바꿈 구분 · 사이트 데이터 보존은 JSON 내보내기로</span><div className="card-search-alias-action-buttons"><button type="button" onClick={cancelSearchAliasEdit}>취소</button><button type="button" className="save" onClick={() => saveSearchAliasEdit(selectedCard)}>화면에 적용</button></div></div>
+                    </>}
+                  </div>
                 </div>
               </div>
             </div>
