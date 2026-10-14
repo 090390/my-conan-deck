@@ -280,6 +280,8 @@ function renderAbilityText(value) {
     const colorMatch = segment.match(/^[（(]([^()（）\n]{1,18})[）)]$/u);
     if (bracketMatch) {
       const label = bracketMatch[1].trim();
+      // 색상 하나만 표시하는 【청】, 【적】 등의 문구는 태그 박스 대신 색상 원으로 표시합니다.
+      if (canonicalAbilityColor(label)) return renderAbilityColorCircle(label, `ability-color-${index}`);
       return <span key={`ability-condition-${index}`} className={`ability-condition-badge ${abilityConditionClass(label)}`}>{renderConditionLabel(label, `ability-condition-${index}`)}</span>;
     }
     if (fileMatch) {
@@ -693,6 +695,7 @@ export default function App() {
   const [costFilter, setCostFilter] = useState('');
   const [lpFilter, setLpFilter] = useState('');
   const [keywordFilter, setKeywordFilter] = useState('');
+  const [traitFilter, setTraitFilter] = useState('');
   const [searchAliases, setSearchAliases] = useState({});
   const [searchAliasEditingKey, setSearchAliasEditingKey] = useState('');
   const [searchAliasDraft, setSearchAliasDraft] = useState('');
@@ -783,7 +786,7 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cards]);
 
-  useEffect(() => { setPage(1); }, [searchTerm, colorFilter, typeFilter, rarityFilter, costFilter, lpFilter, keywordFilter, searchAliases]);
+  useEffect(() => { setPage(1); }, [searchTerm, colorFilter, typeFilter, rarityFilter, costFilter, lpFilter, keywordFilter, traitFilter, searchAliases]);
 
   const colorOptions = useMemo(() => {
     // 표시 순서가 다른 조합(예: 황흑/흑황)은 하나의 필터 선택지로 합칩니다.
@@ -800,6 +803,7 @@ export default function App() {
   const costOptions = useMemo(() => uniqueOptions(cards.map((card) => card.cost)), [cards]);
   const lpOptions = useMemo(() => uniqueOptions(cards.map((card) => card.lp)), [cards]);
   const keywordOptions = useMemo(() => uniqueOptions(cards.flatMap((card) => card.keywordTags || [])), [cards]);
+  const traitOptions = useMemo(() => uniqueOptions(cards.flatMap((card) => card.traits || [])), [cards]);
 
   const filteredCards = useMemo(() => {
     const query = searchTerm.trim().toLocaleLowerCase();
@@ -819,6 +823,7 @@ export default function App() {
         } else if (!searchable.includes(query)) return false;
       }
       if (keywordFilter && !cardKeywordTags.some((tag) => tag === keywordFilter)) return false;
+      if (traitFilter && !(card.traits || []).some((trait) => trait === traitFilter)) return false;
       if (colorFilter && (card.colorKey || normalizeColorKey(card.color)) !== colorFilter) return false;
       if (typeFilter && card.type !== typeFilter) return false;
       if (rarityFilter && card.rarity !== rarityFilter) return false;
@@ -826,7 +831,7 @@ export default function App() {
       if (lpFilter !== '' && String(card.lp) !== lpFilter) return false;
       return true;
     });
-  }, [cards, searchTerm, colorFilter, typeFilter, rarityFilter, costFilter, lpFilter, keywordFilter, keywordOptions, searchAliases]);
+  }, [cards, searchTerm, colorFilter, typeFilter, rarityFilter, costFilter, lpFilter, keywordFilter, traitFilter, keywordOptions, searchAliases]);
 
   const totalPages = Math.max(1, Math.ceil(filteredCards.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -1005,6 +1010,7 @@ export default function App() {
     setCostFilter('');
     setLpFilter('');
     setKeywordFilter('');
+    setTraitFilter('');
   }
 
   async function exportDeckImage() {
@@ -1487,7 +1493,7 @@ export default function App() {
             <div className="flex flex-wrap items-center gap-2"><button onClick={clearFilters} className="filters-reset-button">필터 초기화</button></div>
           </div>
 
-          <div className="app-filters mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-7">
+          <div className="app-filters mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8">
             <input value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder="이름 · 효과 · 카드 ID" aria-label="카드 검색" className="app-control app-search-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-3 py-2 text-sm outline-none transition placeholder:text-slate-600 focus:border-rose-400/70" />
             <select aria-label="색상 필터" value={colorFilter} onChange={(event) => setColorFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 색상</option>{colorOptions.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}</select>
             <select aria-label="종류 필터" value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 종류</option>{typeOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select>
@@ -1495,6 +1501,7 @@ export default function App() {
             <select aria-label="코스트 필터" value={costFilter} onChange={(event) => setCostFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 코스트</option>{costOptions.map((value) => <option key={String(value)} value={String(value)}>{value}</option>)}</select>
             <select aria-label="LP 필터" value={lpFilter} onChange={(event) => setLpFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 LP</option>{lpOptions.map((value) => <option key={String(value)} value={String(value)}>{value}</option>)}</select>
             <select aria-label="특수 키워드 필터" value={keywordFilter} onChange={(event) => setKeywordFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 특수 키워드</option>{keywordOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select>
+            <select aria-label="특징 필터" value={traitFilter} onChange={(event) => setTraitFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 특징</option>{traitOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select>
           </div>
 
           {visibleCards.length === 0 ? <p className="rounded-xl border border-solid border-white/15 p-8 text-center text-sm text-slate-400">조건에 맞는 카드가 없어요.</p> : (
@@ -1676,10 +1683,10 @@ export default function App() {
                 <div className="min-w-0 space-y-3">
                   <dl className="card-meta-grid grid grid-cols-2 gap-2 sm:grid-cols-3">{[['종류', selectedCard.type], ['색상', selectedCard.color], ['레어도', selectedCard.rarity], ['코스트', selectedCard.cost], ['LP', selectedCard.lp], ['수록 제품', selectedCard.set]].map(([label, value]) => <div key={label} className={`card-meta-item rounded-lg border border-white/[0.07] bg-[#090f1b] p-2.5${label === '수록 제품' ? ' card-meta-item-set' : ''}`}><dt className="text-[10px] font-medium text-slate-500">{label}</dt><dd className="mt-1 break-words text-xs font-semibold text-slate-200">{value === null || value === undefined || value === '' ? '-' : value}</dd></div>)}<div className="card-meta-item card-meta-item-traits rounded-lg border border-white/[0.07] bg-[#090f1b] p-2.5"><dt className="text-[10px] font-medium text-slate-500">특징</dt><dd className="mt-1">{selectedCard.traits?.length ? <div className="card-trait-list">{selectedCard.traits.map((trait) => <span key={trait} className="card-trait-chip">{trait}</span>)}</div> : <span className="text-xs font-semibold text-slate-500">없음</span>}</dd></div></dl>
                   {selectedCard.keywordTags?.length > 0 && <div className="detail-keyword-badges effect-badges">{selectedCard.keywordTags.map((tag) => <span key={tag} className={`effect-badge ${keywordTagClass(tag)}${String(tag).startsWith('조건부 ') ? ' conditional' : ''}`}>{tag}</span>)}</div>}
-                  {(selectedCard.hiramekiEffect || selectedCard.cutInEffect) && <div className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><h3 className="mb-3 text-xs font-bold">게임 시스템 효과</h3><div className="space-y-3">{selectedCard.hiramekiEffect && <div className="card-system-effect-item"><h4 className="card-system-effect-label card-system-effect-label-hirameki">히라메키</h4><p className="card-system-effect-text whitespace-pre-wrap break-words text-xs leading-5 text-slate-200">{selectedCard.hiramekiEffect}</p></div>}{selectedCard.cutInEffect && <div className="card-system-effect-item"><h4 className="card-system-effect-label card-system-effect-label-cutin">컷인</h4><p className="card-system-effect-text whitespace-pre-wrap break-words text-xs leading-5 text-slate-200">{selectedCard.cutInEffect}</p></div>}</div></div>}
+                  {(selectedCard.hiramekiEffect || selectedCard.cutInEffect) && <div className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><h3 className="mb-3 text-xs font-bold">게임 시스템 효과</h3><div className="space-y-3">{selectedCard.hiramekiEffect && <div className="card-system-effect-item"><h4 className="card-system-effect-label card-system-effect-label-hirameki">히라메키</h4><p className="card-system-effect-text whitespace-pre-wrap break-words text-xs leading-5 text-slate-200">{renderAbilityText(selectedCard.hiramekiEffect)}</p></div>}{selectedCard.cutInEffect && <div className="card-system-effect-item"><h4 className="card-system-effect-label card-system-effect-label-cutin">컷인</h4><p className="card-system-effect-text whitespace-pre-wrap break-words text-xs leading-5 text-slate-200">{renderAbilityText(selectedCard.cutInEffect)}</p></div>}</div></div>}
                   <div className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><h3 className="mb-2 text-xs font-bold text-slate-300">카드 효과</h3><div className="card-effect-text text-xs leading-6 text-slate-200">{renderAbilityText(selectedCard.ability) || '효과 텍스트 없음'}</div></div>
                   {selectedCard.flavor && <div className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><h3 className="mb-2 text-xs font-bold text-slate-300">플레이버 텍스트</h3><p className="whitespace-pre-wrap break-words text-xs leading-5 text-slate-300">{selectedCard.flavor}</p></div>}
-                  {(selectedCard.originalName !== selectedCard.name || selectedCard.originalAbility !== selectedCard.ability) && <details className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><summary className="cursor-pointer text-xs font-semibold text-slate-300">일본어 원문 보기</summary><div className="mt-3 space-y-3 text-xs leading-5"><p className="card-original-name-text"><span className="text-slate-500">이름: </span>{selectedCard.originalName || '-'}</p><p className="card-original-effect-text whitespace-pre-wrap break-words"><span className="text-slate-500">효과: </span>{renderAbilityText(selectedCard.originalAbility) || '-'}</p></div></details>}
+                  {(selectedCard.originalName !== selectedCard.name || selectedCard.originalAbility !== selectedCard.ability) && <details className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><summary className="cursor-pointer text-xs font-semibold text-slate-300">일본어 원문 보기</summary><div className="mt-3 space-y-3 text-xs leading-5"><p className="card-original-name-text"><span className="text-slate-500">이름: </span>{selectedCard.originalName || '-'}</p><p className="card-original-effect-text whitespace-pre-wrap break-words"><span className="text-slate-500">효과: </span>{selectedCard.originalAbility || '-'}</p></div></details>}
                   <div className="card-search-alias-section" aria-label="검색용 별명 태그">
                     {!editingSelectedAliases ? <div className="card-search-alias-display">
                       <p className="card-search-alias-tags">{selectedCardSearchAliases.length ? selectedCardSearchAliases.map((alias) => <span key={alias}>#{alias} </span>) : <span className="card-search-alias-empty">검색 별명 태그 없음</span>}</p>
@@ -1688,7 +1695,7 @@ export default function App() {
                         <button type="button" onClick={() => startSearchAliasEdit(selectedCard)} className="card-search-alias-edit-button">태그 편집</button>
                       </div>
                     </div> : <>
-                      <textarea className="card-search-alias-input" rows={2} value={searchAliasDraft} onChange={(event) => setSearchAliasDraft(event.target.value)} aria-label="검색용 별명 태그 편집" placeholder="예: 샤로마, 별명2" />
+                      <textarea className="card-search-alias-input" rows={2} value={searchAliasDraft} onChange={(event) => setSearchAliasDraft(event.target.value)} aria-label="검색용 별명 태그 편집" placeholder="예: 샤로마, 멘헤라, 오레노카즈하, 나루호도…" />
                       <div className="card-search-alias-actions"><span className="card-search-alias-help">쉼표/줄바꿈 구분 · 사이트 데이터 보존은 JSON 내보내기로</span><div className="card-search-alias-action-buttons"><button type="button" onClick={cancelSearchAliasEdit}>취소</button><button type="button" className="save" onClick={() => saveSearchAliasEdit(selectedCard)}>화면에 적용</button></div></div>
                     </>}
                   </div>
