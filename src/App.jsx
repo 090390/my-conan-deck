@@ -42,6 +42,8 @@ function numericValue(value) {
 // 카드 색상 표기를 한 글자 태그로 통일합니다. 조합 색상은 표시 순서를 보존하되,
 // 필터용 colorKey는 고정 순서로 만들어 '황흑'과 '흑황'을 같은 색 조합으로 취급합니다.
 const COLOR_ORDER = ['청', '적', '황', '녹', '흑', '백'];
+// 색상 필터 표시 순서: 단일 색상을 먼저, 조합 색상은 색상 수가 적은 것부터 표시합니다.
+const COLOR_FILTER_ORDER = ['청', '녹', '백', '적', '황', '흑'];
 const COLOR_DEFINITIONS = [
   { tag: '청', aliases: ['청', '파랑', '파란색', '파랑색', '푸른색', '青色', '青', 'ブルー', 'blue'] },
   { tag: '적', aliases: ['적', '빨강', '빨간색', '빨강색', '赤色', '赤', 'レッド', 'red'] },
@@ -199,6 +201,53 @@ function keywordTagClass(tag) {
   return 'keyword-other';
 }
 
+function keywordDotClass(tag) {
+  const value = String(tag || '');
+  if (/미스리드|ミスリード/iu.test(value)) return 'keyword-mislead';
+  if (/수사|捜査/iu.test(value)) return 'keyword-investigation';
+  return keywordTagClass(tag);
+}
+
+function cardHasAbilityDot(card, kind) {
+  const tags = Array.isArray(card?.keywordTags) ? card.keywordTags : [];
+  if (kind === 'mislead' && tags.some((tag) => /미스리드|ミスリード/iu.test(String(tag)))) return true;
+  if (kind === 'investigation' && tags.some((tag) => /수사|捜査/iu.test(String(tag)))) return true;
+
+  const sourceText = [card?.ability, card?.originalAbility, card?.hiramekiEffect, card?.cutInEffect]
+    .map((value) => String(value ?? ''))
+    .join('\n');
+  // 숫자/X가 붙은 실제 능력 표기를 찾습니다. 능력을 가진 다른 캐릭터를 언급하는 문구만으로는 점을 붙이지 않습니다.
+  if (kind === 'mislead') return /[〚［\[]\s*(?:미스리드|ミスリード)\s*[0-9０-９XxＸｘ]+\s*[〛］\]]/iu.test(sourceText);
+  if (kind === 'investigation') return /[〚［\[]\s*(?:수사|捜査)\s*[0-9０-９XxＸｘ]+\s*[〛］\]]/iu.test(sourceText);
+  return false;
+}
+
+function getCardFeatureDotItems(card) {
+  const items = [];
+  const seen = new Set();
+  const specialClasses = new Set(['keyword-mislead', 'keyword-investigation']);
+  const tags = Array.isArray(card?.keywordTags) ? card.keywordTags : [];
+  tags.forEach((tag, index) => {
+    const className = keywordDotClass(tag);
+    const uniqueKey = specialClasses.has(className) ? className : `${className}:${tag}`;
+    if (seen.has(uniqueKey)) return;
+    seen.add(uniqueKey);
+    const title = className === 'keyword-mislead' ? '미스리드'
+      : className === 'keyword-investigation' ? '수사' : String(tag);
+    items.push({ key: `tag-${index}-${uniqueKey}`, title, className });
+  });
+  for (const [kind, title, className] of [
+    ['mislead', '미스리드', 'keyword-mislead'],
+    ['investigation', '수사', 'keyword-investigation'],
+  ]) {
+    if (cardHasAbilityDot(card, kind) && !seen.has(className)) {
+      seen.add(className);
+      items.push({ key: `ability-${kind}`, title, className });
+    }
+  }
+  return items;
+}
+
 function formatAbilityText(value) {
   const text = String(value ?? '').replace(/\r\n?/gu, '\n').trim();
   if (!text) return '';
@@ -265,8 +314,18 @@ function findPartnerColorMarker(label) {
 
 function renderConditionLabel(label, keyPrefix) {
   const marker = findPartnerColorMarker(label);
-  if (!marker) return label;
-  return <>{label.slice(0, marker.start)}{renderAbilityColorCircle(marker.rawColor, `${keyPrefix}-color`)}{label.slice(marker.end)}</>;
+  if (marker) {
+    return <>{label.slice(0, marker.start)}{renderAbilityColorCircle(marker.rawColor, `${keyPrefix}-color`)}{label.slice(marker.end)}</>;
+  }
+
+  // 사건 색상 조건(예: 【사건 청&녹】)에서도 색상만 원형으로 강조합니다.
+  const eventMatch = String(label).match(/(사건|事件)([\s　]*)([청적황녹흑백](?:[\s　]*[&＋+/,·][\s　]*[청적황녹흑백])*)/u);
+  if (!eventMatch) return label;
+  const colorStart = eventMatch.index + eventMatch[1].length + eventMatch[2].length;
+  const colorRun = eventMatch[3];
+  return <>{String(label).slice(0, colorStart)}{colorRun.split(/([청적황녹흑백])/u).map((part, index) => COLOR_ORDER.includes(part)
+    ? renderAbilityColorCircle(part, `${keyPrefix}-event-color-${index}`)
+    : part)}{String(label).slice(colorStart + colorRun.length)}</>;
 }
 
 function renderAbilityText(value) {
@@ -280,6 +339,8 @@ function renderAbilityText(value) {
     const colorMatch = segment.match(/^[（(]([^()（）\n]{1,18})[）)]$/u);
     if (bracketMatch) {
       const label = bracketMatch[1].trim();
+      // 색상 하나만 표시하는 【청】, 【적】 등의 문구는 태그 박스 대신 색상 원으로 표시합니다.
+      if (canonicalAbilityColor(label)) return renderAbilityColorCircle(label, `ability-color-${index}`);
       return <span key={`ability-condition-${index}`} className={`ability-condition-badge ${abilityConditionClass(label)}`}>{renderConditionLabel(label, `ability-condition-${index}`)}</span>;
     }
     if (fileMatch) {
@@ -316,7 +377,7 @@ const TRAIT_TRANSLATIONS = {
   '会社員': '회사원', 'NY市警': '뉴욕시경', '女流棋士': '여류 기사', '英語講師': '영어 강사',
   'シャッフルロマンス': '셔플 로맨스', '婚活パーティー': '맞선 파티',
   'お手伝い': '도우미', 'カメラマン': '카메라맨', 'デザイナー': '디자이너', '北海道警': '홋카이도경',
-  '医大生': '의대생', '医療関係者': '의료 관계자', '千葉県警': '지바현경', '女王': '여왕',
+  '医大生': '의대생', '医療関係者': '의료 관계자', '千葉県警': '치바현경', '지바현경': '치바현경', '女王': '여왕',
   '絵描き': '화가', '酒屋': '주점',
 };
 
@@ -414,6 +475,12 @@ function getCardRole(card) {
   if (isPartnerCard(card)) return 'partner';
   if (isEventCard(card)) return 'event';
   return 'main';
+}
+
+// 다른 카드 번호(B01005/B01005P)라도 내부 카드 ID(예: 0001)가 같으면 동일 카드로 셉니다.
+function getSameCardLimitKey(card) {
+  const value = card?.cardId ?? card?.sourceData?.card_id ?? card?.databaseId ?? card?.key ?? '';
+  return String(value).trim().toLocaleUpperCase();
 }
 
 function uniqueOptions(values) {
@@ -562,6 +629,38 @@ function drawExportCard(ctx, card, image, x, y, width, options = {}) {
     drawWrappedCanvasText(ctx, card?.name || '이미지 없음', x + width / 2, y + imageHeight / 2, width - 28 * scale, Math.max(16, 18 * scale), 4);
     ctx.textAlign = 'left';
   }
+  // 내 덱 이미지 저장에서도 실제 덱 화면과 동일한 특성 점을 카드 이미지 위에 그립니다.
+  const exportFeatureDots = getCardFeatureDotItems(card).map((dot) => {
+    const colors = {
+      'keyword-assault': ['#fb7185', '#fda4af'],
+      'keyword-swift': ['#4ade80', '#86efac'],
+      'keyword-gale': ['#38bdf8', '#7dd3fc'],
+      'keyword-other': ['#a78bfa', '#c4b5fd'],
+      'keyword-mislead': ['#e879f9', '#f0abfc'],
+      'keyword-investigation': ['#facc15', '#fde047'],
+    };
+    const pair = colors[dot.className] || colors['keyword-other'];
+    return { fill: pair[0], stroke: pair[1] };
+  });
+  if (card?.hiramekiEffect) exportFeatureDots.push({ fill: '#fb923c', stroke: '#fdba74' });
+  if (card?.cutInEffect) exportFeatureDots.push({ fill: '#7dd3fc', stroke: '#bae6fd' });
+  if (exportFeatureDots.length) {
+    const dotSize = Math.max(9, 11 * scale);
+    const dotGap = Math.max(4, 5 * scale);
+    const totalDotsHeight = exportFeatureDots.length * dotSize + (exportFeatureDots.length - 1) * dotGap;
+    const dotX = x + width - 12 * scale;
+    let dotY = y + imageHeight / 2 - totalDotsHeight / 2 + dotSize / 2;
+    exportFeatureDots.forEach((dot) => {
+      ctx.beginPath();
+      ctx.arc(dotX, dotY, dotSize / 2, 0, Math.PI * 2);
+      ctx.fillStyle = dot.fill;
+      ctx.fill();
+      ctx.lineWidth = Math.max(1, 1 * scale);
+      ctx.strokeStyle = dot.stroke;
+      ctx.stroke();
+      dotY += dotSize + dotGap;
+    });
+  }
   ctx.restore();
   ctx.fillStyle = '#f1f5f9';
   ctx.font = `750 ${primaryFont}px sans-serif`;
@@ -682,6 +781,31 @@ function Pagination({ currentPage, totalPages, onChange }) {
   );
 }
 
+const FEATURE_DOT_LEGEND_ITEMS = [
+  { label: '돌격 계열', className: 'keyword-dot-assault' },
+  { label: '신속 계열', className: 'keyword-dot-swift' },
+  { label: '질풍 계열', className: 'keyword-dot-gale' },
+  { label: '그 밖의 특수 키워드', className: 'keyword-dot-other' },
+  { label: '미스리드', className: 'keyword-dot-mislead' },
+  { label: '수사', className: 'keyword-dot-investigation' },
+  { label: '히라메키', className: 'deck-feature-dot-hirameki' },
+  { label: '컷인', className: 'deck-feature-dot-cutin' },
+];
+
+function FeatureDotLegend({ includeSystemEffects = false, className = '' }) {
+  const items = includeSystemEffects ? FEATURE_DOT_LEGEND_ITEMS : FEATURE_DOT_LEGEND_ITEMS.slice(0, 6);
+  return (
+    <div className={`feature-dot-legend ${className}`.trim()} aria-label="특성 점 색상 안내">
+      {items.map((item) => (
+        <span key={item.label} className="feature-dot-legend-item">
+          <span aria-hidden="true" className={`feature-dot-legend-dot ${item.className}`} />
+          <span>{item.label}</span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export default function App() {
   const [cards, setCards] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -693,6 +817,7 @@ export default function App() {
   const [costFilter, setCostFilter] = useState('');
   const [lpFilter, setLpFilter] = useState('');
   const [keywordFilter, setKeywordFilter] = useState('');
+  const [traitFilter, setTraitFilter] = useState('');
   const [searchAliases, setSearchAliases] = useState({});
   const [searchAliasEditingKey, setSearchAliasEditingKey] = useState('');
   const [searchAliasDraft, setSearchAliasDraft] = useState('');
@@ -756,16 +881,20 @@ export default function App() {
     else localStorage.removeItem(EVENT_STORAGE_KEY);
   }, [eventId]);
 
-  // 예전 버전에서 메인 덱에 들어간 사건 카드는 별도 슬롯으로 옮깁니다.
+  // 예전 버전에서 메인 덱에 들어간 사건 카드를 옮기고, 내부 카드 ID별 최대 3장 제한을 정리합니다.
   useEffect(() => {
     if (!cards.length) return;
     let changed = false;
     let migratedPartner = '';
     let migratedEvent = '';
+    let totalMainCards = 0;
     const nextDeck = {};
-    for (const [key, count] of Object.entries(deck)) {
-      const card = cards.find((item) => item.key === key);
+    const identityCounts = new Map();
+    const cardsByKey = new Map(cards.map((item) => [item.key, item]));
+    for (const [key, rawCount] of Object.entries(deck)) {
+      const card = cardsByKey.get(key);
       const role = card ? getCardRole(card) : 'main';
+      const requestedCount = Math.max(0, Math.floor(Number(rawCount) || 0));
       if (role === 'partner') {
         migratedPartner ||= key;
         changed = true;
@@ -773,7 +902,17 @@ export default function App() {
         migratedEvent ||= key;
         changed = true;
       } else {
-        nextDeck[key] = count;
+        const identity = getSameCardLimitKey(card) || key;
+        const alreadyUsed = identityCounts.get(identity) || 0;
+        const allowedByIdentity = Math.max(0, SAME_CARD_LIMIT - alreadyUsed);
+        const allowedByDeck = Math.max(0, MAIN_DECK_LIMIT - totalMainCards);
+        const count = Math.min(requestedCount, allowedByIdentity, allowedByDeck);
+        if (count > 0) {
+          nextDeck[key] = count;
+          identityCounts.set(identity, alreadyUsed + count);
+          totalMainCards += count;
+        }
+        if (count !== Number(rawCount)) changed = true;
       }
     }
     if (changed) setDeck(nextDeck);
@@ -783,23 +922,47 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cards]);
 
-  useEffect(() => { setPage(1); }, [searchTerm, colorFilter, typeFilter, rarityFilter, costFilter, lpFilter, keywordFilter, searchAliases]);
+  useEffect(() => { setPage(1); }, [searchTerm, colorFilter, typeFilter, rarityFilter, costFilter, lpFilter, keywordFilter, traitFilter, searchAliases]);
 
   const colorOptions = useMemo(() => {
     // 표시 순서가 다른 조합(예: 황흑/흑황)은 하나의 필터 선택지로 합칩니다.
+    // 라벨은 청 → 녹 → 백 → 적 → 황 → 흑 순으로 통일하며 단일 색상부터 나열합니다.
     const optionsByKey = new Map();
     for (const card of cards) {
       if (!card.color) continue;
       const value = card.colorKey || normalizeColorKey(card.color);
-      if (!optionsByKey.has(value)) optionsByKey.set(value, { value, label: card.color });
+      if (!optionsByKey.has(value)) {
+        const orderedColors = COLOR_FILTER_ORDER.filter((tag) => String(value).includes(tag));
+        const knownOnly = orderedColors.length > 0 && orderedColors.join('').length === String(value).length;
+        optionsByKey.set(value, { value, label: knownOnly ? orderedColors.join('') : card.color });
+      }
     }
-    return [...optionsByKey.values()].sort((a, b) => a.label.localeCompare(b.label, 'ko', { numeric: true }));
+    const options = [...optionsByKey.values()];
+    const displayRanks = new Map(COLOR_FILTER_ORDER.map((tag, index) => [tag, index]));
+    const colorParts = (value) => COLOR_FILTER_ORDER.filter((tag) => String(value).includes(tag));
+    return options.sort((a, b) => {
+      const aColors = colorParts(a.value);
+      const bColors = colorParts(b.value);
+      const aKnown = aColors.length > 0 && aColors.join('').length === String(a.value).length;
+      const bKnown = bColors.length > 0 && bColors.join('').length === String(b.value).length;
+      if (aKnown && bKnown) {
+        if (aColors.length !== bColors.length) return aColors.length - bColors.length;
+        for (let index = 0; index < aColors.length; index += 1) {
+          const rankDifference = displayRanks.get(aColors[index]) - displayRanks.get(bColors[index]);
+          if (rankDifference) return rankDifference;
+        }
+      } else if (aKnown !== bKnown) {
+        return aKnown ? -1 : 1;
+      }
+      return a.label.localeCompare(b.label, 'ko', { numeric: true });
+    });
   }, [cards]);
   const typeOptions = useMemo(() => uniqueOptions(cards.map((card) => card.type)), [cards]);
   const rarityOptions = useMemo(() => uniqueOptions(cards.map((card) => card.rarity)), [cards]);
   const costOptions = useMemo(() => uniqueOptions(cards.map((card) => card.cost)), [cards]);
   const lpOptions = useMemo(() => uniqueOptions(cards.map((card) => card.lp)), [cards]);
   const keywordOptions = useMemo(() => uniqueOptions(cards.flatMap((card) => card.keywordTags || [])), [cards]);
+  const traitOptions = useMemo(() => uniqueOptions(cards.flatMap((card) => card.traits || [])), [cards]);
 
   const filteredCards = useMemo(() => {
     const query = searchTerm.trim().toLocaleLowerCase();
@@ -819,6 +982,7 @@ export default function App() {
         } else if (!searchable.includes(query)) return false;
       }
       if (keywordFilter && !cardKeywordTags.some((tag) => tag === keywordFilter)) return false;
+      if (traitFilter && !(card.traits || []).some((trait) => trait === traitFilter)) return false;
       if (colorFilter && (card.colorKey || normalizeColorKey(card.color)) !== colorFilter) return false;
       if (typeFilter && card.type !== typeFilter) return false;
       if (rarityFilter && card.rarity !== rarityFilter) return false;
@@ -826,7 +990,7 @@ export default function App() {
       if (lpFilter !== '' && String(card.lp) !== lpFilter) return false;
       return true;
     });
-  }, [cards, searchTerm, colorFilter, typeFilter, rarityFilter, costFilter, lpFilter, keywordFilter, keywordOptions, searchAliases]);
+  }, [cards, searchTerm, colorFilter, typeFilter, rarityFilter, costFilter, lpFilter, keywordFilter, traitFilter, keywordOptions, searchAliases]);
 
   const totalPages = Math.max(1, Math.ceil(filteredCards.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -932,9 +1096,15 @@ export default function App() {
     }
     setDeck((previous) => {
       const current = Number(previous[card.key] || 0);
+      const identity = getSameCardLimitKey(card);
+      const totalSameCardId = Object.entries(previous).reduce((sum, [key, count]) => {
+        const savedCard = cards.find((item) => item.key === key);
+        const savedIdentity = getSameCardLimitKey(savedCard) || key;
+        return savedIdentity === identity ? sum + Number(count || 0) : sum;
+      }, 0);
       const total = Object.values(previous).reduce((sum, count) => sum + Number(count || 0), 0);
-      if (current >= SAME_CARD_LIMIT) {
-        window.alert(`같은 카드는 최대 ${SAME_CARD_LIMIT}장까지 넣을 수 있어요.`);
+      if (totalSameCardId >= SAME_CARD_LIMIT) {
+        window.alert(`같은 카드 ID는 최대 ${SAME_CARD_LIMIT}장까지 넣을 수 있어요.`);
         return previous;
       }
       if (total >= MAIN_DECK_LIMIT) {
@@ -1005,6 +1175,7 @@ export default function App() {
     setCostFilter('');
     setLpFilter('');
     setKeywordFilter('');
+    setTraitFilter('');
   }
 
   async function exportDeckImage() {
@@ -1051,6 +1222,33 @@ export default function App() {
       ctx.fillStyle = '#a7b4c8';
       ctx.font = '600 16px sans-serif';
       ctx.fillText('명탐정 코난 TCG 도감  ·  메인 덱 40장 + 파트너 + 사건', margin + 44, margin + 77);
+      const exportLegendItems = [
+        { label: '돌격 계열', fill: '#fb7185', stroke: '#fda4af' },
+        { label: '신속 계열', fill: '#4ade80', stroke: '#86efac' },
+        { label: '질풍 계열', fill: '#38bdf8', stroke: '#7dd3fc' },
+        { label: '그 밖의 특수 키워드', fill: '#a78bfa', stroke: '#c4b5fd' },
+        { label: '미스리드', fill: '#e879f9', stroke: '#f0abfc' },
+        { label: '수사', fill: '#facc15', stroke: '#fde047' },
+        { label: '히라메키', fill: '#fb923c', stroke: '#fdba74' },
+        { label: '컷인', fill: '#7dd3fc', stroke: '#bae6fd' },
+      ];
+      ctx.textAlign = 'left';
+      ctx.font = '600 12px sans-serif';
+      const exportLegendWidth = exportLegendItems.reduce((total, item) => total + ctx.measureText(item.label).width + 27, 0);
+      let legendX = canvasWidth - margin - 24 - exportLegendWidth;
+      const legendBaselineY = margin + 101;
+      exportLegendItems.forEach((item) => {
+        ctx.beginPath();
+        ctx.arc(legendX + 4, legendBaselineY - 4, 3.5, 0, Math.PI * 2);
+        ctx.fillStyle = item.fill;
+        ctx.fill();
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = item.stroke;
+        ctx.stroke();
+        ctx.fillStyle = '#a7b4c8';
+        ctx.fillText(item.label, legendX + 13, legendBaselineY);
+        legendX += ctx.measureText(item.label).width + 27;
+      });
       ctx.textAlign = 'right';
       ctx.fillStyle = mainDeckCount === MAIN_DECK_LIMIT ? '#86efac' : '#fda4af';
       ctx.font = '800 22px sans-serif';
@@ -1074,7 +1272,7 @@ export default function App() {
       ctx.fillText('메인 덱', gridX, labelY);
       ctx.fillStyle = '#8190a7';
       ctx.font = '500 11px sans-serif';
-      ctx.fillText(`${columns} × ${rows} 배열 · ${deckSort === 'added' ? '추가한 순서' : deckSort === 'cost' ? '코스트 낮은순' : deckSort === 'cost-desc' ? '코스트 높은순' : deckSort === 'color' ? '색상별' : 'AP 높은순'}`, gridX, labelY + 18);
+      ctx.fillText(`${columns} × ${rows} 배열 · ${deckSort === 'added' ? '추가한 순서' : deckSort === 'cost' ? '코스트 낮은 순' : deckSort === 'cost-desc' ? '코스트 높은 순' : deckSort === 'color' ? '색상별' : 'AP 높은 순'}`, gridX, labelY + 18);
 
       const cardStartY = top + sectionHeight;
       drawExportCard(ctx, partnerCard, loadedImages.get(partnerCard.imageUrl), sideX, cardStartY, cardWidth, { showStats: false, centerName: true });
@@ -1226,8 +1424,10 @@ export default function App() {
         .app-shell .app-panel button:not(.card-open-button):not(.card-tile-action) { border-radius: 8px; }
         .app-shell .card-list-toolbar > button { border: 1px solid rgba(255,255,255,.12); padding: 7px 11px; color: #d1d9e6; background: #151f30; font-size: 12px; font-weight: 650; }
         .app-shell .card-list-toolbar > button:hover { border-color: rgba(251,113,133,.45); background: rgba(255,255,255,.04); }
-        .app-filters { display: grid !important; grid-template-columns: minmax(200px, 1.7fr) repeat(6, minmax(100px, 1fr)) !important; gap: 8px !important; margin: 0 0 15px !important; }
-        .app-control { min-width: 0; width: 100%; height: 37px; padding: 7px 10px !important; border: 1px solid rgba(255,255,255,.11) !important; border-radius: 8px !important; outline: none; background: #090f1b !important; color: #e2e8f0 !important; font-size: 12px !important; }
+        .filter-row-scroll { width: 100%; max-width: 100%; overflow-x: auto; overflow-y: hidden; padding-bottom: 4px; scrollbar-color: rgba(148,163,184,.35) transparent; }
+        .app-filters { display: grid !important; grid-template-columns: minmax(160px, 1.7fr) minmax(72px, .85fr) minmax(70px, .82fr) minmax(62px, .65fr) minmax(76px, .92fr) minmax(92px, 1.05fr) minmax(56px, .52fr) minmax(52px, .48fr) !important; gap: 8px !important; margin: 0 !important; width: max(100%, 820px) !important; }
+        .app-filters .app-search-control { grid-column: auto !important; }
+        .app-control { min-width: 0; width: 100%; height: 37px; padding: 7px 6px !important; border: 1px solid rgba(255,255,255,.11) !important; border-radius: 8px !important; outline: none; background: #090f1b !important; color: #e2e8f0 !important; font-size: 11px !important; }
         .app-control:focus { border-color: rgba(251,113,133,.75) !important; box-shadow: 0 0 0 3px rgba(225,29,72,.12); }
         .app-control::placeholder { color: #718096; }
         .app-control option { color: #e2e8f0; background: #101827; }
@@ -1291,12 +1491,12 @@ export default function App() {
         .card-detail-layout > div:nth-child(2) > div:not(.card-meta-grid):not(.card-search-alias-section), .card-detail-layout > div:nth-child(2) > details { border: 1px solid rgba(255,255,255,.07) !important; border-radius: 10px !important; padding: 12px !important; background: #090f1b !important; color: #e2e8f0 !important; }
         .card-detail-layout > div:nth-child(2) h3 { margin: 0 0 8px !important; color: #dce5f2 !important; font-size: 13px !important; font-weight: 800 !important; }
         .card-detail-layout > div:nth-child(2) h4 { margin: 0 0 4px !important; color: #fcd34d; font-size: 12px; font-weight: 750; }
-        .card-detail-layout > div:nth-child(2) .card-system-effect-item > .card-system-effect-label { display: inline-flex !important; align-items: center; width: fit-content; margin: 0 0 8px !important; padding: 3px 7px !important; border: 1px solid; border-radius: 5px; box-sizing: border-box; font-size: 11px !important; font-weight: 800 !important; line-height: 1.4; }
-        .card-detail-layout > div:nth-child(2) .card-system-effect-item > .card-system-effect-label-hirameki { color: #ffffff !important; background: rgba(226,88,34,.14) !important; border-color: #c62828 !important; }
+        .card-detail-layout > div:nth-child(2) .card-system-effect-item > .card-system-effect-label { display: inline-flex !important; align-items: center; width: fit-content; flex: 0 0 auto; margin: 0 !important; padding: 3px 7px !important; border: 1px solid; border-radius: 5px; box-sizing: border-box; font-size: 11px !important; font-weight: 800 !important; line-height: 1.4; }
+        .card-detail-layout > div:nth-child(2) .card-system-effect-item > .card-system-effect-label-hirameki { color: #ffffff !important; background: rgba(249,115,22,.24) !important; border-color: #c62828 !important; }
         .card-detail-layout > div:nth-child(2) .card-system-effect-item > .card-system-effect-label-cutin { color: #bae6fd !important; background: rgba(56,189,248,.12) !important; border-color: #38bdf8 !important; }
         .card-detail-layout > div:nth-child(2) p { margin: 0; color: #d4dceb !important; font-size: 12px !important; line-height: 1.75 !important; overflow-wrap: anywhere; }
         .card-effect-text, .card-original-effect-text, .card-system-effect-text { white-space: pre-wrap !important; overflow-wrap: anywhere !important; word-break: normal; }
-        .card-system-effect-item { padding-left: 8px !important; box-sizing: border-box !important; }
+        .card-system-effect-item { display: flex !important; align-items: flex-start !important; gap: 8px !important; padding-left: 8px !important; box-sizing: border-box !important; } .card-system-effect-item > .card-system-effect-text { flex: 1 1 auto; min-width: 0; margin: 0 !important; }
         .detail-keyword-badges { margin: 0 0 2px !important; }
         .card-detail-layout > div:nth-child(2) summary { color: #d1d9e6; cursor: pointer; font-size: 12px; font-weight: 650; }
         .card-detail-layout > div:nth-child(2) details > div { margin-top: 10px; display: grid; gap: 10px; }
@@ -1311,14 +1511,14 @@ export default function App() {
         .ability-condition-black { background: rgba(17,24,39,.42); border-color: #374151; color: #f9fafb; }
         .ability-condition-file { background: rgba(236,72,153,.16); border-color: #db2777; color: #fbcfe8; }
         .ability-condition-neutral { background: rgba(51,65,85,.20); border-color: #64748b; color: #f1f5f9; }
-        .ability-color-circle { display: inline-flex; align-items: center; justify-content: center; vertical-align: -0.15em; width: 1.38em; min-width: 1.38em; height: 1.38em; margin: 0 .08em; padding: 0; border: 1px solid rgba(255,255,255,.24); border-radius: 999px; box-sizing: border-box; font-size: .78em; font-weight: 900; line-height: 1; white-space: nowrap; box-shadow: 0 0 0 1px rgba(0,0,0,.16); }
+        .ability-color-circle { display: inline-flex; align-items: center; justify-content: center; vertical-align: 0.14em; width: 1.38em; min-width: 1.38em; height: 1.38em; margin: 0 .08em; padding: 0; border: 1px solid rgba(255,255,255,.24); border-radius: 999px; box-sizing: border-box; font-size: .78em; font-weight: 900; line-height: 1; white-space: nowrap; box-shadow: 0 0 0 1px rgba(0,0,0,.16); }
         .ability-color-blue { background: #2563eb; border-color: #60a5fa; color: #fff; }
         .ability-color-red { background: #dc2626; border-color: #f87171; color: #fff; }
         .ability-color-yellow { background: #facc15; border-color: #fde047; color: #1f2937; }
         .ability-color-green { background: #16a34a; border-color: #4ade80; color: #fff; }
         .ability-color-black { background: #111827; border-color: #9ca3af; color: #f9fafb; }
         .ability-color-white { background: #f8fafc; border-color: #94a3b8; color: #111827; }
-        .effect-badge-hirameki { color: #fcd34d; background: rgba(251,191,36,.11); border-color: rgba(251,191,36,.18); }
+        .effect-badge-hirameki { color: #ffffff; background: rgba(249,115,22,.20); border-color: #c62828; }
         .effect-badge-cutin { color: #7dd3fc; background: rgba(56,189,248,.11); border-color: rgba(56,189,248,.18); }
         .keyword-assault { color: #fda4af; background: rgba(244,63,94,.12); border-color: rgba(251,113,133,.22); }
         .keyword-swift { color: #86efac; background: rgba(34,197,94,.12); border-color: rgba(74,222,128,.22); }
@@ -1327,17 +1527,26 @@ export default function App() {
         .keyword-other { color: #c4b5fd; background: rgba(139,92,246,.12); border-color: rgba(167,139,250,.22); }
         .detail-keyword-badges { padding: 2px 0 2px 8px !important; margin-left: 0 !important; }
         .detail-keyword-badges .effect-badge { font-size: 11px !important; line-height: 1.4; padding: 3px 6px; font-weight: 700; }
+        .feature-dot-legend { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 6px 12px; width: fit-content; max-width: 100%; margin: -8px 0 12px auto; padding: 7px 9px; border: 1px solid rgba(148,163,184,.12); border-radius: 8px; background: rgba(9,15,27,.62); color: #94a3b8; font-size: 10px; line-height: 1.25; }
+        .feature-dot-legend-heading { display: none; }
+        .feature-dot-legend-item { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 5px; white-space: nowrap; }
+        .feature-dot-legend-dot { display: inline-block; width: 7px; height: 7px; flex: 0 0 7px; border: 1px solid rgba(255,255,255,.32); border-radius: 999px; box-shadow: 0 1px 3px rgba(0,0,0,.35); }
+        .deck-feature-dot-hirameki.feature-dot-legend-dot { width: 7px; height: 7px; flex-basis: 7px; }
+        .deck-feature-dot-cutin.feature-dot-legend-dot { width: 7px; height: 7px; flex-basis: 7px; }
+        .deck-feature-dot-legend { margin: -4px 0 12px auto; }
         .keyword-tag-dots { display: flex; align-items: center; justify-content: flex-end; flex: 0 0 auto; flex-wrap: nowrap; gap: 3px; max-width: 38%; min-height: 0; margin: 3px 0 0; overflow: hidden; }
         .keyword-tag-dot { display: inline-block; width: 6px; height: 6px; flex: 0 0 6px; border-radius: 999px; box-shadow: 0 0 0 1px rgba(255,255,255,.18); }
         .keyword-dot-assault { background: #fb7185; }
         .keyword-dot-swift { background: #4ade80; }
         .keyword-dot-gale { background: #38bdf8; }
         .keyword-dot-other { background: #a78bfa; }
+        .keyword-dot-mislead { background: #e879f9; }
+        .keyword-dot-investigation { background: #facc15; }
         .deck-card-image-wrap { position: relative; width: 100%; overflow: hidden; background: #0d1524; }
         .deck-feature-dots { position: absolute; z-index: 5; top: 50%; right: 7px; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; pointer-events: none; }
         .deck-feature-dot { display: block; width: 7px; height: 7px; flex: 0 0 7px; border: 1px solid rgba(255,255,255,.30); border-radius: 999px; box-shadow: 0 1px 3px rgba(0,0,0,.5), 0 0 0 1px rgba(0,0,0,.25); }
-        .deck-feature-dot-hirameki { background: #e25822; border-color: #ff9a70; }
-        .deck-feature-dot-cutin { background: #38bdf8; border-color: #bae6fd; }
+        .deck-feature-dot-hirameki { background: #fb923c; border-color: #fdba74; }
+        .deck-feature-dot-cutin { background: #7dd3fc; border-color: #bae6fd; }
         .card-search-alias-section { display: flex; flex-direction: column; gap: 6px; margin-top: 0; padding: 2px 8px 0; }
         .card-search-alias-display { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
         .card-search-alias-tags { min-width: 0; margin: 0; color: #8b96a8; font-size: 10px; line-height: 1.6; overflow-wrap: anywhere; }
@@ -1435,8 +1644,6 @@ export default function App() {
         .deck-panel img { display: block; object-fit: contain; }
         @media (max-width: 1100px) {
           .conan-card-grid { grid-template-columns: repeat(9, minmax(0, 1fr)) !important; }
-          .app-filters { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
-          .app-search-control { grid-column: span 2; }
         }
         @media (max-width: 800px) {
           .app-shell { padding: 12px !important; }
@@ -1450,8 +1657,6 @@ export default function App() {
           .app-header h1 { font-size: 20px; }
           .app-panel { padding: 10px !important; border-radius: 12px !important; }
           .conan-card-grid { grid-template-columns: repeat(5, minmax(0, 1fr)) !important; gap: 6px !important; }
-          .app-filters { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
-          .app-search-control { grid-column: span 2; }
           .card-tile-caption { padding: 5px !important; }
           .card-tile-title { font-size: 10px !important; }
           .card-detail-overlay { padding: 8px !important; }
@@ -1487,15 +1692,20 @@ export default function App() {
             <div className="flex flex-wrap items-center gap-2"><button onClick={clearFilters} className="filters-reset-button">필터 초기화</button></div>
           </div>
 
-          <div className="app-filters mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-7">
-            <input value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder="이름 · 효과 · 카드 ID" aria-label="카드 검색" className="app-control app-search-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-3 py-2 text-sm outline-none transition placeholder:text-slate-600 focus:border-rose-400/70" />
-            <select aria-label="색상 필터" value={colorFilter} onChange={(event) => setColorFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 색상</option>{colorOptions.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}</select>
-            <select aria-label="종류 필터" value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 종류</option>{typeOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select>
-            <select aria-label="레어도 필터" value={rarityFilter} onChange={(event) => setRarityFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 레어도</option>{rarityOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select>
-            <select aria-label="코스트 필터" value={costFilter} onChange={(event) => setCostFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 코스트</option>{costOptions.map((value) => <option key={String(value)} value={String(value)}>{value}</option>)}</select>
-            <select aria-label="LP 필터" value={lpFilter} onChange={(event) => setLpFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 LP</option>{lpOptions.map((value) => <option key={String(value)} value={String(value)}>{value}</option>)}</select>
-            <select aria-label="특수 키워드 필터" value={keywordFilter} onChange={(event) => setKeywordFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 특수 키워드</option>{keywordOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select>
+          <div className="filter-row-scroll mb-4">
+            <div className="app-filters">
+              <input value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder="이름 · 효과 · 카드 ID" aria-label="카드 검색" className="app-control app-search-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-3 py-2 text-sm outline-none transition placeholder:text-slate-600 focus:border-rose-400/70" />
+              <select aria-label="색상 필터" value={colorFilter} onChange={(event) => setColorFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 색상</option>{colorOptions.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}</select>
+              <select aria-label="종류 필터" value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 종류</option>{typeOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select>
+              <select aria-label="레어도 필터" value={rarityFilter} onChange={(event) => setRarityFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 레어도</option>{rarityOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select>
+              <select aria-label="특징 필터" value={traitFilter} onChange={(event) => setTraitFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 특징</option>{traitOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select>
+              <select aria-label="특수 키워드 필터" value={keywordFilter} onChange={(event) => setKeywordFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 특수 키워드</option>{keywordOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select>
+              <select aria-label="코스트 필터" value={costFilter} onChange={(event) => setCostFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 코스트</option>{costOptions.map((value) => <option key={String(value)} value={String(value)}>{value}</option>)}</select>
+              <select aria-label="LP 필터" value={lpFilter} onChange={(event) => setLpFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 LP</option>{lpOptions.map((value) => <option key={String(value)} value={String(value)}>{value}</option>)}</select>
+            </div>
           </div>
+
+          <FeatureDotLegend />
 
           {visibleCards.length === 0 ? <p className="rounded-xl border border-solid border-white/15 p-8 text-center text-sm text-slate-400">조건에 맞는 카드가 없어요.</p> : (
             <div className="conan-card-grid grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 2xl:grid-cols-10">
@@ -1504,7 +1714,7 @@ export default function App() {
                 const isPartner = partnerId === card.key;
                 const isEvent = eventId === card.key;
                 const role = getCardRole(card);
-                const keywordBadges = card.keywordTags || [];
+                const featureDotItems = getCardFeatureDotItems(card);
                 return (
                   <article key={card.key} className="card-tile group flex min-w-0 flex-col overflow-hidden rounded-lg border border-white/[0.08] bg-[#090f1b] transition duration-150 hover:-translate-y-0.5 hover:border-rose-400/50 hover:shadow-lg hover:shadow-black/20">
                     <button onClick={() => openCardDetail(card, 'cards')} className="card-open-button block w-full min-w-0 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-rose-400" title={`${card.name} 상세 정보 보기`} aria-label={`${card.name} 상세 정보 보기`}>
@@ -1518,7 +1728,7 @@ export default function App() {
                       <div className="card-tile-caption p-1.5 sm:p-2">
                         <div className="card-tile-title-row">
                           <h3 className="card-tile-title line-clamp-2 min-h-[2.2rem] break-keep text-[11px] font-semibold leading-[1.1rem] text-slate-100 sm:text-xs">{card.name}</h3>
-                          {keywordBadges.length > 0 && <div className="keyword-tag-dots" aria-label={`키워드 태그: ${keywordBadges.join(', ')}`}>{keywordBadges.map((tag) => <span key={tag} className={`keyword-tag-dot keyword-dot-${keywordTagClass(tag).replace('keyword-', '')}`} title={tag} aria-label={tag} />)}</div>}
+                          {featureDotItems.length > 0 && <div className="keyword-tag-dots" aria-label={`특성: ${featureDotItems.map((dot) => dot.title).join(', ')}`}>{featureDotItems.map((dot) => <span key={dot.key} className={`keyword-tag-dot keyword-dot-${dot.className.replace('keyword-', '')}`} title={dot.title} aria-label={dot.title} />)}</div>}
                         </div>
                         <div className="mt-1 flex min-w-0 items-center justify-between gap-1 text-[9px] text-slate-500 sm:text-[10px]"><span className="truncate">{card.rarity || card.type || '카드'}</span><span className="shrink-0">{`${formatNumber(card.cost)} / ${formatNumber(card.lp)}`}</span></div>
                         {(card.hiramekiEffect || card.cutInEffect) && <div className="effect-badges">{card.hiramekiEffect && <span className="effect-badge effect-badge-hirameki">히라메키</span>}{card.cutInEffect && <span className="effect-badge effect-badge-cutin">컷인</span>}</div>}
@@ -1550,6 +1760,8 @@ export default function App() {
             </div>
           </div>
 
+          <FeatureDotLegend includeSystemEffects className="deck-feature-dot-legend" />
+
           <div className="deck-board-scroll">
             <div className={`deck-board ${deckLayout === '8x5' ? 'deck-board-8x5' : 'deck-board-10x4'}`}>
               <aside className="deck-specials-column" aria-label="파트너와 사건 카드">
@@ -1562,8 +1774,8 @@ export default function App() {
                     <button onClick={() => openCardDetail(partnerCard, 'cards')} className="deck-special-open" title={getDeckCardSummary(partnerCard)}>
                       <div className="deck-card-image-wrap">
                         {partnerCard.imageUrl ? <img src={partnerCard.imageUrl} loading="lazy" alt={partnerCard.name} className="deck-special-image" /> : <div className="deck-special-image flex items-center justify-center text-[9px] text-slate-500">이미지 없음</div>}
-                        {(partnerCard.keywordTags?.length > 0 || partnerCard.hiramekiEffect || partnerCard.cutInEffect) && <div className="deck-feature-dots" aria-label={`특성: ${(partnerCard.keywordTags || []).join(', ')}${partnerCard.hiramekiEffect ? ', 히라메키' : ''}${partnerCard.cutInEffect ? ', 컷인' : ''}`}>
-                          {(partnerCard.keywordTags || []).map((tag, dotIndex) => <span key={`partner-keyword-dot-${dotIndex}-${tag}`} className={`deck-feature-dot keyword-dot-${keywordTagClass(tag).replace('keyword-', '')}`} title={tag} />)}
+                        {(getCardFeatureDotItems(partnerCard).length > 0 || partnerCard.hiramekiEffect || partnerCard.cutInEffect) && <div className="deck-feature-dots" aria-label={`특성: ${getCardFeatureDotItems(partnerCard).map((dot) => dot.title).concat(partnerCard.hiramekiEffect ? ['히라메키'] : [], partnerCard.cutInEffect ? ['컷인'] : []).join(', ')}`}>
+                          {getCardFeatureDotItems(partnerCard).map((dot) => <span key={`partner-${dot.key}`} className={`deck-feature-dot keyword-dot-${dot.className.replace('keyword-', '')}`} title={dot.title} />)}
                           {partnerCard.hiramekiEffect && <span className="deck-feature-dot deck-feature-dot-hirameki" title="히라메키" />}
                           {partnerCard.cutInEffect && <span className="deck-feature-dot deck-feature-dot-cutin" title="컷인" />}
                         </div>}
@@ -1587,8 +1799,8 @@ export default function App() {
                     <button onClick={() => openCardDetail(eventCard, 'cards')} className="deck-special-open" title={getDeckCardSummary(eventCard)}>
                       <div className="deck-card-image-wrap">
                         {eventCard.imageUrl ? <img src={eventCard.imageUrl} loading="lazy" alt={eventCard.name} className="deck-special-image" /> : <div className="deck-special-image flex items-center justify-center text-[9px] text-slate-500">이미지 없음</div>}
-                        {(eventCard.keywordTags?.length > 0 || eventCard.hiramekiEffect || eventCard.cutInEffect) && <div className="deck-feature-dots" aria-label={`특성: ${(eventCard.keywordTags || []).join(', ')}${eventCard.hiramekiEffect ? ', 히라메키' : ''}${eventCard.cutInEffect ? ', 컷인' : ''}`}>
-                          {(eventCard.keywordTags || []).map((tag, dotIndex) => <span key={`event-keyword-dot-${dotIndex}-${tag}`} className={`deck-feature-dot keyword-dot-${keywordTagClass(tag).replace('keyword-', '')}`} title={tag} />)}
+                        {(getCardFeatureDotItems(eventCard).length > 0 || eventCard.hiramekiEffect || eventCard.cutInEffect) && <div className="deck-feature-dots" aria-label={`특성: ${getCardFeatureDotItems(eventCard).map((dot) => dot.title).concat(eventCard.hiramekiEffect ? ['히라메키'] : [], eventCard.cutInEffect ? ['컷인'] : []).join(', ')}`}>
+                          {getCardFeatureDotItems(eventCard).map((dot) => <span key={`event-${dot.key}`} className={`deck-feature-dot keyword-dot-${dot.className.replace('keyword-', '')}`} title={dot.title} />)}
                           {eventCard.hiramekiEffect && <span className="deck-feature-dot deck-feature-dot-hirameki" title="히라메키" />}
                           {eventCard.cutInEffect && <span className="deck-feature-dot deck-feature-dot-cutin" title="컷인" />}
                         </div>}
@@ -1614,10 +1826,10 @@ export default function App() {
                     <label htmlFor="deck-sort-select">정렬</label>
                     <select id="deck-sort-select" className="deck-sort-select" value={deckSort} onChange={(event) => setDeckSort(event.target.value)} aria-label="덱 정렬 기준">
                       <option value="added">추가한 순서</option>
-                      <option value="cost">코스트 낮은순</option>
-                      <option value="cost-desc">코스트 높은순</option>
+                      <option value="cost">코스트 낮은 순</option>
+                      <option value="cost-desc">코스트 높은 순</option>
                       <option value="color">색상별</option>
-                      <option value="ap">AP 높은순</option>
+                      <option value="ap">AP 높은 순</option>
                     </select>
                     <label htmlFor="deck-layout-select">배열</label>
                     <select id="deck-layout-select" className="deck-layout-select" value={deckLayout} onChange={(event) => setDeckLayout(event.target.value)} aria-label="덱 카드 배열">
@@ -1633,8 +1845,8 @@ export default function App() {
                       <button onClick={() => openCardDetail(card, 'deck')} className="deck-card-open" title={getDeckCardSummary(card)}>
                         <div className="deck-card-image-wrap">
                           {card.imageUrl ? <img src={card.imageUrl} loading="lazy" alt={card.name} className="deck-card-image" /> : <div className="deck-card-image flex items-center justify-center text-[9px] text-slate-500">이미지 없음</div>}
-                          {(card.keywordTags?.length > 0 || card.hiramekiEffect || card.cutInEffect) && <div className="deck-feature-dots" aria-label={`특성: ${(card.keywordTags || []).join(', ')}${card.hiramekiEffect ? ', 히라메키' : ''}${card.cutInEffect ? ', 컷인' : ''}`}>
-                            {(card.keywordTags || []).map((tag, dotIndex) => <span key={`keyword-dot-${dotIndex}-${tag}`} className={`deck-feature-dot keyword-dot-${keywordTagClass(tag).replace('keyword-', '')}`} title={tag} />)}
+                          {(getCardFeatureDotItems(card).length > 0 || card.hiramekiEffect || card.cutInEffect) && <div className="deck-feature-dots" aria-label={`특성: ${getCardFeatureDotItems(card).map((dot) => dot.title).concat(card.hiramekiEffect ? ['히라메키'] : [], card.cutInEffect ? ['컷인'] : []).join(', ')}`}>
+                            {getCardFeatureDotItems(card).map((dot) => <span key={`deck-${dot.key}`} className={`deck-feature-dot keyword-dot-${dot.className.replace('keyword-', '')}`} title={dot.title} />)}
                             {card.hiramekiEffect && <span className="deck-feature-dot deck-feature-dot-hirameki" title="히라메키" />}
                             {card.cutInEffect && <span className="deck-feature-dot deck-feature-dot-cutin" title="컷인" />}
                           </div>}
@@ -1676,10 +1888,10 @@ export default function App() {
                 <div className="min-w-0 space-y-3">
                   <dl className="card-meta-grid grid grid-cols-2 gap-2 sm:grid-cols-3">{[['종류', selectedCard.type], ['색상', selectedCard.color], ['레어도', selectedCard.rarity], ['코스트', selectedCard.cost], ['LP', selectedCard.lp], ['수록 제품', selectedCard.set]].map(([label, value]) => <div key={label} className={`card-meta-item rounded-lg border border-white/[0.07] bg-[#090f1b] p-2.5${label === '수록 제품' ? ' card-meta-item-set' : ''}`}><dt className="text-[10px] font-medium text-slate-500">{label}</dt><dd className="mt-1 break-words text-xs font-semibold text-slate-200">{value === null || value === undefined || value === '' ? '-' : value}</dd></div>)}<div className="card-meta-item card-meta-item-traits rounded-lg border border-white/[0.07] bg-[#090f1b] p-2.5"><dt className="text-[10px] font-medium text-slate-500">특징</dt><dd className="mt-1">{selectedCard.traits?.length ? <div className="card-trait-list">{selectedCard.traits.map((trait) => <span key={trait} className="card-trait-chip">{trait}</span>)}</div> : <span className="text-xs font-semibold text-slate-500">없음</span>}</dd></div></dl>
                   {selectedCard.keywordTags?.length > 0 && <div className="detail-keyword-badges effect-badges">{selectedCard.keywordTags.map((tag) => <span key={tag} className={`effect-badge ${keywordTagClass(tag)}${String(tag).startsWith('조건부 ') ? ' conditional' : ''}`}>{tag}</span>)}</div>}
-                  {(selectedCard.hiramekiEffect || selectedCard.cutInEffect) && <div className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><h3 className="mb-3 text-xs font-bold">게임 시스템 효과</h3><div className="space-y-3">{selectedCard.hiramekiEffect && <div className="card-system-effect-item"><h4 className="card-system-effect-label card-system-effect-label-hirameki">히라메키</h4><p className="card-system-effect-text whitespace-pre-wrap break-words text-xs leading-5 text-slate-200">{selectedCard.hiramekiEffect}</p></div>}{selectedCard.cutInEffect && <div className="card-system-effect-item"><h4 className="card-system-effect-label card-system-effect-label-cutin">컷인</h4><p className="card-system-effect-text whitespace-pre-wrap break-words text-xs leading-5 text-slate-200">{selectedCard.cutInEffect}</p></div>}</div></div>}
+                  {(selectedCard.hiramekiEffect || selectedCard.cutInEffect) && <div className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><h3 className="mb-3 text-xs font-bold">게임 시스템 효과</h3><div className="space-y-2">{selectedCard.hiramekiEffect && <div className="card-system-effect-item"><h4 className="card-system-effect-label card-system-effect-label-hirameki">히라메키</h4><p className="card-system-effect-text whitespace-pre-wrap break-words text-xs leading-5 text-slate-200">{renderAbilityText(selectedCard.hiramekiEffect)}</p></div>}{selectedCard.cutInEffect && <div className="card-system-effect-item"><h4 className="card-system-effect-label card-system-effect-label-cutin">컷인</h4><p className="card-system-effect-text whitespace-pre-wrap break-words text-xs leading-5 text-slate-200">{renderAbilityText(selectedCard.cutInEffect)}</p></div>}</div></div>}
                   <div className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><h3 className="mb-2 text-xs font-bold text-slate-300">카드 효과</h3><div className="card-effect-text text-xs leading-6 text-slate-200">{renderAbilityText(selectedCard.ability) || '효과 텍스트 없음'}</div></div>
                   {selectedCard.flavor && <div className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><h3 className="mb-2 text-xs font-bold text-slate-300">플레이버 텍스트</h3><p className="whitespace-pre-wrap break-words text-xs leading-5 text-slate-300">{selectedCard.flavor}</p></div>}
-                  {(selectedCard.originalName !== selectedCard.name || selectedCard.originalAbility !== selectedCard.ability) && <details className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><summary className="cursor-pointer text-xs font-semibold text-slate-300">일본어 원문 보기</summary><div className="mt-3 space-y-3 text-xs leading-5"><p className="card-original-name-text"><span className="text-slate-500">이름: </span>{selectedCard.originalName || '-'}</p><p className="card-original-effect-text whitespace-pre-wrap break-words"><span className="text-slate-500">효과: </span>{renderAbilityText(selectedCard.originalAbility) || '-'}</p></div></details>}
+                  {(selectedCard.originalName !== selectedCard.name || selectedCard.originalAbility !== selectedCard.ability) && <details className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><summary className="cursor-pointer text-xs font-semibold text-slate-300">일본어 원문 보기</summary><div className="mt-3 space-y-3 text-xs leading-5"><p className="card-original-name-text"><span className="text-slate-500">이름: </span>{selectedCard.originalName || '-'}</p><p className="card-original-effect-text whitespace-pre-wrap break-words"><span className="text-slate-500">효과: </span>{selectedCard.originalAbility || '-'}</p></div></details>}
                   <div className="card-search-alias-section" aria-label="검색용 별명 태그">
                     {!editingSelectedAliases ? <div className="card-search-alias-display">
                       <p className="card-search-alias-tags">{selectedCardSearchAliases.length ? selectedCardSearchAliases.map((alias) => <span key={alias}>#{alias} </span>) : <span className="card-search-alias-empty">검색 별명 태그 없음</span>}</p>
@@ -1688,7 +1900,7 @@ export default function App() {
                         <button type="button" onClick={() => startSearchAliasEdit(selectedCard)} className="card-search-alias-edit-button">태그 편집</button>
                       </div>
                     </div> : <>
-                      <textarea className="card-search-alias-input" rows={2} value={searchAliasDraft} onChange={(event) => setSearchAliasDraft(event.target.value)} aria-label="검색용 별명 태그 편집" placeholder="예: 샤로마, 별명2" />
+                      <textarea className="card-search-alias-input" rows={2} value={searchAliasDraft} onChange={(event) => setSearchAliasDraft(event.target.value)} aria-label="검색용 별명 태그 편집" placeholder="예: 샤로마, 멘헤라, 오레노카즈하, 나루호도…" />
                       <div className="card-search-alias-actions"><span className="card-search-alias-help">쉼표/줄바꿈 구분 · 사이트 데이터 보존은 JSON 내보내기로</span><div className="card-search-alias-action-buttons"><button type="button" onClick={cancelSearchAliasEdit}>취소</button><button type="button" className="save" onClick={() => saveSearchAliasEdit(selectedCard)}>화면에 적용</button></div></div>
                     </>}
                   </div>
