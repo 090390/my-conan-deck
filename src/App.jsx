@@ -418,6 +418,12 @@ function getCardRole(card) {
   return 'main';
 }
 
+// 다른 카드 번호(B01005/B01005P)라도 내부 카드 ID(예: 0001)가 같으면 동일 카드로 셉니다.
+function getSameCardLimitKey(card) {
+  const value = card?.cardId ?? card?.sourceData?.card_id ?? card?.databaseId ?? card?.key ?? '';
+  return String(value).trim().toLocaleUpperCase();
+}
+
 function uniqueOptions(values) {
   return [...new Set(values.filter((value) => value !== '' && value !== null && value !== undefined).map(String))]
     .sort((a, b) => a.localeCompare(b, 'ko', { numeric: true }));
@@ -759,16 +765,20 @@ export default function App() {
     else localStorage.removeItem(EVENT_STORAGE_KEY);
   }, [eventId]);
 
-  // 예전 버전에서 메인 덱에 들어간 사건 카드는 별도 슬롯으로 옮깁니다.
+  // 예전 버전에서 메인 덱에 들어간 사건 카드를 옮기고, 내부 카드 ID별 최대 3장 제한을 정리합니다.
   useEffect(() => {
     if (!cards.length) return;
     let changed = false;
     let migratedPartner = '';
     let migratedEvent = '';
+    let totalMainCards = 0;
     const nextDeck = {};
-    for (const [key, count] of Object.entries(deck)) {
-      const card = cards.find((item) => item.key === key);
+    const identityCounts = new Map();
+    const cardsByKey = new Map(cards.map((item) => [item.key, item]));
+    for (const [key, rawCount] of Object.entries(deck)) {
+      const card = cardsByKey.get(key);
       const role = card ? getCardRole(card) : 'main';
+      const requestedCount = Math.max(0, Math.floor(Number(rawCount) || 0));
       if (role === 'partner') {
         migratedPartner ||= key;
         changed = true;
@@ -776,7 +786,17 @@ export default function App() {
         migratedEvent ||= key;
         changed = true;
       } else {
-        nextDeck[key] = count;
+        const identity = getSameCardLimitKey(card) || key;
+        const alreadyUsed = identityCounts.get(identity) || 0;
+        const allowedByIdentity = Math.max(0, SAME_CARD_LIMIT - alreadyUsed);
+        const allowedByDeck = Math.max(0, MAIN_DECK_LIMIT - totalMainCards);
+        const count = Math.min(requestedCount, allowedByIdentity, allowedByDeck);
+        if (count > 0) {
+          nextDeck[key] = count;
+          identityCounts.set(identity, alreadyUsed + count);
+          totalMainCards += count;
+        }
+        if (count !== Number(rawCount)) changed = true;
       }
     }
     if (changed) setDeck(nextDeck);
@@ -937,9 +957,15 @@ export default function App() {
     }
     setDeck((previous) => {
       const current = Number(previous[card.key] || 0);
+      const identity = getSameCardLimitKey(card);
+      const totalSameCardId = Object.entries(previous).reduce((sum, [key, count]) => {
+        const savedCard = cards.find((item) => item.key === key);
+        const savedIdentity = getSameCardLimitKey(savedCard) || key;
+        return savedIdentity === identity ? sum + Number(count || 0) : sum;
+      }, 0);
       const total = Object.values(previous).reduce((sum, count) => sum + Number(count || 0), 0);
-      if (current >= SAME_CARD_LIMIT) {
-        window.alert(`같은 카드는 최대 ${SAME_CARD_LIMIT}장까지 넣을 수 있어요.`);
+      if (totalSameCardId >= SAME_CARD_LIMIT) {
+        window.alert(`같은 카드 ID는 최대 ${SAME_CARD_LIMIT}장까지 넣을 수 있어요.`);
         return previous;
       }
       if (total >= MAIN_DECK_LIMIT) {
@@ -1232,8 +1258,10 @@ export default function App() {
         .app-shell .app-panel button:not(.card-open-button):not(.card-tile-action) { border-radius: 8px; }
         .app-shell .card-list-toolbar > button { border: 1px solid rgba(255,255,255,.12); padding: 7px 11px; color: #d1d9e6; background: #151f30; font-size: 12px; font-weight: 650; }
         .app-shell .card-list-toolbar > button:hover { border-color: rgba(251,113,133,.45); background: rgba(255,255,255,.04); }
-        .app-filters { display: grid !important; grid-template-columns: minmax(200px, 1.7fr) repeat(6, minmax(100px, 1fr)) !important; gap: 8px !important; margin: 0 0 15px !important; }
-        .app-control { min-width: 0; width: 100%; height: 37px; padding: 7px 10px !important; border: 1px solid rgba(255,255,255,.11) !important; border-radius: 8px !important; outline: none; background: #090f1b !important; color: #e2e8f0 !important; font-size: 12px !important; }
+        .filter-row-scroll { width: 100%; max-width: 100%; overflow-x: auto; overflow-y: hidden; padding-bottom: 4px; scrollbar-color: rgba(148,163,184,.35) transparent; }
+        .app-filters { display: grid !important; grid-template-columns: minmax(160px, 1.7fr) minmax(72px, .85fr) minmax(70px, .82fr) minmax(62px, .65fr) minmax(76px, .92fr) minmax(92px, 1.05fr) minmax(56px, .52fr) minmax(52px, .48fr) !important; gap: 8px !important; margin: 0 !important; width: max(100%, 820px) !important; }
+        .app-filters .app-search-control { grid-column: auto !important; }
+        .app-control { min-width: 0; width: 100%; height: 37px; padding: 7px 6px !important; border: 1px solid rgba(255,255,255,.11) !important; border-radius: 8px !important; outline: none; background: #090f1b !important; color: #e2e8f0 !important; font-size: 11px !important; }
         .app-control:focus { border-color: rgba(251,113,133,.75) !important; box-shadow: 0 0 0 3px rgba(225,29,72,.12); }
         .app-control::placeholder { color: #718096; }
         .app-control option { color: #e2e8f0; background: #101827; }
@@ -1441,8 +1469,6 @@ export default function App() {
         .deck-panel img { display: block; object-fit: contain; }
         @media (max-width: 1100px) {
           .conan-card-grid { grid-template-columns: repeat(9, minmax(0, 1fr)) !important; }
-          .app-filters { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
-          .app-search-control { grid-column: span 2; }
         }
         @media (max-width: 800px) {
           .app-shell { padding: 12px !important; }
@@ -1456,8 +1482,6 @@ export default function App() {
           .app-header h1 { font-size: 20px; }
           .app-panel { padding: 10px !important; border-radius: 12px !important; }
           .conan-card-grid { grid-template-columns: repeat(5, minmax(0, 1fr)) !important; gap: 6px !important; }
-          .app-filters { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
-          .app-search-control { grid-column: span 2; }
           .card-tile-caption { padding: 5px !important; }
           .card-tile-title { font-size: 10px !important; }
           .card-detail-overlay { padding: 8px !important; }
@@ -1493,15 +1517,17 @@ export default function App() {
             <div className="flex flex-wrap items-center gap-2"><button onClick={clearFilters} className="filters-reset-button">필터 초기화</button></div>
           </div>
 
-          <div className="app-filters mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8">
-            <input value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder="이름 · 효과 · 카드 ID" aria-label="카드 검색" className="app-control app-search-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-3 py-2 text-sm outline-none transition placeholder:text-slate-600 focus:border-rose-400/70" />
-            <select aria-label="색상 필터" value={colorFilter} onChange={(event) => setColorFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 색상</option>{colorOptions.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}</select>
-            <select aria-label="종류 필터" value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 종류</option>{typeOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select>
-            <select aria-label="레어도 필터" value={rarityFilter} onChange={(event) => setRarityFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 레어도</option>{rarityOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select>
-            <select aria-label="코스트 필터" value={costFilter} onChange={(event) => setCostFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 코스트</option>{costOptions.map((value) => <option key={String(value)} value={String(value)}>{value}</option>)}</select>
-            <select aria-label="LP 필터" value={lpFilter} onChange={(event) => setLpFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 LP</option>{lpOptions.map((value) => <option key={String(value)} value={String(value)}>{value}</option>)}</select>
-            <select aria-label="특수 키워드 필터" value={keywordFilter} onChange={(event) => setKeywordFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 특수 키워드</option>{keywordOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select>
-            <select aria-label="특징 필터" value={traitFilter} onChange={(event) => setTraitFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 특징</option>{traitOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select>
+          <div className="filter-row-scroll mb-4">
+            <div className="app-filters">
+              <input value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder="이름 · 효과 · 카드 ID" aria-label="카드 검색" className="app-control app-search-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-3 py-2 text-sm outline-none transition placeholder:text-slate-600 focus:border-rose-400/70" />
+              <select aria-label="색상 필터" value={colorFilter} onChange={(event) => setColorFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 색상</option>{colorOptions.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}</select>
+              <select aria-label="종류 필터" value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 종류</option>{typeOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select>
+              <select aria-label="레어도 필터" value={rarityFilter} onChange={(event) => setRarityFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 레어도</option>{rarityOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select>
+              <select aria-label="특징 필터" value={traitFilter} onChange={(event) => setTraitFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 특징</option>{traitOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select>
+              <select aria-label="특수 키워드 필터" value={keywordFilter} onChange={(event) => setKeywordFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 특수 키워드</option>{keywordOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select>
+              <select aria-label="코스트 필터" value={costFilter} onChange={(event) => setCostFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 코스트</option>{costOptions.map((value) => <option key={String(value)} value={String(value)}>{value}</option>)}</select>
+              <select aria-label="LP 필터" value={lpFilter} onChange={(event) => setLpFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 LP</option>{lpOptions.map((value) => <option key={String(value)} value={String(value)}>{value}</option>)}</select>
+            </div>
           </div>
 
           {visibleCards.length === 0 ? <p className="rounded-xl border border-solid border-white/15 p-8 text-center text-sm text-slate-400">조건에 맞는 카드가 없어요.</p> : (
