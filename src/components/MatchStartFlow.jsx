@@ -126,10 +126,6 @@ export default function MatchStartFlow({
 
   const phase = matchState?.phase || "waiting";
   const allReady = players.length === 2 && players.every((player) => player.is_ready === true);
-  const statePlayers = Array.isArray(matchState?.players) && matchState.players.length
-    ? matchState.players
-    : players;
-  const firstPlayer = statePlayers.find((player) => player.user_id === matchState?.first_player_user_id);
   const myHand = matchState?.my_hand || [];
   const myMulliganDone = matchState?.my_mulligan_done === true;
   const seat1Done = matchState?.seat1_mulligan_done === true;
@@ -186,8 +182,8 @@ export default function MatchStartFlow({
 
       {phase !== "waiting" && (
         <div style={{ marginTop: 12, display: "flex", flexWrap: "wrap", gap: 8 }}>
-          <span style={{ background: "rgba(255,255,255,.05)", borderRadius: 7, padding: "7px 9px", color: "#dbe4f1", fontSize: 12 }}>
-            선공: {firstPlayer ? `플레이어 ${firstPlayer.seat}${firstPlayer.user_id === userId ? " (나)" : ""}` : "결정 중"}
+          <span style={{ background: "rgba(147,197,253,.10)", border: "1px solid rgba(147,197,253,.22)", borderRadius: 7, padding: "7px 9px", color: "#93c5fd", fontSize: 12, fontWeight: 800 }}>
+            내 역할: {matchState?.first_player_user_id ? (matchState.first_player_user_id === userId ? "선공" : "후공") : "결정 중"}
           </span>
           <span style={{ background: "rgba(255,255,255,.05)", borderRadius: 7, padding: "7px 9px", color: "#dbe4f1", fontSize: 12 }}>
             내 덱: {matchState?.my_deck_count ?? "-"}장

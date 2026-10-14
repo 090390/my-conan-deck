@@ -1,17 +1,22 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import MatchStartFlow from "./MatchStartFlow";
+import MatchTurnBoard from "./MatchTurnBoard";
 
-export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", cards = [] }) {
+export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", cards = [], onGameFieldChange }) {
   const [inviteCodeInput, setInviteCodeInput] = useState("");
   const [room, setRoom] = useState(null);
   const [players, setPlayers] = useState([]);
   const [userId, setUserId] = useState("");
   const [readyDeckSignature, setReadyDeckSignature] = useState("");
+  const [matchPhase, setMatchPhase] = useState("waiting");
+  const [showFieldOnly, setShowFieldOnly] = useState(true);
+  const [nicknameDraft, setNicknameDraft] = useState("");
+  const [nicknameDirty, setNicknameDirty] = useState(false);
+  const [savingNickname, setSavingNickname] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [matchPhase, setMatchPhase] = useState("waiting");
 
   async function ensureSignedIn() {
     const {
@@ -36,7 +41,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
   async function loadPlayers(roomId) {
     const { data, error: queryError } = await supabase
       .from("room_players")
-      .select("user_id, seat, joined_at, is_ready")
+      .select("user_id, seat, joined_at, is_ready, temporary_nickname")
       .eq("room_id", roomId)
       .order("seat");
 
@@ -106,7 +111,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
       try {
         const { data, error: queryError } = await supabase
           .from("room_players")
-          .select("user_id, seat, joined_at, is_ready")
+          .select("user_id, seat, joined_at, is_ready, temporary_nickname")
           .eq("room_id", room.id)
           .order("seat");
         if (queryError) throw queryError;
@@ -165,6 +170,33 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
   const canReady = deckTotal === 40 && partnerLooksValid && eventLooksValid && allDeckKeysExist;
   const myPlayer = players.find((player) => player.user_id === userId);
   const bothReady = players.length === 2 && players.every((player) => player.is_ready === true);
+  const handleMatchPhaseChange = useCallback((phase) => setMatchPhase(phase), []);
+
+  useEffect(() => {
+    if (!nicknameDirty && myPlayer) setNicknameDraft(myPlayer.temporary_nickname || "");
+  }, [myPlayer?.temporary_nickname, nicknameDirty, userId]);
+
+  useEffect(() => {
+    onGameFieldChange?.(Boolean(room?.id && matchPhase === "playing" && showFieldOnly));
+  }, [room?.id, matchPhase, showFieldOnly, onGameFieldChange]);
+
+  async function saveTemporaryNickname() {
+    if (!room?.id || savingNickname) return;
+    setSavingNickname(true); setError(""); setNotice("");
+    try {
+      await ensureSignedIn();
+      const { error: rpcError } = await supabase.rpc("set_private_room_nickname", {
+        p_room_id: room.id,
+        p_nickname: nicknameDraft.trim(),
+      });
+      if (rpcError) throw rpcError;
+      setNicknameDirty(false);
+      await loadPlayers(room.id);
+      setNotice(nicknameDraft.trim() ? "이번 방에서 사용할 임시 닉네임을 저장했어." : "임시 닉네임을 지웠어. 기본 플레이어 이름을 사용해.");
+    } catch (err) {
+      setError(err?.message || "임시 닉네임을 저장하지 못했습니다.");
+    } finally { setSavingNickname(false); }
+  }
   const deckSignature = JSON.stringify({
     deck: Object.entries(deck || {}).sort(([a], [b]) => a.localeCompare(b)),
     partnerId,
@@ -186,7 +218,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
 
         const { data, error: queryError } = await supabase
           .from("room_players")
-          .select("user_id, seat, joined_at, is_ready")
+          .select("user_id, seat, joined_at, is_ready, temporary_nickname")
           .eq("room_id", room.id)
           .order("seat");
         if (queryError) throw queryError;
@@ -212,7 +244,19 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
         const identity = String(
           card?.cardId ?? card?.sourceData?.card_id ?? card?.databaseId ?? card?.key ?? key
         ).trim().toLocaleUpperCase();
-        return { key: String(key), count, limit_key: identity };
+        const typeText = `${card?.type || ""} ${card?.originalType || ""} ${card?.roleText || ""}`;
+        let cardType = "other";
+        if (/イベント|이벤트|(?:^|\s)event(?:\s|$)/iu.test(typeText)) cardType = "event";
+        else if (/キャラ|character|캐릭터/iu.test(typeText)) cardType = "character";
+        const cutInText = String(card?.cutInEffect || "");
+        const cutInBonus = /2000/u.test(cutInText) ? 2000 : /1000/u.test(cutInText) ? 1000 : 0;
+        return {
+          key: String(key), count, limit_key: identity, card_type: cardType,
+          cost: Math.max(0, Number(card?.cost) || 0),
+          ap: Math.max(0, Number(card?.ap ?? card?.sourceData?.ap ?? card?.sourceData?.AP) || 0),
+          lp: Math.max(0, Number(card?.lp ?? card?.sourceData?.lp ?? card?.sourceData?.LP) || 0),
+          cut_in_bonus: cutInBonus,
+        };
       })
       .filter(Boolean);
   }
@@ -260,6 +304,10 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
     } finally {
       setLoading(false);
     }
+  }
+
+  if (room?.id && matchPhase === "playing" && showFieldOnly) {
+    return <MatchTurnBoard roomId={room.id} userId={userId} cards={cards} onLeaveField={() => setShowFieldOnly(false)} />;
   }
 
   const panelStyle = {
@@ -323,13 +371,20 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
         </div>
       ) : (
         <>
-          {matchPhase === "waiting" && (
           <div style={{ marginTop: 20, padding: 16, border: "1px solid rgba(255,255,255,.08)", borderRadius: 12, background: "#0b1220" }}>
             <div style={{ color: "#8998ae", fontSize: 12 }}>친구에게 전달할 초대 코드</div>
             <div style={{ fontSize: 28, fontWeight: 850, letterSpacing: 3, margin: "5px 0 12px", overflowWrap: "anywhere" }}>{room.inviteCode}</div>
             <button type="button" style={buttonStyle} onClick={copyInviteCode}>초대 코드 복사</button>
           </div>
-          )}
+
+          <div style={{ marginTop: 16, padding: 14, border: "1px solid rgba(255,255,255,.08)", borderRadius: 10, background: "#0b1220" }}>
+            <h3 style={{ margin: "0 0 6px", fontSize: 13 }}>이번 방에서 표시할 이름</h3>
+            <p style={{ margin: "0 0 9px", color: "#8998ae", fontSize: 11, lineHeight: 1.6 }}>선택 사항이야. 비워 두면 플레이어 1/2로 보여. 이 이름은 이 방에만 저장되고 게임이 끝나면 자동으로 지워져.</p>
+            <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+              <input value={nicknameDraft} onChange={(event) => { setNicknameDraft(event.target.value); setNicknameDirty(true); }} maxLength={16} placeholder={`기본 이름: 플레이어 ${myPlayer?.seat || "?"}`} aria-label="이번 방 임시 닉네임" style={{ ...inputStyle, flex: "1 1 220px", minWidth: 0 }} />
+              <button type="button" style={{ ...buttonStyle, background: "#374151" }} disabled={savingNickname || loading} onClick={() => void saveTemporaryNickname()}>{savingNickname ? "저장 중…" : "닉네임 저장"}</button>
+            </div>
+          </div>
 
           <div style={{ marginTop: 22 }}>
             <h3 style={{ margin: "0 0 8px", fontSize: 15 }}>대기실</h3>
@@ -337,7 +392,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
               const player = players.find((item) => item.seat === seat);
               return (
                 <div key={seat} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "13px 2px", borderBottom: "1px solid rgba(255,255,255,.08)" }}>
-                  <span style={{ color: "#dbe4f1", fontSize: 13 }}>플레이어 {seat}{player?.user_id === userId ? " · 나" : ""}</span>
+                  <span style={{ color: "#dbe4f1", fontSize: 13 }}>{player?.temporary_nickname || `플레이어 ${seat}`}{player?.user_id === userId ? " · 나" : ""}</span>
                   <strong style={{ color: !player ? "#7d8ba0" : player.is_ready ? "#86efac" : "#fcd34d", fontSize: 12 }}>{!player ? "입장 대기 중" : player.is_ready ? "준비 완료" : "덱 선택 중"}</strong>
                 </div>
               );
@@ -356,15 +411,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
             <p style={{ margin: "10px 0 0", color: "#74839a", fontSize: 11, lineHeight: 1.6 }}>상대에게는 준비 여부만 표시돼. 카드별 덱 목록은 별도 비공개 테이블에 저장돼.</p>
           </div>
 
-          {bothReady && (
-            <MatchStartFlow
-              roomId={room.id}
-              userId={userId}
-              players={players}
-              cards={cards}
-              onPhaseChange={setMatchPhase}
-            />
-           )}
+          {bothReady && <MatchStartFlow roomId={room.id} userId={userId} players={players} cards={cards} onPhaseChange={handleMatchPhaseChange} />}
         </>
       )}
 
