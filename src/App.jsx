@@ -493,6 +493,30 @@ function drawExportCard(ctx, card, image, x, y, width, options = {}) {
   return { width, height };
 }
 
+function drawExportEmptySlot(ctx, slotNumber, x, y, width) {
+  const scale = width / 165;
+  const imageHeight = width * 4 / 3;
+  const captionHeight = Math.max(58, 62 * scale);
+  const height = imageHeight + captionHeight;
+  const radius = 10 * scale;
+
+  // 실제 덱 화면의 빈 슬롯을 닮은 실선 테두리와 번호/라벨을 그립니다.
+  roundedCanvasRect(ctx, x, y, width, height, radius, '#090f1b', null);
+  ctx.fillStyle = '#0d1524';
+  ctx.fillRect(x + 1, y + 1, width - 2, imageHeight - 1);
+  ctx.fillStyle = '#64748b';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `600 ${Math.max(13, 16 * scale)}px sans-serif`;
+  ctx.fillText(String(slotNumber), x + width / 2, y + imageHeight / 2);
+  ctx.fillStyle = '#64748b';
+  ctx.font = `500 ${Math.max(10, 11 * scale)}px sans-serif`;
+  ctx.fillText('빈 슬롯', x + width / 2, y + imageHeight + captionHeight / 2);
+  ctx.textBaseline = 'alphabetic';
+  ctx.textAlign = 'left';
+  roundedCanvasRect(ctx, x, y, width, height, radius, null, '#344256');
+}
+
 function loadSavedDeck() {
   try {
     const saved = JSON.parse(localStorage.getItem(DECK_STORAGE_KEY) || '{}');
@@ -785,8 +809,8 @@ export default function App() {
   }
 
   async function exportDeckImage() {
-    if (!partnerCard || !eventCard || mainDeckCount !== MAIN_DECK_LIMIT) {
-      window.alert(`이미지로 저장하려면 메인 덱 ${MAIN_DECK_LIMIT}장과 파트너 카드 1장, 사건 카드 1장이 필요해요.\n현재 메인 덱: ${mainDeckCount}/${MAIN_DECK_LIMIT}장 · 파트너: ${partnerCard ? '선택됨' : '미선택'} · 사건: ${eventCard ? '선택됨' : '미선택'}`);
+    if (!partnerCard || !eventCard) {
+      window.alert(`이미지로 저장하려면 파트너 카드 1장과 사건 카드 1장이 필요해요.\n현재 메인 덱: ${mainDeckCount}/${MAIN_DECK_LIMIT}장 · 파트너: ${partnerCard ? '선택됨' : '미선택'} · 사건: ${eventCard ? '선택됨' : '미선택'}`);
       return;
     }
     if (exportingDeckImage) return;
@@ -856,10 +880,16 @@ export default function App() {
       const cardStartY = top + sectionHeight;
       drawExportCard(ctx, partnerCard, loadedImages.get(partnerCard.imageUrl), sideX, cardStartY, cardWidth, { showStats: false, centerName: true });
       drawExportCard(ctx, eventCard, loadedImages.get(eventCard.imageUrl), sideX, cardStartY + cardHeight + Math.max(14, gap), cardWidth, { showStats: false, centerName: true });
-      slots.forEach((card, index) => {
+      deckSlots.forEach((card, index) => {
         const row = Math.floor(index / columns);
         const col = index % columns;
-        drawExportCard(ctx, card, loadedImages.get(card.imageUrl), gridX + col * (cardWidth + gap), cardStartY + row * (cardHeight + gap), cardWidth);
+        const cardX = gridX + col * (cardWidth + gap);
+        const cardY = cardStartY + row * (cardHeight + gap);
+        if (card) {
+          drawExportCard(ctx, card, loadedImages.get(card.imageUrl), cardX, cardY, cardWidth);
+        } else {
+          drawExportEmptySlot(ctx, index + 1, cardX, cardY, cardWidth);
+        }
       });
 
       const footerY = cardStartY + gridHeight + 30;
@@ -1052,6 +1082,9 @@ export default function App() {
         .card-meta-item dt { color: #9aa8bd !important; font-size: 11px !important; font-weight: 600 !important; }
         .card-meta-item dd { display: flex; flex: 1 1 auto; align-items: center; min-height: 20px; margin: 4px 0 0 !important; color: #f1f5f9 !important; font-size: 13px !important; font-weight: 650 !important; overflow-wrap: anywhere; }
         .card-meta-item:not(.card-meta-item-traits) dd { justify-content: flex-start !important; text-align: left !important; padding-left: 8px !important; box-sizing: border-box !important; }
+        .card-meta-item.card-meta-item-set dd { padding-left: 0 !important; }
+        .card-meta-item-traits > dd { padding-left: 8px !important; }
+        .card-effect-text, .card-original-effect-text { padding-left: 8px !important; box-sizing: border-box !important; }
         .card-detail-layout > div:nth-child(2) > div:not(.card-meta-grid), .card-detail-layout > div:nth-child(2) > details { border: 1px solid rgba(255,255,255,.07) !important; border-radius: 10px !important; padding: 12px !important; background: #090f1b !important; color: #e2e8f0 !important; }
         .card-detail-layout > div:nth-child(2) h3 { margin: 0 0 8px !important; color: #dce5f2 !important; font-size: 13px !important; font-weight: 800 !important; }
         .card-detail-layout > div:nth-child(2) h4 { margin: 0 0 4px !important; color: #fcd34d; font-size: 12px; font-weight: 750; }
@@ -1358,7 +1391,7 @@ export default function App() {
               </div>
             </div>
           </div>
-          <p className="deck-footnote border-t border-white/[0.08] pt-3 text-[11px] leading-5 text-slate-500">덱 구성은 이 브라우저에 자동 저장돼요. 덱 이미지를 저장하려면 메인 덱 40장과 파트너 카드 1장, 사건 카드 1장을 모두 선택해야 해요.</p>
+          <p className="deck-footnote border-t border-white/[0.08] pt-3 text-[11px] leading-5 text-slate-500">덱 구성은 이 브라우저에 자동 저장돼요. 메인 덱은 빈 슬롯을 포함해 이미지로 저장할 수 있어요. 파트너 카드와 사건 카드는 각각 선택해야 해요.</p>
         </section>
       )}
 
@@ -1377,7 +1410,7 @@ export default function App() {
                   {filteredCards.length > 1 && <p className="text-[10px] text-slate-600">← → 키로 다른 카드 확인</p>}
                 </div>
                 <div className="min-w-0 space-y-3">
-                  <dl className="card-meta-grid grid grid-cols-2 gap-2 sm:grid-cols-3">{[['종류', selectedCard.type], ['색상', selectedCard.color], ['레어도', selectedCard.rarity], ['코스트', selectedCard.cost === null || selectedCard.cost === undefined ? '' : selectedCard.cost], ['LP', formatNumber(selectedCard.lp)], ['수록 제품', selectedCard.set]].map(([label, value]) => <div key={label} className="card-meta-item rounded-lg border border-white/[0.07] bg-[#090f1b] p-2.5"><dt className="text-[10px] font-medium text-slate-500">{label}</dt><dd className="mt-1 break-words text-xs font-semibold text-slate-200">{label === '코스트' && (value === '' || value === null || value === undefined) ? '' : (value ?? '-')}</dd></div>)}<div className="card-meta-item card-meta-item-traits rounded-lg border border-white/[0.07] bg-[#090f1b] p-2.5"><dt className="text-[10px] font-medium text-slate-500">특징</dt><dd className="mt-1">{selectedCard.traits?.length ? <div className="card-trait-list">{selectedCard.traits.map((trait) => <span key={trait} className="card-trait-chip">{trait}</span>)}</div> : <span className="text-xs font-semibold text-slate-500">없음</span>}</dd></div></dl>
+                  <dl className="card-meta-grid grid grid-cols-2 gap-2 sm:grid-cols-3">{[['종류', selectedCard.type], ['색상', selectedCard.color], ['레어도', selectedCard.rarity], ['코스트', formatNumber(selectedCard.cost)], ['LP', formatNumber(selectedCard.lp)], ['수록 제품', selectedCard.set]].map(([label, value]) => <div key={label} className={`card-meta-item rounded-lg border border-white/[0.07] bg-[#090f1b] p-2.5${label === '수록 제품' ? ' card-meta-item-set' : ''}`}><dt className="text-[10px] font-medium text-slate-500">{label}</dt><dd className="mt-1 break-words text-xs font-semibold text-slate-200">{value ?? '-'}</dd></div>)}<div className="card-meta-item card-meta-item-traits rounded-lg border border-white/[0.07] bg-[#090f1b] p-2.5"><dt className="text-[10px] font-medium text-slate-500">특징</dt><dd className="mt-1">{selectedCard.traits?.length ? <div className="card-trait-list">{selectedCard.traits.map((trait) => <span key={trait} className="card-trait-chip">{trait}</span>)}</div> : <span className="text-xs font-semibold text-slate-500">없음</span>}</dd></div></dl>
                   {selectedCard.keywordTags?.length > 0 && <div className="detail-keyword-badges effect-badges">{selectedCard.keywordTags.map((tag) => <span key={tag} className={`effect-badge ${keywordTagClass(tag)}${String(tag).startsWith('조건부 ') ? ' conditional' : ''}`}>{tag}</span>)}</div>}
                   {(selectedCard.hiramekiEffect || selectedCard.cutInEffect) && <div className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><h3 className="mb-3 text-xs font-bold">게임 시스템 효과</h3><div className="space-y-3">{selectedCard.hiramekiEffect && <div><h4 className="mb-1 text-xs font-bold text-amber-300">히라메키</h4><p className="whitespace-pre-wrap break-words text-xs leading-5 text-slate-200">{selectedCard.hiramekiEffect}</p></div>}{selectedCard.cutInEffect && <div><h4 className="mb-1 text-xs font-bold text-sky-300">컷인</h4><p className="whitespace-pre-wrap break-words text-xs leading-5 text-slate-200">{selectedCard.cutInEffect}</p></div>}</div></div>}
                   <div className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><h3 className="mb-2 text-xs font-bold text-slate-300">카드 효과</h3><div className="card-effect-text text-xs leading-6 text-slate-200">{formatAbilityText(selectedCard.ability) || '효과 텍스트 없음'}</div></div>
