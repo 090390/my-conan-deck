@@ -997,7 +997,9 @@ export default function App() {
         .card-role-partner { background: #fcd34d; }
         .card-role-event { background: #7dd3fc; }
         .card-tile-caption { min-width: 0; padding: 7px 7px 6px !important; }
-        .card-tile-title { display: -webkit-box; min-height: 2.35em !important; margin: 0; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; color: #f1f5f9 !important; font-size: 11px !important; font-weight: 750 !important; line-height: 1.4 !important; overflow-wrap: anywhere; }
+        .card-tile-title-row { display: flex !important; align-items: flex-start; justify-content: space-between; gap: 4px; min-width: 0; min-height: 2.35em; margin-top: 0 !important; color: inherit !important; font-size: inherit !important; }
+        .card-tile-caption > .card-tile-title-row { margin-top: 0 !important; }
+        .card-tile-title { display: -webkit-box; flex: 1 1 auto; min-width: 0; min-height: 2.35em !important; margin: 0; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; color: #f1f5f9 !important; font-size: 11px !important; font-weight: 750 !important; line-height: 1.4 !important; overflow-wrap: anywhere; }
         .card-tile-caption > div { display: flex; justify-content: space-between; gap: 4px; margin-top: 5px !important; color: #8b9ab0 !important; font-size: 9px !important; }
         .card-tile-caption > div > span { min-width: 0; }
         .card-tile-caption > div > span:last-child { flex-shrink: 0; }
@@ -1042,11 +1044,11 @@ export default function App() {
         .keyword-assault { color: #fda4af; background: rgba(244,63,94,.12); border-color: rgba(251,113,133,.22); }
         .keyword-swift { color: #86efac; background: rgba(34,197,94,.12); border-color: rgba(74,222,128,.22); }
         .keyword-gale { color: #7dd3fc; background: rgba(14,165,233,.12); border-color: rgba(56,189,248,.22); }
-        .effect-badge.conditional { border-style: dashed; opacity: .95; }
+        .effect-badge.conditional { border-style: solid; opacity: .95; }
         .keyword-other { color: #c4b5fd; background: rgba(139,92,246,.12); border-color: rgba(167,139,250,.22); }
         .detail-keyword-badges { padding: 2px 0; }
         .detail-keyword-badges .effect-badge { font-size: 11px !important; line-height: 1.4; padding: 3px 6px; font-weight: 700; }
-        .keyword-tag-dots { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; min-height: 7px; margin-top: 4px; }
+        .keyword-tag-dots { display: flex; align-items: center; justify-content: flex-end; flex: 0 0 auto; flex-wrap: nowrap; gap: 3px; max-width: 38%; min-height: 0; margin: 3px 0 0; overflow: hidden; }
         .keyword-tag-dot { display: inline-block; width: 6px; height: 6px; flex: 0 0 6px; border-radius: 999px; box-shadow: 0 0 0 1px rgba(255,255,255,.18); }
         .keyword-dot-assault { background: #fb7185; }
         .keyword-dot-swift { background: #4ade80; }
@@ -1080,13 +1082,13 @@ export default function App() {
         .deck-card-name, .deck-special-name { display: -webkit-box; min-height: 2.5em; margin: 0; padding: 5px 4px 4px; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; color: #cbd5e1; font-size: 9px; line-height: 1.25; overflow-wrap: anywhere; }
         .deck-card-remove, .deck-special-remove { position: absolute; z-index: 3; top: 4px; right: 4px; display: flex !important; width: 19px !important; height: 19px !important; align-items: center; justify-content: center; padding: 0 !important; border: 1px solid rgba(255,255,255,.18) !important; border-radius: 50% !important; color: white !important; background: rgba(0,0,0,.82) !important; font-size: 14px !important; line-height: 1 !important; font-weight: 800 !important; }
         .deck-card-remove:hover, .deck-special-remove:hover { background: #e11d48 !important; }
-        .deck-empty-slot { display: flex; min-width: 0; flex-direction: column; overflow: hidden; border: 1px dashed rgba(148,163,184,.16); border-radius: 8px; background: rgba(255,255,255,.012); }
+        .deck-empty-slot { display: flex; min-width: 0; flex-direction: column; overflow: hidden; border: 1px solid rgba(148,163,184,.16); border-radius: 8px; background: rgba(255,255,255,.012); }
         .deck-empty-slot .deck-card-name { color: #64748b; }
-        .deck-empty-special { border-style: dashed; border-color: rgba(148,163,184,.24); background: rgba(255,255,255,.015); }
+        .deck-empty-special { border-style: solid; border-color: rgba(148,163,184,.24); background: rgba(255,255,255,.015); }
         .deck-empty-special-image { display: flex; align-items: center; justify-content: center; padding: 5px; color: #64748b; font-size: 10px; text-align: center; }
         .deck-empty-special .deck-special-name { color: #8b9ab0; text-align: center; }
         .deck-special-card { align-self: start; }
-        .deck-special-card .deck-special-name { color: #f1f5f9; font-weight: 750; }
+        .deck-special-card .deck-special-name { min-height: 2.4em; color: #f1f5f9; font-size: 10px; font-weight: 800; line-height: 1.35; }
         .deck-special-id { position: absolute; z-index: 2; top: 4px; right: 4px; display: block; max-width: calc(100% - 48px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: 4px; padding: 2px 4px; color: #e2e8f0; background: rgba(0,0,0,.8); font-size: 8px; line-height: 1.35; }
         .deck-special-role { position: absolute; z-index: 3; top: 4px; left: 4px; display: inline-block; border-radius: 4px; padding: 2px 4px; color: #0f172a; background: #fcd34d; font-size: 8px; line-height: 1.35; font-weight: 850; }
         .deck-special-role.is-event { background: #7dd3fc; }
@@ -1113,7 +1115,8 @@ export default function App() {
         .deck-sort-select:focus, .deck-layout-select:focus { border-color: rgba(251,113,133,.7); }
         .app-shell .filters-reset-button { min-height: 30px; border: 1px solid #be123c !important; border-radius: 8px !important; padding: 6px 11px !important; color: #fff1f2 !important; background: #be123c !important; font-size: 11px !important; font-weight: 800 !important; transition: background .15s ease, border-color .15s ease; }
         .app-shell .filters-reset-button:hover { border-color: #f43f5e !important; background: #e11d48 !important; }
-        .deck-board-8x5 .deck-card-name, .deck-board-8x5 .deck-special-name { min-height: 3.8em; font-size: 11px; line-height: 1.4; }
+        .deck-board-8x5 .deck-card-name { min-height: 3.8em; font-size: 11px; line-height: 1.4; }
+        .deck-board-8x5 .deck-special-card .deck-special-name { min-height: 2.4em; font-size: 11px; line-height: 1.4; }
         .deck-card-name, .deck-special-name { display: flex; flex-direction: column; gap: 2px; min-height: 3.5em; margin: 0; padding: 5px 4px 4px; overflow: hidden; color: #cbd5e1; font-size: 9px; line-height: 1.4; overflow-wrap: anywhere; word-break: normal; }
         .deck-card-primary { display: block; color: #f1f5f9; font-weight: 750; overflow-wrap: anywhere; }
         .deck-card-secondary { display: block; color: #94a3b8; font-size: .92em; font-weight: 550; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -1193,7 +1196,7 @@ export default function App() {
             <select aria-label="LP 필터" value={lpFilter} onChange={(event) => setLpFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 LP</option>{lpOptions.map((value) => <option key={String(value)} value={String(value)}>{value}</option>)}</select>
           </div>
 
-          {visibleCards.length === 0 ? <p className="rounded-xl border border-dashed border-white/15 p-8 text-center text-sm text-slate-400">조건에 맞는 카드가 없어요.</p> : (
+          {visibleCards.length === 0 ? <p className="rounded-xl border border-solid border-white/15 p-8 text-center text-sm text-slate-400">조건에 맞는 카드가 없어요.</p> : (
             <div className="conan-card-grid grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 2xl:grid-cols-10">
               {visibleCards.map((card) => {
                 const count = Number(deck[card.key] || 0);
@@ -1212,8 +1215,10 @@ export default function App() {
                         {isEvent && <span className="card-role-badge card-role-event absolute bottom-1 left-1 rounded bg-sky-300 px-1.5 py-0.5 text-[9px] font-black text-slate-950">사건</span>}
                       </div>
                       <div className="card-tile-caption p-1.5 sm:p-2">
-                        <h3 className="card-tile-title line-clamp-2 min-h-[2.2rem] break-keep text-[11px] font-semibold leading-[1.1rem] text-slate-100 sm:text-xs">{card.name}</h3>
-                        {keywordBadges.length > 0 && <div className="keyword-tag-dots" aria-label={`키워드 태그: ${keywordBadges.join(', ')}`}>{keywordBadges.map((tag) => <span key={tag} className={`keyword-tag-dot keyword-dot-${keywordTagClass(tag).replace('keyword-', '')}`} title={tag} aria-label={tag} />)}</div>}
+                        <div className="card-tile-title-row">
+                          <h3 className="card-tile-title line-clamp-2 min-h-[2.2rem] break-keep text-[11px] font-semibold leading-[1.1rem] text-slate-100 sm:text-xs">{card.name}</h3>
+                          {keywordBadges.length > 0 && <div className="keyword-tag-dots" aria-label={`키워드 태그: ${keywordBadges.join(', ')}`}>{keywordBadges.map((tag) => <span key={tag} className={`keyword-tag-dot keyword-dot-${keywordTagClass(tag).replace('keyword-', '')}`} title={tag} aria-label={tag} />)}</div>}
+                        </div>
                         <div className="mt-1 flex min-w-0 items-center justify-between gap-1 text-[9px] text-slate-500 sm:text-[10px]"><span className="truncate">{card.rarity || card.type || '카드'}</span><span className="shrink-0">{card.cost === null || card.cost === undefined ? formatNumber(card.lp) : `${formatNumber(card.cost)} / ${formatNumber(card.lp)}`}</span></div>
                         {(card.hiramekiEffect || card.cutInEffect) && <div className="effect-badges">{card.hiramekiEffect && <span className="effect-badge effect-badge-hirameki">히라메키</span>}{card.cutInEffect && <span className="effect-badge effect-badge-cutin">컷인</span>}</div>}
                       </div>
@@ -1255,7 +1260,7 @@ export default function App() {
                     <span className="deck-special-role">파트너</span>
                     <button onClick={() => setSelectedCard(partnerCard)} className="deck-special-open" title={getDeckCardSummary(partnerCard)}>
                       {partnerCard.imageUrl ? <img src={partnerCard.imageUrl} loading="lazy" alt={partnerCard.name} className="deck-special-image" /> : <div className="deck-special-image flex items-center justify-center text-[9px] text-slate-500">이미지 없음</div>}
-                      <div className="deck-special-name"><span className="deck-card-primary">{getDeckCardNameLine(partnerCard)}</span><span className="deck-card-secondary">{getDeckCardStatsLine(partnerCard)}</span></div>
+                      <div className="deck-special-name"><span className="deck-card-primary">{getDeckCardNameLine(partnerCard)}</span></div>
                       <span className="deck-special-id">{partnerCard.cardId || partnerCard.cardNum || '파트너 카드'}</span>
                     </button>
                     <button onClick={() => setPartnerId('')} aria-label="파트너 카드 해제" title="파트너 해제" className="deck-special-remove">×</button>
@@ -1273,7 +1278,7 @@ export default function App() {
                     <span className="deck-special-role is-event">사건</span>
                     <button onClick={() => setSelectedCard(eventCard)} className="deck-special-open" title={getDeckCardSummary(eventCard)}>
                       {eventCard.imageUrl ? <img src={eventCard.imageUrl} loading="lazy" alt={eventCard.name} className="deck-special-image" /> : <div className="deck-special-image flex items-center justify-center text-[9px] text-slate-500">이미지 없음</div>}
-                      <div className="deck-special-name"><span className="deck-card-primary">{getDeckCardNameLine(eventCard)}</span><span className="deck-card-secondary">{getDeckCardStatsLine(eventCard)}</span></div>
+                      <div className="deck-special-name"><span className="deck-card-primary">{getDeckCardNameLine(eventCard)}</span></div>
                       <span className="deck-special-id">{eventCard.cardId || eventCard.cardNum || '사건 카드'}</span>
                     </button>
                     <button onClick={() => setEventId('')} aria-label="사건 카드 해제" title="사건 카드 해제" className="deck-special-remove">×</button>
