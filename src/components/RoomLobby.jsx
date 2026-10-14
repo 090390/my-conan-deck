@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import MatchStartFlow from "./MatchStartFlow";
 
 export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", cards = [] }) {
   const [inviteCodeInput, setInviteCodeInput] = useState("");
@@ -10,6 +11,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [matchPhase, setMatchPhase] = useState("waiting");
 
   async function ensureSignedIn() {
     const {
@@ -321,11 +323,13 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
         </div>
       ) : (
         <>
+          {matchPhase === "waiting" && (
           <div style={{ marginTop: 20, padding: 16, border: "1px solid rgba(255,255,255,.08)", borderRadius: 12, background: "#0b1220" }}>
             <div style={{ color: "#8998ae", fontSize: 12 }}>친구에게 전달할 초대 코드</div>
             <div style={{ fontSize: 28, fontWeight: 850, letterSpacing: 3, margin: "5px 0 12px", overflowWrap: "anywhere" }}>{room.inviteCode}</div>
             <button type="button" style={buttonStyle} onClick={copyInviteCode}>초대 코드 복사</button>
           </div>
+          )}
 
           <div style={{ marginTop: 22 }}>
             <h3 style={{ margin: "0 0 8px", fontSize: 15 }}>대기실</h3>
@@ -352,7 +356,15 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
             <p style={{ margin: "10px 0 0", color: "#74839a", fontSize: 11, lineHeight: 1.6 }}>상대에게는 준비 여부만 표시돼. 카드별 덱 목록은 별도 비공개 테이블에 저장돼.</p>
           </div>
 
-          {bothReady && <p role="status" style={{ marginTop: 16, padding: 12, border: "1px solid rgba(134,239,172,.22)", borderRadius: 9, color: "#86efac", background: "rgba(34,197,94,.07)", fontWeight: 750 }}>두 플레이어 모두 준비 완료! 다음 단계에서 선후공 결정과 게임 시작을 연결할 수 있어.</p>}
+          {bothReady && (
+            <MatchStartFlow
+              roomId={room.id}
+              userId={userId}
+              players={players}
+              cards={cards}
+              onPhaseChange={setMatchPhase}
+            />
+           )}
         </>
       )}
 
