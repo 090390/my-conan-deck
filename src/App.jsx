@@ -1679,7 +1679,6 @@ export default function App() {
       `}</style>
       {!gameFieldOnly && (
       <header className="app-header mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
-      )}
         <h1 className="text-xl font-black tracking-tight md:text-2xl">명탐정 코난 TCG 도감</h1>
         <div className="flex flex-wrap items-center gap-2">
           <nav aria-label="메인 메뉴" className="app-nav flex rounded-xl border border-white/10 bg-[#101827] p-1">
@@ -1690,6 +1689,7 @@ export default function App() {
           <a className="rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:border-rose-400/50 hover:text-white" href="https://www.takaratomy.co.jp/products/conan-cardgame/cardlist/" target="_blank" rel="noreferrer">일본 공식 카드 목록 ↗</a>
         </div>
       </header>
+      )}
 
       <div style={{ display: activeView === 'match' ? 'block' : 'none' }}>
         <RoomLobby deck={deck} partnerId={partnerId} eventId={eventId} cards={cards} onGameFieldChange={setGameFieldOnly}/>
