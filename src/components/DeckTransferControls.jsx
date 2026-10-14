@@ -131,11 +131,44 @@ export default function DeckTransferControls({ cards = [], deck = {}, partnerId 
     }
   }
 
-  const button = { display: "inline-flex", alignItems: "center", justifyContent: "center", minHeight: 36, border: "1px solid rgba(148,163,184,.24)", borderRadius: 8, padding: "7px 10px", color: "#e8edf7", background: "#172033", fontSize: 11, fontWeight: 800, cursor: busy ? "wait" : "pointer", opacity: busy ? .65 : 1, whiteSpace: "nowrap" };
-  return <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "flex-end", flexWrap: "wrap", gap: 6 }}>
-    <button type="button" style={button} onClick={exportFile} disabled={busy}>덱 JSON 저장</button>
-    <button type="button" style={{ ...button, background: "#263d63" }} onClick={() => inputRef.current?.click()} disabled={busy}>{busy ? "읽는 중…" : "덱 JSON 불러오기"}</button>
-    <input ref={inputRef} type="file" accept="application/json,.json,.txt" onChange={importFile} style={{ display: "none" }} aria-label="덱 JSON 파일 선택" />
-    {status && <span role="status" style={{ width: "100%", textAlign: "right", color: status.startsWith("불러오기 실패") || status.startsWith("내보내기 실패") ? "#fda4af" : "#86efac", fontSize: 10 }}>{status}</span>}
-  </div>;
+  const button = { display: "inline-flex", alignItems: "center", justifyContent: "center", minHeight: 36, border: "1px solid rgba(148,163,184,.24)", borderRadius: 8, padding: "7px 10px", color: "#e8edf7", background: "#172033", fontSize: 11, fontWeight: 800, cursor: busy ? "wait" : "pointer", opacity: busy ? .65 : 1, whiteSpace: "nowrap", flex: "0 0 auto" };
+  const statusIsError = status.startsWith("불러오기 실패") || status.startsWith("내보내기 실패");
+  return (
+    <div style={{
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "stretch",
+      justifyContent: "flex-start",
+      gap: 2,
+      width: 226,
+      minWidth: 226,
+      flex: "0 0 226px",
+      boxSizing: "border-box",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", flexWrap: "nowrap", gap: 6, minHeight: 36 }}>
+        <button type="button" style={button} onClick={exportFile} disabled={busy}>덱 JSON 저장</button>
+        <button type="button" style={{ ...button, background: "#263d63" }} onClick={() => inputRef.current?.click()} disabled={busy}>{busy ? "읽는 중…" : "덱 JSON 불러오기"}</button>
+        <input ref={inputRef} type="file" accept="application/json,.json,.txt" onChange={importFile} style={{ display: "none" }} aria-label="덱 JSON 파일 선택" />
+      </div>
+      <div
+        role="status"
+        aria-live="polite"
+        title={status || undefined}
+        style={{
+          minHeight: 13,
+          lineHeight: "13px",
+          width: "100%",
+          boxSizing: "border-box",
+          textAlign: "right",
+          color: statusIsError ? "#fda4af" : "#86efac",
+          fontSize: 10,
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        }}
+      >
+        {status || " "}
+      </div>
+    </div>
+  );
 }
