@@ -201,6 +201,53 @@ function keywordTagClass(tag) {
   return 'keyword-other';
 }
 
+function keywordDotClass(tag) {
+  const value = String(tag || '');
+  if (/미스리드|ミスリード/iu.test(value)) return 'keyword-mislead';
+  if (/수사|捜査/iu.test(value)) return 'keyword-investigation';
+  return keywordTagClass(tag);
+}
+
+function cardHasAbilityDot(card, kind) {
+  const tags = Array.isArray(card?.keywordTags) ? card.keywordTags : [];
+  if (kind === 'mislead' && tags.some((tag) => /미스리드|ミスリード/iu.test(String(tag)))) return true;
+  if (kind === 'investigation' && tags.some((tag) => /수사|捜査/iu.test(String(tag)))) return true;
+
+  const sourceText = [card?.ability, card?.originalAbility, card?.hiramekiEffect, card?.cutInEffect]
+    .map((value) => String(value ?? ''))
+    .join('\n');
+  // 숫자/X가 붙은 실제 능력 표기를 찾습니다. 능력을 가진 다른 캐릭터를 언급하는 문구만으로는 점을 붙이지 않습니다.
+  if (kind === 'mislead') return /[〚［\[]\s*(?:미스리드|ミスリード)\s*[0-9０-９XxＸｘ]+\s*[〛］\]]/iu.test(sourceText);
+  if (kind === 'investigation') return /[〚［\[]\s*(?:수사|捜査)\s*[0-9０-９XxＸｘ]+\s*[〛］\]]/iu.test(sourceText);
+  return false;
+}
+
+function getCardFeatureDotItems(card) {
+  const items = [];
+  const seen = new Set();
+  const specialClasses = new Set(['keyword-mislead', 'keyword-investigation']);
+  const tags = Array.isArray(card?.keywordTags) ? card.keywordTags : [];
+  tags.forEach((tag, index) => {
+    const className = keywordDotClass(tag);
+    const uniqueKey = specialClasses.has(className) ? className : `${className}:${tag}`;
+    if (seen.has(uniqueKey)) return;
+    seen.add(uniqueKey);
+    const title = className === 'keyword-mislead' ? '미스리드'
+      : className === 'keyword-investigation' ? '수사' : String(tag);
+    items.push({ key: `tag-${index}-${uniqueKey}`, title, className });
+  });
+  for (const [kind, title, className] of [
+    ['mislead', '미스리드', 'keyword-mislead'],
+    ['investigation', '수사', 'keyword-investigation'],
+  ]) {
+    if (cardHasAbilityDot(card, kind) && !seen.has(className)) {
+      seen.add(className);
+      items.push({ key: `ability-${kind}`, title, className });
+    }
+  }
+  return items;
+}
+
 function formatAbilityText(value) {
   const text = String(value ?? '').replace(/\r\n?/gu, '\n').trim();
   if (!text) return '';
@@ -583,15 +630,16 @@ function drawExportCard(ctx, card, image, x, y, width, options = {}) {
     ctx.textAlign = 'left';
   }
   // 내 덱 이미지 저장에서도 실제 덱 화면과 동일한 특성 점을 카드 이미지 위에 그립니다.
-  const exportFeatureDots = (Array.isArray(card?.keywordTags) ? card.keywordTags : []).map((tag) => {
-    const tagClass = keywordTagClass(tag);
+  const exportFeatureDots = getCardFeatureDotItems(card).map((dot) => {
     const colors = {
       'keyword-assault': ['#fb7185', '#fda4af'],
       'keyword-swift': ['#4ade80', '#86efac'],
       'keyword-gale': ['#38bdf8', '#7dd3fc'],
       'keyword-other': ['#a78bfa', '#c4b5fd'],
+      'keyword-mislead': ['#e879f9', '#f0abfc'],
+      'keyword-investigation': ['#facc15', '#fde047'],
     };
-    const pair = colors[tagClass] || colors['keyword-other'];
+    const pair = colors[dot.className] || colors['keyword-other'];
     return { fill: pair[0], stroke: pair[1] };
   });
   if (card?.hiramekiEffect) exportFeatureDots.push({ fill: '#fb923c', stroke: '#fdba74' });
@@ -738,12 +786,14 @@ const FEATURE_DOT_LEGEND_ITEMS = [
   { label: '신속 계열', className: 'keyword-dot-swift' },
   { label: '질풍 계열', className: 'keyword-dot-gale' },
   { label: '그 밖의 특수 키워드', className: 'keyword-dot-other' },
+  { label: '미스리드', className: 'keyword-dot-mislead' },
+  { label: '수사', className: 'keyword-dot-investigation' },
   { label: '히라메키', className: 'deck-feature-dot-hirameki' },
   { label: '컷인', className: 'deck-feature-dot-cutin' },
 ];
 
 function FeatureDotLegend({ includeSystemEffects = false, className = '' }) {
-  const items = includeSystemEffects ? FEATURE_DOT_LEGEND_ITEMS : FEATURE_DOT_LEGEND_ITEMS.slice(0, 4);
+  const items = includeSystemEffects ? FEATURE_DOT_LEGEND_ITEMS : FEATURE_DOT_LEGEND_ITEMS.slice(0, 6);
   return (
     <div className={`feature-dot-legend ${className}`.trim()} aria-label="특성 점 색상 안내">
       {items.map((item) => (
@@ -1177,6 +1227,8 @@ export default function App() {
         { label: '신속 계열', fill: '#4ade80', stroke: '#86efac' },
         { label: '질풍 계열', fill: '#38bdf8', stroke: '#7dd3fc' },
         { label: '그 밖의 특수 키워드', fill: '#a78bfa', stroke: '#c4b5fd' },
+        { label: '미스리드', fill: '#e879f9', stroke: '#f0abfc' },
+        { label: '수사', fill: '#facc15', stroke: '#fde047' },
         { label: '히라메키', fill: '#fb923c', stroke: '#fdba74' },
         { label: '컷인', fill: '#7dd3fc', stroke: '#bae6fd' },
       ];
@@ -1488,6 +1540,8 @@ export default function App() {
         .keyword-dot-swift { background: #4ade80; }
         .keyword-dot-gale { background: #38bdf8; }
         .keyword-dot-other { background: #a78bfa; }
+        .keyword-dot-mislead { background: #e879f9; }
+        .keyword-dot-investigation { background: #facc15; }
         .deck-card-image-wrap { position: relative; width: 100%; overflow: hidden; background: #0d1524; }
         .deck-feature-dots { position: absolute; z-index: 5; top: 50%; right: 7px; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; pointer-events: none; }
         .deck-feature-dot { display: block; width: 7px; height: 7px; flex: 0 0 7px; border: 1px solid rgba(255,255,255,.30); border-radius: 999px; box-shadow: 0 1px 3px rgba(0,0,0,.5), 0 0 0 1px rgba(0,0,0,.25); }
@@ -1660,7 +1714,7 @@ export default function App() {
                 const isPartner = partnerId === card.key;
                 const isEvent = eventId === card.key;
                 const role = getCardRole(card);
-                const keywordBadges = card.keywordTags || [];
+                const featureDotItems = getCardFeatureDotItems(card);
                 return (
                   <article key={card.key} className="card-tile group flex min-w-0 flex-col overflow-hidden rounded-lg border border-white/[0.08] bg-[#090f1b] transition duration-150 hover:-translate-y-0.5 hover:border-rose-400/50 hover:shadow-lg hover:shadow-black/20">
                     <button onClick={() => openCardDetail(card, 'cards')} className="card-open-button block w-full min-w-0 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-rose-400" title={`${card.name} 상세 정보 보기`} aria-label={`${card.name} 상세 정보 보기`}>
@@ -1674,7 +1728,7 @@ export default function App() {
                       <div className="card-tile-caption p-1.5 sm:p-2">
                         <div className="card-tile-title-row">
                           <h3 className="card-tile-title line-clamp-2 min-h-[2.2rem] break-keep text-[11px] font-semibold leading-[1.1rem] text-slate-100 sm:text-xs">{card.name}</h3>
-                          {keywordBadges.length > 0 && <div className="keyword-tag-dots" aria-label={`키워드 태그: ${keywordBadges.join(', ')}`}>{keywordBadges.map((tag) => <span key={tag} className={`keyword-tag-dot keyword-dot-${keywordTagClass(tag).replace('keyword-', '')}`} title={tag} aria-label={tag} />)}</div>}
+                          {featureDotItems.length > 0 && <div className="keyword-tag-dots" aria-label={`특성: ${featureDotItems.map((dot) => dot.title).join(', ')}`}>{featureDotItems.map((dot) => <span key={dot.key} className={`keyword-tag-dot keyword-dot-${dot.className.replace('keyword-', '')}`} title={dot.title} aria-label={dot.title} />)}</div>}
                         </div>
                         <div className="mt-1 flex min-w-0 items-center justify-between gap-1 text-[9px] text-slate-500 sm:text-[10px]"><span className="truncate">{card.rarity || card.type || '카드'}</span><span className="shrink-0">{`${formatNumber(card.cost)} / ${formatNumber(card.lp)}`}</span></div>
                         {(card.hiramekiEffect || card.cutInEffect) && <div className="effect-badges">{card.hiramekiEffect && <span className="effect-badge effect-badge-hirameki">히라메키</span>}{card.cutInEffect && <span className="effect-badge effect-badge-cutin">컷인</span>}</div>}
@@ -1720,8 +1774,8 @@ export default function App() {
                     <button onClick={() => openCardDetail(partnerCard, 'cards')} className="deck-special-open" title={getDeckCardSummary(partnerCard)}>
                       <div className="deck-card-image-wrap">
                         {partnerCard.imageUrl ? <img src={partnerCard.imageUrl} loading="lazy" alt={partnerCard.name} className="deck-special-image" /> : <div className="deck-special-image flex items-center justify-center text-[9px] text-slate-500">이미지 없음</div>}
-                        {(partnerCard.keywordTags?.length > 0 || partnerCard.hiramekiEffect || partnerCard.cutInEffect) && <div className="deck-feature-dots" aria-label={`특성: ${(partnerCard.keywordTags || []).join(', ')}${partnerCard.hiramekiEffect ? ', 히라메키' : ''}${partnerCard.cutInEffect ? ', 컷인' : ''}`}>
-                          {(partnerCard.keywordTags || []).map((tag, dotIndex) => <span key={`partner-keyword-dot-${dotIndex}-${tag}`} className={`deck-feature-dot keyword-dot-${keywordTagClass(tag).replace('keyword-', '')}`} title={tag} />)}
+                        {(getCardFeatureDotItems(partnerCard).length > 0 || partnerCard.hiramekiEffect || partnerCard.cutInEffect) && <div className="deck-feature-dots" aria-label={`특성: ${getCardFeatureDotItems(partnerCard).map((dot) => dot.title).concat(partnerCard.hiramekiEffect ? ['히라메키'] : [], partnerCard.cutInEffect ? ['컷인'] : []).join(', ')}`}>
+                          {getCardFeatureDotItems(partnerCard).map((dot) => <span key={`partner-${dot.key}`} className={`deck-feature-dot keyword-dot-${dot.className.replace('keyword-', '')}`} title={dot.title} />)}
                           {partnerCard.hiramekiEffect && <span className="deck-feature-dot deck-feature-dot-hirameki" title="히라메키" />}
                           {partnerCard.cutInEffect && <span className="deck-feature-dot deck-feature-dot-cutin" title="컷인" />}
                         </div>}
@@ -1745,8 +1799,8 @@ export default function App() {
                     <button onClick={() => openCardDetail(eventCard, 'cards')} className="deck-special-open" title={getDeckCardSummary(eventCard)}>
                       <div className="deck-card-image-wrap">
                         {eventCard.imageUrl ? <img src={eventCard.imageUrl} loading="lazy" alt={eventCard.name} className="deck-special-image" /> : <div className="deck-special-image flex items-center justify-center text-[9px] text-slate-500">이미지 없음</div>}
-                        {(eventCard.keywordTags?.length > 0 || eventCard.hiramekiEffect || eventCard.cutInEffect) && <div className="deck-feature-dots" aria-label={`특성: ${(eventCard.keywordTags || []).join(', ')}${eventCard.hiramekiEffect ? ', 히라메키' : ''}${eventCard.cutInEffect ? ', 컷인' : ''}`}>
-                          {(eventCard.keywordTags || []).map((tag, dotIndex) => <span key={`event-keyword-dot-${dotIndex}-${tag}`} className={`deck-feature-dot keyword-dot-${keywordTagClass(tag).replace('keyword-', '')}`} title={tag} />)}
+                        {(getCardFeatureDotItems(eventCard).length > 0 || eventCard.hiramekiEffect || eventCard.cutInEffect) && <div className="deck-feature-dots" aria-label={`특성: ${getCardFeatureDotItems(eventCard).map((dot) => dot.title).concat(eventCard.hiramekiEffect ? ['히라메키'] : [], eventCard.cutInEffect ? ['컷인'] : []).join(', ')}`}>
+                          {getCardFeatureDotItems(eventCard).map((dot) => <span key={`event-${dot.key}`} className={`deck-feature-dot keyword-dot-${dot.className.replace('keyword-', '')}`} title={dot.title} />)}
                           {eventCard.hiramekiEffect && <span className="deck-feature-dot deck-feature-dot-hirameki" title="히라메키" />}
                           {eventCard.cutInEffect && <span className="deck-feature-dot deck-feature-dot-cutin" title="컷인" />}
                         </div>}
@@ -1791,8 +1845,8 @@ export default function App() {
                       <button onClick={() => openCardDetail(card, 'deck')} className="deck-card-open" title={getDeckCardSummary(card)}>
                         <div className="deck-card-image-wrap">
                           {card.imageUrl ? <img src={card.imageUrl} loading="lazy" alt={card.name} className="deck-card-image" /> : <div className="deck-card-image flex items-center justify-center text-[9px] text-slate-500">이미지 없음</div>}
-                          {(card.keywordTags?.length > 0 || card.hiramekiEffect || card.cutInEffect) && <div className="deck-feature-dots" aria-label={`특성: ${(card.keywordTags || []).join(', ')}${card.hiramekiEffect ? ', 히라메키' : ''}${card.cutInEffect ? ', 컷인' : ''}`}>
-                            {(card.keywordTags || []).map((tag, dotIndex) => <span key={`keyword-dot-${dotIndex}-${tag}`} className={`deck-feature-dot keyword-dot-${keywordTagClass(tag).replace('keyword-', '')}`} title={tag} />)}
+                          {(getCardFeatureDotItems(card).length > 0 || card.hiramekiEffect || card.cutInEffect) && <div className="deck-feature-dots" aria-label={`특성: ${getCardFeatureDotItems(card).map((dot) => dot.title).concat(card.hiramekiEffect ? ['히라메키'] : [], card.cutInEffect ? ['컷인'] : []).join(', ')}`}>
+                            {getCardFeatureDotItems(card).map((dot) => <span key={`deck-${dot.key}`} className={`deck-feature-dot keyword-dot-${dot.className.replace('keyword-', '')}`} title={dot.title} />)}
                             {card.hiramekiEffect && <span className="deck-feature-dot deck-feature-dot-hirameki" title="히라메키" />}
                             {card.cutInEffect && <span className="deck-feature-dot deck-feature-dot-cutin" title="컷인" />}
                           </div>}
