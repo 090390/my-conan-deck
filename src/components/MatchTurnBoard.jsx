@@ -10,12 +10,12 @@ function n(value, fallback = 0) {
   const valueNumber = Number(value);
   return Number.isFinite(valueNumber) ? valueNumber : fallback;
 }
-function promptCount(label, defaultValue = 1, max = 20) {
-  const raw = window.prompt(`${label} (1~${max}장)`, String(defaultValue));
+function promptCount(label, defaultValue = 1, max = 20, min = 1) {
+  const raw = window.prompt(`${label} (${min}~${max}장)`, String(defaultValue));
   if (raw === null) return null;
   const value = Math.floor(Number(raw));
-  if (!Number.isInteger(value) || value < 1 || value > max) {
-    window.alert(`1~${max} 사이의 정수를 입력해 주세요.`);
+  if (!Number.isInteger(value) || value < min || value > max) {
+    window.alert(`${min}~${max} 사이의 정수를 입력해 주세요.`);
     return null;
   }
   return value;
@@ -29,6 +29,8 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
   const [selectedNextHint, setSelectedNextHint] = useState("");
   const [selectedAttacker, setSelectedAttacker] = useState("");
   const [allowActiveTargets, setAllowActiveTargets] = useState(false);
+  const [allowFreshlyPlayed, setAllowFreshlyPlayed] = useState(false);
+  const [stunTargetOnContact, setStunTargetOnContact] = useState(false);
   const [showRemoveArea, setShowRemoveArea] = useState(false);
   const [detailCard, setDetailCard] = useState(null);
 
@@ -83,8 +85,9 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
       setGame(data && typeof data === "object" ? data : null);
       setNotice(data?.last_action_label || "행동을 반영했습니다.");
       if (action === "next_hint") setSelectedNextHint("");
-      if (["attack_character", "attack_evidence", "guard_with_character", "decline_guard"].includes(action)) setSelectedAttacker("");
-      if (action === "move_field_card" && payload.owner_user_id === userId) setDetailCard(null);
+      if (["declare_contact", "attack_character", "attack_evidence", "guard_with_character", "decline_guard", "contact_use_cutin", "contact_pass_cutin"].includes(action)) setSelectedAttacker("");
+      if (action === "declare_contact") setStunTargetOnContact(false);
+      if ((action === "move_field_card" || action === "move_hand_card") && (payload.owner_user_id || userId) === userId) setDetailCard(null);
     } catch (err) {
       setError(err?.message || "행동을 처리하지 못했습니다.");
     } finally { setLoading(false); }
@@ -96,14 +99,20 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
   const currentTurnBoard = boards.find((board) => board.user_id === game?.current_turn_user_id);
   const myHand = Array.isArray(game?.my_hand) ? game.my_hand : [];
   const myRemoveCards = Array.isArray(game?.my_remove_cards) ? game.my_remove_cards : [];
+  const opponentRemoveCards = Array.isArray(game?.opponent_remove_cards) ? game.opponent_remove_cards : [];
   const pending = game?.pending_action || null;
   const pendingIsForMe = pending?.target_user_id === userId;
+  const isContactPending = pending?.type === "character_contact";
+  const isMisleadPending = pending?.type === "mislead_response";
   const isMyTurn = game?.current_turn_user_id === userId;
   const myRole = game?.first_player_user_id === userId ? "선공" : "후공";
   const fileTarget = n(myBoard?.files_to_place);
   const filesPlaced = n(myBoard?.files_placed_this_turn);
   const costLimit = n(myBoard?.file_count) + (myBoard?.partner_assist_used ? 1 : 0);
   const canActMain = isMyTurn && game?.turn_step === "main" && !game?.game_over && !pending;
+  const myEventCard = myBoard ? cardsByKey.get(String(myBoard.event_key)) : null;
+  const opponentEventCard = opponentBoard ? cardsByKey.get(String(opponentBoard.event_key)) : null;
+  const eventsDiffer = Boolean(myBoard && opponentBoard && myBoard.event_key !== opponentBoard.event_key);
 
   const st = {
     root: { minHeight: "100vh", padding: "clamp(10px, 2vw, 22px)", background: C.bg, color: C.text, fontFamily: 'Inter, Pretendard, "Noto Sans KR", sans-serif' },
@@ -125,10 +134,13 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
     if (count !== null) void runAction("draw_cards", { count });
   }
   function invokeInvestigate(instance, isPartner = false) {
-    const data = isPartner ? infoFor({ key: myBoard?.partner_key }) : instance;
-    const suggested = Math.max(1, Math.min(12, n(data?.lp, 1) || 1));
-    const count = promptCount(isPartner ? "파트너 추리로 얻을 증거" : "이 캐릭터의 추리로 얻을 증거", suggested, 12);
-    if (count !== null) void runAction(isPartner ? "partner_deduce" : "investigate", isPartner ? { evidence_count: count } : { instance_id: instance.instance_id, evidence_count: count });
+    if (isPartner) {
+      void runAction("partner_deduce", { evidence_count: 1 });
+      return;
+    }
+    const suggested = Math.max(0, Math.min(3, n(instance?.lp, 1)));
+    const count = promptCount("캐릭터 추리로 얻을 증거", suggested, 3, 0);
+    if (count !== null) void runAction("investigate", { instance_id: instance.instance_id, evidence_count: count, allow_newly_played: allowFreshlyPlayed });
   }
   function moveField(card, ownerId, destination) {
     const labels = { hand: "소유자의 손패", deck: "소유자의 덱 아래", remove: "리무브 영역" };
@@ -136,12 +148,16 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
     void runAction("move_field_card", { instance_id: card.instance_id, owner_user_id: ownerId, destination });
   }
 
-  function CardArt({ instance, compact = false, rested = false, onClick = null, faceDown = false }) {
+  function CardArt({ instance, compact = false, rested = false, status: statusProp = "", onClick = null, faceDown = false }) {
     const info = infoFor(instance);
+    const cardStatus = statusProp === "stunned" || instance?.status === "stunned"
+      ? "stunned"
+      : (rested || instance?.rested ? "rested" : (statusProp || instance?.status || "active"));
+    const transform = cardStatus === "stunned" ? "rotate(180deg) scale(.76)" : cardStatus === "rested" || rested || instance?.rested ? "rotate(90deg) scale(.72)" : "none";
     const style = {
       display: "block", width: "100%", aspectRatio: "3 / 4", objectFit: "contain", borderRadius: 5,
       background: "#070c14", cursor: onClick ? "pointer" : "default",
-      transform: rested ? "rotate(90deg) scale(.72)" : "none", transformOrigin: "center center", transition: "transform .12s ease",
+      transform, transformOrigin: "center center", transition: "transform .12s ease",
     };
     if (faceDown) return <div style={st.faceDown} aria-label="뒷면 카드" />;
     return info?.imageUrl
@@ -151,27 +167,35 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
 
   function ZoneCard({ instance, rested = false, ownerId, mine = false, eventResolving = false }) {
     const isEvent = instance.card_type === "event";
-    const canAttackThis = Boolean(selectedAttacker) && !mine && !isEvent && canActMain && (rested || allowActiveTargets);
+    const cardStatus = instance.status === "stunned"
+      ? "stunned"
+      : (instance.rested ? "rested" : (instance.status || "active"));
+    const notReadyYet = Boolean(instance.summoned_this_turn) && !allowFreshlyPlayed;
+    const canAttackThis = Boolean(selectedAttacker) && !mine && !isEvent && canActMain
+      && ((cardStatus === "rested" || cardStatus === "stunned" || rested) || allowActiveTargets);
     const canManage = !game?.game_over && !pending;
+    const ownerLabel = ownerId === userId ? "내" : "상대";
     return (
-      <article key={instance.instance_id} style={{ minWidth: 0, width: "100%", border: `1px solid ${canAttackThis ? "#fb7185" : "rgba(148,163,184,.16)"}`, borderRadius: 7, padding: 6, background: "#080d16" }}>
+      <article key={instance.instance_id} style={{ minWidth: 0, width: "100%", border: `1px solid ${canAttackThis ? "#fb7185" : "rgba(148,163,184,.16)"}`, borderRadius: 7, padding: 4, background: "#080d16" }}>
         <button type="button" onClick={() => openDetails(instance)} title={`${nameOf(instance)} 상세 정보`} style={{ display: "block", width: "100%", border: 0, background: "transparent", color: C.text, padding: 0 }}>
           <div style={{ position: "relative", overflow: "hidden", aspectRatio: "3 / 4", display: "grid", placeItems: "center", background: "#0c1422", borderRadius: 5 }}>
-            <CardArt instance={instance} rested={rested} />
-            <span style={{ position: "absolute", left: 4, top: 4, padding: "2px 4px", borderRadius: 4, background: rested ? "rgba(190,24,93,.94)" : "rgba(22,101,52,.9)", color: "white", fontSize: 8, fontWeight: 900 }}>{rested ? "슬립" : "액티브"}</span>
-            {isEvent && <span style={{ position: "absolute", right: 4, top: 4, padding: "2px 4px", borderRadius: 4, background: "rgba(3,105,161,.92)", color: "white", fontSize: 8, fontWeight: 900 }}>이벤트</span>}
+            <CardArt instance={instance} rested={rested} status={cardStatus} />
+            <span style={{ position: "absolute", left: 3, top: 3, padding: "2px 3px", borderRadius: 4, background: cardStatus === "stunned" ? "rgba(126,34,206,.95)" : cardStatus === "rested" || rested ? "rgba(190,24,93,.94)" : "rgba(22,101,52,.9)", color: "white", fontSize: 7, fontWeight: 900 }}>{cardStatus === "stunned" ? "스턴" : cardStatus === "rested" || rested ? "슬립" : "액티브"}</span>
+            {String(instance.rarity || "").toUpperCase() === "MR" && <span style={{ position: "absolute", right: 3, bottom: 3, padding: "2px 3px", borderRadius: 4, background: "#a16207", color: "white", fontSize: 7, fontWeight: 900 }}>MR</span>}
+            {isEvent && <span style={{ position: "absolute", right: 3, top: 3, padding: "2px 3px", borderRadius: 4, background: "rgba(3,105,161,.92)", color: "white", fontSize: 7, fontWeight: 900 }}>이벤트</span>}
           </div>
         </button>
-        <div style={{ marginTop: 5, fontSize: 10, fontWeight: 800, lineHeight: 1.35, overflowWrap: "anywhere" }}>{nameOf(instance)}</div>
-        <div style={{ marginTop: 3, color: C.muted, fontSize: 9 }}>AP {n(instance.ap) + n(instance.ap_bonus)} · 코스트 {instance.cost ?? "-"}</div>
-        {eventResolving && mine && <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 6, background: "#075985" }} disabled={loading} onClick={() => void runAction("finish_event", { instance_id: instance.instance_id })}>효과 처리 완료 → 리무브</button>}
-        {canAttackThis && <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 6, borderColor: "#fb7185", color: C.red }} disabled={loading} onClick={() => void runAction("attack_character", { attacker_instance_id: selectedAttacker, target_user_id: ownerId, target_instance_id: instance.instance_id })}>이 캐릭터 공격</button>}
-        {mine && !isEvent && canActMain && !rested && <div style={{ display: "grid", gap: 4, marginTop: 6 }}>
-          <button type="button" style={st.smallButton} disabled={loading} onClick={() => invokeInvestigate(instance)}>추리</button>
-          <button type="button" style={{ ...st.smallButton, borderColor: selectedAttacker === instance.instance_id ? "#fb7185" : "rgba(255,255,255,.13)" }} disabled={loading} onClick={() => setSelectedAttacker((current) => current === instance.instance_id ? "" : instance.instance_id)}>{selectedAttacker === instance.instance_id ? "공격자 선택 해제" : "공격자로 선택"}</button>
-          <button type="button" style={st.smallButton} disabled={loading || !opponentBoard?.evidence_count} onClick={() => void runAction("attack_evidence", { attacker_instance_id: instance.instance_id, target_user_id: opponentBoard?.user_id })}>상대 증거 공격</button>
+        <div style={{ marginTop: 4, fontSize: 9, fontWeight: 800, lineHeight: 1.3, overflowWrap: "anywhere" }}>{nameOf(instance)}</div>
+        <div style={{ marginTop: 2, color: C.muted, fontSize: 8 }}>AP {n(instance.ap) + n(instance.ap_bonus)} · 코스트 {instance.cost ?? "-"}</div>
+        {eventResolving && mine && <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 5, background: "#075985" }} disabled={loading} onClick={() => void runAction("finish_event", { instance_id: instance.instance_id })}>효과 처리 완료 → 리무브</button>}
+        {canAttackThis && <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 5, borderColor: "#fb7185", color: C.red }} disabled={loading} onClick={() => void runAction("declare_contact", { attacker_instance_id: selectedAttacker, target_user_id: ownerId, target_instance_id: instance.instance_id, allow_active_target: allowActiveTargets, allow_newly_played: allowFreshlyPlayed, stun_target_on_attacker_win: stunTargetOnContact })}>컨택 시작</button>}
+        {mine && !isEvent && canActMain && cardStatus === "active" && <div style={{ display: "grid", gap: 4, marginTop: 5 }}>
+          <button type="button" style={st.smallButton} disabled={loading || notReadyYet} title={notReadyYet ? "이번 턴에 출동한 카드는 기본적으로 행동할 수 없습니다." : ""} onClick={() => invokeInvestigate(instance)}>추리</button>
+          <button type="button" style={{ ...st.smallButton, borderColor: selectedAttacker === instance.instance_id ? "#fb7185" : "rgba(255,255,255,.13)" }} disabled={loading || notReadyYet} onClick={() => setSelectedAttacker((current) => current === instance.instance_id ? "" : instance.instance_id)}>{selectedAttacker === instance.instance_id ? "공격자 선택 해제" : "공격자로 선택"}</button>
+          <button type="button" style={st.smallButton} disabled={loading || notReadyYet || !opponentBoard?.evidence_count} onClick={() => void runAction("attack_evidence", { attacker_instance_id: instance.instance_id, target_user_id: opponentBoard?.user_id, allow_newly_played: allowFreshlyPlayed })}>상대 증거 공격</button>
         </div>}
-        {canManage && <details style={{ marginTop: 6 }}><summary style={{ cursor: "pointer", fontSize: 9, color: "#8796ac" }}>효과 처리 · 카드 이동</summary><div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 4, marginTop: 5 }}>
+        {canManage && <details style={{ marginTop: 5 }}><summary style={{ cursor: "pointer", fontSize: 8, color: "#8796ac" }}>효과 처리 · 카드 이동</summary><div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 4, marginTop: 5 }}>
+          {!isEvent && <button type="button" style={st.smallButton} disabled={loading} onClick={() => { if (window.confirm(`${nameOf(instance)} 카드를 스턴 상태로 만들까요?`)) void runAction("stun_character", { instance_id: instance.instance_id, owner_user_id: ownerId }); }}>효과: 스턴(180°)</button>}
           <button type="button" style={st.smallButton} disabled={loading} onClick={() => moveField(instance, ownerId, "hand")}>손패로 이동</button>
           <button type="button" style={st.smallButton} disabled={loading} onClick={() => moveField(instance, ownerId, "deck")}>덱 아래로 이동</button>
           <button type="button" style={st.smallButton} disabled={loading} onClick={() => moveField(instance, ownerId, "remove")}>리무브로 이동</button>
@@ -182,9 +206,6 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
 
   if (!game) return <main style={st.root}><div style={st.panel}>게임 필드를 불러오는 중…{error && <p style={{ color: C.red }}>{error}</p>}</div></main>;
 
-  const caseBoard = boards.find((board) => Number(board.seat) === 1) || boards[0] || null;
-  const caseEventCard = caseBoard ? cardsByKey.get(String(caseBoard.event_key)) : null;
-  const eventsDiffer = Boolean(myBoard && opponentBoard && myBoard.event_key !== opponentBoard.event_key);
   const solutionFileThreshold = game.first_player_user_id === userId ? 7 : 6;
   const winEvidenceThreshold = solutionFileThreshold;
   const roleText = game.first_player_user_id === userId ? "선공" : "후공";
@@ -198,7 +219,9 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
         .mock-zone-case {grid-column:1;grid-row:1;} .mock-zone-center {grid-column:2;grid-row:1 / span 2;} .mock-zone-deck {grid-column:3;grid-row:1;}
         .mock-zone-evidence {grid-column:1;grid-row:2 / span 1;} .mock-zone-remove {grid-column:3;grid-row:2 / span 1;} .mock-zone-files {grid-column:1 / span 2;grid-row:3;}
         .mock-zone-special-remove {grid-column:3;grid-row:3;}
-        .mock-field-row {display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:7px;align-items:start;}
+        .mock-field-row {display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;align-items:start;}
+        .mock-field-row > article { width:100%; min-width:0; }
+        .mock-field-empty { grid-column:1 / -1; min-height:55px; display:grid; place-items:center; }
         .mock-card-modal-layout { display:grid; grid-template-columns:minmax(150px,250px) minmax(0,1fr); gap:14px; padding:14px; overflow-y:auto; }
         @media(max-width:680px){.mock-card-modal-layout{grid-template-columns:minmax(0,1fr)}.mock-card-modal-layout>div:first-child img{max-width:200px;display:block;margin:0 auto}}
         @media(max-width:820px){.mock-board-grid{grid-template-columns:minmax(115px,1fr) minmax(0,3fr) minmax(115px,1fr);gap:7px}.mock-zone-center{grid-column:1 / span 3;grid-row:2}.mock-zone-evidence{grid-column:1;grid-row:3}.mock-zone-remove{grid-column:3;grid-row:3}.mock-zone-files{grid-column:1 / span 2;grid-row:4}.mock-zone-special-remove{grid-column:3;grid-row:4}.mock-zone-case{grid-column:1;grid-row:1}.mock-zone-deck{grid-column:3;grid-row:1}}
@@ -224,7 +247,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
       {(error || notice) && <div role={error ? "alert" : "status"} style={{ marginBottom: 10, padding: 9, borderRadius: 6, border: `1px solid ${error ? "rgba(253,164,175,.3)" : "rgba(134,239,172,.24)"}`, color: error ? C.red : C.green, background: error ? "rgba(190,24,93,.07)" : "rgba(22,101,52,.07)", fontSize: 11 }}>{error || notice}</div>}
       {game.last_action_label && <p style={{ ...st.muted, marginBottom: 10 }}>최근 처리: {game.last_action_label}</p>}
 
-      {pending && <section style={{ ...st.panel, marginBottom: 10, borderColor: "rgba(252,211,77,.45)" }}>
+      {pending?.type === "evidence_attack" && <section style={{ ...st.panel, marginBottom: 10, borderColor: "rgba(252,211,77,.45)" }}>
         <h2 style={{ ...st.zoneTitle, color: C.gold }}>증거 공격 · 가드 선택</h2>
         {pendingIsForMe ? <>
           <p style={{ ...st.muted, marginBottom: 8 }}>상대가 내 증거 영역을 공격했어. 액티브 캐릭터로 가드하거나 가드하지 않을 수 있어.</p>
@@ -235,12 +258,42 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
         </> : <p style={st.muted}>상대가 가드 여부를 선택할 때까지 기다려 줘.</p>}
       </section>}
 
+      {isContactPending && <section style={{ ...st.panel, marginBottom: 10, borderColor: "rgba(251,113,133,.45)" }}>
+        <h2 style={{ ...st.zoneTitle, color: C.red }}>컨택 · 컷인 선택</h2>
+        <p style={{ ...st.muted, marginBottom: 8 }}>공격 AP {n(pending.attacker_ap) + n(pending.attacker_bonus)} · 수비 AP {n(pending.target_ap) + n(pending.target_bonus)}. 이 컨택에서는 컷인을 최대 1회 사용할 수 있어. {pending.stun_target_on_attacker_win ? "공격자 승리 시 대상은 리무브 대신 스턴돼." : "일반 컨택은 패배한 캐릭터가 리무브돼. (MR은 MR 파트너 영역으로 이동)"}</p>
+        {pending.next_responder_user_id === userId ? <>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 7 }}>
+            {myHand.filter((card) => n(card.cut_in_bonus) > 0).map((card) => <button key={card.instance_id} type="button" style={{ ...st.button, background: "#164e63" }} disabled={loading || pending.cut_in_used} onClick={() => void runAction("contact_use_cutin", { instance_id: card.instance_id })}>{nameOf(card)} · 컷인 +{n(card.cut_in_bonus)}</button>)}
+          </div>
+          <button type="button" style={{ ...st.button, background: "#273244" }} disabled={loading} onClick={() => void runAction("contact_pass_cutin")}>{pending.cut_in_used ? "계속 진행" : "컷인 없이 진행"}</button>
+        </> : <p style={st.muted}>상대가 컷인 사용 여부를 선택하는 중이야.</p>}
+      </section>}
+
+      {isMisleadPending && <section style={{ ...st.panel, marginBottom: 10, borderColor: "rgba(232,121,249,.45)" }}>
+        <h2 style={{ ...st.zoneTitle, color: "#e879f9" }}>미스리드 응답</h2>
+        <p style={{ ...st.muted, marginBottom: 8 }}>상대의 추리 선언으로 증거 {n(pending.evidence_count)}장을 얻으려 해. 미스리드를 사용하면 지정 수치만큼 줄일 수 있어.</p>
+        {pending.target_user_id === userId ? <>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 7 }}>
+            {(myBoard?.field_cards || []).filter((card) => n(card.mislead_value) > 0 && !card.rested && (card.status || "active") === "active" && (!card.summoned_this_turn || allowFreshlyPlayed)).map((card) => <button key={card.instance_id} type="button" style={{ ...st.button, background: "#581c87" }} disabled={loading} onClick={() => void runAction("resolve_mislead", { instance_id: card.instance_id, allow_newly_played: allowFreshlyPlayed })}>{nameOf(card)} · 미스리드 {n(card.mislead_value)}</button>)}
+          </div>
+          <button type="button" style={{ ...st.button, background: "#273244" }} disabled={loading} onClick={() => void runAction("pass_mislead")}>미스리드 사용 안 함</button>
+        </> : <p style={st.muted}>상대가 미스리드 사용 여부를 선택하는 중이야.</p>}
+      </section>}
+
       <section className="mock-board-grid" aria-label="대전 필드">
         <div className="mock-zone-case" style={st.panel}>
           <h2 style={st.zoneTitle}>사건</h2>
-          {caseEventCard?.imageUrl ? <button type="button" onClick={() => openDetails({ key: caseBoard.event_key, instance_id: `case-${caseBoard.event_key}` })} style={{ width: "100%", padding: 0, border: 0, background: "transparent" }}><img src={caseEventCard.imageUrl} alt={caseEventCard.name} style={{ display: "block", width: "100%", aspectRatio: "3 / 4", objectFit: "contain", borderRadius: 5 }} /></button> : <div style={{ ...st.faceDown }} />}
-          <div style={{ marginTop: 6, fontSize: 10, fontWeight: 800, lineHeight: 1.35 }}>{caseEventCard?.name || caseBoard?.event_key || "사건 미지정"}</div>
-          {eventsDiffer && <p style={{ ...st.muted, marginTop: 5, color: C.red }}>두 플레이어가 다른 사건 카드를 선택했어. 현재는 플레이어 1의 사건 카드를 공통 사건으로 표시해.</p>}
+          <div style={{ padding: 5, border: "1px solid rgba(255,255,255,.08)", borderRadius: 6, background: "#080d16" }}>
+            <div style={{ color: C.muted, fontSize: 8, marginBottom: 4 }}>상대 사건 · 위쪽</div>
+            {opponentEventCard?.imageUrl ? <button type="button" onClick={() => openDetails({ key: opponentBoard.event_key, instance_id: `event-${opponentBoard.event_key}-opponent` })} style={{ width: "100%", padding: 0, border: 0, background: "transparent" }}><img src={opponentEventCard.imageUrl} alt={opponentEventCard.name} style={{ display: "block", width: "100%", aspectRatio: "3 / 4", objectFit: "contain", borderRadius: 5 }} /></button> : <div style={st.faceDown} />}
+            <div style={{ marginTop: 4, fontSize: 9, fontWeight: 800, lineHeight: 1.3, overflowWrap: "anywhere" }}>{opponentEventCard?.name || opponentBoard?.event_key || "미선택"}</div>
+          </div>
+          <div style={{ marginTop: 7, padding: 5, border: "1px solid rgba(255,255,255,.08)", borderRadius: 6, background: "#080d16" }}>
+            <div style={{ color: C.muted, fontSize: 8, marginBottom: 4 }}>내 사건 · 아래쪽</div>
+            {myEventCard?.imageUrl ? <button type="button" onClick={() => openDetails({ key: myBoard.event_key, instance_id: `event-${myBoard.event_key}-mine` })} style={{ width: "100%", padding: 0, border: 0, background: "transparent" }}><img src={myEventCard.imageUrl} alt={myEventCard.name} style={{ display: "block", width: "100%", aspectRatio: "3 / 4", objectFit: "contain", borderRadius: 5 }} /></button> : <div style={st.faceDown} />}
+            <div style={{ marginTop: 4, fontSize: 9, fontWeight: 800, lineHeight: 1.3, overflowWrap: "anywhere" }}>{myEventCard?.name || myBoard?.event_key || "미선택"}</div>
+          </div>
+          {eventsDiffer && <p style={{ ...st.muted, marginTop: 5, color: C.red }}>두 플레이어의 사건 카드가 달라. 실제 카드 효과는 각자 선택한 사건을 기준으로 수동 처리해 줘.</p>}
           <div style={{ marginTop: 4, color: C.muted, fontSize: 9 }}>{game.case_phase === "solution" ? "해결편" : "사건편"}</div>
           {canActMain && game.case_phase === "incident" && n(myBoard?.file_count) >= solutionFileThreshold && <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 7 }} disabled={loading} onClick={() => void runAction("declare_solution")}>해결편으로 전환</button>}
           {canActMain && game.case_phase === "solution" && n(myBoard?.evidence_count) >= winEvidenceThreshold && <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 7, background: "#166534" }} disabled={loading} onClick={() => void runAction("solve_case")}>사건 해결 선언</button>}
@@ -260,13 +313,31 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
             <h3 style={{ ...st.zoneTitle, textAlign: "center", marginBottom: 8 }}>파트너 에이리어</h3>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 8 }}>
               {[{ board: opponentBoard, mine: false }, { board: myBoard, mine: true }].map(({ board, mine }) => {
-                if (!board) return null;
+                if (!board || board.partner_assist_used) return null;
                 const partner = cardsByKey.get(String(board.partner_key));
                 return <div key={board.user_id} style={{ display: "grid", gridTemplateColumns: "minmax(55px,90px) minmax(0,1fr)", gap: 8, alignItems: "center", padding: 6, border: "1px solid rgba(255,255,255,.09)", borderRadius: 6, background: "#080d16" }}>
                   {partner?.imageUrl ? <button type="button" onClick={() => openDetails({ key: board.partner_key, instance_id: `partner-${board.user_id}` })} style={{ border: 0, background: "transparent", padding: 0 }}><img src={partner.imageUrl} alt={partner.name} style={{ width: "100%", maxHeight: 122, objectFit: "contain", transform: board.partner_rested ? "rotate(90deg) scale(.72)" : "none" }} /></button> : <div style={st.faceDown} />}
-                  <div style={{ minWidth: 0 }}><div style={{ color: C.muted, fontSize: 8, marginBottom: 3 }}>{board.display_name || (mine ? "내 파트너" : "상대 파트너")}</div><div style={{ fontSize: 10, fontWeight: 850, overflowWrap: "anywhere" }}>{partner?.name || board.partner_key}</div><div style={{ color: board.partner_rested ? C.red : C.green, fontSize: 9, marginTop: 4 }}>{board.partner_rested ? "슬립" : "액티브"}{mine && board.partner_assist_used ? " · 어시스트 사용" : ""}</div>
-                    {mine && canActMain && !board.partner_rested && <div style={{ display: "grid", gap: 4, marginTop: 6 }}><button type="button" style={st.smallButton} disabled={loading || board.next_hint_used} onClick={() => void runAction("partner_assist")}>어시스트 (+코스트 1)</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => invokeInvestigate(null, true)}>파트너 추리</button></div>}
+                  <div style={{ minWidth: 0 }}><div style={{ color: C.muted, fontSize: 8, marginBottom: 3 }}>{board.display_name || (mine ? "내 파트너" : "상대 파트너")}</div><div style={{ fontSize: 10, fontWeight: 850, overflowWrap: "anywhere" }}>{partner?.name || board.partner_key}</div><div style={{ color: board.partner_rested ? C.red : C.green, fontSize: 9, marginTop: 4 }}>{board.partner_rested ? "슬립" : "액티브"}</div>
+                    {mine && canActMain && !board.partner_rested && <div style={{ display: "grid", gap: 4, marginTop: 6 }}><button type="button" style={st.smallButton} disabled={loading || board.next_hint_used} onClick={() => void runAction("partner_assist")}>어시스트 · 코스트 +1</button><button type="button" style={st.smallButton} disabled={loading || board.next_hint_used} onClick={() => invokeInvestigate(null, true)}>파트너 추리 · 증거 1장</button></div>}
                   </div>
+                </div>;
+              })}
+            </div>
+          </div>
+
+          <div style={{ border: "1px solid rgba(252,211,77,.3)", borderRadius: 7, padding: 8, background: "rgba(161,98,7,.06)" }}>
+            <h3 style={{ ...st.zoneTitle, color: C.gold, textAlign: "center", marginBottom: 7 }}>MR 파트너 영역</h3>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 8 }}>
+              {[{ board: opponentBoard, mine: false }, { board: myBoard, mine: true }].map(({ board, mine }) => {
+                const mr = board?.partner_mr_card;
+                const info = mr ? infoFor(mr) : null;
+                return <div key={`mr-${board?.user_id || (mine ? "mine" : "opponent")}`} style={{ minWidth: 0, padding: 6, border: "1px solid rgba(255,255,255,.08)", borderRadius: 6, background: "#080d16" }}>
+                  <div style={{ color: C.muted, fontSize: 8, marginBottom: 4 }}>{mine ? "내 MR" : "상대 MR"}</div>
+                  {mr ? <>
+                    <button type="button" onClick={() => openDetails(mr)} style={{ width: "100%", padding: 0, border: 0, background: "transparent" }}>{info?.imageUrl ? <img src={info.imageUrl} alt={nameOf(mr)} style={{ width: "100%", maxHeight: 110, aspectRatio: "3/4", objectFit: "contain" }} /> : <div style={st.faceDown} />}</button>
+                    <div style={{ fontSize: 9, fontWeight: 800, overflowWrap: "anywhere", marginTop: 4 }}>{nameOf(mr)}</div>
+                    {!game.game_over && !pending && <div style={{ display: "grid", gap: 3, marginTop: 5 }}><button type="button" style={st.smallButton} disabled={loading} onClick={() => moveField(mr, board.user_id, "hand")}>손패로 이동</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => moveField(mr, board.user_id, "remove")}>리무브로 이동</button></div>}
+                  </> : <div style={{ minHeight: 55, display: "grid", placeItems: "center", color: C.muted, fontSize: 9 }}>없음</div>}
                 </div>;
               })}
             </div>
@@ -301,7 +372,9 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
           <h2 style={st.zoneTitle}>리무브 에이리어</h2>
           <div style={{ ...st.counts, gridTemplateColumns: "repeat(2,minmax(0,1fr))" }}><div style={st.countCell}><div style={{ fontSize: 10, color: C.muted }}>내 리무브</div><div style={{ fontSize: 22, fontWeight: 900 }}>{myBoard?.remove_count ?? 0}</div></div><div style={st.countCell}><div style={{ fontSize: 10, color: C.muted }}>상대 리무브</div><div style={{ fontSize: 22, fontWeight: 900 }}>{opponentBoard?.remove_count ?? 0}</div></div></div>
           <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 8 }} onClick={() => setShowRemoveArea((value) => !value)}>{showRemoveArea ? "리무브 목록 닫기" : "리무브 영역 보기"}</button>
-          {showRemoveArea && <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 5, marginTop: 8, maxHeight: 350, overflowY: "auto" }}>{myRemoveCards.map((card) => <button key={card.instance_id} type="button" onClick={() => openDetails(card)} style={{ border: "1px solid rgba(255,255,255,.1)", borderRadius: 5, padding: 4, background: "#080d16", color: C.text, minWidth: 0 }}>{infoFor(card)?.imageUrl ? <img src={infoFor(card).imageUrl} alt={nameOf(card)} style={{ width: "100%", aspectRatio: "3/4", objectFit: "contain" }} /> : <div style={st.faceDown} />}<div style={{ fontSize: 9, overflowWrap: "anywhere" }}>{nameOf(card)}</div></button>)}</div>}
+          {showRemoveArea && <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 8, marginTop: 8, maxHeight: 350, overflowY: "auto" }}>
+            {[{ label: "내 리무브", cards: myRemoveCards }, { label: "상대 리무브", cards: opponentRemoveCards }].map((pile) => <div key={pile.label} style={{ minWidth: 0 }}><div style={{ color: C.muted, fontSize: 9, marginBottom: 5 }}>{pile.label} · {pile.cards.length}장</div><div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 5 }}>{pile.cards.map((card) => <button key={card.instance_id} type="button" onClick={() => openDetails(card)} style={{ border: "1px solid rgba(255,255,255,.1)", borderRadius: 5, padding: 4, background: "#080d16", color: C.text, minWidth: 0 }}>{infoFor(card)?.imageUrl ? <img src={infoFor(card).imageUrl} alt={nameOf(card)} style={{ width: "100%", aspectRatio: "3/4", objectFit: "contain" }} /> : <div style={st.faceDown} />}<div style={{ fontSize: 9, overflowWrap: "anywhere" }}>{nameOf(card)}</div></button>)}</div>{!pile.cards.length && <p style={st.muted}>비어 있어.</p>}</div>)}
+          </div>}
         </div>
 
         <div className="mock-zone-files" style={st.panel}>
@@ -313,16 +386,27 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
         </div>
 
         <div className="mock-zone-special-remove" style={st.panel}>
-          <h2 style={st.zoneTitle}>해제한 파트너 두는 곳</h2>
-          <div style={{ minHeight: 96, border: "1px solid rgba(148,163,184,.24)", borderRadius: 6, padding: 8, background: "#080d16", display: "grid", placeItems: "center", textAlign: "center" }}>
-            <p style={st.muted}>파트너가 효과로 해제될 때 사용하는 자리</p>
+          <h2 style={st.zoneTitle}>어시스트 영역</h2>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 7 }}>
+            {[{ board: opponentBoard, mine: false }, { board: myBoard, mine: true }].map(({ board, mine }) => {
+              if (!board?.partner_assist_used) return <div key={`assist-empty-${board?.user_id || mine}`} style={{ minHeight: 82, display: "grid", placeItems: "center", border: "1px solid rgba(255,255,255,.07)", borderRadius: 6, color: C.muted, fontSize: 8 }}>{mine ? "내 어시스트 없음" : "상대 어시스트 없음"}</div>;
+              const partner = cardsByKey.get(String(board.partner_key));
+              return <button key={`assist-${board.user_id}`} type="button" onClick={() => openDetails({ key: board.partner_key, instance_id: `partner-${board.user_id}` })} style={{ minWidth: 0, padding: 5, border: "1px solid rgba(255,255,255,.09)", borderRadius: 6, background: "#080d16", color: C.text }}>
+                {partner?.imageUrl ? <img src={partner.imageUrl} alt={partner.name} style={{ width: "100%", aspectRatio: "3/4", maxHeight: 100, objectFit: "contain", transform: "rotate(90deg) scale(.72)" }} /> : <div style={st.faceDown} />}
+                <div style={{ marginTop: 3, fontSize: 8, overflowWrap: "anywhere" }}>{partner?.name || board.partner_key}</div><div style={{ color: C.red, fontSize: 8 }}>어시스트 · 슬립</div>
+              </button>;
+            })}
           </div>
-          <label style={{ display: "flex", alignItems: "flex-start", gap: 6, marginTop: 9, fontSize: 9, color: C.muted, lineHeight: 1.45 }}><input type="checkbox" checked={allowActiveTargets} onChange={(event) => setAllowActiveTargets(event.target.checked)} /> 효과에 따라 액티브 상태의 상대 캐릭터도 공격 대상으로 선택</label>
         </div>
       </section>
 
       {!game.game_over && <section style={{ ...st.panel, marginTop: 10 }}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", alignItems: "baseline" }}><h2 style={st.zoneTitle}>턴 컨트롤</h2><span style={{ color: C.muted, fontSize: 10 }}>현재 코스트 상한 {costLimit} · 기본 출동 {myBoard?.character_played_this_turn ? "사용함" : "미사용"}</span></div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 9 }}>
+          <label style={{ display: "flex", alignItems: "flex-start", gap: 6, fontSize: 9, color: C.muted, lineHeight: 1.45 }}><input type="checkbox" checked={allowActiveTargets} onChange={(event) => setAllowActiveTargets(event.target.checked)} /> 효과에 따라 액티브 상대 캐릭터도 공격 대상으로 허용</label>
+          <label style={{ display: "flex", alignItems: "flex-start", gap: 6, fontSize: 9, color: C.muted, lineHeight: 1.45 }}><input type="checkbox" checked={allowFreshlyPlayed} onChange={(event) => setAllowFreshlyPlayed(event.target.checked)} /> 효과로 이번 턴 출동한 캐릭터도 즉시 행동 가능</label>
+          <label style={{ display: "flex", alignItems: "flex-start", gap: 6, fontSize: 9, color: C.muted, lineHeight: 1.45 }}><input type="checkbox" checked={stunTargetOnContact} onChange={(event) => setStunTargetOnContact(event.target.checked)} /> 다음 컨택에서 공격자 승리 시 상대를 리무브 대신 스턴</label>
+        </div>
         {game.turn_step === "begin" && (isMyTurn ? <button type="button" style={st.button} disabled={loading || pending} onClick={() => void runAction("begin_turn")}>턴 시작 · 액티브화 · 손패 1장 드로우</button> : <p style={st.muted}>상대가 턴을 시작할 때까지 대기해.</p>)}
         {game.turn_step === "file" && <div><p style={{ ...st.muted, marginBottom: 8 }}>{isMyTurn ? `덱 위에서 파일 ${Math.max(0, fileTarget - filesPlaced)}장을 뒤집어 배치해.` : `상대가 파일 ${currentTurnBoard?.files_to_place ?? 0}장을 배치하고 있어.`}</p>{isMyTurn && <button type="button" style={st.button} disabled={loading} onClick={() => void runAction("place_files")}>덱 위에서 파일 {Math.max(0, fileTarget - filesPlaced)}장 배치</button>}</div>}
         {canActMain && <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 5 }}>
@@ -343,11 +427,12 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
               <button type="button" onClick={() => openDetails(card)} style={{ display: "block", width: "100%", border: 0, background: "transparent", color: C.text, padding: 0 }}><CardArt instance={card} /><div style={{ fontSize: 10, fontWeight: 800, lineHeight: 1.35, marginTop: 5, textAlign: "left", overflowWrap: "anywhere" }}>{info?.name || card.key}</div></button>
               <div style={{ fontSize: 9, color: C.muted, marginTop: 3 }}>코스트 {card.cost ?? "-"} · AP {card.ap ?? "-"}</div>
               {canActMain && card.card_type === "character" && <div style={{ display: "grid", gap: 4, marginTop: 6 }}>
-                {normalPlay && <button type="button" style={st.smallButton} disabled={loading} onClick={() => void runAction("play_character", { instance_id: card.instance_id })}>기본 출동</button>}
+                {normalPlay && <button type="button" style={st.smallButton} disabled={loading || (myBoard?.field_cards?.length || 0) >= 5} onClick={() => void runAction("play_character", { instance_id: card.instance_id })}>기본 출동</button>}
                 {card.card_type === "character" && n(card.cost) <= costLimit && <button type="button" style={{ ...st.smallButton, borderColor: nextSelected ? "#fb7185" : "rgba(255,255,255,.13)", color: nextSelected ? C.red : C.text }} disabled={loading || !myBoard?.base_action_done || !myBoard?.file_count} onClick={() => setSelectedNextHint(nextSelected ? "" : card.instance_id)}>{nextSelected ? "넥스트 힌트 선택됨" : "넥스트 힌트 선택"}</button>}
               </div>}
               {canActMain && card.card_type === "event" && <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 6, background: "#075985" }} disabled={loading} onClick={() => void runAction("play_event", { instance_id: card.instance_id })}>현장에 이벤트 사용</button>}
-              {canManualEffect && card.card_type === "character" && <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 5, background: "#3b2f5c" }} disabled={loading || n(card.cost) > costLimit} onClick={() => void runAction("extra_play_character", { instance_id: card.instance_id, effect_override: true })}>효과로 추가 출동</button>}
+              {canManualEffect && card.card_type === "character" && <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 5, background: "#3b2f5c" }} disabled={loading || (myBoard?.field_cards?.length || 0) >= 5} onClick={() => void runAction("extra_play_character", { instance_id: card.instance_id, effect_override: true })}>효과로 추가 출동 (제한 무시)</button>}
+              {canManualEffect && <div style={{ display: "grid", gap: 4, marginTop: 5 }}><button type="button" style={st.smallButton} disabled={loading} onClick={() => { if (window.confirm(`${info?.name || card.key}를 손패에서 리무브 영역으로 옮길까요?`)) void runAction("move_hand_card", { instance_id: card.instance_id, destination: "remove" }); }}>손패에서 리무브</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => { if (window.confirm(`${info?.name || card.key}를 덱 맨 아래로 옮길까요?`)) void runAction("move_hand_card", { instance_id: card.instance_id, destination: "deck" }); }}>손패에서 덱 아래로</button></div>}
             </article>;
           })}
           {!myHand.length && <p style={st.muted}>손패가 비어 있어.</p>}
