@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import RoomLobby from "./components/RoomLobby";
 
 const PAGE_SIZE = 100;
 const MAIN_DECK_LIMIT = 40;
@@ -1680,12 +1681,17 @@ export default function App() {
           <nav aria-label="메인 메뉴" className="app-nav flex rounded-xl border border-white/10 bg-[#101827] p-1">
             <button onClick={() => setActiveView('cards')} className={`rounded-lg px-3 py-2 text-xs font-bold transition sm:px-4 ${activeView === 'cards' ? 'bg-rose-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}>카드 목록</button>
             <button onClick={() => setActiveView('deck')} className={`rounded-lg px-3 py-2 text-xs font-bold transition sm:px-4 ${activeView === 'deck' ? 'bg-rose-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}>내 덱 구성</button>
+            <button onClick={() => setActiveView('match')} className={`rounded-lg px-3 py-2 text-xs font-bold transition sm:px-4 ${activeView === 'match'  ? 'bg-rose-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}>모의전</button>
           </nav>
           <a className="rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:border-rose-400/50 hover:text-white" href="https://www.takaratomy.co.jp/products/conan-cardgame/cardlist/" target="_blank" rel="noreferrer">일본 공식 카드 목록 ↗</a>
         </div>
       </header>
 
-      {activeView === 'cards' ? (
+      <div style={{ display: activeView === 'match' ? 'block' : 'none' }}>
+        <RoomLobby deck={deck} partnerId={partnerId} eventId={eventId} cards={cards} />
+      </div>
+      
+      {activeView === 'match' ? null : activeView === 'cards' ? (
         <section id="card-list-top" className="app-panel card-list-panel min-w-0 rounded-2xl border border-white/10 bg-[#101827] p-3 md:p-4">
           <div className="card-list-toolbar mb-3 flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-baseline gap-2"><h2 className="text-base font-bold">카드 목록</h2><span className="text-xs tabular-nums text-slate-400">검색 결과 {filteredCards.length.toLocaleString()}장</span></div>
