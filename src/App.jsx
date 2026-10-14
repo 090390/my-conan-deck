@@ -42,6 +42,8 @@ function numericValue(value) {
 // 카드 색상 표기를 한 글자 태그로 통일합니다. 조합 색상은 표시 순서를 보존하되,
 // 필터용 colorKey는 고정 순서로 만들어 '황흑'과 '흑황'을 같은 색 조합으로 취급합니다.
 const COLOR_ORDER = ['청', '적', '황', '녹', '흑', '백'];
+// 색상 필터 표시 순서: 단일 색상을 먼저, 조합 색상은 색상 수가 적은 것부터 표시합니다.
+const COLOR_FILTER_ORDER = ['청', '녹', '백', '적', '황', '흑'];
 const COLOR_DEFINITIONS = [
   { tag: '청', aliases: ['청', '파랑', '파란색', '파랑색', '푸른색', '青色', '青', 'ブルー', 'blue'] },
   { tag: '적', aliases: ['적', '빨강', '빨간색', '빨강색', '赤色', '赤', 'レッド', 'red'] },
@@ -595,10 +597,10 @@ function drawExportCard(ctx, card, image, x, y, width, options = {}) {
   if (card?.hiramekiEffect) exportFeatureDots.push({ fill: '#fb923c', stroke: '#fdba74' });
   if (card?.cutInEffect) exportFeatureDots.push({ fill: '#7dd3fc', stroke: '#bae6fd' });
   if (exportFeatureDots.length) {
-    const dotSize = Math.max(5, 7 * scale);
-    const dotGap = Math.max(3, 4 * scale);
+    const dotSize = Math.max(9, 11 * scale);
+    const dotGap = Math.max(4, 5 * scale);
     const totalDotsHeight = exportFeatureDots.length * dotSize + (exportFeatureDots.length - 1) * dotGap;
-    const dotX = x + width - 10 * scale;
+    const dotX = x + width - 12 * scale;
     let dotY = y + imageHeight / 2 - totalDotsHeight / 2 + dotSize / 2;
     exportFeatureDots.forEach((dot) => {
       ctx.beginPath();
@@ -744,7 +746,6 @@ function FeatureDotLegend({ includeSystemEffects = false, className = '' }) {
   const items = includeSystemEffects ? FEATURE_DOT_LEGEND_ITEMS : FEATURE_DOT_LEGEND_ITEMS.slice(0, 4);
   return (
     <div className={`feature-dot-legend ${className}`.trim()} aria-label="특성 점 색상 안내">
-      <span className="feature-dot-legend-heading">점 색상 안내</span>
       {items.map((item) => (
         <span key={item.label} className="feature-dot-legend-item">
           <span aria-hidden="true" className={`feature-dot-legend-dot ${item.className}`} />
@@ -875,13 +876,36 @@ export default function App() {
 
   const colorOptions = useMemo(() => {
     // 표시 순서가 다른 조합(예: 황흑/흑황)은 하나의 필터 선택지로 합칩니다.
+    // 라벨은 청 → 녹 → 백 → 적 → 황 → 흑 순으로 통일하며 단일 색상부터 나열합니다.
     const optionsByKey = new Map();
     for (const card of cards) {
       if (!card.color) continue;
       const value = card.colorKey || normalizeColorKey(card.color);
-      if (!optionsByKey.has(value)) optionsByKey.set(value, { value, label: card.color });
+      if (!optionsByKey.has(value)) {
+        const orderedColors = COLOR_FILTER_ORDER.filter((tag) => String(value).includes(tag));
+        const knownOnly = orderedColors.length > 0 && orderedColors.join('').length === String(value).length;
+        optionsByKey.set(value, { value, label: knownOnly ? orderedColors.join('') : card.color });
+      }
     }
-    return [...optionsByKey.values()].sort((a, b) => a.label.localeCompare(b.label, 'ko', { numeric: true }));
+    const options = [...optionsByKey.values()];
+    const displayRanks = new Map(COLOR_FILTER_ORDER.map((tag, index) => [tag, index]));
+    const colorParts = (value) => COLOR_FILTER_ORDER.filter((tag) => String(value).includes(tag));
+    return options.sort((a, b) => {
+      const aColors = colorParts(a.value);
+      const bColors = colorParts(b.value);
+      const aKnown = aColors.length > 0 && aColors.join('').length === String(a.value).length;
+      const bKnown = bColors.length > 0 && bColors.join('').length === String(b.value).length;
+      if (aKnown && bKnown) {
+        if (aColors.length !== bColors.length) return aColors.length - bColors.length;
+        for (let index = 0; index < aColors.length; index += 1) {
+          const rankDifference = displayRanks.get(aColors[index]) - displayRanks.get(bColors[index]);
+          if (rankDifference) return rankDifference;
+        }
+      } else if (aKnown !== bKnown) {
+        return aKnown ? -1 : 1;
+      }
+      return a.label.localeCompare(b.label, 'ko', { numeric: true });
+    });
   }, [cards]);
   const typeOptions = useMemo(() => uniqueOptions(cards.map((card) => card.type)), [cards]);
   const rarityOptions = useMemo(() => uniqueOptions(cards.map((card) => card.rarity)), [cards]);
@@ -1158,7 +1182,8 @@ export default function App() {
       ];
       ctx.textAlign = 'left';
       ctx.font = '600 12px sans-serif';
-      let legendX = margin + 47;
+      const exportLegendWidth = exportLegendItems.reduce((total, item) => total + ctx.measureText(item.label).width + 27, 0);
+      let legendX = canvasWidth - margin - 24 - exportLegendWidth;
       const legendBaselineY = margin + 101;
       exportLegendItems.forEach((item) => {
         ctx.beginPath();
@@ -1195,7 +1220,7 @@ export default function App() {
       ctx.fillText('메인 덱', gridX, labelY);
       ctx.fillStyle = '#8190a7';
       ctx.font = '500 11px sans-serif';
-      ctx.fillText(`${columns} × ${rows} 배열 · ${deckSort === 'added' ? '추가한 순서' : deckSort === 'cost' ? '코스트 낮은순' : deckSort === 'cost-desc' ? '코스트 높은순' : deckSort === 'color' ? '색상별' : 'AP 높은순'}`, gridX, labelY + 18);
+      ctx.fillText(`${columns} × ${rows} 배열 · ${deckSort === 'added' ? '추가한 순서' : deckSort === 'cost' ? '코스트 낮은 순' : deckSort === 'cost-desc' ? '코스트 높은 순' : deckSort === 'color' ? '색상별' : 'AP 높은 순'}`, gridX, labelY + 18);
 
       const cardStartY = top + sectionHeight;
       drawExportCard(ctx, partnerCard, loadedImages.get(partnerCard.imageUrl), sideX, cardStartY, cardWidth, { showStats: false, centerName: true });
@@ -1434,7 +1459,7 @@ export default function App() {
         .ability-condition-black { background: rgba(17,24,39,.42); border-color: #374151; color: #f9fafb; }
         .ability-condition-file { background: rgba(236,72,153,.16); border-color: #db2777; color: #fbcfe8; }
         .ability-condition-neutral { background: rgba(51,65,85,.20); border-color: #64748b; color: #f1f5f9; }
-        .ability-color-circle { display: inline-flex; align-items: center; justify-content: center; vertical-align: -0.02em; width: 1.38em; min-width: 1.38em; height: 1.38em; margin: 0 .08em; padding: 0; border: 1px solid rgba(255,255,255,.24); border-radius: 999px; box-sizing: border-box; font-size: .78em; font-weight: 900; line-height: 1; white-space: nowrap; box-shadow: 0 0 0 1px rgba(0,0,0,.16); }
+        .ability-color-circle { display: inline-flex; align-items: center; justify-content: center; vertical-align: 0.14em; width: 1.38em; min-width: 1.38em; height: 1.38em; margin: 0 .08em; padding: 0; border: 1px solid rgba(255,255,255,.24); border-radius: 999px; box-sizing: border-box; font-size: .78em; font-weight: 900; line-height: 1; white-space: nowrap; box-shadow: 0 0 0 1px rgba(0,0,0,.16); }
         .ability-color-blue { background: #2563eb; border-color: #60a5fa; color: #fff; }
         .ability-color-red { background: #dc2626; border-color: #f87171; color: #fff; }
         .ability-color-yellow { background: #facc15; border-color: #fde047; color: #1f2937; }
@@ -1450,13 +1475,13 @@ export default function App() {
         .keyword-other { color: #c4b5fd; background: rgba(139,92,246,.12); border-color: rgba(167,139,250,.22); }
         .detail-keyword-badges { padding: 2px 0 2px 8px !important; margin-left: 0 !important; }
         .detail-keyword-badges .effect-badge { font-size: 11px !important; line-height: 1.4; padding: 3px 6px; font-weight: 700; }
-        .feature-dot-legend { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; width: 100%; margin: -8px 0 12px; padding: 7px 9px; border: 1px solid rgba(148,163,184,.12); border-radius: 8px; background: rgba(9,15,27,.62); color: #94a3b8; font-size: 10px; line-height: 1.25; }
-        .feature-dot-legend-heading { margin-right: 2px; color: #64748b; font-size: 9px; font-weight: 800; white-space: nowrap; }
+        .feature-dot-legend { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 6px 12px; width: fit-content; max-width: 100%; margin: -8px 0 12px auto; padding: 7px 9px; border: 1px solid rgba(148,163,184,.12); border-radius: 8px; background: rgba(9,15,27,.62); color: #94a3b8; font-size: 10px; line-height: 1.25; }
+        .feature-dot-legend-heading { display: none; }
         .feature-dot-legend-item { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 5px; white-space: nowrap; }
         .feature-dot-legend-dot { display: inline-block; width: 7px; height: 7px; flex: 0 0 7px; border: 1px solid rgba(255,255,255,.32); border-radius: 999px; box-shadow: 0 1px 3px rgba(0,0,0,.35); }
         .deck-feature-dot-hirameki.feature-dot-legend-dot { width: 7px; height: 7px; flex-basis: 7px; }
         .deck-feature-dot-cutin.feature-dot-legend-dot { width: 7px; height: 7px; flex-basis: 7px; }
-        .deck-feature-dot-legend { margin: -4px 0 12px; }
+        .deck-feature-dot-legend { margin: -4px 0 12px auto; }
         .keyword-tag-dots { display: flex; align-items: center; justify-content: flex-end; flex: 0 0 auto; flex-wrap: nowrap; gap: 3px; max-width: 38%; min-height: 0; margin: 3px 0 0; overflow: hidden; }
         .keyword-tag-dot { display: inline-block; width: 6px; height: 6px; flex: 0 0 6px; border-radius: 999px; box-shadow: 0 0 0 1px rgba(255,255,255,.18); }
         .keyword-dot-assault { background: #fb7185; }
@@ -1747,10 +1772,10 @@ export default function App() {
                     <label htmlFor="deck-sort-select">정렬</label>
                     <select id="deck-sort-select" className="deck-sort-select" value={deckSort} onChange={(event) => setDeckSort(event.target.value)} aria-label="덱 정렬 기준">
                       <option value="added">추가한 순서</option>
-                      <option value="cost">코스트 낮은순</option>
-                      <option value="cost-desc">코스트 높은순</option>
+                      <option value="cost">코스트 낮은 순</option>
+                      <option value="cost-desc">코스트 높은 순</option>
                       <option value="color">색상별</option>
-                      <option value="ap">AP 높은순</option>
+                      <option value="ap">AP 높은 순</option>
                     </select>
                     <label htmlFor="deck-layout-select">배열</label>
                     <select id="deck-layout-select" className="deck-layout-select" value={deckLayout} onChange={(event) => setDeckLayout(event.target.value)} aria-label="덱 카드 배열">
