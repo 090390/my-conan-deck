@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import RoomLobby from "./components/RoomLobby";
+import DeckTransferControls from "./components/DeckTransferControls";
 
 const PAGE_SIZE = 100;
 const MAIN_DECK_LIMIT = 40;
@@ -833,6 +834,7 @@ export default function App() {
   const [exportingDeckImage, setExportingDeckImage] = useState(false);
   const [partnerId, setPartnerId] = useState(() => localStorage.getItem(PARTNER_STORAGE_KEY) || '');
   const [eventId, setEventId] = useState(() => localStorage.getItem(EVENT_STORAGE_KEY) || '');
+  const [gameFieldOnly, setGameFieldOnly] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -1675,6 +1677,7 @@ export default function App() {
           .card-meta-grid { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
         }
       `}</style>
+      {!gameFieldOnly && (
       <header className="app-header mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
         <h1 className="text-xl font-black tracking-tight md:text-2xl">명탐정 코난 TCG 도감</h1>
         <div className="flex flex-wrap items-center gap-2">
@@ -1686,9 +1689,10 @@ export default function App() {
           <a className="rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:border-rose-400/50 hover:text-white" href="https://www.takaratomy.co.jp/products/conan-cardgame/cardlist/" target="_blank" rel="noreferrer">일본 공식 카드 목록 ↗</a>
         </div>
       </header>
+      )}
 
       <div style={{ display: activeView === 'match' ? 'block' : 'none' }}>
-        <RoomLobby deck={deck} partnerId={partnerId} eventId={eventId} cards={cards} />
+        <RoomLobby deck={deck} partnerId={partnerId} eventId={eventId} cards={cards} onGameFieldChange={setGameFieldOnly}/>
       </div>
       
       {activeView === 'match' ? null : activeView === 'cards' ? (
@@ -1761,6 +1765,7 @@ export default function App() {
             </div>
             <div className="deck-action-buttons">
               <button onClick={clearDeck} className="deck-reset-button">덱 초기화</button>
+              <DeckTransferControls cards={cards} deck={deck} partnerId={partnerId} eventId={eventId} onImport={({ deck: nextDeck, partnerId: nextPartnerId, eventId: nextEventId }) => {setDeck(nextDeck); setPartnerId(nextPartnerId); setEventId(nextEventId);}}/>
               <select className="deck-image-export-format" value={deckImageFormat} onChange={(event) => setDeckImageFormat(event.target.value)} aria-label="이미지 파일 형식"><option value="png">PNG</option><option value="jpeg">JPG</option></select>
               <button onClick={exportDeckImage} disabled={exportingDeckImage} className="deck-export-button">{exportingDeckImage ? '이미지 생성 중…' : '이미지 저장'}</button>
             </div>
