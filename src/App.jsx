@@ -1030,7 +1030,8 @@ export default function App() {
         .app-control::placeholder { color: #718096; }
         .app-control option { color: #e2e8f0; background: #101827; }
         .conan-card-grid {
-          grid-template-columns: repeat(11, minmax(0, 1fr)) !important;
+          /* Desktop default: 100 cards in a clean 10 x 10 grid. */
+          grid-template-columns: repeat(10, minmax(0, 1fr)) !important;
           align-items: stretch; gap: 8px !important;
         }
         .card-tile {
