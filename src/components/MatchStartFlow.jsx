@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
+import MatchTurnBoard from "./MatchTurnBoard";
 
 export default function MatchStartFlow({
   roomId,
@@ -259,23 +260,7 @@ export default function MatchStartFlow({
       )}
 
       {phase === "playing" && (
-        <div style={{ marginTop: 14 }}>
-          <p role="status" style={{ margin: "0 0 8px", color: "#86efac", fontSize: 13, fontWeight: 800 }}>양쪽 멀리건 완료!</p>
-          <p style={{ margin: 0, color: "#aab5c8", fontSize: 12, lineHeight: 1.7 }}>
-            시작 손패와 남은 덱이 서버에 저장되었습니다. 현재 선공 플레이어가 첫 턴 플레이어입니다. 다음 단계에서 턴 진행 UI를 연결하면 됩니다.
-          </p>
-          <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(76px, 1fr))", gap: 7 }}>
-            {myHand.map((handCard) => {
-              const card = cardsByKey.get(String(handCard.key));
-              return (
-                <div key={handCard.instance_id} style={{ padding: 6, border: "1px solid rgba(255,255,255,.10)", borderRadius: 8, background: "#101827" }}>
-                  {card?.imageUrl ? <img src={card.imageUrl} alt={card.name || "카드"} style={{ display: "block", width: "100%", aspectRatio: "3 / 4", objectFit: "contain", borderRadius: 5 }} /> : <div style={{ aspectRatio: "3 / 4", display: "grid", placeItems: "center", color: "#74839a", fontSize: 10 }}>이미지 없음</div>}
-                  <div style={{ marginTop: 5, fontSize: 10, lineHeight: 1.3, color: "#dbe4f1", overflowWrap: "anywhere" }}>{card?.name || handCard.key}</div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        <MatchTurnBoard roomId={roomId} userId={userId} cards={cards} />
       )}
 
       {notice && <p role="status" style={{ margin: "12px 0 0", color: "#86efac", fontSize: 12 }}>{notice}</p>}
