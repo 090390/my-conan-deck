@@ -265,8 +265,18 @@ function findPartnerColorMarker(label) {
 
 function renderConditionLabel(label, keyPrefix) {
   const marker = findPartnerColorMarker(label);
-  if (!marker) return label;
-  return <>{label.slice(0, marker.start)}{renderAbilityColorCircle(marker.rawColor, `${keyPrefix}-color`)}{label.slice(marker.end)}</>;
+  if (marker) {
+    return <>{label.slice(0, marker.start)}{renderAbilityColorCircle(marker.rawColor, `${keyPrefix}-color`)}{label.slice(marker.end)}</>;
+  }
+
+  // 사건 색상 조건(예: 【사건 청&녹】)에서도 색상만 원형으로 강조합니다.
+  const eventMatch = String(label).match(/(사건|事件)([\s　]*)([청적황녹흑백](?:[\s　]*[&＋+/,·][\s　]*[청적황녹흑백])*)/u);
+  if (!eventMatch) return label;
+  const colorStart = eventMatch.index + eventMatch[1].length + eventMatch[2].length;
+  const colorRun = eventMatch[3];
+  return <>{String(label).slice(0, colorStart)}{colorRun.split(/([청적황녹흑백])/u).map((part, index) => COLOR_ORDER.includes(part)
+    ? renderAbilityColorCircle(part, `${keyPrefix}-event-color-${index}`)
+    : part)}{String(label).slice(colorStart + colorRun.length)}</>;
 }
 
 function renderAbilityText(value) {
@@ -318,7 +328,7 @@ const TRAIT_TRANSLATIONS = {
   '会社員': '회사원', 'NY市警': '뉴욕시경', '女流棋士': '여류 기사', '英語講師': '영어 강사',
   'シャッフルロマンス': '셔플 로맨스', '婚活パーティー': '맞선 파티',
   'お手伝い': '도우미', 'カメラマン': '카메라맨', 'デザイナー': '디자이너', '北海道警': '홋카이도경',
-  '医大生': '의대생', '医療関係者': '의료 관계자', '千葉県警': '지바현경', '女王': '여왕',
+  '医大生': '의대생', '医療関係者': '의료 관계자', '千葉県警': '치바현경', '지바현경': '치바현경', '女王': '여왕',
   '絵描き': '화가', '酒屋': '주점',
 };
 
@@ -570,6 +580,37 @@ function drawExportCard(ctx, card, image, x, y, width, options = {}) {
     drawWrappedCanvasText(ctx, card?.name || '이미지 없음', x + width / 2, y + imageHeight / 2, width - 28 * scale, Math.max(16, 18 * scale), 4);
     ctx.textAlign = 'left';
   }
+  // 내 덱 이미지 저장에서도 실제 덱 화면과 동일한 특성 점을 카드 이미지 위에 그립니다.
+  const exportFeatureDots = (Array.isArray(card?.keywordTags) ? card.keywordTags : []).map((tag) => {
+    const tagClass = keywordTagClass(tag);
+    const colors = {
+      'keyword-assault': ['#fb7185', '#fda4af'],
+      'keyword-swift': ['#4ade80', '#86efac'],
+      'keyword-gale': ['#38bdf8', '#7dd3fc'],
+      'keyword-other': ['#a78bfa', '#c4b5fd'],
+    };
+    const pair = colors[tagClass] || colors['keyword-other'];
+    return { fill: pair[0], stroke: pair[1] };
+  });
+  if (card?.hiramekiEffect) exportFeatureDots.push({ fill: '#fb923c', stroke: '#fdba74' });
+  if (card?.cutInEffect) exportFeatureDots.push({ fill: '#7dd3fc', stroke: '#bae6fd' });
+  if (exportFeatureDots.length) {
+    const dotSize = Math.max(5, 7 * scale);
+    const dotGap = Math.max(3, 4 * scale);
+    const totalDotsHeight = exportFeatureDots.length * dotSize + (exportFeatureDots.length - 1) * dotGap;
+    const dotX = x + width - 10 * scale;
+    let dotY = y + imageHeight / 2 - totalDotsHeight / 2 + dotSize / 2;
+    exportFeatureDots.forEach((dot) => {
+      ctx.beginPath();
+      ctx.arc(dotX, dotY, dotSize / 2, 0, Math.PI * 2);
+      ctx.fillStyle = dot.fill;
+      ctx.fill();
+      ctx.lineWidth = Math.max(1, 1 * scale);
+      ctx.strokeStyle = dot.stroke;
+      ctx.stroke();
+      dotY += dotSize + dotGap;
+    });
+  }
   ctx.restore();
   ctx.fillStyle = '#f1f5f9';
   ctx.font = `750 ${primaryFont}px sans-serif`;
@@ -687,6 +728,30 @@ function Pagination({ currentPage, totalPages, onChange }) {
       </div>
       <span className="pagination-current">{currentPage} / {totalPages} 페이지</span>
     </nav>
+  );
+}
+
+const FEATURE_DOT_LEGEND_ITEMS = [
+  { label: '돌격 계열', className: 'keyword-dot-assault' },
+  { label: '신속 계열', className: 'keyword-dot-swift' },
+  { label: '질풍 계열', className: 'keyword-dot-gale' },
+  { label: '그 밖의 특수 키워드', className: 'keyword-dot-other' },
+  { label: '히라메키', className: 'deck-feature-dot-hirameki' },
+  { label: '컷인', className: 'deck-feature-dot-cutin' },
+];
+
+function FeatureDotLegend({ includeSystemEffects = false, className = '' }) {
+  const items = includeSystemEffects ? FEATURE_DOT_LEGEND_ITEMS : FEATURE_DOT_LEGEND_ITEMS.slice(0, 4);
+  return (
+    <div className={`feature-dot-legend ${className}`.trim()} aria-label="특성 점 색상 안내">
+      <span className="feature-dot-legend-heading">점 색상 안내</span>
+      {items.map((item) => (
+        <span key={item.label} className="feature-dot-legend-item">
+          <span aria-hidden="true" className={`feature-dot-legend-dot ${item.className}`} />
+          <span>{item.label}</span>
+        </span>
+      ))}
+    </div>
   );
 }
 
@@ -1083,6 +1148,30 @@ export default function App() {
       ctx.fillStyle = '#a7b4c8';
       ctx.font = '600 16px sans-serif';
       ctx.fillText('명탐정 코난 TCG 도감  ·  메인 덱 40장 + 파트너 + 사건', margin + 44, margin + 77);
+      const exportLegendItems = [
+        { label: '돌격 계열', fill: '#fb7185', stroke: '#fda4af' },
+        { label: '신속 계열', fill: '#4ade80', stroke: '#86efac' },
+        { label: '질풍 계열', fill: '#38bdf8', stroke: '#7dd3fc' },
+        { label: '그 밖의 특수 키워드', fill: '#a78bfa', stroke: '#c4b5fd' },
+        { label: '히라메키', fill: '#fb923c', stroke: '#fdba74' },
+        { label: '컷인', fill: '#7dd3fc', stroke: '#bae6fd' },
+      ];
+      ctx.textAlign = 'left';
+      ctx.font = '600 12px sans-serif';
+      let legendX = margin + 47;
+      const legendBaselineY = margin + 101;
+      exportLegendItems.forEach((item) => {
+        ctx.beginPath();
+        ctx.arc(legendX + 4, legendBaselineY - 4, 3.5, 0, Math.PI * 2);
+        ctx.fillStyle = item.fill;
+        ctx.fill();
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = item.stroke;
+        ctx.stroke();
+        ctx.fillStyle = '#a7b4c8';
+        ctx.fillText(item.label, legendX + 13, legendBaselineY);
+        legendX += ctx.measureText(item.label).width + 27;
+      });
       ctx.textAlign = 'right';
       ctx.fillStyle = mainDeckCount === MAIN_DECK_LIMIT ? '#86efac' : '#fda4af';
       ctx.font = '800 22px sans-serif';
@@ -1326,7 +1415,7 @@ export default function App() {
         .card-detail-layout > div:nth-child(2) h3 { margin: 0 0 8px !important; color: #dce5f2 !important; font-size: 13px !important; font-weight: 800 !important; }
         .card-detail-layout > div:nth-child(2) h4 { margin: 0 0 4px !important; color: #fcd34d; font-size: 12px; font-weight: 750; }
         .card-detail-layout > div:nth-child(2) .card-system-effect-item > .card-system-effect-label { display: inline-flex !important; align-items: center; width: fit-content; margin: 0 0 8px !important; padding: 3px 7px !important; border: 1px solid; border-radius: 5px; box-sizing: border-box; font-size: 11px !important; font-weight: 800 !important; line-height: 1.4; }
-        .card-detail-layout > div:nth-child(2) .card-system-effect-item > .card-system-effect-label-hirameki { color: #ffffff !important; background: rgba(226,88,34,.14) !important; border-color: #c62828 !important; }
+        .card-detail-layout > div:nth-child(2) .card-system-effect-item > .card-system-effect-label-hirameki { color: #ffffff !important; background: rgba(249,115,22,.24) !important; border-color: #c62828 !important; }
         .card-detail-layout > div:nth-child(2) .card-system-effect-item > .card-system-effect-label-cutin { color: #bae6fd !important; background: rgba(56,189,248,.12) !important; border-color: #38bdf8 !important; }
         .card-detail-layout > div:nth-child(2) p { margin: 0; color: #d4dceb !important; font-size: 12px !important; line-height: 1.75 !important; overflow-wrap: anywhere; }
         .card-effect-text, .card-original-effect-text, .card-system-effect-text { white-space: pre-wrap !important; overflow-wrap: anywhere !important; word-break: normal; }
@@ -1345,14 +1434,14 @@ export default function App() {
         .ability-condition-black { background: rgba(17,24,39,.42); border-color: #374151; color: #f9fafb; }
         .ability-condition-file { background: rgba(236,72,153,.16); border-color: #db2777; color: #fbcfe8; }
         .ability-condition-neutral { background: rgba(51,65,85,.20); border-color: #64748b; color: #f1f5f9; }
-        .ability-color-circle { display: inline-flex; align-items: center; justify-content: center; vertical-align: -0.15em; width: 1.38em; min-width: 1.38em; height: 1.38em; margin: 0 .08em; padding: 0; border: 1px solid rgba(255,255,255,.24); border-radius: 999px; box-sizing: border-box; font-size: .78em; font-weight: 900; line-height: 1; white-space: nowrap; box-shadow: 0 0 0 1px rgba(0,0,0,.16); }
+        .ability-color-circle { display: inline-flex; align-items: center; justify-content: center; vertical-align: -0.02em; width: 1.38em; min-width: 1.38em; height: 1.38em; margin: 0 .08em; padding: 0; border: 1px solid rgba(255,255,255,.24); border-radius: 999px; box-sizing: border-box; font-size: .78em; font-weight: 900; line-height: 1; white-space: nowrap; box-shadow: 0 0 0 1px rgba(0,0,0,.16); }
         .ability-color-blue { background: #2563eb; border-color: #60a5fa; color: #fff; }
         .ability-color-red { background: #dc2626; border-color: #f87171; color: #fff; }
         .ability-color-yellow { background: #facc15; border-color: #fde047; color: #1f2937; }
         .ability-color-green { background: #16a34a; border-color: #4ade80; color: #fff; }
         .ability-color-black { background: #111827; border-color: #9ca3af; color: #f9fafb; }
         .ability-color-white { background: #f8fafc; border-color: #94a3b8; color: #111827; }
-        .effect-badge-hirameki { color: #fcd34d; background: rgba(251,191,36,.11); border-color: rgba(251,191,36,.18); }
+        .effect-badge-hirameki { color: #ffffff; background: rgba(249,115,22,.20); border-color: #c62828; }
         .effect-badge-cutin { color: #7dd3fc; background: rgba(56,189,248,.11); border-color: rgba(56,189,248,.18); }
         .keyword-assault { color: #fda4af; background: rgba(244,63,94,.12); border-color: rgba(251,113,133,.22); }
         .keyword-swift { color: #86efac; background: rgba(34,197,94,.12); border-color: rgba(74,222,128,.22); }
@@ -1361,6 +1450,13 @@ export default function App() {
         .keyword-other { color: #c4b5fd; background: rgba(139,92,246,.12); border-color: rgba(167,139,250,.22); }
         .detail-keyword-badges { padding: 2px 0 2px 8px !important; margin-left: 0 !important; }
         .detail-keyword-badges .effect-badge { font-size: 11px !important; line-height: 1.4; padding: 3px 6px; font-weight: 700; }
+        .feature-dot-legend { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; width: 100%; margin: -8px 0 12px; padding: 7px 9px; border: 1px solid rgba(148,163,184,.12); border-radius: 8px; background: rgba(9,15,27,.62); color: #94a3b8; font-size: 10px; line-height: 1.25; }
+        .feature-dot-legend-heading { margin-right: 2px; color: #64748b; font-size: 9px; font-weight: 800; white-space: nowrap; }
+        .feature-dot-legend-item { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 5px; white-space: nowrap; }
+        .feature-dot-legend-dot { display: inline-block; width: 7px; height: 7px; flex: 0 0 7px; border: 1px solid rgba(255,255,255,.32); border-radius: 999px; box-shadow: 0 1px 3px rgba(0,0,0,.35); }
+        .deck-feature-dot-hirameki.feature-dot-legend-dot { width: 7px; height: 7px; flex-basis: 7px; }
+        .deck-feature-dot-cutin.feature-dot-legend-dot { width: 7px; height: 7px; flex-basis: 7px; }
+        .deck-feature-dot-legend { margin: -4px 0 12px; }
         .keyword-tag-dots { display: flex; align-items: center; justify-content: flex-end; flex: 0 0 auto; flex-wrap: nowrap; gap: 3px; max-width: 38%; min-height: 0; margin: 3px 0 0; overflow: hidden; }
         .keyword-tag-dot { display: inline-block; width: 6px; height: 6px; flex: 0 0 6px; border-radius: 999px; box-shadow: 0 0 0 1px rgba(255,255,255,.18); }
         .keyword-dot-assault { background: #fb7185; }
@@ -1370,8 +1466,8 @@ export default function App() {
         .deck-card-image-wrap { position: relative; width: 100%; overflow: hidden; background: #0d1524; }
         .deck-feature-dots { position: absolute; z-index: 5; top: 50%; right: 7px; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; pointer-events: none; }
         .deck-feature-dot { display: block; width: 7px; height: 7px; flex: 0 0 7px; border: 1px solid rgba(255,255,255,.30); border-radius: 999px; box-shadow: 0 1px 3px rgba(0,0,0,.5), 0 0 0 1px rgba(0,0,0,.25); }
-        .deck-feature-dot-hirameki { background: #e25822; border-color: #ff9a70; }
-        .deck-feature-dot-cutin { background: #38bdf8; border-color: #bae6fd; }
+        .deck-feature-dot-hirameki { background: #fb923c; border-color: #fdba74; }
+        .deck-feature-dot-cutin { background: #7dd3fc; border-color: #bae6fd; }
         .card-search-alias-section { display: flex; flex-direction: column; gap: 6px; margin-top: 0; padding: 2px 8px 0; }
         .card-search-alias-display { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
         .card-search-alias-tags { min-width: 0; margin: 0; color: #8b96a8; font-size: 10px; line-height: 1.6; overflow-wrap: anywhere; }
@@ -1530,6 +1626,8 @@ export default function App() {
             </div>
           </div>
 
+          <FeatureDotLegend />
+
           {visibleCards.length === 0 ? <p className="rounded-xl border border-solid border-white/15 p-8 text-center text-sm text-slate-400">조건에 맞는 카드가 없어요.</p> : (
             <div className="conan-card-grid grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 2xl:grid-cols-10">
               {visibleCards.map((card) => {
@@ -1582,6 +1680,8 @@ export default function App() {
               <button onClick={exportDeckImage} disabled={exportingDeckImage} className="deck-export-button">{exportingDeckImage ? '이미지 생성 중…' : '이미지 저장'}</button>
             </div>
           </div>
+
+          <FeatureDotLegend includeSystemEffects className="deck-feature-dot-legend" />
 
           <div className="deck-board-scroll">
             <div className={`deck-board ${deckLayout === '8x5' ? 'deck-board-8x5' : 'deck-board-10x4'}`}>
