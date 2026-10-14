@@ -210,6 +210,29 @@ function formatAbilityText(value) {
     .replace(/\n{3,}/gu, '\n\n');
 }
 
+function abilityConditionClass(label) {
+  const value = String(label || '').replace(/[\s　]+/gu, '').toLocaleLowerCase();
+  if (/턴1|ターン1|ターン１/u.test(value)) return 'ability-condition-turn1';
+  if (/선언|宣言|등장시|登場時|현장리무브시|現場リムーブ時/u.test(value)) return 'ability-condition-blue';
+  if (/슬립|スリップ/u.test(value)) return 'ability-condition-slip';
+  if (/자신의?턴중|自分の?ターン中/u.test(value)) return 'ability-condition-own-turn';
+  if (/상대의?턴중|相手の?ターン中/u.test(value)) return 'ability-condition-opponent-turn';
+  if (/사건편|事件編|해결편|解決編|어시스트|アシスト/u.test(value)) return 'ability-condition-black';
+  // 지정 색상이 없는 괄호형 헤더도 같은 태그 모양으로 통일합니다.
+  return 'ability-condition-neutral';
+}
+
+function renderAbilityText(value) {
+  const formatted = formatAbilityText(value);
+  if (!formatted) return '';
+  return formatted.split(/(【[^】]+】)/gu).map((segment, index) => {
+    const match = segment.match(/^【([^】]+)】$/u);
+    if (!match) return segment;
+    const label = match[1].trim();
+    return <span key={`ability-condition-${index}`} className={`ability-condition-badge ${abilityConditionClass(label)}`}>{label}</span>;
+  });
+}
+
 const TRAIT_TRANSLATIONS = {
   '高校生': '고등학생', '警察': '경찰', '探偵': '탐정', '黒ずくめの組織': '검은 조직',
   '警視庁': '경시청', '少年探偵団': '소년 탐정단', '毛利探偵事務所': '모리 탐정 사무소',
@@ -1115,6 +1138,14 @@ export default function App() {
         .card-detail-layout > div:nth-child(2) details > div { margin-top: 10px; display: grid; gap: 10px; }
         .effect-badges { display: flex !important; flex-wrap: wrap !important; gap: 4px !important; margin-top: 6px !important; }
         .effect-badge { display: inline-flex; align-items: center; border: 1px solid transparent; border-radius: 4px; padding: 2px 5px; font-size: 8px; line-height: 1.35; font-weight: 800; white-space: nowrap; }
+        .ability-condition-badge { display: inline-flex; align-items: center; vertical-align: baseline; margin: 0 2px 1px; padding: 1px 5px; border: 1px solid #64748b; border-radius: 4px; background: rgba(148,163,184,.10); color: #f1f5f9; font-size: .88em; font-weight: 800; line-height: 1.45; white-space: nowrap; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+        .ability-condition-turn1 { background: rgba(15,118,110,.18); border-color: #0f766e; color: #ccfbf1; }
+        .ability-condition-blue { background: rgba(29,78,216,.18); border-color: #1d4ed8; color: #dbeafe; }
+        .ability-condition-slip { background: rgba(109,40,217,.18); border-color: #6d28d9; color: #ede9fe; }
+        .ability-condition-own-turn { background: rgba(190,18,60,.18); border-color: #be123c; color: #ffe4e6; }
+        .ability-condition-opponent-turn { background: rgba(194,65,12,.18); border-color: #c2410c; color: #ffedd5; }
+        .ability-condition-black { background: rgba(17,24,39,.42); border-color: #374151; color: #f9fafb; }
+        .ability-condition-neutral { background: rgba(51,65,85,.20); border-color: #64748b; color: #f1f5f9; }
         .effect-badge-hirameki { color: #fcd34d; background: rgba(251,191,36,.11); border-color: rgba(251,191,36,.18); }
         .effect-badge-cutin { color: #7dd3fc; background: rgba(56,189,248,.11); border-color: rgba(56,189,248,.18); }
         .keyword-assault { color: #fda4af; background: rgba(244,63,94,.12); border-color: rgba(251,113,133,.22); }
@@ -1433,9 +1464,9 @@ export default function App() {
                   <dl className="card-meta-grid grid grid-cols-2 gap-2 sm:grid-cols-3">{[['종류', selectedCard.type], ['색상', selectedCard.color], ['레어도', selectedCard.rarity], ['코스트', selectedCard.cost], ['LP', selectedCard.lp], ['수록 제품', selectedCard.set]].map(([label, value]) => <div key={label} className={`card-meta-item rounded-lg border border-white/[0.07] bg-[#090f1b] p-2.5${label === '수록 제품' ? ' card-meta-item-set' : ''}`}><dt className="text-[10px] font-medium text-slate-500">{label}</dt><dd className="mt-1 break-words text-xs font-semibold text-slate-200">{value === null || value === undefined || value === '' ? '-' : value}</dd></div>)}<div className="card-meta-item card-meta-item-traits rounded-lg border border-white/[0.07] bg-[#090f1b] p-2.5"><dt className="text-[10px] font-medium text-slate-500">특징</dt><dd className="mt-1">{selectedCard.traits?.length ? <div className="card-trait-list">{selectedCard.traits.map((trait) => <span key={trait} className="card-trait-chip">{trait}</span>)}</div> : <span className="text-xs font-semibold text-slate-500">없음</span>}</dd></div></dl>
                   {selectedCard.keywordTags?.length > 0 && <div className="detail-keyword-badges effect-badges">{selectedCard.keywordTags.map((tag) => <span key={tag} className={`effect-badge ${keywordTagClass(tag)}${String(tag).startsWith('조건부 ') ? ' conditional' : ''}`}>{tag}</span>)}</div>}
                   {(selectedCard.hiramekiEffect || selectedCard.cutInEffect) && <div className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><h3 className="mb-3 text-xs font-bold">게임 시스템 효과</h3><div className="space-y-3">{selectedCard.hiramekiEffect && <div className="card-system-effect-item"><h4 className="mb-1 text-xs font-bold text-amber-300">히라메키</h4><p className="card-system-effect-text whitespace-pre-wrap break-words text-xs leading-5 text-slate-200">{selectedCard.hiramekiEffect}</p></div>}{selectedCard.cutInEffect && <div className="card-system-effect-item"><h4 className="mb-1 text-xs font-bold text-sky-300">컷인</h4><p className="card-system-effect-text whitespace-pre-wrap break-words text-xs leading-5 text-slate-200">{selectedCard.cutInEffect}</p></div>}</div></div>}
-                  <div className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><h3 className="mb-2 text-xs font-bold text-slate-300">카드 효과</h3><div className="card-effect-text text-xs leading-6 text-slate-200">{formatAbilityText(selectedCard.ability) || '효과 텍스트 없음'}</div></div>
+                  <div className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><h3 className="mb-2 text-xs font-bold text-slate-300">카드 효과</h3><div className="card-effect-text text-xs leading-6 text-slate-200">{renderAbilityText(selectedCard.ability) || '효과 텍스트 없음'}</div></div>
                   {selectedCard.flavor && <div className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><h3 className="mb-2 text-xs font-bold text-slate-300">플레이버 텍스트</h3><p className="whitespace-pre-wrap break-words text-xs leading-5 text-slate-300">{selectedCard.flavor}</p></div>}
-                  {(selectedCard.originalName !== selectedCard.name || selectedCard.originalAbility !== selectedCard.ability) && <details className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><summary className="cursor-pointer text-xs font-semibold text-slate-300">일본어 원문 보기</summary><div className="mt-3 space-y-3 text-xs leading-5"><p className="card-original-name-text"><span className="text-slate-500">이름: </span>{selectedCard.originalName || '-'}</p><p className="card-original-effect-text whitespace-pre-wrap break-words"><span className="text-slate-500">효과: </span>{formatAbilityText(selectedCard.originalAbility) || '-'}</p></div></details>}
+                  {(selectedCard.originalName !== selectedCard.name || selectedCard.originalAbility !== selectedCard.ability) && <details className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><summary className="cursor-pointer text-xs font-semibold text-slate-300">일본어 원문 보기</summary><div className="mt-3 space-y-3 text-xs leading-5"><p className="card-original-name-text"><span className="text-slate-500">이름: </span>{selectedCard.originalName || '-'}</p><p className="card-original-effect-text whitespace-pre-wrap break-words"><span className="text-slate-500">효과: </span>{renderAbilityText(selectedCard.originalAbility) || '-'}</p></div></details>}
                 </div>
               </div>
             </div>
