@@ -374,7 +374,7 @@ function getDeckCardSummary(card) {
   return `${getDeckCardNameLine(card)}\n${getDeckCardStatsLine(card)}`;
 }
 
-function loadImageForExport(src) {
+function loadImageSourceForExport(src, timeoutMs = 8000) {
   return new Promise((resolve) => {
     if (!src) return resolve(null);
     const image = new Image();
@@ -385,12 +385,23 @@ function loadImageForExport(src) {
       clearTimeout(timeout);
       resolve(result);
     };
-    const timeout = setTimeout(() => finish(null), 8000);
+    const timeout = setTimeout(() => finish(null), timeoutMs);
+    // CORS를 명시해 캔버스에 그려도 저장이 막히지 않는 이미지인지 확인합니다.
     image.crossOrigin = 'anonymous';
-    image.onload = () => finish(image);
+    image.onload = () => finish(image.naturalWidth > 0 && image.naturalHeight > 0 ? image : null);
     image.onerror = () => finish(null);
     image.src = src;
   });
+}
+
+async function loadImageForExport(src) {
+  if (!src) return null;
+  // 원본 서버가 CORS를 허용하면 직접 사용하고, 허용하지 않는 경우 CORS 헤더를 제공하는
+  // 이미지 프록시를 재시도해 캔버스 내보내기에서 카드 이미지가 빠지는 문제를 줄입니다.
+  const directImage = await loadImageSourceForExport(src, 5000);
+  if (directImage) return directImage;
+  const proxyUrl = `https://wsrv.nl/?url=${encodeURIComponent(src)}&output=png`;
+  return loadImageSourceForExport(proxyUrl, 10000);
 }
 
 function roundedCanvasRect(ctx, x, y, width, height, radius, fill, stroke = null) {
@@ -436,6 +447,8 @@ function drawExportCard(ctx, card, image, x, y, width, options = {}) {
   const primaryFont = Math.max(12, 14 * scale);
   const secondaryFont = Math.max(10, 11 * scale);
   const captionHeight = Math.max(58, 62 * scale);
+  const showStats = options.showStats !== false;
+  const centerName = options.centerName === true;
   const height = imageHeight + captionHeight;
   roundedCanvasRect(ctx, x, y, width, height, 10 * scale, '#090f1b', '#344256');
   ctx.save();
@@ -464,10 +477,19 @@ function drawExportCard(ctx, card, image, x, y, width, options = {}) {
   ctx.restore();
   ctx.fillStyle = '#f1f5f9';
   ctx.font = `750 ${primaryFont}px sans-serif`;
-  drawWrappedCanvasText(ctx, getDeckCardNameLine(card), x + 8 * scale, y + imageHeight + 19 * scale, width - 16 * scale, primaryFont * 1.25, 2);
-  ctx.fillStyle = '#94a3b8';
-  ctx.font = `550 ${secondaryFont}px sans-serif`;
-  ctx.fillText(getDeckCardStatsLine(card), x + 8 * scale, y + height - 9 * scale);
+  ctx.textAlign = centerName ? 'center' : 'left';
+  const nameX = centerName ? x + width / 2 : x + 8 * scale;
+  const nameY = showStats
+    ? y + imageHeight + 19 * scale
+    : y + imageHeight + captionHeight / 2 + primaryFont * 0.35;
+  drawWrappedCanvasText(ctx, getDeckCardNameLine(card), nameX, nameY, width - 16 * scale, primaryFont * 1.25, 2);
+  if (showStats) {
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = `550 ${secondaryFont}px sans-serif`;
+    ctx.textAlign = 'left';
+    ctx.fillText(getDeckCardStatsLine(card), x + 8 * scale, y + height - 9 * scale);
+  }
+  ctx.textAlign = 'left';
   return { width, height };
 }
 
@@ -832,8 +854,8 @@ export default function App() {
       ctx.fillText(`${columns} × ${rows} 배열 · ${deckSort === 'added' ? '추가한 순서' : deckSort === 'cost' ? '코스트 낮은순' : deckSort === 'cost-desc' ? '코스트 높은순' : deckSort === 'color' ? '색상별' : 'AP 높은순'}`, gridX, labelY + 18);
 
       const cardStartY = top + sectionHeight;
-      drawExportCard(ctx, partnerCard, loadedImages.get(partnerCard.imageUrl), sideX, cardStartY, cardWidth);
-      drawExportCard(ctx, eventCard, loadedImages.get(eventCard.imageUrl), sideX, cardStartY + cardHeight + Math.max(14, gap), cardWidth);
+      drawExportCard(ctx, partnerCard, loadedImages.get(partnerCard.imageUrl), sideX, cardStartY, cardWidth, { showStats: false, centerName: true });
+      drawExportCard(ctx, eventCard, loadedImages.get(eventCard.imageUrl), sideX, cardStartY + cardHeight + Math.max(14, gap), cardWidth, { showStats: false, centerName: true });
       slots.forEach((card, index) => {
         const row = Math.floor(index / columns);
         const col = index % columns;
@@ -858,7 +880,7 @@ export default function App() {
       link.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1500);
       if (imageUrls.some((url) => !loadedImages.get(url))) {
-        window.alert('이미지 파일을 저장했어요. 일부 카드 이미지는 원본 서버의 교차 출처 제한으로 불러오지 못해 카드명 표시로 대체했어요.');
+        window.alert('이미지 파일은 저장했어요. 일부 카드 이미지는 원본 서버나 이미지 프록시의 접근 제한으로 불러오지 못해 카드명 표시로 대체했어요.');
       }
     } catch (error) {
       window.alert(error instanceof Error ? error.message : '이미지 저장 중 문제가 발생했어요.');
@@ -1029,7 +1051,7 @@ export default function App() {
         .card-meta-item { min-width: 0; display: flex; flex-direction: column; border: 1px solid rgba(255,255,255,.075) !important; border-radius: 9px !important; padding: 10px !important; background: #090f1b !important; }
         .card-meta-item dt { color: #9aa8bd !important; font-size: 11px !important; font-weight: 600 !important; }
         .card-meta-item dd { display: flex; flex: 1 1 auto; align-items: center; min-height: 20px; margin: 4px 0 0 !important; color: #f1f5f9 !important; font-size: 13px !important; font-weight: 650 !important; overflow-wrap: anywhere; }
-        .card-meta-item:not(.card-meta-item-traits) dd { justify-content: center !important; text-align: center !important; }
+        .card-meta-item:not(.card-meta-item-traits) dd { justify-content: flex-start !important; text-align: left !important; padding-left: 8px !important; box-sizing: border-box !important; }
         .card-detail-layout > div:nth-child(2) > div:not(.card-meta-grid), .card-detail-layout > div:nth-child(2) > details { border: 1px solid rgba(255,255,255,.07) !important; border-radius: 10px !important; padding: 12px !important; background: #090f1b !important; color: #e2e8f0 !important; }
         .card-detail-layout > div:nth-child(2) h3 { margin: 0 0 8px !important; color: #dce5f2 !important; font-size: 13px !important; font-weight: 800 !important; }
         .card-detail-layout > div:nth-child(2) h4 { margin: 0 0 4px !important; color: #fcd34d; font-size: 12px; font-weight: 750; }
@@ -1123,7 +1145,8 @@ export default function App() {
         .deck-card-primary { display: block; color: #f1f5f9; font-weight: 750; overflow-wrap: anywhere; }
         .deck-card-secondary { display: block; color: #94a3b8; font-size: .92em; font-weight: 550; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .deck-empty-slot .deck-card-name { color: #64748b; }
-        .deck-special-name { text-align: left; }
+        .deck-special-name { align-items: center; text-align: center; }
+        .deck-special-name .deck-card-primary { width: 100%; text-align: center; }
         @media (max-width: 600px) {
           .deck-board { min-width: 1000px; gap: 12px !important; }
           .deck-slots-grid, .deck-specials-column { gap: 6px !important; }
