@@ -182,7 +182,8 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
 
   if (!game) return <main style={st.root}><div style={st.panel}>게임 필드를 불러오는 중…{error && <p style={{ color: C.red }}>{error}</p>}</div></main>;
 
-  const caseEventCard = caseBoard && cardsByKey.get(String(caseBoard.event_key));
+  const caseBoard = boards.find((board) => Number(board.seat) === 1) || boards[0] || null;
+  const caseEventCard = caseBoard ? cardsByKey.get(String(caseBoard.event_key)) : null;
   const eventsDiffer = Boolean(myBoard && opponentBoard && myBoard.event_key !== opponentBoard.event_key);
   const solutionFileThreshold = game.first_player_user_id === userId ? 7 : 6;
   const winEvidenceThreshold = solutionFileThreshold;
