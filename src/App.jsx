@@ -207,7 +207,11 @@ function formatAbilityText(value) {
   return text
     .replace(/([.!?。！？])\s*(?=【(?:선언|자동|상시|기동|宣言|自動|常時|起動)(?:】|\s))/gu, '$1\n')
     .replace(/[ \t　]+\n/gu, '\n')
-    .replace(/\n{3,}/gu, '\n\n');
+    .replace(/\n{3,}/gu, '\n\n')
+    // 줄의 맨 앞에 태그가 붙으면 본문과의 간격을 공백 한 칸으로 통일합니다.
+    // 문장 중간에 들어간 태그는 기존 앞뒤 공백을 그대로 유지합니다.
+    .replace(/(^|\n)([ \t　]*(?:(?:【[^】]+】|\[FILE[0-9０-９]+\])[ \t　]*)+)(?=\S)/gu,
+      (_, lineBreak, tagRun) => `${lineBreak}${tagRun.replace(/[ \t　]+$/u, '')} `);
 }
 
 function abilityConditionClass(label) {
@@ -218,21 +222,75 @@ function abilityConditionClass(label) {
   if (/슬립|スリップ/u.test(value)) return 'ability-condition-slip';
   if (/자신의?턴중|自分の?ターン中/u.test(value)) return 'ability-condition-own-turn';
   if (/상대의?턴중|相手の?ターン中/u.test(value)) return 'ability-condition-opponent-turn';
-  if (/사건편|事件編|해결편|解決編|어시스트|アシスト/u.test(value)) return 'ability-condition-black';
+  if (/사건편|事件編|해결편|解決編|어시스트|アシスト|파트너|パートナー|partner/iu.test(value)) return 'ability-condition-black';
   // 지정 색상이 없는 괄호형 헤더도 같은 태그 모양으로 통일합니다.
   return 'ability-condition-neutral';
+}
+
+function canonicalAbilityColor(value) {
+  const normalized = normalizeColor(String(value ?? '').replace(/[()（）]/gu, '').trim());
+  return COLOR_ORDER.includes(normalized) ? normalized : '';
+}
+
+function abilityColorCircleClass(color) {
+  return `ability-color-circle ability-color-${({ '청': 'blue', '적': 'red', '황': 'yellow', '녹': 'green', '흑': 'black', '백': 'white' })[color] || 'unknown'}`;
+}
+
+function renderAbilityColorCircle(rawColor, key) {
+  const raw = String(rawColor ?? '').replace(/[()（）]/gu, '').trim();
+  const color = canonicalAbilityColor(raw);
+  if (!color) return rawColor;
+  return <span key={key} className={abilityColorCircleClass(color)} title={`${raw} 색상`} aria-label={`${raw} 색상`}>{raw}</span>;
+}
+
+function findPartnerColorMarker(label) {
+  if (!/(?:파트너|パートナー|partner)/iu.test(label)) return null;
+  const parenthetical = /[（(]\s*([^()（）]+?)\s*[）)]/gu;
+  for (const match of label.matchAll(parenthetical)) {
+    if (!canonicalAbilityColor(match[1])) continue;
+    return { start: match.index, end: match.index + match[0].length, rawColor: match[1].trim() };
+  }
+  const trimmed = label.trimEnd();
+  const lower = trimmed.toLocaleLowerCase();
+  for (const { alias } of COLOR_ALIAS_LOOKUP) {
+    if (!lower.endsWith(alias)) continue;
+    const start = trimmed.length - alias.length;
+    const before = trimmed.slice(0, start);
+    if (!/(?:파트너|パートナー|partner)[\s　]*$/iu.test(before)) continue;
+    if (!canonicalAbilityColor(trimmed.slice(start))) continue;
+    return { start, end: trimmed.length, rawColor: trimmed.slice(start) };
+  }
+  return null;
+}
+
+function renderConditionLabel(label, keyPrefix) {
+  const marker = findPartnerColorMarker(label);
+  if (!marker) return label;
+  return <>{label.slice(0, marker.start)}{renderAbilityColorCircle(marker.rawColor, `${keyPrefix}-color`)}{label.slice(marker.end)}</>;
 }
 
 function renderAbilityText(value) {
   const formatted = formatAbilityText(value);
   if (!formatted) return '';
-  // FILE 영역 태그는 [FILE1] 형식으로 표기되고, 다른 조건 태그는 【턴1】 형식을 사용합니다.
-  return formatted.split(/(【[^】]+】|\[FILE[0-9０-９]+\])/giu).map((segment, index) => {
+  // FILE 영역 태그는 [FILE1], 조건 태그는 【턴1】, 색상 토큰은 (녹) 형식으로 구분합니다.
+  // 색상 외의 일반 괄호는 원문을 그대로 유지합니다.
+  return formatted.split(/(【[^】]+】|\[FILE[0-9０-９]+\]|[（(][^()（）\n]{1,18}[）)])/gu).map((segment, index) => {
     const bracketMatch = segment.match(/^【([^】]+)】$/u);
     const fileMatch = segment.match(/^\[(FILE[0-9０-９]+)\]$/iu);
-    if (!bracketMatch && !fileMatch) return segment;
-    const label = (bracketMatch ? bracketMatch[1] : fileMatch[1]).trim();
-    return <span key={`ability-condition-${index}`} className={`ability-condition-badge ${abilityConditionClass(label)}`}>{label}</span>;
+    const colorMatch = segment.match(/^[（(]([^()（）\n]{1,18})[）)]$/u);
+    if (bracketMatch) {
+      const label = bracketMatch[1].trim();
+      return <span key={`ability-condition-${index}`} className={`ability-condition-badge ${abilityConditionClass(label)}`}>{renderConditionLabel(label, `ability-condition-${index}`)}</span>;
+    }
+    if (fileMatch) {
+      const label = fileMatch[1].trim();
+      return <span key={`ability-condition-${index}`} className={`ability-condition-badge ${abilityConditionClass(label)}`}>{label}</span>;
+    }
+    if (colorMatch) {
+      const rawColor = colorMatch[1].trim();
+      if (canonicalAbilityColor(rawColor)) return renderAbilityColorCircle(rawColor, `ability-color-${index}`);
+    }
+    return segment;
   });
 }
 
@@ -547,6 +605,38 @@ function drawExportEmptySlot(ctx, slotNumber, x, y, width) {
   roundedCanvasRect(ctx, x, y, width, height, radius, null, '#344256');
 }
 
+function normalizeSearchAliasData(input) {
+  // 검색 별명은 브라우저 저장소가 아니라 public/card-search-aliases.json에서 읽습니다.
+  // 형식은 { version: 1, cards: { "카드 ID": ["별명1", "별명2"] } } 입니다.
+  const source = input && typeof input === 'object' && !Array.isArray(input)
+    ? (input.cards && typeof input.cards === 'object' && !Array.isArray(input.cards) ? input.cards : input)
+    : {};
+  const cleaned = {};
+  for (const [key, values] of Object.entries(source)) {
+    if (!Array.isArray(values)) continue;
+    const unique = [...new Map(values.map((value) => String(value ?? '').trim().replace(/^#+/u, '').trim())
+      .filter(Boolean).map((value) => [value.toLocaleLowerCase(), value])).values()];
+    if (key && unique.length) cleaned[key] = unique;
+  }
+  return cleaned;
+}
+
+function getCardSearchAliasKey(card) {
+  return String(card?.key || card?.databaseId || card?.cardId || card?.cardNum || '').trim();
+}
+
+function getCardSearchAliases(aliasMap, card) {
+  const key = getCardSearchAliasKey(card);
+  return key && Array.isArray(aliasMap?.[key]) ? aliasMap[key] : [];
+}
+
+function parseSearchAliasDraft(value) {
+  return [...new Map(String(value ?? '').split(/[\n,，;；]+/u)
+    .map((item) => item.trim().replace(/^#+/u, '').trim())
+    .filter(Boolean)
+    .map((item) => [item.toLocaleLowerCase(), item])).values()];
+}
+
 function loadSavedDeck() {
   try {
     const saved = JSON.parse(localStorage.getItem(DECK_STORAGE_KEY) || '{}');
@@ -602,6 +692,10 @@ export default function App() {
   const [rarityFilter, setRarityFilter] = useState('');
   const [costFilter, setCostFilter] = useState('');
   const [lpFilter, setLpFilter] = useState('');
+  const [keywordFilter, setKeywordFilter] = useState('');
+  const [searchAliases, setSearchAliases] = useState({});
+  const [searchAliasEditingKey, setSearchAliasEditingKey] = useState('');
+  const [searchAliasDraft, setSearchAliasDraft] = useState('');
   const [page, setPage] = useState(1);
   const [selectedCard, setSelectedCard] = useState(null);
   const [selectedCardSource, setSelectedCardSource] = useState('cards');
@@ -620,7 +714,7 @@ export default function App() {
       setLoading(true);
       setLoadError('');
       try {
-        const [cardResponse, translations, loadedKeywordTagData] = await Promise.all([
+        const [cardResponse, translations, loadedKeywordTagData, loadedSearchAliasData] = await Promise.all([
           fetch('/cards.json').then((response) => {
             if (!response.ok) throw new Error(`cards.json 응답 오류 (${response.status})`);
             return response.json();
@@ -631,12 +725,16 @@ export default function App() {
           fetch('/card-keyword-tags.json', { cache: 'no-store' })
             .then((response) => response.ok ? response.json() : { version: 1, cards: {} })
             .catch(() => ({ version: 1, cards: {} })),
+          fetch('/card-search-aliases.json', { cache: 'no-store' })
+            .then((response) => response.ok ? response.json() : { version: 1, cards: {} })
+            .catch(() => ({ version: 1, cards: {} })),
         ]);
         const rawCards = getCardArray(cardResponse);
         if (!rawCards.length) throw new Error('cards.json에서 카드 배열을 찾지 못했어요. JSON의 최상위 구조를 확인해 주세요.');
         const normalized = rawCards.map((card) => normalizeCard(card, translations, loadedKeywordTagData)).filter((card) => card.key && card.key !== 'undefined');
         if (!cancelled) {
           setCards(normalized);
+          setSearchAliases(normalizeSearchAliasData(loadedSearchAliasData));
         }
       } catch (error) {
         if (!cancelled) setLoadError(error instanceof Error ? error.message : String(error));
@@ -685,7 +783,7 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cards]);
 
-  useEffect(() => { setPage(1); }, [searchTerm, colorFilter, typeFilter, rarityFilter, costFilter, lpFilter]);
+  useEffect(() => { setPage(1); }, [searchTerm, colorFilter, typeFilter, rarityFilter, costFilter, lpFilter, keywordFilter, searchAliases]);
 
   const colorOptions = useMemo(() => {
     // 표시 순서가 다른 조합(예: 황흑/흑황)은 하나의 필터 선택지로 합칩니다.
@@ -701,17 +799,26 @@ export default function App() {
   const rarityOptions = useMemo(() => uniqueOptions(cards.map((card) => card.rarity)), [cards]);
   const costOptions = useMemo(() => uniqueOptions(cards.map((card) => card.cost)), [cards]);
   const lpOptions = useMemo(() => uniqueOptions(cards.map((card) => card.lp)), [cards]);
+  const keywordOptions = useMemo(() => uniqueOptions(cards.flatMap((card) => card.keywordTags || [])), [cards]);
 
   const filteredCards = useMemo(() => {
     const query = searchTerm.trim().toLocaleLowerCase();
+    // 검색창에 키워드 태그의 정확한 이름을 입력하면 '돌격'과 '조건부 돌격'을 구분합니다.
+    const exactKeywordQuery = query ? keywordOptions.find((tag) => tag.toLocaleLowerCase() === query) : '';
     return cards.filter((card) => {
+      const cardKeywordTags = card.keywordTags || [];
       const searchable = [
         card.name, card.originalName, card.cardId, card.cardNum,
         card.type, card.originalType, card.color, card.colorKey, card.originalColor,
         card.ability, card.originalAbility, card.set, card.originalSet, card.rarity,
-        card.hiramekiEffect, card.cutInEffect, ...(card.keywordTags || []),
+        card.hiramekiEffect, card.cutInEffect, ...getCardSearchAliases(searchAliases, card),
       ].join(' ').toLocaleLowerCase();
-      if (query && !searchable.includes(query)) return false;
+      if (query) {
+        if (exactKeywordQuery) {
+          if (!cardKeywordTags.some((tag) => tag.toLocaleLowerCase() === exactKeywordQuery.toLocaleLowerCase())) return false;
+        } else if (!searchable.includes(query)) return false;
+      }
+      if (keywordFilter && !cardKeywordTags.some((tag) => tag === keywordFilter)) return false;
       if (colorFilter && (card.colorKey || normalizeColorKey(card.color)) !== colorFilter) return false;
       if (typeFilter && card.type !== typeFilter) return false;
       if (rarityFilter && card.rarity !== rarityFilter) return false;
@@ -719,7 +826,7 @@ export default function App() {
       if (lpFilter !== '' && String(card.lp) !== lpFilter) return false;
       return true;
     });
-  }, [cards, searchTerm, colorFilter, typeFilter, rarityFilter, costFilter, lpFilter]);
+  }, [cards, searchTerm, colorFilter, typeFilter, rarityFilter, costFilter, lpFilter, keywordFilter, keywordOptions, searchAliases]);
 
   const totalPages = Math.max(1, Math.ceil(filteredCards.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -769,16 +876,26 @@ export default function App() {
 
   // 덱 화면에서 연 상세 창은 현재 덱 배열의 순서로, 카드 목록에서 연 창은 필터 결과 순서로 탐색합니다.
   const modalNavigationCards = selectedCardSource === 'deck' ? sortedDeckCards : filteredCards;
+  const selectedCardAliasKey = selectedCard ? getCardSearchAliasKey(selectedCard) : '';
+  const selectedCardSearchAliases = selectedCard ? getCardSearchAliases(searchAliases, selectedCard) : [];
+  const editingSelectedAliases = Boolean(selectedCardAliasKey && searchAliasEditingKey === selectedCardAliasKey);
 
   useEffect(() => {
     if (!selectedCard) return undefined;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     function handleModalKeys(event) {
+      const target = event.target;
+      const isEditingField = target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement || target?.isContentEditable;
       if (event.key === 'Escape') {
+        if (target instanceof HTMLTextAreaElement && searchAliasEditingKey === getCardSearchAliasKey(selectedCard)) {
+          cancelSearchAliasEdit();
+          return;
+        }
         setSelectedCard(null);
-      } else if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
+      } else if ((event.key === 'ArrowRight' || event.key === 'ArrowLeft') && !isEditingField) {
         event.preventDefault();
+        setSearchAliasEditingKey('');
         const step = event.key === 'ArrowRight' ? 1 : -1;
         setSelectedCard((current) => {
           const navigationCards = selectedCardSource === 'deck' ? sortedDeckCards : filteredCards;
@@ -796,7 +913,7 @@ export default function App() {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener('keydown', handleModalKeys);
     };
-  }, [selectedCard, selectedCardSource, filteredCards, sortedDeckCards]);
+  }, [selectedCard, selectedCardSource, filteredCards, sortedDeckCards, searchAliasEditingKey]);
 
   function openCardDetail(card, source = 'cards') {
     setSelectedCardSource(source);
@@ -840,6 +957,46 @@ export default function App() {
     });
   }
 
+  function startSearchAliasEdit(card) {
+    const key = getCardSearchAliasKey(card);
+    setSearchAliasEditingKey(key);
+    setSearchAliasDraft(getCardSearchAliases(searchAliases, card).join(', '));
+  }
+
+  function saveSearchAliasEdit(card) {
+    const key = getCardSearchAliasKey(card);
+    if (!key) return;
+    const aliases = parseSearchAliasDraft(searchAliasDraft);
+    const next = { ...searchAliases };
+    if (aliases.length) next[key] = aliases;
+    else delete next[key];
+    // 편집값은 현재 화면/검색에 즉시 반영합니다. 영구 보관용 JSON은 별도 내보내기 버튼으로 저장합니다.
+    setSearchAliases(next);
+    setSearchAliasEditingKey('');
+  }
+
+  function exportSearchAliasData() {
+    const payload = {
+      version: 1,
+      description: '카드별 검색 전용 별명. cards의 키는 cards.json에 있는 카드 ID이며, 값은 별명 문자열 배열입니다.',
+      cards: searchAliases,
+    };
+    const blob = new Blob([`${JSON.stringify(payload, null, 2)}\n`], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'card-search-aliases.json';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function cancelSearchAliasEdit() {
+    setSearchAliasEditingKey('');
+    setSearchAliasDraft('');
+  }
+
   function clearFilters() {
     setSearchTerm('');
     setColorFilter('');
@@ -847,6 +1004,7 @@ export default function App() {
     setRarityFilter('');
     setCostFilter('');
     setLpFilter('');
+    setKeywordFilter('');
   }
 
   async function exportDeckImage() {
@@ -1068,7 +1226,7 @@ export default function App() {
         .app-shell .app-panel button:not(.card-open-button):not(.card-tile-action) { border-radius: 8px; }
         .app-shell .card-list-toolbar > button { border: 1px solid rgba(255,255,255,.12); padding: 7px 11px; color: #d1d9e6; background: #151f30; font-size: 12px; font-weight: 650; }
         .app-shell .card-list-toolbar > button:hover { border-color: rgba(251,113,133,.45); background: rgba(255,255,255,.04); }
-        .app-filters { display: grid !important; grid-template-columns: minmax(200px, 1.7fr) repeat(5, minmax(100px, 1fr)) !important; gap: 8px !important; margin: 0 0 15px !important; }
+        .app-filters { display: grid !important; grid-template-columns: minmax(200px, 1.7fr) repeat(6, minmax(100px, 1fr)) !important; gap: 8px !important; margin: 0 0 15px !important; }
         .app-control { min-width: 0; width: 100%; height: 37px; padding: 7px 10px !important; border: 1px solid rgba(255,255,255,.11) !important; border-radius: 8px !important; outline: none; background: #090f1b !important; color: #e2e8f0 !important; font-size: 12px !important; }
         .app-control:focus { border-color: rgba(251,113,133,.75) !important; box-shadow: 0 0 0 3px rgba(225,29,72,.12); }
         .app-control::placeholder { color: #718096; }
@@ -1130,7 +1288,7 @@ export default function App() {
         .card-meta-item.card-meta-item-set dd { padding-left: 8px !important; padding-right: 8px !important; box-sizing: border-box !important; }
         .card-meta-item-traits > dd { padding-left: 8px !important; }
         .card-effect-text, .card-original-effect-text, .card-original-name-text { padding-left: 8px !important; box-sizing: border-box !important; }
-        .card-detail-layout > div:nth-child(2) > div:not(.card-meta-grid), .card-detail-layout > div:nth-child(2) > details { border: 1px solid rgba(255,255,255,.07) !important; border-radius: 10px !important; padding: 12px !important; background: #090f1b !important; color: #e2e8f0 !important; }
+        .card-detail-layout > div:nth-child(2) > div:not(.card-meta-grid):not(.card-search-alias-section), .card-detail-layout > div:nth-child(2) > details { border: 1px solid rgba(255,255,255,.07) !important; border-radius: 10px !important; padding: 12px !important; background: #090f1b !important; color: #e2e8f0 !important; }
         .card-detail-layout > div:nth-child(2) h3 { margin: 0 0 8px !important; color: #dce5f2 !important; font-size: 13px !important; font-weight: 800 !important; }
         .card-detail-layout > div:nth-child(2) h4 { margin: 0 0 4px !important; color: #fcd34d; font-size: 12px; font-weight: 750; }
         .card-detail-layout > div:nth-child(2) .card-system-effect-item > .card-system-effect-label { display: inline-flex !important; align-items: center; width: fit-content; margin: 0 0 8px !important; padding: 3px 7px !important; border: 1px solid; border-radius: 5px; box-sizing: border-box; font-size: 11px !important; font-weight: 800 !important; line-height: 1.4; }
@@ -1153,6 +1311,13 @@ export default function App() {
         .ability-condition-black { background: rgba(17,24,39,.42); border-color: #374151; color: #f9fafb; }
         .ability-condition-file { background: rgba(236,72,153,.16); border-color: #db2777; color: #fbcfe8; }
         .ability-condition-neutral { background: rgba(51,65,85,.20); border-color: #64748b; color: #f1f5f9; }
+        .ability-color-circle { display: inline-flex; align-items: center; justify-content: center; vertical-align: -0.15em; width: 1.38em; min-width: 1.38em; height: 1.38em; margin: 0 .08em; padding: 0; border: 1px solid rgba(255,255,255,.24); border-radius: 999px; box-sizing: border-box; font-size: .78em; font-weight: 900; line-height: 1; white-space: nowrap; box-shadow: 0 0 0 1px rgba(0,0,0,.16); }
+        .ability-color-blue { background: #2563eb; border-color: #60a5fa; color: #fff; }
+        .ability-color-red { background: #dc2626; border-color: #f87171; color: #fff; }
+        .ability-color-yellow { background: #facc15; border-color: #fde047; color: #1f2937; }
+        .ability-color-green { background: #16a34a; border-color: #4ade80; color: #fff; }
+        .ability-color-black { background: #111827; border-color: #9ca3af; color: #f9fafb; }
+        .ability-color-white { background: #f8fafc; border-color: #94a3b8; color: #111827; }
         .effect-badge-hirameki { color: #fcd34d; background: rgba(251,191,36,.11); border-color: rgba(251,191,36,.18); }
         .effect-badge-cutin { color: #7dd3fc; background: rgba(56,189,248,.11); border-color: rgba(56,189,248,.18); }
         .keyword-assault { color: #fda4af; background: rgba(244,63,94,.12); border-color: rgba(251,113,133,.22); }
@@ -1160,7 +1325,7 @@ export default function App() {
         .keyword-gale { color: #7dd3fc; background: rgba(14,165,233,.12); border-color: rgba(56,189,248,.22); }
         .effect-badge.conditional { border-style: solid; opacity: .95; }
         .keyword-other { color: #c4b5fd; background: rgba(139,92,246,.12); border-color: rgba(167,139,250,.22); }
-        .detail-keyword-badges { padding: 2px 0; }
+        .detail-keyword-badges { padding: 2px 0 2px 8px !important; margin-left: 0 !important; }
         .detail-keyword-badges .effect-badge { font-size: 11px !important; line-height: 1.4; padding: 3px 6px; font-weight: 700; }
         .keyword-tag-dots { display: flex; align-items: center; justify-content: flex-end; flex: 0 0 auto; flex-wrap: nowrap; gap: 3px; max-width: 38%; min-height: 0; margin: 3px 0 0; overflow: hidden; }
         .keyword-tag-dot { display: inline-block; width: 6px; height: 6px; flex: 0 0 6px; border-radius: 999px; box-shadow: 0 0 0 1px rgba(255,255,255,.18); }
@@ -1168,6 +1333,25 @@ export default function App() {
         .keyword-dot-swift { background: #4ade80; }
         .keyword-dot-gale { background: #38bdf8; }
         .keyword-dot-other { background: #a78bfa; }
+        .deck-card-image-wrap { position: relative; width: 100%; overflow: hidden; background: #0d1524; }
+        .deck-feature-dots { position: absolute; z-index: 5; top: 50%; right: 7px; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; pointer-events: none; }
+        .deck-feature-dot { display: block; width: 7px; height: 7px; flex: 0 0 7px; border: 1px solid rgba(255,255,255,.30); border-radius: 999px; box-shadow: 0 1px 3px rgba(0,0,0,.5), 0 0 0 1px rgba(0,0,0,.25); }
+        .deck-feature-dot-hirameki { background: #e25822; border-color: #ff9a70; }
+        .deck-feature-dot-cutin { background: #38bdf8; border-color: #bae6fd; }
+        .card-search-alias-section { display: flex; flex-direction: column; gap: 6px; margin-top: 0; padding: 2px 8px 0; }
+        .card-search-alias-display { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+        .card-search-alias-tags { min-width: 0; margin: 0; color: #8b96a8; font-size: 10px; line-height: 1.6; overflow-wrap: anywhere; }
+        .card-detail-layout > div:nth-child(2) .card-search-alias-tags { color: #8b96a8 !important; font-size: 10px !important; }
+        .card-search-alias-empty { color: #68758a; font-style: italic; }
+        .card-search-alias-edit-button { flex: 0 0 auto; padding: 1px 5px; border: 1px solid rgba(148,163,184,.15); border-radius: 5px; color: #8793a7; background: rgba(148,163,184,.05); font-size: 9px; line-height: 1.5; }
+        .card-search-alias-edit-button:hover { border-color: rgba(148,163,184,.4); color: #dbe5f2; }
+        .card-search-alias-input { width: 100%; min-height: 60px; resize: vertical; border: 1px solid rgba(148,163,184,.22); border-radius: 7px; padding: 7px 8px; outline: none; color: #e2e8f0; background: #070c14; font-size: 11px; line-height: 1.5; }
+        .card-search-alias-input:focus { border-color: rgba(148,163,184,.55); }
+        .card-search-alias-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; }
+        .card-search-alias-help { color: #68758a; font-size: 9px; }
+        .card-search-alias-action-buttons { display: flex; gap: 5px; }
+        .card-search-alias-action-buttons button { border: 1px solid rgba(148,163,184,.2); border-radius: 5px; padding: 3px 7px; color: #9aa8bd; background: rgba(148,163,184,.06); font-size: 10px; }
+        .card-search-alias-action-buttons .save { border-color: rgba(244,114,182,.45); color: #fbcfe8; background: rgba(219,39,119,.12); }
         .card-meta-item-traits { grid-column: 1 / -1; }
         .card-trait-list { display: flex; flex-wrap: wrap; gap: 5px; }
         .card-trait-chip { display: inline-flex; align-items: center; border: 1px solid rgba(148,163,184,.18); border-radius: 5px; background: rgba(148,163,184,.08); padding: 3px 6px; color: #dbe5f2; font-size: 11px; font-weight: 650; line-height: 1.4; }
@@ -1303,13 +1487,14 @@ export default function App() {
             <div className="flex flex-wrap items-center gap-2"><button onClick={clearFilters} className="filters-reset-button">필터 초기화</button></div>
           </div>
 
-          <div className="app-filters mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+          <div className="app-filters mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-7">
             <input value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder="이름 · 효과 · 카드 ID" aria-label="카드 검색" className="app-control app-search-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-3 py-2 text-sm outline-none transition placeholder:text-slate-600 focus:border-rose-400/70" />
             <select aria-label="색상 필터" value={colorFilter} onChange={(event) => setColorFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 색상</option>{colorOptions.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}</select>
             <select aria-label="종류 필터" value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 종류</option>{typeOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select>
             <select aria-label="레어도 필터" value={rarityFilter} onChange={(event) => setRarityFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 레어도</option>{rarityOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select>
             <select aria-label="코스트 필터" value={costFilter} onChange={(event) => setCostFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 코스트</option>{costOptions.map((value) => <option key={String(value)} value={String(value)}>{value}</option>)}</select>
             <select aria-label="LP 필터" value={lpFilter} onChange={(event) => setLpFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 LP</option>{lpOptions.map((value) => <option key={String(value)} value={String(value)}>{value}</option>)}</select>
+            <select aria-label="특수 키워드 필터" value={keywordFilter} onChange={(event) => setKeywordFilter(event.target.value)} className="app-control min-w-0 rounded-lg border border-white/10 bg-[#090f1b] px-2 py-2 text-xs outline-none focus:border-rose-400/70"><option value="">모든 특수 키워드</option>{keywordOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select>
           </div>
 
           {visibleCards.length === 0 ? <p className="rounded-xl border border-solid border-white/15 p-8 text-center text-sm text-slate-400">조건에 맞는 카드가 없어요.</p> : (
@@ -1375,7 +1560,14 @@ export default function App() {
                   <article className="deck-special-card">
                     <span className="deck-special-role">파트너</span>
                     <button onClick={() => openCardDetail(partnerCard, 'cards')} className="deck-special-open" title={getDeckCardSummary(partnerCard)}>
-                      {partnerCard.imageUrl ? <img src={partnerCard.imageUrl} loading="lazy" alt={partnerCard.name} className="deck-special-image" /> : <div className="deck-special-image flex items-center justify-center text-[9px] text-slate-500">이미지 없음</div>}
+                      <div className="deck-card-image-wrap">
+                        {partnerCard.imageUrl ? <img src={partnerCard.imageUrl} loading="lazy" alt={partnerCard.name} className="deck-special-image" /> : <div className="deck-special-image flex items-center justify-center text-[9px] text-slate-500">이미지 없음</div>}
+                        {(partnerCard.keywordTags?.length > 0 || partnerCard.hiramekiEffect || partnerCard.cutInEffect) && <div className="deck-feature-dots" aria-label={`특성: ${(partnerCard.keywordTags || []).join(', ')}${partnerCard.hiramekiEffect ? ', 히라메키' : ''}${partnerCard.cutInEffect ? ', 컷인' : ''}`}>
+                          {(partnerCard.keywordTags || []).map((tag, dotIndex) => <span key={`partner-keyword-dot-${dotIndex}-${tag}`} className={`deck-feature-dot keyword-dot-${keywordTagClass(tag).replace('keyword-', '')}`} title={tag} />)}
+                          {partnerCard.hiramekiEffect && <span className="deck-feature-dot deck-feature-dot-hirameki" title="히라메키" />}
+                          {partnerCard.cutInEffect && <span className="deck-feature-dot deck-feature-dot-cutin" title="컷인" />}
+                        </div>}
+                      </div>
                       <div className="deck-special-name"><span className="deck-card-primary">{getDeckCardNameLine(partnerCard)}</span></div>
                       <span className="deck-special-id">{partnerCard.cardId || partnerCard.cardNum || '파트너 카드'}</span>
                     </button>
@@ -1393,7 +1585,14 @@ export default function App() {
                   <article className="deck-special-card">
                     <span className="deck-special-role is-event">사건</span>
                     <button onClick={() => openCardDetail(eventCard, 'cards')} className="deck-special-open" title={getDeckCardSummary(eventCard)}>
-                      {eventCard.imageUrl ? <img src={eventCard.imageUrl} loading="lazy" alt={eventCard.name} className="deck-special-image" /> : <div className="deck-special-image flex items-center justify-center text-[9px] text-slate-500">이미지 없음</div>}
+                      <div className="deck-card-image-wrap">
+                        {eventCard.imageUrl ? <img src={eventCard.imageUrl} loading="lazy" alt={eventCard.name} className="deck-special-image" /> : <div className="deck-special-image flex items-center justify-center text-[9px] text-slate-500">이미지 없음</div>}
+                        {(eventCard.keywordTags?.length > 0 || eventCard.hiramekiEffect || eventCard.cutInEffect) && <div className="deck-feature-dots" aria-label={`특성: ${(eventCard.keywordTags || []).join(', ')}${eventCard.hiramekiEffect ? ', 히라메키' : ''}${eventCard.cutInEffect ? ', 컷인' : ''}`}>
+                          {(eventCard.keywordTags || []).map((tag, dotIndex) => <span key={`event-keyword-dot-${dotIndex}-${tag}`} className={`deck-feature-dot keyword-dot-${keywordTagClass(tag).replace('keyword-', '')}`} title={tag} />)}
+                          {eventCard.hiramekiEffect && <span className="deck-feature-dot deck-feature-dot-hirameki" title="히라메키" />}
+                          {eventCard.cutInEffect && <span className="deck-feature-dot deck-feature-dot-cutin" title="컷인" />}
+                        </div>}
+                      </div>
                       <div className="deck-special-name"><span className="deck-card-primary">{getDeckCardNameLine(eventCard)}</span></div>
                       <span className="deck-special-id">{eventCard.cardId || eventCard.cardNum || '사건 카드'}</span>
                     </button>
@@ -1432,7 +1631,14 @@ export default function App() {
                   {deckSlots.map((card, index) => card ? (
                     <article key={card.deckSlotKey} className="deck-card-slot">
                       <button onClick={() => openCardDetail(card, 'deck')} className="deck-card-open" title={getDeckCardSummary(card)}>
-                        {card.imageUrl ? <img src={card.imageUrl} loading="lazy" alt={card.name} className="deck-card-image" /> : <div className="deck-card-image flex items-center justify-center text-[9px] text-slate-500">이미지 없음</div>}
+                        <div className="deck-card-image-wrap">
+                          {card.imageUrl ? <img src={card.imageUrl} loading="lazy" alt={card.name} className="deck-card-image" /> : <div className="deck-card-image flex items-center justify-center text-[9px] text-slate-500">이미지 없음</div>}
+                          {(card.keywordTags?.length > 0 || card.hiramekiEffect || card.cutInEffect) && <div className="deck-feature-dots" aria-label={`특성: ${(card.keywordTags || []).join(', ')}${card.hiramekiEffect ? ', 히라메키' : ''}${card.cutInEffect ? ', 컷인' : ''}`}>
+                            {(card.keywordTags || []).map((tag, dotIndex) => <span key={`keyword-dot-${dotIndex}-${tag}`} className={`deck-feature-dot keyword-dot-${keywordTagClass(tag).replace('keyword-', '')}`} title={tag} />)}
+                            {card.hiramekiEffect && <span className="deck-feature-dot deck-feature-dot-hirameki" title="히라메키" />}
+                            {card.cutInEffect && <span className="deck-feature-dot deck-feature-dot-cutin" title="컷인" />}
+                          </div>}
+                        </div>
                         <div className="deck-card-name"><span className="deck-card-primary">{getDeckCardNameLine(card)}</span><span className="deck-card-secondary">{getDeckCardStatsLine(card)}</span></div>
                       </button>
                       <button onClick={() => removeCard(card.key)} aria-label={`${card.name} 한 장 제거`} title="한 장 제거" className="deck-card-remove">−</button>
@@ -1474,6 +1680,18 @@ export default function App() {
                   <div className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><h3 className="mb-2 text-xs font-bold text-slate-300">카드 효과</h3><div className="card-effect-text text-xs leading-6 text-slate-200">{renderAbilityText(selectedCard.ability) || '효과 텍스트 없음'}</div></div>
                   {selectedCard.flavor && <div className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><h3 className="mb-2 text-xs font-bold text-slate-300">플레이버 텍스트</h3><p className="whitespace-pre-wrap break-words text-xs leading-5 text-slate-300">{selectedCard.flavor}</p></div>}
                   {(selectedCard.originalName !== selectedCard.name || selectedCard.originalAbility !== selectedCard.ability) && <details className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><summary className="cursor-pointer text-xs font-semibold text-slate-300">일본어 원문 보기</summary><div className="mt-3 space-y-3 text-xs leading-5"><p className="card-original-name-text"><span className="text-slate-500">이름: </span>{selectedCard.originalName || '-'}</p><p className="card-original-effect-text whitespace-pre-wrap break-words"><span className="text-slate-500">효과: </span>{renderAbilityText(selectedCard.originalAbility) || '-'}</p></div></details>}
+                  <div className="card-search-alias-section" aria-label="검색용 별명 태그">
+                    {!editingSelectedAliases ? <div className="card-search-alias-display">
+                      <p className="card-search-alias-tags">{selectedCardSearchAliases.length ? selectedCardSearchAliases.map((alias) => <span key={alias}>#{alias} </span>) : <span className="card-search-alias-empty">검색 별명 태그 없음</span>}</p>
+                      <div className="card-search-alias-action-buttons">
+                        <button type="button" onClick={exportSearchAliasData}>JSON 내보내기</button>
+                        <button type="button" onClick={() => startSearchAliasEdit(selectedCard)} className="card-search-alias-edit-button">태그 편집</button>
+                      </div>
+                    </div> : <>
+                      <textarea className="card-search-alias-input" rows={2} value={searchAliasDraft} onChange={(event) => setSearchAliasDraft(event.target.value)} aria-label="검색용 별명 태그 편집" placeholder="예: 샤로마, 별명2" />
+                      <div className="card-search-alias-actions"><span className="card-search-alias-help">쉼표/줄바꿈 구분 · 사이트 데이터 보존은 JSON 내보내기로</span><div className="card-search-alias-action-buttons"><button type="button" onClick={cancelSearchAliasEdit}>취소</button><button type="button" className="save" onClick={() => saveSearchAliasEdit(selectedCard)}>화면에 적용</button></div></div>
+                    </>}
+                  </div>
                 </div>
               </div>
             </div>
