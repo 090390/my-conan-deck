@@ -65,7 +65,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
       }
 
       setRoom({ id: result.out_room_id, inviteCode: result.out_invite_code });
-      setNotice("방을 만들었어! 친구에게 초대 코드를 보내 줘.");
+      setNotice("방이 생성되었습니다. 친구에게 초대 코드를 전달해 주세요.");
     } catch (err) {
       setError(err?.message || "방을 만들지 못했습니다.");
     } finally {
@@ -76,7 +76,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
   async function joinRoom() {
     const code = inviteCodeInput.trim().toUpperCase();
     if (!code) {
-      setError("친구에게 받은 초대 코드를 입력해 줘.");
+      setError("친구에게 받은 초대 코드를 입력해 주세요.");
       return;
     }
 
@@ -95,7 +95,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
       if (!result?.out_room_id) throw new Error("입장 결과를 확인할 수 없습니다.");
 
       setRoom({ id: result.out_room_id, inviteCode: code });
-      setNotice("방에 입장했어!");
+      setNotice("방에 입장했습니다.");
     } catch (err) {
       setError(err?.message || "방에 입장하지 못했습니다.");
     } finally {
@@ -136,7 +136,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
       )
       .subscribe((status) => {
         if (active && (status === "CHANNEL_ERROR" || status === "TIMED_OUT")) {
-          setError("실시간 연결에 문제가 있어. 새로고침 후 다시 확인해 줘.");
+          setError("실시간 연결에 문제가 발생했습니다. 새로고침 후 다시 확인해 주세요.");
         }
       });
 
@@ -149,9 +149,9 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
   async function copyInviteCode() {
     try {
       await navigator.clipboard.writeText(room.inviteCode);
-      setNotice("초대 코드를 복사했어!");
+      setNotice("초대 코드를 복사했습니다.");
     } catch {
-      setNotice("초대 코드를 직접 선택해서 복사해 줘.");
+      setNotice("초대 코드를 직접 선택한 뒤 복사해 주세요.");
     }
   }
 
@@ -192,7 +192,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
       if (rpcError) throw rpcError;
       setNicknameDirty(false);
       await loadPlayers(room.id);
-      setNotice(nicknameDraft.trim() ? "이번 방에서 사용할 임시 닉네임을 저장했어." : "임시 닉네임을 지웠어. 기본 플레이어 이름을 사용해.");
+      setNotice(nicknameDraft.trim() ? "이번 방에서 사용할 임시 닉네임을 저장했습니다." : "임시 닉네임을 삭제했습니다. 기본 플레이어 이름을 사용합니다.");
     } catch (err) {
       setError(err?.message || "임시 닉네임을 저장하지 못했습니다.");
     } finally { setSavingNickname(false); }
@@ -224,7 +224,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
         if (queryError) throw queryError;
         if (active) {
           setPlayers(data ?? []);
-          setNotice("덱 구성이 바뀌어서 준비를 취소했어. 수정한 덱으로 다시 준비해 줘.");
+          setNotice("덱 구성이 변경되어 준비가 취소되었습니다. 수정한 덱으로 다시 준비해 주세요.");
         }
       } catch (err) {
         if (active) setError(err?.message || "덱 변경 후 준비 상태를 갱신하지 못했습니다.");
@@ -287,7 +287,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
       if (rpcError) throw rpcError;
       setReadyDeckSignature(deckSignature);
       await loadPlayers(room.id);
-      setNotice("덱은 비공개로 저장됐고, 준비 완료로 표시했어.");
+      setNotice("덱은 비공개로 저장되었으며, 준비 완료 상태로 표시되었습니다.");
     } catch (err) {
       setError(err?.message || "덱을 제출하지 못했습니다.");
     } finally {
@@ -307,7 +307,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
       });
       if (rpcError) throw rpcError;
       await loadPlayers(room.id);
-      setNotice("준비를 취소했어. 덱을 바꾼 뒤 다시 준비할 수 있어.");
+      setNotice("준비가 취소되었습니다. 덱을 변경한 뒤 다시 준비할 수 있습니다.");
     } catch (err) {
       setError(err?.message || "준비를 취소하지 못했습니다.");
     } finally {
@@ -359,16 +359,18 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
         <div>
           <p style={{ margin: "0 0 5px", color: "#fb7185", fontSize: 10, fontWeight: 800, letterSpacing: ".18em" }}>PRIVATE MATCH</p>
           <h2 style={{ margin: 0, fontSize: 22, fontWeight: 850 }}>비공개 대전 방</h2>
-          <p style={{ color: "#9aa8bd", marginTop: 7, fontSize: 13 }}>친구와 방을 만들고, 각자 덱을 준비해 봐. 덱 목록은 상대에게 공개되지 않아.</p>
+          <p style={{ color: "#9aa8bd", marginTop: 7, fontSize: 13 }}>친구와 2인 비공개 방에서 각자 준비한 덱을 사용하여 모의전을 진행합니다.</p>
         </div>
         {room && <span style={{ padding: "5px 9px", border: "1px solid rgba(134,239,172,.22)", borderRadius: 7, color: "#86efac", background: "rgba(34,197,94,.08)", fontSize: 11, fontWeight: 750 }}>대기실 입장 중</span>}
       </div>
+
+      {room && matchPhase === "playing" && !showFieldOnly && <div style={{ marginTop: 14, padding: 12, borderRadius: 10, border: "1px solid rgba(147,197,253,.24)", background: "rgba(30,58,95,.2)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}><div><strong style={{ display: "block", fontSize: 13, color: "#dbeafe" }}>대전 진행 중</strong><span style={{ display: "block", marginTop: 3, color: "#9aa8bd", fontSize: 11 }}>필드 화면이 접혀 있습니다. 버튼을 눌러 게임 필드 전체 화면으로 돌아갈 수 있습니다.</span></div><button type="button" style={buttonStyle} onClick={() => setShowFieldOnly(true)}>게임 필드 전체 화면으로 돌아가기</button></div>}
 
       {!room ? (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: 16, marginTop: 20 }}>
           <div style={{ border: "1px solid rgba(255,255,255,.08)", borderRadius: 12, padding: 16, background: "#0b1220" }}>
             <h3 style={{ margin: "0 0 8px", fontSize: 14 }}>새 방 만들기</h3>
-            <p style={{ margin: "0 0 14px", color: "#8998ae", fontSize: 12 }}>방을 만든 뒤 초대 코드를 친구에게 보내 줘.</p>
+            <p style={{ margin: "0 0 14px", color: "#8998ae", fontSize: 12 }}>방을 만든 뒤 초대 코드를 친구에게 전달해 주세요.</p>
             <button type="button" style={buttonStyle} disabled={loading} onClick={createRoom}>{loading ? "처리 중..." : "새 방 만들기"}</button>
           </div>
           <div style={{ border: "1px solid rgba(255,255,255,.08)", borderRadius: 12, padding: 16, background: "#0b1220" }}>
@@ -388,7 +390,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
 
           <div style={{ marginTop: 16, padding: 14, border: "1px solid rgba(255,255,255,.08)", borderRadius: 10, background: "#0b1220" }}>
             <h3 style={{ margin: "0 0 6px", fontSize: 13 }}>이번 방에서 표시할 이름</h3>
-            <p style={{ margin: "0 0 9px", color: "#8998ae", fontSize: 11, lineHeight: 1.6 }}>선택 사항이야. 비워 두면 플레이어 1/2로 보여. 이 이름은 이 방에만 저장되고 게임이 끝나면 자동으로 지워져.</p>
+            <p style={{ margin: "0 0 9px", color: "#8998ae", fontSize: 11, lineHeight: 1.6 }}>선택 사항입니다. 비워 둘 시 플레이어 1/2로 표시됩니다. 이 이름은 이 방에만 저장되며 게임이 끝나면 자동으로 삭제됩니다.</p>
             <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
               <input value={nicknameDraft} onChange={(event) => { setNicknameDraft(event.target.value); setNicknameDirty(true); }} maxLength={16} placeholder={`기본 이름: 플레이어 ${myPlayer?.seat || "?"}`} aria-label="이번 방 임시 닉네임" style={{ ...inputStyle, flex: "1 1 220px", minWidth: 0 }} />
               <button type="button" style={{ ...buttonStyle, background: "#374151" }} disabled={savingNickname || loading} onClick={() => void saveTemporaryNickname()}>{savingNickname ? "저장 중…" : "닉네임 저장"}</button>
@@ -411,13 +413,13 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
           <div style={{ marginTop: 18, padding: 16, border: "1px solid rgba(255,255,255,.08)", borderRadius: 12, background: "#0b1220" }}>
             <h3 style={{ margin: "0 0 8px", fontSize: 14 }}>내 덱 준비</h3>
             <p style={{ margin: "0 0 10px", color: "#aab5c8", fontSize: 12 }}>메인 덱 {deckTotal}/40장 · 파트너 {partnerLooksValid ? "선택됨" : "미선택"} · 사건 {eventLooksValid ? "선택됨" : "미선택"}</p>
-            {!canReady && <p style={{ margin: "0 0 12px", color: "#fda4af", fontSize: 12, lineHeight: 1.6 }}>준비하려면 메인 덱을 정확히 40장으로 맞추고, 파트너 카드와 사건 카드를 각각 1장씩 선택해 줘. 덱 편집은 위의 ‘내 덱 구성’ 탭에서 할 수 있어.</p>}
+            {!canReady && <p style={{ margin: "0 0 12px", color: "#fda4af", fontSize: 12, lineHeight: 1.6 }}>준비하려면 메인 덱을 정확히 40장으로 맞추고, 파트너 카드와 사건 카드를 각각 1장씩 선택해 주세요. 덱 편집은 위의 ‘내 덱 구성’ 탭에서 할 수 있습니다.</p>}
             {myPlayer?.is_ready ? (
               <button type="button" style={{ ...buttonStyle, background: "#4b2637" }} disabled={loading} onClick={cancelReady}>{loading ? "처리 중..." : "준비 취소 · 덱 수정하기"}</button>
             ) : (
               <button type="button" style={{ ...buttonStyle, background: canReady ? "#166534" : "#263040", opacity: !canReady || loading ? 0.55 : 1 }} disabled={!canReady || loading} onClick={markReady}>{loading ? "저장 중..." : "덱을 비공개로 제출하고 준비 완료"}</button>
             )}
-            <p style={{ margin: "10px 0 0", color: "#74839a", fontSize: 11, lineHeight: 1.6 }}>상대에게는 준비 여부만 표시돼. 카드별 덱 목록은 별도 비공개 테이블에 저장돼.</p>
+            <p style={{ margin: "10px 0 0", color: "#74839a", fontSize: 11, lineHeight: 1.6 }}>상대에게는 준비 여부만 표시됩니다. 카드별 덱 목록은 별도의 비공개 테이블에 저장됩니다.</p>
           </div>
 
           {bothReady && <MatchStartFlow roomId={room.id} userId={userId} players={players} cards={cards} onPhaseChange={handleMatchPhaseChange} />}
