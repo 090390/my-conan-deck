@@ -10,6 +10,11 @@ function n(value, fallback = 0) {
   const valueNumber = Number(value);
   return Number.isFinite(valueNumber) ? valueNumber : fallback;
 }
+function countDelta(current, previous) {
+  const delta = Number(current || 0) - Number(previous ?? current ?? 0);
+  return delta === 0 ? "±0" : `${delta > 0 ? "+" : ""}${delta}`;
+}
+
 function promptCount(label, defaultValue = 1, max = 20, min = 1) {
   const raw = window.prompt(`${label} (${min}~${max}장)`, String(defaultValue));
   if (raw === null) return null;
@@ -19,6 +24,20 @@ function promptCount(label, defaultValue = 1, max = 20, min = 1) {
     return null;
   }
   return value;
+}
+
+function normalizeRuleCardId(value) {
+  const raw = String(value ?? "").trim().toLocaleUpperCase();
+  if (!raw) return "";
+  return /^\d+$/.test(raw) ? String(Number(raw)) : raw;
+}
+
+function cardHasRuleId(card, targetId) {
+  const source = card?.sourceData && typeof card.sourceData === "object" ? card.sourceData : card?.raw && typeof card.raw === "object" ? card.raw : {};
+  const target = normalizeRuleCardId(targetId);
+  return [card?.key, card?.databaseId, card?.cardId, card?.cardNum, card?.id,
+    source?.id, source?.databaseId, source?.database_id, source?.cardId, source?.card_id, source?.cardNum, source?.card_num]
+    .some((value) => normalizeRuleCardId(value) === target);
 }
 
 export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveField = null }) {
@@ -40,6 +59,10 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
   const [loadingOpponentDeck, setLoadingOpponentDeck] = useState(false);
   const [showHandRevealSelector, setShowHandRevealSelector] = useState(false);
   const [selectedHandRevealIds, setSelectedHandRevealIds] = useState([]);
+  const [setCardModal, setSetCardModal] = useState(null);
+  const [showPlayHistory, setShowPlayHistory] = useState(false);
+  const [playHistory, setPlayHistory] = useState([]);
+  const [loadingPlayHistory, setLoadingPlayHistory] = useState(false);
 
   const myPeekSignature = useMemo(() => {
     const peek = game?.my_deck_peek;
@@ -107,7 +130,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
       setGame(data && typeof data === "object" ? data : null);
       setNotice(data?.last_action_label || "행동을 반영했습니다.");
       if (action === "next_hint") setSelectedNextHint("");
-      if (["declare_contact", "attack_character", "attack_evidence", "guard_with_character", "decline_guard", "contact_use_cutin", "contact_pass_cutin"].includes(action)) setSelectedAttacker("");
+      if (["declare_contact", "attack_character", "attack_evidence", "guard_with_character", "decline_guard", "guard_contact_with_character", "decline_contact_guard", "contact_use_cutin", "contact_pass_cutin"].includes(action)) setSelectedAttacker("");
       if ((action === "move_field_card" || action === "move_hand_card") && (payload.owner_user_id || userId) === userId) setDetailCard(null);
     } catch (err) {
       const message = err?.message || "행동을 처리하지 못했습니다.";
@@ -123,9 +146,11 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
   const myHand = Array.isArray(game?.my_hand) ? game.my_hand : [];
   const sharedHandReveal = game?.shared_hand_reveal && Array.isArray(game.shared_hand_reveal.cards) ? game.shared_hand_reveal : null;
   const myRemoveCards = Array.isArray(game?.my_remove_cards) ? game.my_remove_cards : [];
+  const myFileCards = Array.isArray(game?.my_file_cards) ? game.my_file_cards : [];
   const opponentRemoveCards = Array.isArray(game?.opponent_remove_cards) ? game.opponent_remove_cards : [];
   const pending = game?.pending_action || null;
   const pendingIsForMe = pending?.target_user_id === userId;
+  const isContactGuardPending = pending?.type === "character_contact_guard";
   const isContactPending = pending?.type === "character_contact";
   const isMisleadPending = pending?.type === "mislead_response";
   const isMyTurn = game?.current_turn_user_id === userId;
@@ -170,6 +195,31 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
     } catch (err) {
       showBlockedReason(err?.message || "상대 덱을 불러오지 못했습니다.");
     } finally { setLoadingOpponentDeck(false); }
+  }
+  async function openPlayHistory() {
+    if (loadingPlayHistory) return;
+    setLoadingPlayHistory(true);
+    try {
+      const { data, error: rpcError } = await supabase.rpc("get_private_match_play_history", { p_room_id: roomId });
+      if (rpcError) throw rpcError;
+      setPlayHistory(Array.isArray(data) ? data : Array.isArray(data?.history) ? data.history : []);
+      setShowPlayHistory(true);
+    } catch (err) {
+      showBlockedReason(err?.message || "플레이 기록을 불러오지 못했습니다.");
+    } finally { setLoadingPlayHistory(false); }
+  }
+  function openSetCardModal(hostCard, hostOwnerId, mode = "set", source = "hand") {
+    setSetCardModal({ hostCard, hostOwnerId, mode, source, faceUp: false });
+  }
+  function selectSetSourceCard(card) {
+    if (!setCardModal) return;
+    const { hostCard, hostOwnerId, mode, source, faceUp } = setCardModal;
+    if (mode === "stack") {
+      void runAction("stack_remove_under_field", { host_instance_id: hostCard.instance_id, host_owner_user_id: hostOwnerId, source_instance_id: card.instance_id, face_up: true });
+    } else {
+      void runAction("set_card_to_field", { host_instance_id: hostCard.instance_id, host_owner_user_id: hostOwnerId, source, source_instance_id: card.instance_id, face_up: faceUp });
+    }
+    setSetCardModal(null);
   }
   function promptApBonus(card, ownerId) {
     const amount = promptCount(`${nameOf(card)}에 이번 턴 동안 추가할 AP`, 1000, 10000);
@@ -254,7 +304,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
           void runAction("declare_contact", { attacker_instance_id: selectedAttacker, target_user_id: ownerId, target_instance_id: instance.instance_id, allow_active_target: allowActiveTargets, allow_newly_played: allowFreshlyPlayed });
         }}>컨택 시작</button>}
         {mine && !isEvent && canActMain && <div style={{ display: "grid", gap: 4, marginTop: 5 }}>
-          <button type="button" style={{ ...st.smallButton, opacity: cardStatus !== "active" || notReadyYet ? .72 : 1 }} disabled={loading} title={cardStatus !== "active" ? "슬립/스턴 상태에서는 추리할 수 없습니다." : notReadyYet ? "이번 턴에 출동한 카드는 기본적으로 행동할 수 없습니다." : ""} onClick={() => { if (cardStatus !== "active") { showBlockedReason("슬립/스턴 상태의 캐릭터는 추리할 수 없습니다."); return; } if (notReadyYet) { showBlockedReason("등장 후 1턴이 지나지 않아 행동할 수 없습니다. 효과 예외 옵션을 활성화해 주세요."); return; } invokeInvestigate(instance); }}>추리</button>
+          <button type="button" style={{ ...st.smallButton, opacity: cardStatus !== "active" || notReadyYet ? .72 : 1 }} disabled={loading} title={cardStatus !== "active" ? "슬립/스턴 상태에서는 추리할 수 없습니다." : notReadyYet ? "이번 턴에 등장한 카드는 기본적으로 행동할 수 없습니다." : ""} onClick={() => { if (cardStatus !== "active") { showBlockedReason("슬립/스턴 상태의 캐릭터는 추리할 수 없습니다."); return; } if (notReadyYet) { showBlockedReason("등장 후 1턴이 지나지 않아 행동할 수 없습니다. 효과 예외 옵션을 활성화해 주세요."); return; } invokeInvestigate(instance); }}>추리</button>
           <button type="button" style={{ ...st.smallButton, opacity: cardStatus !== "active" || notReadyYet ? .72 : 1, borderColor: selectedAttacker === instance.instance_id ? "#fb7185" : "rgba(255,255,255,.13)" }} disabled={loading} onClick={() => { if (cardStatus !== "active") { showBlockedReason("슬립/스턴 상태의 캐릭터는 공격자로 지정할 수 없습니다."); return; } if (notReadyYet) { showBlockedReason("등장 후 1턴이 지나지 않아 공격자로 선택할 수 없습니다. 효과 예외 옵션을 활성화해 주세요."); return; } setSelectedAttacker((current) => current === instance.instance_id ? "" : instance.instance_id); }}>{selectedAttacker === instance.instance_id ? "공격자 선택 해제" : "공격자로 선택"}</button>
           <button type="button" style={{ ...st.smallButton, opacity: cardStatus !== "active" || notReadyYet ? .72 : 1 }} disabled={loading} onClick={() => { if (cardStatus !== "active") { showBlockedReason("슬립/스턴 상태의 캐릭터는 공격할 수 없습니다."); return; } if (notReadyYet && !allowFreshlyPlayed) { showBlockedReason("등장 후 1턴이 지나지 않아 공격할 수 없습니다. 효과 예외 옵션을 활성화해 주세요."); return; } if (!opponentBoard?.evidence_count) { showBlockedReason("상대 증거 에이리어에 공격할 증거가 없습니다."); return; } void runAction("attack_evidence", { attacker_instance_id: instance.instance_id, target_user_id: opponentBoard?.user_id, allow_newly_played: allowFreshlyPlayed }); }}>상대 증거 공격</button>
         </div>}
@@ -266,7 +316,11 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
           <button type="button" style={st.smallButton} disabled={loading} onClick={() => moveField(instance, ownerId, "hand")}>손패로 이동</button>
           <button type="button" style={st.smallButton} disabled={loading} onClick={() => moveField(instance, ownerId, "deck")}>덱 아래로 이동</button>
           <button type="button" style={st.smallButton} disabled={loading} onClick={() => moveField(instance, ownerId, "remove")}>리무브로 이동</button>
+          <button type="button" style={{ ...st.smallButton, color: C.gold, borderColor: "rgba(252,211,77,.4)" }} disabled={loading} onClick={() => { if (window.confirm(`${nameOf(instance)} 카드를 앞면 공개 상태로 증거 에이리어 맨 위에 이동할까요?`)) void runAction("move_field_card", { instance_id: instance.instance_id, owner_user_id: ownerId, destination: "evidence_top" }); }}>앞면 증거로 맨 위에 올리기</button>
         </div></details>}
+        {Array.isArray(instance.set_cards) && instance.set_cards.length > 0 && <div style={{ marginTop: 6, padding: 5, border: "1px dashed rgba(252,211,77,.38)", borderRadius: 6, background: "rgba(120,83,10,.08)" }}><div style={{ color: C.gold, fontSize: 8, fontWeight: 900, marginBottom: 4 }}>세트 카드 · 현장 장수 제한에서 제외</div><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(42px,1fr))", gap: 4 }}>{instance.set_cards.map((setCard) => <div key={setCard.instance_id} style={{ minWidth: 0 }}><button type="button" title={nameOf(setCard)} onClick={() => (setCard.face_up || setCard.set_owner_user_id === userId) ? openDetails(setCard) : showBlockedReason("상대의 뒷면 세트 카드는 앞면으로 공개된 뒤 상세 정보를 확인할 수 있습니다.")} style={{ width: "100%", padding: 2, border: "1px solid rgba(255,255,255,.12)", borderRadius: 4, background: "#080d16" }}>{setCard.face_up && infoFor(setCard)?.imageUrl ? <img src={infoFor(setCard).imageUrl} alt={nameOf(setCard)} style={{ width: "100%", aspectRatio: "3/4", objectFit: "contain" }} /> : <div style={st.faceDown} />}</button>{!setCard.face_up && canManualEffect && <button type="button" style={{ ...st.smallButton, width: "100%", fontSize: 7, padding: 2, marginTop: 2 }} disabled={loading} onClick={() => void runAction("reveal_set_card", { host_instance_id: instance.instance_id, host_owner_user_id: ownerId, set_instance_id: setCard.instance_id })}>뒤집기</button>}</div>)}</div></div>}
+        {Array.isArray(instance.stacked_cards) && instance.stacked_cards.length > 0 && <div style={{ marginTop: 5, padding: 5, border: "1px dashed rgba(147,197,253,.28)", borderRadius: 6 }}><div style={{ color: C.blue, fontSize: 8, fontWeight: 900, marginBottom: 4 }}>아래에 겹친 카드</div><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(42px,1fr))", gap: 4 }}>{instance.stacked_cards.map((stackCard) => <button key={stackCard.instance_id} type="button" title={nameOf(stackCard)} onClick={() => stackCard.face_up ? openDetails(stackCard) : showBlockedReason("뒷면으로 겹쳐 둔 카드는 공개된 뒤 상세 정보를 확인할 수 있습니다.")} style={{ minWidth: 0, padding: 2, border: "1px solid rgba(255,255,255,.12)", borderRadius: 4, background: "#080d16" }}>{stackCard.face_up && infoFor(stackCard)?.imageUrl ? <img src={infoFor(stackCard).imageUrl} alt={nameOf(stackCard)} style={{ width: "100%", aspectRatio: "3/4", objectFit: "contain" }} /> : <div style={st.faceDown} />}</button>)}</div></div>}
+        {canManualEffect && mine && <details style={{ marginTop: 5 }}><summary style={{ cursor: "pointer", fontSize: 8, color: C.gold }}>세트 · 카드 겹치기</summary><div style={{ display: "grid", gap: 4, marginTop: 5 }}><button type="button" style={st.smallButton} disabled={loading || !myHand.length} onClick={() => openSetCardModal(instance, ownerId, "set", "hand")}>손패에서 세트</button><button type="button" style={st.smallButton} disabled={loading || !myRemoveCards.length} onClick={() => openSetCardModal(instance, ownerId, "set", "remove")}>리무브에서 세트</button><button type="button" style={st.smallButton} disabled={loading || !n(game?.my_deck_count)} onClick={() => openSetCardModal(instance, ownerId, "set", "deck_top")}>덱 위 카드 세트</button><button type="button" style={st.smallButton} disabled={loading || !myRemoveCards.length} onClick={() => openSetCardModal(instance, ownerId, "stack", "remove")}>리무브 카드를 아래에 겹치기</button></div></details>}
       </article>
     );
   }
@@ -280,8 +334,10 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
   const canManualEffect = !game.game_over && !pending && !myBoard?.next_hint_pending && (!game.deck_peek_locked || Boolean(game.my_deck_peek));
   const canTransitionSolution = canActMain && myBoard?.case_phase === "incident" && n(myBoard?.file_count) >= solutionFileThreshold
     && !myBoard?.partner_rested && !myBoard?.partner_assist_used && !myBoard?.next_hint_used && !myBoard?.next_hint_pending;
-  const canWinCase = canActMain && myBoard?.case_phase === "solution" && n(myBoard?.evidence_count) >= winEvidenceThreshold
+  const hasCulpritsCrimeCase = cardHasRuleId(myEventCard || { key: myBoard?.event_key }, "1046");
+  const canWinCase = canActMain && myBoard?.case_phase === "solution" && !hasCulpritsCrimeCase && n(myBoard?.evidence_count) >= winEvidenceThreshold
     && !myBoard?.partner_rested && !myBoard?.partner_assist_used;
+  const canDeclareCulpritsCrime = canActMain && myBoard?.case_phase === "solution" && hasCulpritsCrimeCase;
   const activeSharedPeekCards = Array.isArray(game.shared_deck_peek_cards) ? game.shared_deck_peek_cards : [];
   // Define the current private peek before checking which cards have been selected for sharing.
   // Keeping this declaration order matters: const values are in the temporal dead zone until initialized.
@@ -292,20 +348,25 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
   const deckRemovalCards = Array.isArray(pending?.cards) ? pending.cards : [];
   const deckRemovalAcknowledged = Array.isArray(pending?.acknowledged_user_ids) ? pending.acknowledged_user_ids : [];
   const opponentDeckCardGroup = (card) => {
+    const instanceId = String(card?.instance_id || "");
+    // The configured incident/case card is returned by the RPC with an event-like type,
+    // but it is not part of the normal event-card section.
+    if (instanceId.startsWith("after-game-partner-") || instanceId.startsWith("after-game-event-")) return "special";
     const type = String(card?.card_type || infoFor(card)?.type || infoFor(card)?.originalType || infoFor(card)?.roleText || "").toLowerCase();
-    if (/event|事件|사건/.test(type)) return "event";
     if (/partner|パートナー|파트너/.test(type) || /^p\d+/i.test(String(card?.key || ""))) return "special";
+    if (/case|incident|사건 카드|事件カード/.test(type) && !/event|イベント|이벤트/.test(type)) return "special";
+    if (/event|イベント|이벤트/.test(type)) return "event";
     return "character";
   };
   const opponentDeckCards = [...(opponentDeckAfterWin?.cards || [])].sort((a, b) => {
-    const groupOrder = { character: 0, event: 1, special: 2 };
+    const groupOrder = { special: 0, character: 1, event: 2 };
     const groupDiff = groupOrder[opponentDeckCardGroup(a)] - groupOrder[opponentDeckCardGroup(b)];
     return groupDiff || n(b?.cost ?? infoFor(b)?.cost, -1) - n(a?.cost ?? infoFor(a)?.cost, -1) || nameOf(a).localeCompare(nameOf(b), "ko");
   });
   const opponentDeckGroups = [
+    { key: "special", label: "파트너 · 사건 카드", cards: opponentDeckCards.filter((card) => opponentDeckCardGroup(card) === "special") },
     { key: "character", label: "캐릭터 카드", cards: opponentDeckCards.filter((card) => opponentDeckCardGroup(card) === "character") },
     { key: "event", label: "이벤트 카드", cards: opponentDeckCards.filter((card) => opponentDeckCardGroup(card) === "event") },
-    { key: "special", label: "파트너 · 기타 특수 카드", cards: opponentDeckCards.filter((card) => opponentDeckCardGroup(card) === "special") },
   ];
   const ownPeekOrder = peekOrderIds.map((id) => ownPeekCards.find((card) => card.instance_id === id)).filter(Boolean);
   const canSelectNextHintCard = isMyTurn && game?.turn_step === "main" && !game?.game_over && !pending && Boolean(myBoard?.next_hint_pending);
@@ -318,7 +379,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
     (minimizedModal === "peek" && ownPeek) ||
     (minimizedModal === "sharedPeek" && activeSharedPeekCards.length > 0) ||
     (minimizedModal === "handReveal" && Boolean(sharedHandReveal)) ||
-    (minimizedModal === "contact" && isContactPending) ||
+    (minimizedModal === "contact" && (isContactPending || isContactGuardPending)) ||
     (minimizedModal === "evidence" && revealedEvidenceCard) ||
     (minimizedModal === "detail" && detailCard) ||
     (minimizedModal === "opponentDeck" && opponentDeckAfterWin)
@@ -409,7 +470,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
           </div>
           <div style={{ marginTop: 4, color: C.muted, fontSize: 9 }}>{myBoard?.case_phase === "solution" ? "해결편" : "사건편"}</div>
           {canTransitionSolution && <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 7, background: "#7f1d1d", borderColor: "#fb7185" }} disabled={loading} onClick={() => void runAction("declare_solution")}>파트너 어시스트 후 해결편 전환</button>}
-          {canWinCase && <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 7, background: "#166534" }} disabled={loading} onClick={() => void runAction("solve_case")}>사건 해결 선언</button>}
+          {canDeclareCulpritsCrime ? <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 7, background: "#7f1d1d", borderColor: "#ef4444" }} disabled={loading} onClick={() => { if (window.confirm("본인 덱 전체를 리무브하고 모든 증거를 앞면으로 공개합니다. 범인 특징 증거가 8장 이상이면 승리하며, 8장 미만이면 리프레시 후 게임을 계속합니다. 선언하시겠습니까?")) void runAction("culprits_crime"); }}>범인들의 범행</button> : canWinCase && <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 7, background: "#166534" }} disabled={loading} onClick={() => void runAction("solve_case")}>사건 해결 선언</button>}
         </div>
 
         <div className="mock-zone-center" style={{ ...st.panel, display: "flex", flexDirection: "column", gap: 10 }}>
@@ -449,7 +510,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
                   {mr ? <>
                     <button type="button" onClick={() => openDetails(mr)} style={{ width: "100%", padding: 0, border: 0, background: "transparent" }}>{info?.imageUrl ? <img src={info.imageUrl} alt={nameOf(mr)} style={{ width: "100%", maxHeight: 110, aspectRatio: "3/4", objectFit: "contain" }} /> : <div style={st.faceDown} />}</button>
                     <div style={{ fontSize: 9, fontWeight: 800, overflowWrap: "anywhere", marginTop: 4 }}>{nameOf(mr)}</div>
-                    {!game.game_over && !pending && <div style={{ display: "grid", gap: 3, marginTop: 5 }}><button type="button" style={st.smallButton} disabled={loading} onClick={() => moveField(mr, board.user_id, "hand")}>손패로 이동</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => moveField(mr, board.user_id, "remove")}>리무브로 이동</button></div>}
+                    {!game.game_over && !pending && <div style={{ display: "grid", gap: 3, marginTop: 5 }}><button type="button" style={st.smallButton} disabled={loading} onClick={() => moveField(mr, board.user_id, "hand")}>손패로 이동</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => moveField(mr, board.user_id, "remove")}>선택한 MR 카드를 리무브로 이동</button></div>}
                   </> : <div style={{ minHeight: 55, display: "grid", placeItems: "center", color: C.muted, fontSize: 9 }}>없음</div>}
                 </div>;
               })}
@@ -460,7 +521,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 8, marginBottom: 8 }}><strong style={{ color: C.muted, fontSize: 10 }}>내 현장</strong><span style={st.muted}>{myBoard?.field_cards?.length || 0}장 · {isMyTurn ? "내 턴" : "상대 턴"}</span></div>
             <div className="mock-field-row">
               {(myBoard?.field_cards || []).map((card) => <ZoneCard key={card.instance_id} instance={card} rested={Boolean(card.rested)} ownerId={userId} mine eventResolving={Boolean(card.resolving)} />)}
-              {!myBoard?.field_cards?.length && <p style={st.muted}>아직 현장에 출동한 카드가 없습니다.</p>}
+              {!myBoard?.field_cards?.length && <p style={st.muted}>아직 현장에 등장한 카드가 없습니다.</p>}
             </div>
           </div>
         </div>
@@ -490,7 +551,13 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6, marginBottom: 7 }}><span style={{ fontSize: 9, color: C.muted, fontWeight: 800 }}>{mine ? "내 증거" : "상대 증거"} · 뒷면 {hiddenCount}장 / 공개 {publicCards.length}장</span><span style={{ fontSize: 8, color: "#6b7b94" }}>공개 카드는 아래에 표시됩니다.</span></div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
                 {Array.from({ length: Math.min(12, hiddenCount) }, (_, i) => <div key={`hidden-${i}`} style={{ width: 27, flex: "0 0 27px" }}><div style={{ ...st.faceDown, aspectRatio: "3/4" }} /></div>)}
-                {publicCards.map((card) => <button key={card.instance_id} type="button" onClick={() => openDetails(card)} title={`${nameOf(card)} · 공개 증거`} style={{ width: 42, flex: "0 0 42px", padding: 2, border: "1px solid rgba(252,211,77,.5)", borderRadius: 5, background: "#111827" }}>{infoFor(card)?.imageUrl ? <img src={infoFor(card).imageUrl} alt={nameOf(card)} style={{ width: "100%", aspectRatio: "3/4", objectFit: "contain" }} /> : <div style={{ ...st.faceDown, aspectRatio: "3/4" }} />}<span style={{ display: "block", fontSize: 7, lineHeight: 1.2, color: C.gold, overflowWrap: "anywhere" }}>{nameOf(card)}</span></button>)}
+                {publicCards.map((card) => <div key={card.instance_id} style={{ width: 42, flex: "0 0 42px", minWidth: 0, display: "grid", gap: 3, alignContent: "start" }}>
+                  <button type="button" onClick={() => openDetails(card)} title={`${nameOf(card)} · 공개 증거 · 클릭하여 상세 보기`} style={{ width: "100%", minWidth: 0, padding: 2, border: "1px solid rgba(252,211,77,.5)", borderRadius: 5, background: "#111827", color: C.text }}>
+                    {infoFor(card)?.imageUrl ? <img src={infoFor(card).imageUrl} alt={nameOf(card)} style={{ display: "block", width: "100%", height: "auto", aspectRatio: "3/4", objectFit: "contain" }} /> : <div style={{ ...st.faceDown, aspectRatio: "3/4" }} />}
+                    <span style={{ display: "block", fontSize: 7, lineHeight: 1.2, color: C.gold, overflowWrap: "anywhere" }}>{nameOf(card)}</span>
+                  </button>
+                  {canManualEffect && <button type="button" style={{ ...st.smallButton, width: "100%", padding: "2px 0", fontSize: 7, whiteSpace: "nowrap", color: C.gold, borderColor: "rgba(252,211,77,.35)" }} disabled={loading} title="공개된 증거 카드를 소유자의 덱 맨 아래로 이동합니다." onClick={() => { if (window.confirm(`${nameOf(card)} 공개 증거를 소유자의 덱 맨 아래로 이동할까요?`)) void runAction("move_evidence_to_deck_bottom", { instance_id: card.instance_id, owner_user_id: board.user_id }); }}>덱 밑으로</button>}
+                </div>)}
               </div>
               {canManualEffect && n(board?.evidence_count) > 0 && <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8, paddingTop: 7, borderTop: "1px solid rgba(255,255,255,.06)" }}><button type="button" style={{ ...st.smallButton, minWidth: 104, background: "#263d63" }} disabled={loading} onClick={() => invokeExposeEvidence(board.user_id, n(board.evidence_count), mine ? "내 증거" : "상대 증거")}>위 N장 공개</button></div>}
             </div>;
@@ -504,7 +571,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
         </div>
 
         <div className="mock-zone-files" style={st.panel}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}><h2 style={{ ...st.zoneTitle, marginBottom: 0 }}>파일 에이리어</h2><strong style={{ fontSize: 11 }}>내 파일 {myBoard?.file_count ?? 0}장 · 상대 파일 {opponentBoard?.file_count ?? 0}장</strong></div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}><h2 style={{ ...st.zoneTitle, marginBottom: 0 }}>파일 에이리어</h2><strong style={{ fontSize: 11 }}>내 파일 {myBoard?.file_count ?? 0}장 · 상대 파일 {opponentBoard?.file_count ?? 0}장</strong></div><div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginTop: 7 }}><button type="button" style={st.smallButton} disabled={loading || !myFileCards.length || Boolean(pending)} onClick={() => void runAction("take_top_file_to_hand")}>파일 맨 위 카드를 손패로</button><button type="button" style={st.smallButton} disabled={loading || !myFileCards.length || Boolean(pending)} onClick={() => void runAction("reveal_top_file")}>파일 맨 위 카드 공개</button></div>{myFileCards.filter((card) => card.face_up).length > 0 && <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>{myFileCards.filter((card) => card.face_up).slice(-5).map((card) => <button key={card.instance_id} type="button" style={{ ...st.smallButton, maxWidth: 115 }} onClick={() => openDetails(card)}>{nameOf(card)} · 공개</button>)}</div>}
           <p style={{ ...st.muted, marginTop: 6 }}>두 플레이어의 파일 카드는 뒷면으로 가로 배치됩니다. 넥스트 힌트 사용 시 내 파일의 가장 최근 카드를 회수합니다.</p>
           <div style={{ display: "grid", gap: 6, marginTop: 8 }}>
             <div className="mock-file-row"><strong style={{ color: C.muted, fontSize: 9, flex: "0 0 72px" }}>상대 파일 · {n(opponentBoard?.file_count)}장</strong><div className="mock-file-card-strip" aria-label="상대 파일 카드">{Array.from({ length: Math.min(40, n(opponentBoard?.file_count)) }, (_, i) => <div key={i} className="mock-file-card" title="뒷면 파일 카드" />)}{!n(opponentBoard?.file_count) && <span style={{ color: C.muted, fontSize: 9 }}>파일 없음</span>}</div></div>
@@ -521,14 +588,14 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
       </section>
 
       {!game.game_over && <section style={{ ...st.panel, marginTop: 10 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", alignItems: "baseline" }}><h2 style={st.zoneTitle}>턴 컨트롤</h2><span style={{ color: C.muted, fontSize: 10 }}>현재 코스트 상한 {costLimit} · 기본 출동 {myBoard?.character_played_this_turn ? "사용함" : "미사용"}</span></div>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", alignItems: "baseline" }}><h2 style={st.zoneTitle}>턴 컨트롤</h2><span style={{ color: C.muted, fontSize: 10 }}>현재 코스트 상한 {costLimit} · 기본 등장 {myBoard?.character_played_this_turn ? "사용함" : "미사용"}</span></div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 9 }}>
           <label style={{ display: "flex", alignItems: "flex-start", gap: 6, fontSize: 9, color: C.muted, lineHeight: 1.45 }}><input type="checkbox" checked={allowActiveTargets} onChange={(event) => setAllowActiveTargets(event.target.checked)} /> 효과에 따라 액티브 상대 캐릭터도 공격 대상으로 허용</label>
-          <label style={{ display: "flex", alignItems: "flex-start", gap: 6, fontSize: 9, color: C.muted, lineHeight: 1.45 }}><input type="checkbox" checked={allowFreshlyPlayed} onChange={(event) => setAllowFreshlyPlayed(event.target.checked)} /> 효과로 이번 턴 출동한 캐릭터도 즉시 행동 가능</label>
+          <label style={{ display: "flex", alignItems: "flex-start", gap: 6, fontSize: 9, color: C.muted, lineHeight: 1.45 }}><input type="checkbox" checked={allowFreshlyPlayed} onChange={(event) => setAllowFreshlyPlayed(event.target.checked)} /> 효과로 이번 턴 등장한 캐릭터도 즉시 행동 가능</label>
         </div>
         {game.turn_step === "begin" && (isMyTurn ? <button type="button" style={st.button} disabled={loading || pending} onClick={() => void runAction("begin_turn")}>턴 시작 · 액티브화 · 손패 1장 드로우</button> : <p style={st.muted}>상대가 턴을 시작할 때까지 대기합니다.</p>)}
         {game.turn_step === "file" && <div><p style={{ ...st.muted, marginBottom: 8 }}>{isMyTurn ? `덱 위에서 파일 ${Math.max(0, fileTarget - filesPlaced)}장을 뒤집어 배치합니다.` : `상대가 파일 ${currentTurnBoard?.files_to_place ?? 0}장을 배치하고 있습니다.`}</p>{isMyTurn && <button type="button" style={st.button} disabled={loading} onClick={() => void runAction("place_files")}>덱 위에서 파일 {Math.max(0, fileTarget - filesPlaced)}장 배치</button>}</div>}
-        {canSelectNextHintCard && <p style={{ ...st.muted, color: C.gold, marginTop: 8 }}>파일을 손패로 가져왔습니다. 아래 손패에서 출동할 캐릭터를 선택해 주세요. 선택 중에는 다른 행동이 일시 중지됩니다.</p>}
+        {canSelectNextHintCard && <p style={{ ...st.muted, color: C.gold, marginTop: 8 }}>파일을 손패로 가져왔습니다. 아래 손패에서 등장할 캐릭터를 선택해 주세요. 선택 중에는 다른 행동이 일시 중지됩니다.</p>}
         {canActMain && <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 5 }}>
           {myBoard?.base_action_done && n(myBoard?.file_count) > 0 && <button type="button" style={st.button} disabled={loading} onClick={() => void runAction("next_hint_take_file")}>넥스트 힌트 선언 · 파일을 손패로</button>}
           <button type="button" style={{ ...st.button, background: "#4b2637" }} disabled={loading || pending} onClick={() => void runAction("end_turn")}>턴 종료</button>
@@ -537,7 +604,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
       </section>}
 
       <section style={{ ...st.panel, marginTop: 10 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}><h2 style={{ ...st.zoneTitle, marginBottom: 0 }}>내 손패 · {myHand.length}장</h2><div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", flexWrap: "wrap", gap: 7 }}><span style={{ padding: "5px 8px", borderRadius: 7, border: "1px solid rgba(134,239,172,.25)", background: "rgba(22,101,52,.12)", color: C.green, fontSize: 9, fontWeight: 850 }}>{costLimit}코스트의 카드까지 현장 출동 가능 · 파일 {n(myBoard?.file_count)}장{myBoard?.partner_assist_used ? " + 파트너 어시스트 1" : ""}</span><button type="button" style={{ ...st.smallButton, borderColor: "rgba(252,211,77,.55)", color: C.gold, background: "rgba(120,83,10,.15)" }} disabled={loading || !myHand.length || !canManualEffect} onClick={() => { setSelectedHandRevealIds([]); setShowHandRevealSelector(true); }}>손패 카드 공개</button><span style={st.muted}>카드 이미지를 선택하면 상세 설명을 확인할 수 있습니다.</span></div></div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}><h2 style={{ ...st.zoneTitle, marginBottom: 0 }}>내 손패 · {myHand.length}장</h2><div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", flexWrap: "wrap", gap: 7 }}><span style={{ padding: "5px 8px", borderRadius: 7, border: "1px solid rgba(134,239,172,.25)", background: "rgba(22,101,52,.12)", color: C.green, fontSize: 9, fontWeight: 850 }}>{costLimit}코스트의 카드까지 현장 등장 가능 · 파일 {n(myBoard?.file_count)}장{myBoard?.partner_assist_used ? " + 파트너 어시스트 1" : ""}</span><button type="button" style={{ ...st.smallButton, borderColor: "rgba(252,211,77,.55)", color: C.gold, background: "rgba(120,83,10,.15)" }} disabled={loading || !myHand.length || !canManualEffect} onClick={() => { setSelectedHandRevealIds([]); setShowHandRevealSelector(true); }}>손패 카드 공개</button><span style={st.muted}>카드 이미지를 선택하면 상세 설명을 확인할 수 있습니다.</span></div></div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(104px,1fr))", gap: 7, marginTop: 9 }}>
           {myHand.map((card) => {
             const info = infoFor(card);
@@ -549,36 +616,38 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
               {(canActMain || canSelectNextHintCard) && card.card_type === "character" && <div style={{ display: "grid", gap: 4, marginTop: 6 }}>
                 {canActMain && !myBoard?.next_hint_pending && <button type="button" style={{ ...st.smallButton, opacity: n(card.cost) > costLimit || myBoard?.character_played_this_turn || (myBoard?.field_cards?.length || 0) >= 5 ? .72 : 1 }} disabled={loading} onClick={() => {
                   if (n(card.cost) > costLimit) { showBlockedReason(`필요 코스트를 충족하지 않아 사용할 수 없습니다. 현재 코스트 상한은 ${costLimit}입니다.`); return; }
-                  if (myBoard?.character_played_this_turn) { showBlockedReason("이번 턴의 기본 출동을 이미 사용했습니다. 추가 출동은 효과 처리 버튼을 이용해 주세요."); return; }
+                  if (myBoard?.character_played_this_turn) { showBlockedReason("이번 턴의 기본 등장을 이미 사용했습니다. 추가 등장은 효과 처리 버튼을 이용해 주세요."); return; }
                   if ((myBoard?.field_cards?.length || 0) >= 5 && String(card.rarity || "").toUpperCase() !== "MR") { showBlockedReason("현장에 이미 카드가 5장 있습니다. 먼저 현장 카드를 이동해 주세요."); return; }
                   void runAction("play_character", { instance_id: card.instance_id });
-                }}>기본 출동</button>}
+                }}>기본 등장</button>}
                 {canSelectNextHintCard && <button type="button" style={{ ...st.smallButton, borderColor: "#fb7185", color: C.red, opacity: n(card.cost) > (costLimit + 1) ? .72 : 1 }} disabled={loading} onClick={() => {
                   const nextCostLimit = n(myBoard?.file_count) + 1 + (myBoard?.partner_assist_used ? 1 : 0);
-                  if (n(card.cost) > nextCostLimit) { showBlockedReason(`필요 코스트를 충족하지 않아 넥스트 힌트로 출동할 수 없습니다. 선언 전 기준 코스트 상한은 ${nextCostLimit}입니다.`); return; }
+                  if (n(card.cost) > nextCostLimit) { showBlockedReason(`필요 코스트를 충족하지 않아 넥스트 힌트로 등장할 수 없습니다. 선언 전 기준 코스트 상한은 ${nextCostLimit}입니다.`); return; }
                   void runAction("next_hint", { instance_id: card.instance_id });
-                }}>이 카드로 넥스트 힌트 출동</button>}
+                }}>이 카드로 넥스트 힌트 등장</button>}
               </div>}
               {canActMain && card.card_type === "event" && <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 6, background: "#075985", opacity: n(card.cost) > costLimit || (myBoard?.field_cards?.length || 0) >= 5 ? .72 : 1 }} disabled={loading} onClick={() => {
                 if (n(card.cost) > costLimit) { showBlockedReason(`필요 코스트를 충족하지 않아 이벤트를 사용할 수 없습니다. 현재 코스트 상한은 ${costLimit}입니다.`); return; }
                 if ((myBoard?.field_cards?.length || 0) >= 5) { showBlockedReason("현장에 이미 카드가 5장 있습니다. 먼저 현장 카드를 이동해 주세요."); return; }
                 void runAction("play_event", { instance_id: card.instance_id });
               }}>현장에 이벤트 사용</button>}
-              {canManualEffect && card.card_type === "character" && <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 5, background: "#3b2f5c" }} disabled={loading} onClick={() => { if ((myBoard?.field_cards?.length || 0) >= 5 && String(card.rarity || "").toUpperCase() !== "MR") { showBlockedReason("현장에 이미 카드가 5장 있습니다. 먼저 현장 카드를 이동해 주세요."); return; } void runAction("extra_play_character", { instance_id: card.instance_id, effect_override: true }); }}>효과로 추가 출동<br />(제한 무시)</button>}
-              {canManualEffect && <div style={{ display: "grid", gap: 4, marginTop: 5 }}><button type="button" style={st.smallButton} disabled={loading} onClick={() => { if (window.confirm(`${info?.name || card.key}를 손패에서 리무브 영역으로 옮길까요?`)) void runAction("move_hand_card", { instance_id: card.instance_id, destination: "remove" }); }}>손패에서 리무브</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => { if (window.confirm(`${info?.name || card.key}를 덱 맨 아래로 옮길까요?`)) void runAction("move_hand_card", { instance_id: card.instance_id, destination: "deck" }); }}>손패에서 덱 아래로</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => { if (window.confirm(`${info?.name || card.key}를 덱 맨 위로 옮길까요?`)) void runAction("move_hand_card", { instance_id: card.instance_id, destination: "deck_top" }); }}>손패에서 덱 위로</button></div>}
+              {canManualEffect && card.card_type === "character" && <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 5, background: "#3b2f5c" }} disabled={loading} onClick={() => { if ((myBoard?.field_cards?.length || 0) >= 5 && String(card.rarity || "").toUpperCase() !== "MR") { showBlockedReason("현장에 이미 카드가 5장 있습니다. 먼저 현장 카드를 이동해 주세요."); return; } void runAction("extra_play_character", { instance_id: card.instance_id, effect_override: true }); }}>효과로 추가 등장<br />(제한 무시)</button>}
+              {canManualEffect && <div style={{ display: "grid", gap: 4, marginTop: 5 }}><button type="button" style={st.smallButton} disabled={loading} onClick={() => { if (window.confirm(`${info?.name || card.key}를 손패에서 리무브 영역으로 옮길까요?`)) void runAction("move_hand_card", { instance_id: card.instance_id, destination: "remove" }); }}>손패에서 리무브</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => { if (window.confirm(`${info?.name || card.key}를 덱 맨 아래로 옮길까요?`)) void runAction("move_hand_card", { instance_id: card.instance_id, destination: "deck" }); }}>손패에서 덱 아래로</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => { if (window.confirm(`${info?.name || card.key}를 덱 맨 위로 옮길까요?`)) void runAction("move_hand_card", { instance_id: card.instance_id, destination: "deck_top" }); }}>손패에서 덱 위로</button><button type="button" style={st.smallButton} disabled={loading || Boolean(myBoard?.partner_mr_card)} onClick={() => void runAction("move_card_to_mr_partner", { source: "hand", instance_id: card.instance_id })}>MR 파트너 영역으로 이동</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => void runAction("move_hand_card", { instance_id: card.instance_id, destination: "file_top" })}>파일 맨 위에 앞면으로</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => void runAction("move_hand_card", { instance_id: card.instance_id, destination: "file_bottom" })}>파일 맨 아래에 앞면으로</button></div>}
             </article>;
           })}
           {!myHand.length && <p style={st.muted}>손패가 비어 있습니다.</p>}
         </div>
       </section>
 
-      {canWinCase && <div style={{ position: "fixed", zIndex: 99980, right: 14, bottom: 14, maxWidth: "min(390px, calc(100vw - 28px))", display: "flex", alignItems: "center", gap: 9, padding: "10px 13px", border: "1px solid #22c55e", borderRadius: 10, color: "#f0fdf4", background: "rgba(20,83,45,.97)", boxShadow: "0 8px 30px rgba(20,83,45,.35)", pointerEvents: "none" }}><span style={{ display: "grid", placeItems: "center", width: 27, height: 27, flex: "0 0 27px", borderRadius: "50%", background: "#16a34a", color: "white", fontSize: 20, fontWeight: 1000 }}>!</span><strong style={{ fontSize: 11, lineHeight: 1.45 }}>사건 해결 선언이 가능합니다</strong></div>}
+      {(canWinCase || canDeclareCulpritsCrime) && <div style={{ position: "fixed", zIndex: 99980, right: 14, bottom: 14, maxWidth: "min(390px, calc(100vw - 28px))", display: "flex", alignItems: "center", gap: 9, padding: "10px 13px", border: `1px solid ${canDeclareCulpritsCrime ? "#ef4444" : "#22c55e"}`, borderRadius: 10, color: "#f0fdf4", background: canDeclareCulpritsCrime ? "rgba(127,29,29,.97)" : "rgba(20,83,45,.97)", boxShadow: "0 8px 30px rgba(20,83,45,.35)", pointerEvents: "none" }}><span style={{ display: "grid", placeItems: "center", width: 27, height: 27, flex: "0 0 27px", borderRadius: "50%", background: canDeclareCulpritsCrime ? "#dc2626" : "#16a34a", color: "white", fontSize: 20, fontWeight: 1000 }}>!</span><strong style={{ fontSize: 11, lineHeight: 1.45 }}>{canDeclareCulpritsCrime ? "범인들의 범행을 선언할 수 있습니다" : "사건 해결 선언이 가능합니다"}</strong></div>}
       {canTransitionSolution && <div style={{ position: "fixed", zIndex: 99980, left: 14, bottom: 14, maxWidth: "min(390px, calc(100vw - 28px))", display: "flex", alignItems: "center", gap: 9, padding: "10px 13px", border: "1px solid #ef4444", borderRadius: 10, color: "#fff1f2", background: "rgba(127,29,29,.96)", boxShadow: "0 8px 30px rgba(127,29,29,.35)", pointerEvents: "none" }}><span style={{ display: "grid", placeItems: "center", width: 27, height: 27, flex: "0 0 27px", borderRadius: "50%", background: "#ef4444", color: "white", fontSize: 20, fontWeight: 1000 }}>!</span><strong style={{ fontSize: 11, lineHeight: 1.45 }}>지금부터 해결편으로 전환할 수 있습니다</strong></div>}
+
+      {setCardModal && <div role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setSetCardModal(null); }} style={{ position: "fixed", inset: 0, zIndex: 100180, display: "flex", alignItems: "center", justifyContent: "center", padding: 12, background: "rgba(0,0,0,.88)" }}><section role="dialog" aria-modal="true" aria-label="카드 세트 또는 겹치기" style={{ width: "min(100%, 780px)", maxHeight: "90dvh", overflowY: "auto", padding: 14, border: "1px solid rgba(252,211,77,.45)", borderRadius: 12, background: "#111a2a", color: C.text }}><header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}><h2 style={{ margin: 0, fontSize: 16 }}>{setCardModal.mode === "stack" ? "리무브 카드를 아래에 겹치기" : "세트 카드 추가"}</h2><button type="button" style={st.button} onClick={() => setSetCardModal(null)}>닫기</button></header><p style={{ ...st.muted, marginTop: 6 }}>대상 카드: {nameOf(setCardModal.hostCard)} · 겹친 카드는 현장 5장 제한에 포함되지 않습니다.</p>{setCardModal.mode === "set" && <><div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", margin: "10px 0" }}><label style={{ fontSize: 11, display: "flex", gap: 6, alignItems: "center" }}><input type="radio" name="set-face" checked={!setCardModal.faceUp} onChange={() => setSetCardModal((old) => ({ ...old, faceUp: false }))}/>뒷면으로 세트</label><label style={{ fontSize: 11, display: "flex", gap: 6, alignItems: "center" }}><input type="radio" name="set-face" checked={setCardModal.faceUp} onChange={() => setSetCardModal((old) => ({ ...old, faceUp: true }))}/>앞면으로 세트</label></div>{setCardModal.source === "deck_top" ? <button type="button" style={st.button} disabled={loading || !n(game?.my_deck_count)} onClick={() => { const { hostCard, hostOwnerId, faceUp } = setCardModal; setSetCardModal(null); void runAction("set_card_to_field", { host_instance_id: hostCard.instance_id, host_owner_user_id: hostOwnerId, source: "deck_top", face_up: faceUp }); }}>덱 위 카드 세트</button> : <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(100px,1fr))", gap: 7 }}>{(setCardModal.source === "hand" ? myHand : myRemoveCards).filter((card) => card.card_type === "event" || /event|イベント|이벤트/i.test(`${infoFor(card)?.type || ""} ${infoFor(card)?.originalType || ""} ${infoFor(card)?.roleText || ""}`)).map((card) => <button key={card.instance_id} type="button" style={st.smallButton} disabled={loading} onClick={() => selectSetSourceCard(card)}>{infoFor(card)?.imageUrl ? <img src={infoFor(card).imageUrl} alt={nameOf(card)} style={{ width: "100%", aspectRatio: "3/4", objectFit: "contain" }} /> : <div style={st.faceDown} />}<span style={{ display: "block", marginTop: 4 }}>{nameOf(card)}</span></button>)}</div>}</>}{setCardModal.mode === "stack" && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(100px,1fr))", gap: 7, marginTop: 10 }}>{myRemoveCards.map((card) => <button key={card.instance_id} type="button" style={st.smallButton} disabled={loading} onClick={() => selectSetSourceCard(card)}>{infoFor(card)?.imageUrl ? <img src={infoFor(card).imageUrl} alt={nameOf(card)} style={{ width: "100%", aspectRatio: "3/4", objectFit: "contain" }} /> : <div style={st.faceDown} />}<span style={{ display: "block", marginTop: 4 }}>{nameOf(card)}</span></button>)}</div>}</section></div>}
 
       {showRemoveArea && minimizedModal !== "remove" && <div role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowRemoveArea(false); }} style={{ position: "fixed", inset: 0, zIndex: 100000, padding: 12, display: "flex", justifyContent: "center", alignItems: "center", background: "rgba(0,0,0,.84)", backdropFilter: "blur(4px)" }}>
         <section onDoubleClick={(event) => minimizeOnDoubleClick(event, "remove")} role="dialog" aria-modal="true" aria-label="리무브 영역 목록" style={{ width: "min(100%, 920px)", maxHeight: "92dvh", overflow: "hidden", display: "flex", flexDirection: "column", border: "1px solid rgba(148,163,184,.24)", borderRadius: 12, background: "#111a2a", color: C.text, boxShadow: "0 24px 70px rgba(0,0,0,.7)" }}>
           <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: 12, borderBottom: "1px solid rgba(255,255,255,.09)" }}><div><h2 style={{ margin: 0, fontSize: 17 }}>리무브 영역</h2><p style={{ ...st.muted, marginTop: 4 }}>내 리무브 {myRemoveCards.length}장 · 상대 리무브 {opponentRemoveCards.length}장</p></div><button type="button" style={st.button} onClick={() => setShowRemoveArea(false)}>닫기 ✕</button></header>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 10, padding: 12, overflowY: "auto" }}>{[{ label: "내 리무브", cards: myRemoveCards }, { label: "상대 리무브", cards: opponentRemoveCards }].map((pile) => <div key={pile.label} style={{ minWidth: 0, padding: 8, border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, background: "#080d16" }}><h3 style={{ margin: "0 0 8px", fontSize: 11, color: C.blue }}>{pile.label} · {pile.cards.length}장</h3><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(86px,1fr))", gap: 6 }}>{pile.cards.map((card) => <button key={card.instance_id} type="button" onClick={() => openDetails(card)} style={{ border: "1px solid rgba(255,255,255,.1)", borderRadius: 6, padding: 5, background: "#101827", color: C.text, minWidth: 0 }}>{infoFor(card)?.imageUrl ? <img src={infoFor(card).imageUrl} alt={nameOf(card)} style={{ width: "100%", aspectRatio: "3/4", objectFit: "contain" }} /> : <div style={st.faceDown} />}<div style={{ fontSize: 9, lineHeight: 1.3, overflowWrap: "anywhere", marginTop: 4 }}>{nameOf(card)}</div></button>)}</div>{!pile.cards.length && <p style={st.muted}>비어 있습니다.</p>}</div>)}</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 10, padding: 12, overflowY: "auto" }}>{[{ label: "내 리무브", cards: myRemoveCards }, { label: "상대 리무브", cards: opponentRemoveCards }].map((pile) => <div key={pile.label} style={{ minWidth: 0, padding: 8, border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, background: "#080d16" }}><h3 style={{ margin: "0 0 8px", fontSize: 11, color: C.blue }}>{pile.label} · {pile.cards.length}장</h3><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(86px,1fr))", gap: 6 }}>{pile.cards.map((card) => <article key={card.instance_id} style={{ border: "1px solid rgba(255,255,255,.1)", borderRadius: 6, padding: 5, background: "#101827", color: C.text, minWidth: 0 }}><button type="button" onClick={() => openDetails(card)} style={{ width: "100%", border: 0, padding: 0, background: "transparent", color: C.text }}>{infoFor(card)?.imageUrl ? <img src={infoFor(card).imageUrl} alt={nameOf(card)} style={{ width: "100%", aspectRatio: "3/4", objectFit: "contain" }} /> : <div style={st.faceDown} />}<div style={{ fontSize: 9, lineHeight: 1.3, overflowWrap: "anywhere", marginTop: 4 }}>{nameOf(card)}</div></button>{pile.label === "내 리무브" && !game.game_over && !pending && <div style={{ display: "grid", gap: 3, marginTop: 5 }}><button type="button" style={st.smallButton} disabled={loading} onClick={() => void runAction("move_remove_card_to_hand", { instance_id: card.instance_id })}>손패로 가져오기</button><button type="button" style={st.smallButton} disabled={loading || (myBoard?.field_cards?.length || 0) >= 5} onClick={() => void runAction("play_remove_character", { instance_id: card.instance_id })}>현장에 등장</button><button type="button" style={st.smallButton} disabled={loading || Boolean(myBoard?.partner_mr_card)} onClick={() => void runAction("move_card_to_mr_partner", { source: "remove", instance_id: card.instance_id })}>MR 파트너 영역으로 이동</button></div>}</article>)}</div>{!pile.cards.length && <p style={st.muted}>비어 있습니다.</p>}</div>)}</div>
         </section>
       </div>}
 
@@ -587,7 +656,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
           <header style={{ padding: 14, borderBottom: "1px solid rgba(255,255,255,.09)" }}><h2 style={{ margin: 0, color: C.red, fontSize: 18 }}>덱 위 카드 공개 · 리무브 확인</h2><p style={{ ...st.muted, marginTop: 5, fontSize: 11 }}>덱에서 이동할 카드 {deckRemovalCards.length}장을 양쪽 플레이어가 확인합니다. 두 사람 모두 확인하면 해당 카드가 리무브 에이리어로 이동합니다.</p></header>
           <div style={{ padding: 12, overflowY: "auto" }}><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(100px,1fr))", gap: 8 }}>{deckRemovalCards.map((card, index) => <button key={`${card.instance_id || card.key}-${index}`} type="button" onClick={() => openDetails(card)} style={{ minWidth: 0, padding: 6, border: "1px solid rgba(253,164,175,.25)", borderRadius: 7, background: "#080d16", color: C.text, textAlign: "left" }}>{infoFor(card)?.imageUrl ? <img src={infoFor(card).imageUrl} alt={nameOf(card)} style={{ width: "100%", aspectRatio: "3/4", objectFit: "contain" }} /> : <div style={st.faceDown} />}<span style={{ display: "block", marginTop: 4, fontSize: 9, fontWeight: 800, overflowWrap: "anywhere" }}>{nameOf(card)}</span><span style={{ display: "block", marginTop: 3, color: C.muted, fontSize: 8 }}>코스트 {card.cost ?? infoFor(card)?.cost ?? "-"}</span></button>)}</div>
           </div>
-          <footer style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap", padding: 12, borderTop: "1px solid rgba(255,255,255,.09)" }}><span style={st.muted}>확인 완료 {deckRemovalAcknowledged.length}/2명</span>{deckRemovalAcknowledged.includes(userId) ? <button type="button" style={{ ...st.button, background: "#374151" }} disabled>{"확인 완료 · 상대 확인 대기"}</button> : <button type="button" style={{ ...st.button, background: "#7f1d1d" }} disabled={loading} onClick={() => void runAction("acknowledge_deck_remove")}>카드를 확인했고 리무브에 동의</button>}</footer>
+          <footer style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap", padding: 12, borderTop: "1px solid rgba(255,255,255,.09)" }}><span style={st.muted}>확인 완료 {deckRemovalAcknowledged.length}/2명</span>{deckRemovalAcknowledged.includes(userId) ? <button type="button" style={{ ...st.button, background: "#374151" }} disabled>{"확인 완료 · 상대 확인 대기"}</button> : <button type="button" style={{ ...st.button, background: "#7f1d1d" }} disabled={loading} onClick={() => void runAction("acknowledge_deck_remove")}>카드 확인 완료</button>}</footer>
         </section>
       </div>}
 
@@ -631,6 +700,8 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
         <section onDoubleClick={(event) => minimizeOnDoubleClick(event, "sharedPeek")} role="dialog" aria-modal="true" aria-label="기존 덱 공개 확인" style={{ width: "min(100%, 760px)", maxHeight: "90dvh", overflowY: "auto", padding: 13, border: "1px solid rgba(252,211,77,.55)", borderRadius: 12, background: "#111a2a", color: C.text }}><h2 style={{ margin: "0 0 5px", fontSize: 16 }}>공개된 덱 카드 확인</h2><p style={{ ...st.muted, marginBottom: 10 }}>이전에 진행하던 덱 공개가 남아 있는 경우에만 표시됩니다.</p><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(110px,1fr))", gap: 8 }}>{activeSharedPeekCards.map((entry) => <button key={`${entry.source_user_id}-${entry.card?.instance_id}`} type="button" onClick={() => openDetails(entry.card)} style={{ padding: 7, border: "1px solid rgba(252,211,77,.3)", borderRadius: 7, background: "#080d16", color: C.text }}>{infoFor(entry.card)?.imageUrl ? <img src={infoFor(entry.card).imageUrl} alt={nameOf(entry.card)} style={{ width: "100%", maxHeight: 210, aspectRatio: "3/4", objectFit: "contain" }} /> : <div style={st.faceDown} />}<span style={{ display: "block", marginTop: 4, fontSize: 10, fontWeight: 800, overflowWrap: "anywhere" }}>{nameOf(entry.card)}</span><span style={{ display: "block", fontSize: 8, color: C.gold }}>{entry.source_display_name || "상대 덱"}</span></button>)}</div><div style={{ display: "flex", justifyContent: "flex-end", marginTop: 11 }}><button type="button" style={st.button} disabled={loading} onClick={() => activeSharedPeekCards.every((entry) => entry.returned) ? void runAction("acknowledge_shared_deck_peek") : setDismissedSharedPeekSignature(sharedPeekSignature)}>{activeSharedPeekCards.every((entry) => entry.returned) ? "공개 카드 확인 완료" : "확인 (덱 반환 후 다시 알림)"}</button></div></section>
       </div>}
 
+      {isContactGuardPending && minimizedModal !== "contact" && <div style={{ position: "fixed", inset: 0, zIndex: 100025, padding: 12, display: "flex", justifyContent: "center", alignItems: "center", background: "rgba(0,0,0,.88)", backdropFilter: "blur(5px)" }}><section onDoubleClick={(event) => minimizeOnDoubleClick(event, "contact")} role="dialog" aria-modal="true" aria-label="컨택 가드 선택" style={{ width: "min(100%, 760px)", maxHeight: "90dvh", overflowY: "auto", padding: 15, border: "1px solid rgba(252,211,77,.6)", borderRadius: 12, background: "#111a2a", color: C.text }}><h2 style={{ margin: "0 0 7px", fontSize: 18 }}>컨택 공격 · 가드 지정</h2><p style={{ ...st.muted, marginBottom: 10 }}>{pending.target_user_id === userId ? "공격을 받을 캐릭터 대신 액티브 캐릭터를 지정하여 가드할 수 있습니다. 가드 캐릭터는 슬립됩니다." : "상대가 공격 가드를 선택하고 있습니다."}</p>{pending.target_user_id === userId ? <><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(110px,1fr))", gap: 7 }}>{(myBoard?.field_cards || []).filter((card) => card.card_type === "character" && card.instance_id !== pending.target_instance_id && !card.rested && (card.status || "active") === "active").map((card) => <button key={card.instance_id} type="button" style={{ ...st.smallButton, padding: 7 }} disabled={loading} onClick={() => void runAction("guard_contact_with_character", { instance_id: card.instance_id })}>{infoFor(card)?.imageUrl ? <img src={infoFor(card).imageUrl} alt={nameOf(card)} style={{ width: "100%", aspectRatio: "3/4", objectFit: "contain" }} /> : <div style={st.faceDown} />}<span style={{ display: "block", marginTop: 4 }}>{nameOf(card)}<br/>AP {n(card.ap)+n(card.ap_bonus)}</span></button>)}</div><button type="button" style={{ ...st.button, width: "100%", marginTop: 10 }} disabled={loading} onClick={() => void runAction("decline_contact_guard")}>가드하지 않고 진행</button></> : <p style={{ marginTop: 10, color: C.gold, fontSize: 11 }}>수비자의 선택을 기다리는 중입니다.</p>}</section></div>}
+
       {isContactPending && minimizedModal !== "contact" && <div style={{ position: "fixed", inset: 0, zIndex: 100030, padding: 12, display: "flex", justifyContent: "center", alignItems: "center", background: "rgba(0,0,0,.86)", backdropFilter: "blur(5px)" }}>
         <section onDoubleClick={(event) => minimizeOnDoubleClick(event, "contact")} role="dialog" aria-modal="true" aria-label="컨택 및 컷인 선택" style={{ width: "min(100%, 700px)", maxHeight: "90dvh", overflowY: "auto", padding: 15, border: "1px solid rgba(251,113,133,.6)", borderRadius: 12, background: "#111a2a", color: C.text, boxShadow: "0 24px 70px rgba(0,0,0,.7)" }}>
           <div style={{ color: C.red, fontSize: 9, letterSpacing: ".15em", fontWeight: 900 }}>CONTACT</div><h2 style={{ margin: "4px 0 7px", fontSize: 18 }}>컨택 발생 · 컷인 선택</h2><p style={{ ...st.muted, marginBottom: 10 }}>수비자가 먼저 컷인 사용 여부를 선택하고, 수비자가 패스하면 공격자가 선택합니다. 컷인은 컨택당 최대 1회 사용할 수 있으며, 선택이 완료되면 최종 AP를 비교합니다.</p>
@@ -664,7 +735,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
 
       {minimizedModalExists && <button type="button" onClick={() => setMinimizedModal("")} style={{ position: "fixed", zIndex: 100250, left: "50%", bottom: 14, transform: "translateX(-50%)", padding: "10px 16px", borderRadius: 999, border: "1px solid rgba(147,197,253,.65)", color: "#eff6ff", background: "rgba(30,58,95,.97)", boxShadow: "0 8px 28px rgba(0,0,0,.55)", fontSize: 11, fontWeight: 900 }}>접힌 창 복구 · {minimizedModalLabels[minimizedModal] || "창"}</button>}
 
-      {blockedToast && <div role="alert" aria-live="assertive" style={{ position: "fixed", zIndex: 100260, right: 14, bottom: canWinCase ? 78 : 14, width: "min(430px, calc(100vw - 28px))", display: "flex", alignItems: "flex-start", gap: 10, padding: "12px 14px", border: "1px solid #ef4444", borderRadius: 11, background: "rgba(69,10,10,.97)", color: "#fff1f2", boxShadow: "0 12px 32px rgba(0,0,0,.5)" }}><span style={{ display: "grid", placeItems: "center", width: 27, height: 27, flex: "0 0 27px", borderRadius: "50%", background: "#dc2626", color: "white", fontSize: 18, fontWeight: 1000 }}>!</span><span style={{ fontSize: 11, lineHeight: 1.55, fontWeight: 750 }}>{blockedToast}</span><button type="button" onClick={() => setBlockedToast("")} aria-label="안내 닫기" style={{ marginLeft: "auto", border: 0, background: "transparent", color: "#fecaca", fontSize: 15 }}>×</button></div>}
+      {blockedToast && <div role="alert" aria-live="assertive" style={{ position: "fixed", zIndex: 100260, right: 14, bottom: (canWinCase || canDeclareCulpritsCrime) ? 78 : 14, width: "min(430px, calc(100vw - 28px))", display: "flex", alignItems: "flex-start", gap: 10, padding: "12px 14px", border: "1px solid #ef4444", borderRadius: 11, background: "rgba(69,10,10,.97)", color: "#fff1f2", boxShadow: "0 12px 32px rgba(0,0,0,.5)" }}><span style={{ display: "grid", placeItems: "center", width: 27, height: 27, flex: "0 0 27px", borderRadius: "50%", background: "#dc2626", color: "white", fontSize: 18, fontWeight: 1000 }}>!</span><span style={{ fontSize: 11, lineHeight: 1.55, fontWeight: 750 }}>{blockedToast}</span><button type="button" onClick={() => setBlockedToast("")} aria-label="안내 닫기" style={{ marginLeft: "auto", border: 0, background: "transparent", color: "#fecaca", fontSize: 15 }}>×</button></div>}
 
       {game.game_over && <div style={{ position: "fixed", inset: 0, zIndex: 100200, display: "flex", alignItems: "center", justifyContent: "center", padding: 18, background: "rgba(0,0,0,.96)", color: "#f8fafc" }}>
         <section style={{ width: "min(100%, 540px)", padding: "clamp(22px, 5vw, 42px)", textAlign: "center", border: "1px solid rgba(134,239,172,.3)", borderRadius: 18, background: "linear-gradient(160deg,#111827,#05070b)", boxShadow: "0 24px 80px rgba(0,0,0,.7)" }}>
@@ -672,9 +743,12 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
           <h1 style={{ margin: "12px 0 9px", fontSize: "clamp(28px, 7vw, 42px)", fontWeight: 950, color: "#f0fdf4" }}>{winnerName} 승리!</h1>
           <p style={{ margin: "0 0 22px", color: "#a7b4c8", fontSize: 13 }}>턴 {n(game.winner_turn_number, n(game.turn_number))} 소요</p>
           <button type="button" disabled={loadingOpponentDeck} onClick={() => void openOpponentDeckAfterGame()} style={{ width: "100%", padding: "12px 16px", border: "1px solid #22c55e", borderRadius: 10, background: "#166534", color: "white", fontSize: 13, fontWeight: 900, cursor: loadingOpponentDeck ? "wait" : "pointer", opacity: loadingOpponentDeck ? .6 : 1 }}>{loadingOpponentDeck ? "상대 덱을 불러오는 중…" : "상대 덱 보기 →"}</button>
-          <p style={{ ...st.muted, marginTop: 12 }}>버튼을 누르면 상대의 덱 구성을 확인할 수 있습니다.</p>
+          <button type="button" disabled={loadingPlayHistory} onClick={() => void openPlayHistory()} style={{ width: "100%", padding: "11px 16px", marginTop: 8, border: "1px solid rgba(147,197,253,.45)", borderRadius: 10, background: "#17243a", color: "#dbeafe", fontSize: 12, fontWeight: 850 }}>{loadingPlayHistory ? "플레이 기록을 불러오는 중…" : "플레이 기록 보기 →"}</button>
+          <p style={{ ...st.muted, marginTop: 12 }}>상대 덱과 이번 게임의 턴별 기록을 확인할 수 있습니다.</p>
         </section>
       </div>}
+
+      {showPlayHistory && <div role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowPlayHistory(false); }} style={{ position: "fixed", inset: 0, zIndex: 100230, display: "flex", alignItems: "center", justifyContent: "center", padding: 12, background: "rgba(0,0,0,.92)" }}><section role="dialog" aria-modal="true" aria-label="플레이 기록" style={{ width: "min(100%, 1100px)", maxHeight: "94dvh", overflow: "hidden", display: "flex", flexDirection: "column", border: "1px solid rgba(147,197,253,.35)", borderRadius: 12, background: "#101827", color: C.text }}><header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, padding: 12, borderBottom: "1px solid rgba(255,255,255,.1)" }}><div><h2 style={{ margin: 0, fontSize: 17 }}>플레이 기록</h2><p style={{ ...st.muted, marginTop: 4 }}>선공은 왼쪽, 후공은 오른쪽으로 표시됩니다.</p></div><button type="button" style={st.button} onClick={() => setShowPlayHistory(false)}>닫기 ✕</button></header><div style={{ padding: 10, overflowY: "auto", display: "grid", gap: 9 }}>{playHistory.length === 0 && <p style={st.muted}>저장된 플레이 기록이 없습니다.</p>}{playHistory.map((entry, entryIndex) => { const snap = entry.snapshot || {}; const sides = Array.isArray(snap.players) ? snap.players : []; const firstId = snap.first_player_user_id || game.first_player_user_id; const orderedSides = [...sides].sort((a,b) => a.user_id === firstId ? -1 : b.user_id === firstId ? 1 : 0); const previousSides = playHistory[entryIndex - 1]?.snapshot?.players || []; const deltaFor = (side, key) => countDelta(side[key], previousSides.find((item) => item.user_id === side.user_id)?.[key]); return <article key={entry.id} style={{ border: "1px solid rgba(255,255,255,.1)", borderRadius: 8, padding: 9, background: "#080d16" }}><div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap", marginBottom: 7 }}><strong style={{ fontSize: 11, color: C.gold }}>턴 {entry.turn_number} · {entry.actor_name || (entry.actor_user_id === firstId ? "선공" : "후공")}</strong><span style={{ fontSize: 9, color: C.muted }}>{new Date(entry.created_at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}</span></div><p style={{ fontSize: 10, margin: "0 0 8px", color: C.text }}>{entry.action_label || "행동 기록"}</p><div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 7 }}>{orderedSides.map((side, index) => <div key={side.user_id} style={{ minWidth: 0, padding: 7, border: "1px solid rgba(255,255,255,.08)", borderRadius: 7, background: "#101827" }}><strong style={{ display: "block", fontSize: 9, color: index === 0 ? C.blue : C.gold, marginBottom: 4 }}>{index === 0 ? "선공" : "후공"} · {side.display_name || "플레이어"}</strong><div style={{ fontSize: 8, color: C.muted, lineHeight: 1.5 }}>현재: 덱 {side.deck_count ?? 0} · 손패 {side.hand_count ?? 0} · 파일 {side.file_count ?? 0} · 증거 {side.evidence_count ?? 0} · 리무브 {side.remove_count ?? 0}</div><div style={{ fontSize: 8, color: C.green, lineHeight: 1.5, marginTop: 2 }}>변화: 덱 {deltaFor(side,"deck_count")} / 손패 {deltaFor(side,"hand_count")} / 파일 {deltaFor(side,"file_count")} / 증거 {deltaFor(side,"evidence_count")} / 리무브 {deltaFor(side,"remove_count")}</div><div style={{ marginTop: 6 }}><b style={{ fontSize: 8, color: C.blue }}>현장</b><div style={{ display: "flex", flexWrap: "wrap", gap: 3, marginTop: 3 }}>{(side.field_cards || []).map((card) => <button key={card.instance_id} type="button" onClick={() => openDetails(card)} style={{ ...st.smallButton, fontSize: 7, padding: "3px 4px" }}>{nameOf(card)}{card.rested ? " · 슬립" : ""}</button>)}{!(side.field_cards || []).length && <span style={{ fontSize: 8, color: C.muted }}>없음</span>}</div></div><div style={{ marginTop: 6 }}><b style={{ fontSize: 8, color: C.gold }}>손패 목록</b><div style={{ display: "flex", flexWrap: "wrap", gap: 3, marginTop: 3 }}>{(side.hand_cards || []).map((card) => <button key={card.instance_id} type="button" onClick={() => openDetails(card)} style={{ ...st.smallButton, fontSize: 7, padding: "3px 4px" }}>{nameOf(card)}</button>)}{!(side.hand_cards || []).length && <span style={{ fontSize: 8, color: C.muted }}>없음</span>}</div></div></div>)}</div></article>; })}</div></section></div>}
 
       {opponentDeckAfterWin && minimizedModal !== "opponentDeck" && <div role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setOpponentDeckAfterWin(null); }} style={{ position: "fixed", inset: 0, zIndex: 100220, display: "flex", alignItems: "center", justifyContent: "center", padding: 12, background: "rgba(0,0,0,.9)", backdropFilter: "blur(5px)" }}>
         <section onDoubleClick={(event) => minimizeOnDoubleClick(event, "opponentDeck")} role="dialog" aria-modal="true" aria-label="상대 덱 보기" style={{ width: "min(100%, 1040px)", maxHeight: "92dvh", display: "flex", flexDirection: "column", overflow: "hidden", border: "1px solid rgba(134,239,172,.3)", borderRadius: 13, background: "#101827", color: C.text }}>

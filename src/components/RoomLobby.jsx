@@ -3,6 +3,37 @@ import { supabase } from "../lib/supabase";
 import MatchStartFlow from "./MatchStartFlow";
 import MatchTurnBoard from "./MatchTurnBoard";
 
+function normalizeCardIdentifier(value) {
+  const raw = String(value ?? "").trim().toLocaleUpperCase();
+  if (!raw) return "";
+  return /^\d+$/.test(raw) ? String(Number(raw)) : raw;
+}
+
+function getCopyLimitExemptionId(card, fallbackKey = "") {
+  const source = card?.sourceData && typeof card.sourceData === "object" ? card.sourceData : card?.raw && typeof card.raw === "object" ? card.raw : {};
+  const values = [card?.key, card?.databaseId, card?.cardId, card?.cardNum, fallbackKey,
+    source?.id, source?.databaseId, source?.database_id, source?.cardId, source?.card_id, source?.cardNum, source?.card_num];
+  if (values.some((value) => normalizeCardIdentifier(value) === "627")) return "0627";
+  if (values.some((value) => normalizeCardIdentifier(value) === "1039")) return "1039";
+  return null;
+}
+
+function getEventRuleCode(card, fallbackKey = "") {
+  const source = card?.sourceData && typeof card.sourceData === "object" ? card.sourceData : card?.raw && typeof card.raw === "object" ? card.raw : {};
+  const values = [card?.key, card?.databaseId, card?.cardId, card?.cardNum, fallbackKey,
+    source?.id, source?.databaseId, source?.database_id, source?.cardId, source?.card_id, source?.cardNum, source?.card_num];
+  return values.some((value) => normalizeCardIdentifier(value) === "1046") ? "culprits_1046" : "";
+}
+
+function getCardTraits(card) {
+  const values = [card?.traits, card?.category1, card?.category2, card?.category3];
+  return [...new Set(values.flatMap((value) => {
+    if (Array.isArray(value)) return value.map((item) => String(item ?? "").trim()).filter(Boolean);
+    if (value === null || value === undefined || String(value).trim() === "") return [];
+    return String(value).split(/[、,，;；|｜]/u).map((item) => item.trim()).filter(Boolean);
+  }))];
+}
+
 export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", cards = [], onGameFieldChange }) {
   const [inviteCodeInput, setInviteCodeInput] = useState("");
   const [room, setRoom] = useState(null);
@@ -259,6 +290,14 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
           : 0;
         return {
           key: String(key), count, limit_key: identity, card_type: cardType,
+          copy_limit_exemption_id: getCopyLimitExemptionId(card, key),
+          card_id: String(card?.cardId || card?.sourceData?.card_id || ""),
+          card_num: String(card?.cardNum || card?.sourceData?.card_num || ""),
+          database_id: String(card?.databaseId || card?.sourceData?.database_id || key),
+          traits: getCardTraits(card),
+          category1: String(card?.category1 || ""),
+          category2: String(card?.category2 || ""),
+          category3: String(card?.category3 || ""),
           rarity: String(card?.rarity || card?.sourceData?.rarity || ""),
           cost: Math.max(0, Number(card?.cost) || 0),
           ap: Math.max(0, Number(card?.ap ?? card?.sourceData?.ap ?? card?.sourceData?.AP) || 0),
@@ -283,6 +322,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
         p_main_deck: makePrivateDeckPayload(),
         p_partner_key: partnerId,
         p_event_key: eventId,
+        p_event_rule_code: getEventRuleCode(cardsByKey.get(String(eventId)), eventId),
       });
       if (rpcError) throw rpcError;
       setReadyDeckSignature(deckSignature);

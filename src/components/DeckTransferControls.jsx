@@ -1,5 +1,22 @@
 import { useRef, useState } from "react";
 
+function normalizeCardIdentifier(value) {
+  const raw = String(value ?? "").trim().toLocaleUpperCase();
+  if (!raw) return "";
+  return /^\d+$/.test(raw) ? String(Number(raw)) : raw;
+}
+
+function cardHasIdentifier(card, targetId) {
+  const target = normalizeCardIdentifier(targetId);
+  const source = card?.sourceData && typeof card.sourceData === "object" ? card.sourceData : card?.raw && typeof card.raw === "object" ? card.raw : {};
+  return [card?.key, card?.databaseId, card?.cardId, card?.cardNum, source?.id, source?.databaseId, source?.database_id, source?.cardId, source?.card_id, source?.cardNum, source?.card_num]
+    .some((value) => normalizeCardIdentifier(value) === target);
+}
+
+function isUnlimitedCopyCard(card) {
+  return cardHasIdentifier(card, "0627") || cardHasIdentifier(card, "1039");
+}
+
 function normalizedIdentity(card) {
   return String(card?.cardId ?? card?.sourceData?.card_id ?? card?.databaseId ?? card?.key ?? "").trim().toLocaleUpperCase();
 }
@@ -51,9 +68,11 @@ function resolveMainDeck(payload, cards, cardsByKey) {
     if (!count) continue;
     const card = cardsByKey.get(key);
     const identity = normalizedIdentity(card) || key;
-    const nextIdentityCount = (sameIdCounts.get(identity) || 0) + count;
-    if (nextIdentityCount > 3) throw new Error(`${card?.name || key}: 같은 카드 ID는 최대 3장까지 넣을 수 있습니다.`);
-    sameIdCounts.set(identity, nextIdentityCount);
+    if (!isUnlimitedCopyCard(card)) {
+      const nextIdentityCount = (sameIdCounts.get(identity) || 0) + count;
+      if (nextIdentityCount > 3) throw new Error(`${card?.name || key}: 같은 카드 ID는 최대 3장까지 넣을 수 있습니다. (0627, 1039 카드는 예외입니다.)`);
+      sameIdCounts.set(identity, nextIdentityCount);
+    }
     deck[key] = (deck[key] || 0) + count;
     total += count;
     if (total > 40) throw new Error("메인 덱은 최대 40장입니다.");
@@ -141,7 +160,7 @@ export default function DeckTransferControls({ cards = [], deck = {}, partnerId 
       justifyContent: "flex-start",
       gap: 2,
       position: "relative",
-      top: 7,
+      top: 8,
       width: 226,
       minWidth: 226,
       flex: "0 0 226px",
