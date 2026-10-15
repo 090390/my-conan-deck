@@ -226,7 +226,6 @@ export default function PublicDeckLibrary({ cards = [], deck = {}, partnerId = "
           {error && <p role="alert" style={{ color: "#fda4af", fontSize: 11, margin: 0, overflowWrap: "anywhere" }}>{error}</p>}
           <form onSubmit={uploadCurrentDeck} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 8, padding: 10, border: "1px solid rgba(147,197,253,.2)", borderRadius: 8, background: "#080d16" }}>
             <strong style={{ gridColumn: "1 / -1", fontSize: 12 }}>현재 덱을 서버에 공개 업로드</strong>
-            <label style={labelStyle}>덱 이름<input value={deckName} onChange={(event) => setDeckName(event.target.value)} maxLength={80} placeholder="예: 초반 압박 덱" style={inputStyle} /></label>
             <label style={labelStyle}>덱 이름<input value={deckName} onChange={(event) => setDeckName(event.target.value)} maxLength={80} placeholder="예: 나가노 돌격 덱" style={inputStyle} /></label>
             <label style={labelStyle}>덱 편성자 닉네임<input value={composerName} onChange={(event) => setComposerName(event.target.value)} maxLength={80} placeholder="공개할 편성자 이름" style={inputStyle} /></label>
             <label style={{ ...labelStyle, gridColumn: "1 / -1" }}>덱 설명<textarea value={description} onChange={(event) => setDescription(event.target.value)} maxLength={2000} rows={3} placeholder="덱의 전략, 운용법, 특징 등을 작성해 주세요." style={{ ...inputStyle, resize: "vertical" }} /></label>
