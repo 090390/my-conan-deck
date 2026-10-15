@@ -408,6 +408,16 @@ function normalizeCard(card, translations, keywordTagData = {}) {
   const hiramekiEffect = String(translated.hirameki || '').replace(/^【히라메키】\s*/u, '');
   const cutInEffect = String(translated.cut_in || '').replace(/^【컷인】\s*/u, '');
   const hensoEffect = String(translated.henso || '').replace(/^【변장】\s*/u, '');
+  const disguiseEffect = String(translated.disguise || translated.disguise_effect || translated.disguiseEffect || firstValue(objects, ['disguiseEffect', 'disguise_effect', 'disguise'])).trim();
+  const traitAliases = new Map([['怪盗', '괴도'], ['高校生', '고등학생'], ['マジシャン', '마술사'], ['探偵', '탐정'], ['小学生', '초등학생'], ['警察', '경찰'], ['刑事', '형사'], ['公安', '공안'], ['黒ずくめの組織', '검은 조직'], ['犯人', '범인']]);
+  const traitRaw = [translated.traitsKo, translated.traits_ko, translated.traits, translated.category1Ko, translated.category2Ko, translated.category3Ko,
+    ...objects.flatMap((object) => [object.traitsKo, object.traits_ko, object.traits, object.trait, object.characteristics, object.characteristic,
+      object.category1Ko, object.category2Ko, object.category3Ko, object.category1, object.category_1, object.category2, object.category_2, object.category3, object.category_3])];
+  const traitTokens = traitRaw.flatMap((value) => Array.isArray(value) ? value : typeof value === 'string' ? value.split(/[|｜,，、/／·・]+/u) : [])
+    .map((value) => String(value).trim()).filter(Boolean)
+    .map((value) => traitAliases.get(value) || value)
+    .filter((value) => !/[\u3040-\u30ff\u3400-\u9fff]/u.test(value));
+  const traits = [...new Set(traitTokens)];
   const originalName = String(firstValue(objects, ['nameJp', 'title', 'name', 'cardName', 'card_name']));
   const originalType = String(firstValue(objects, ['typeJp', 'type', 'cardType', 'card_type', 'category1', 'category_1']));
   const originalColor = String(firstValue(objects, ['colorJp', 'color', 'colour']));
@@ -478,6 +488,8 @@ function normalizeCard(card, translations, keywordTagData = {}) {
     hiramekiEffect,
     cutInEffect,
     hensoEffect,
+    disguiseEffect,
+    traits,
     keywordTags,
     flavor: String(translated.flavorKo || firstValue([card], ['flavorKo']) || originalFlavor),
     imageUrl: getImageUrl(card, source),
