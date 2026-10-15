@@ -1831,7 +1831,7 @@ export default function App() {
             </div>
             <div className="deck-action-buttons">
               <button onClick={clearDeck} className="deck-reset-button">덱 초기화</button>
-              <DeckTransferControls cards={cards} deck={deck} partnerId={partnerId} eventId={eventId} onImport={({ deck: nextDeck, partnerId: nextPartnerId, eventId: nextEventId }) => {setDeck(nextDeck); setPartnerId(nextPartnerId); setEventId(nextEventId);}}/>
+              <DeckTransferControls cards={cards} deck={deck} partnerId={partnerId} eventId={eventId} onImport={({ deck: nextDeck, partnerId: nextPartnerId, eventId: nextEventId }) => {setDeck(nextDeck);   setPartnerId(nextPartnerId); setEventId(nextEventId);}} onReset={clearDeck}/>
               <select className="deck-image-export-format" value={deckImageFormat} onChange={(event) => setDeckImageFormat(event.target.value)} aria-label="이미지 파일 형식"><option value="png">PNG</option><option value="jpeg">JPG</option></select>
               <button onClick={exportDeckImage} disabled={exportingDeckImage} className="deck-export-button">{exportingDeckImage ? '이미지 생성 중…' : '이미지 저장'}</button>
             </div>
@@ -1946,19 +1946,6 @@ export default function App() {
                 {mainDeckCount === 0 && <p className="deck-empty-hint">카드를 추가하려면 ‘카드 목록’ 탭으로 이동해 원하는 카드에서 ‘덱에 추가’를 눌러 주세요.</p>}
               </div>
             </div>
-
-          <PublicDeckLibrary
-            cards={cards}
-            deck={deck}
-            partnerId={partnerId}
-            eventId={eventId}
-            onImport={({ deck: nextDeck, partnerId: nextPartnerId, eventId: nextEventId }) => {
-              setDeck(nextDeck);
-              setPartnerId(nextPartnerId);
-              setEventId(nextEventId);
-            }}
-          />
-
           </div>
           <p className="deck-footnote border-t border-white/[0.08] pt-3 text-[11px] leading-5 text-slate-500">덱 구성은 이 브라우저에 자동 저장돼요. 메인 덱은 빈 슬롯을 포함해 이미지로 저장할 수 있어요. 파트너 카드와 사건 카드는 각각 선택해야 해요.</p>
         </section>

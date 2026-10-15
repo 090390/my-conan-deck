@@ -81,7 +81,7 @@ function resolveMainDeck(payload, cards, cardsByKey) {
   return deck;
 }
 
-export default function DeckTransferControls({ cards = [], deck = {}, partnerId = "", eventId = "", onImport }) {
+export default function DeckTransferControls({ cards = [], deck = {}, partnerId = "", eventId = "", onImport, onReset }) {
   const inputRef = useRef(null);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
@@ -162,16 +162,23 @@ export default function DeckTransferControls({ cards = [], deck = {}, partnerId 
       gap: 2,
       position: "relative",
       top: 8,
-      width: 312,
+      width: "fit-content",
       minWidth: 0,
       maxWidth: "100%",
-      flex: "0 1 312px",
+      flex: "0 1 auto",
       boxSizing: "border-box",
     }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", flexWrap: "wrap", gap: 6, minHeight: 36 }}>
         <button type="button" style={button} onClick={exportFile} disabled={busy}>덱 JSON 저장</button>
         <button type="button" style={{ ...button, background: "#263d63" }} onClick={() => inputRef.current?.click()} disabled={busy}>{busy ? "읽는 중…" : "덱 JSON 불러오기"}</button>
         <PublicDeckLibrary cards={cards} deck={deck} partnerId={partnerId} eventId={eventId} onImport={onImport} />
+        {typeof onReset === "function" && <button
+          type="button"
+          style={{ ...button, background: "#241b25", borderColor: "rgba(251,113,133,.35)", color: "#fecdd3" }}
+          onClick={onReset}
+          disabled={busy}
+          title="메인 덱, 파트너, 사건 카드를 초기화합니다."
+        >덱 초기화</button>}
         <input ref={inputRef} type="file" accept="application/json,.json,.txt" onChange={importFile} style={{ display: "none" }} aria-label="덱 JSON 파일 선택" />
       </div>
       <div
