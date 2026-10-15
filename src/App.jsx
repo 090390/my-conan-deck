@@ -1826,11 +1826,10 @@ export default function App() {
             <div className="deck-topbar-info">
               <div className="deck-heading-copy">
                 <div className="deck-title-row"><h2 className="text-base font-bold">내 덱 구성</h2><span className="deck-count-pill">{mainDeckCount} / {MAIN_DECK_LIMIT}장</span></div>
-                <p className="mt-1 text-xs text-slate-400">메인 덱 최대 40장 · 같은 카드 최대 3장 (ID 0627·1039 제외) · 파트너와 사건 카드는 별도 슬롯</p>
+                <p className="mt-1 text-xs text-slate-400">파트너와 사건 카드는 별도 슬롯 · 메인 덱 40장 · 같은 카드 최대 3장</p>
               </div>
             </div>
             <div className="deck-action-buttons">
-              <button onClick={clearDeck} className="deck-reset-button">덱 초기화</button>
               <DeckTransferControls cards={cards} deck={deck} partnerId={partnerId} eventId={eventId} onImport={({ deck: nextDeck, partnerId: nextPartnerId, eventId: nextEventId }) => {setDeck(nextDeck);   setPartnerId(nextPartnerId); setEventId(nextEventId);}} onReset={clearDeck}/>
               <select className="deck-image-export-format" value={deckImageFormat} onChange={(event) => setDeckImageFormat(event.target.value)} aria-label="이미지 파일 형식"><option value="png">PNG</option><option value="jpeg">JPG</option></select>
               <button onClick={exportDeckImage} disabled={exportingDeckImage} className="deck-export-button">{exportingDeckImage ? '이미지 생성 중…' : '이미지 저장'}</button>
