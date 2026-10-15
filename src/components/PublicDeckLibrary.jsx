@@ -203,33 +203,48 @@ export default function PublicDeckLibrary({ cards = [], deck = {}, partnerId = "
     } catch (err) { setError(err?.message || "덱을 삭제하지 못했습니다."); }
   }
 
-  return <section style={{ marginTop: 12, padding: 12, border: "1px solid rgba(148,163,184,.23)", borderRadius: 10, background: "rgba(15,23,42,.55)", color: "#e8edf7" }}>
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
-      <div><h3 style={{ margin: 0, fontSize: 14, fontWeight: 900 }}>공개 덱 저장소</h3><p style={{ margin: "5px 0 0", color: "#94a3b8", fontSize: 11, lineHeight: 1.5 }}>공개 덱 JSON을 공유하고 다른 편성자의 덱을 내 덱으로 적용할 수 있습니다.</p></div>
-      <button type="button" onClick={() => setOpen((value) => !value)} style={buttonStyle}>{open ? "저장소 닫기" : "공개 덱 찾아보기 / 업로드"}</button>
-    </div>
-    {notice && <p role="status" style={{ color: "#86efac", fontSize: 11, margin: "9px 0 0" }}>{notice}</p>}
-    {error && <p role="alert" style={{ color: "#fda4af", fontSize: 11, margin: "9px 0 0", overflowWrap: "anywhere" }}>{error}</p>}
-    {open && <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr)", gap: 12, marginTop: 12 }}>
-      <form onSubmit={uploadCurrentDeck} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 8, padding: 10, border: "1px solid rgba(147,197,253,.2)", borderRadius: 8, background: "#080d16" }}>
-        <strong style={{ gridColumn: "1 / -1", fontSize: 12 }}>현재 덱을 서버에 공개 업로드</strong>
-        <label style={labelStyle}>덱 이름<input value={deckName} onChange={(event) => setDeckName(event.target.value)} maxLength={80} placeholder="예: 초반 압박 덱" style={inputStyle} /></label>
-        <label style={labelStyle}>덱 편성자 닉네임<input value={composerName} onChange={(event) => setComposerName(event.target.value)} maxLength={80} placeholder="공개할 편성자 이름" style={inputStyle} /></label>
-        <label style={{ ...labelStyle, gridColumn: "1 / -1" }}>덱 설명<textarea value={description} onChange={(event) => setDescription(event.target.value)} maxLength={2000} rows={3} placeholder="덱의 전략, 운용법, 특징 등을 작성해 주세요." style={{ ...inputStyle, resize: "vertical" }} /></label>
-        <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap", alignItems: "center" }}><span style={{ color: totalCards === 40 && partnerId && eventId ? "#86efac" : "#fcd34d", fontSize: 10 }}>현재 덱: {totalCards}/40장 · 파트너 {partnerId ? "선택됨" : "미선택"} · 사건 {eventId ? "선택됨" : "미선택"}</span><button type="submit" disabled={saving} style={buttonStyle}>{saving ? "업로드 중…" : "서버에 공개 업로드"}</button></div>
-      </form>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}><strong style={{ fontSize: 12 }}>공개된 덱 · {items.length}개</strong><button type="button" onClick={() => void loadItems()} disabled={loading} style={smallButtonStyle}>{loading ? "불러오는 중…" : "새로고침"}</button></div>
-      {loading && !items.length && <p style={mutedStyle}>공개 덱을 불러오고 있습니다…</p>}
-      {!loading && !items.length && <p style={mutedStyle}>아직 공개된 덱이 없습니다. 첫 덱을 업로드해 보세요.</p>}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 7 }}>
-        {items.map((item) => <article key={item.id} style={{ minWidth: 0, padding: 10, border: `1px solid ${selected?.id === item.id ? "rgba(252,211,77,.6)" : "rgba(255,255,255,.1)"}`, borderRadius: 8, background: "#0b1220" }}>
-          <button type="button" onClick={() => { setSelected(item); setError(""); }} style={{ display: "block", width: "100%", padding: 0, border: 0, textAlign: "left", background: "transparent", color: "#f8fafc", cursor: "pointer" }}><strong style={{ display: "block", fontSize: 12, overflowWrap: "anywhere" }}>{item.deck_name}</strong><span style={{ display: "block", color: "#94a3b8", fontSize: 10, marginTop: 4 }}>편성자: {item.composer_name}</span><span style={{ display: "block", color: "#64748b", fontSize: 9, marginTop: 3 }}>{new Date(item.created_at).toLocaleDateString("ko-KR")}</span><span style={{ display: "block", color: "#93c5fd", fontSize: 10, marginTop: 7 }}>상세 보기 →</span></button>
-          <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginTop: 8 }}><button type="button" style={smallButtonStyle} onClick={() => downloadJson(`${safeFileName(item.deck_name)}.json`, item.deck_json)}>JSON 다운로드</button>{item.created_by && item.created_by === currentUserId && <button type="button" style={smallButtonStyle} onClick={() => void deleteOwnDeck(item)}>삭제</button>}</div>
-        </article>)}
-      </div>
+  return <>
+    <button
+      type="button"
+      onClick={() => setOpen(true)}
+      style={{ ...buttonStyle, minHeight: 36, padding: "7px 10px", whiteSpace: "nowrap", flex: "0 0 auto" }}
+      aria-haspopup="dialog"
+      aria-expanded={open}
+    >덱 저장소</button>
+    {open && <div
+      role="presentation"
+      onMouseDown={(event) => { if (event.target === event.currentTarget) { setSelected(null); setOpen(false); } }}
+      style={{ position: "fixed", inset: 0, zIndex: 100400, padding: 12, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,.86)", backdropFilter: "blur(4px)" }}
+    >
+      <section role="dialog" aria-modal="true" aria-label="공개 덱 저장소" style={{ width: "min(100%, 1080px)", maxHeight: "92dvh", overflow: "hidden", display: "flex", flexDirection: "column", border: "1px solid rgba(147,197,253,.35)", borderRadius: 12, background: "#101827", color: "#e8edf7", boxShadow: "0 24px 80px rgba(0,0,0,.6)" }}>
+        <header style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, padding: 13, borderBottom: "1px solid rgba(255,255,255,.1)" }}>
+          <div><h2 style={{ margin: 0, fontSize: 17, fontWeight: 900 }}>공개 덱 저장소</h2><p style={{ margin: "5px 0 0", color: "#94a3b8", fontSize: 11, lineHeight: 1.5 }}>공개 덱을 검색하고 상세 구성을 확인한 뒤, JSON으로 다운로드하거나 내 덱 구성에 적용할 수 있습니다.</p></div>
+          <button type="button" onClick={() => { setSelected(null); setOpen(false); }} style={smallButtonStyle}>닫기 ✕</button>
+        </header>
+        <div style={{ padding: 12, overflowY: "auto", display: "grid", gridTemplateColumns: "minmax(0,1fr)", gap: 12 }}>
+          {notice && <p role="status" style={{ color: "#86efac", fontSize: 11, margin: 0 }}>{notice}</p>}
+          {error && <p role="alert" style={{ color: "#fda4af", fontSize: 11, margin: 0, overflowWrap: "anywhere" }}>{error}</p>}
+          <form onSubmit={uploadCurrentDeck} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 8, padding: 10, border: "1px solid rgba(147,197,253,.2)", borderRadius: 8, background: "#080d16" }}>
+            <strong style={{ gridColumn: "1 / -1", fontSize: 12 }}>현재 덱을 서버에 공개 업로드</strong>
+            <label style={labelStyle}>덱 이름<input value={deckName} onChange={(event) => setDeckName(event.target.value)} maxLength={80} placeholder="예: 초반 압박 덱" style={inputStyle} /></label>
+            <label style={labelStyle}>덱 편성자 닉네임<input value={composerName} onChange={(event) => setComposerName(event.target.value)} maxLength={80} placeholder="공개할 편성자 이름" style={inputStyle} /></label>
+            <label style={{ ...labelStyle, gridColumn: "1 / -1" }}>덱 설명<textarea value={description} onChange={(event) => setDescription(event.target.value)} maxLength={2000} rows={3} placeholder="덱의 전략, 운용법, 특징 등을 작성해 주세요." style={{ ...inputStyle, resize: "vertical" }} /></label>
+            <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap", alignItems: "center" }}><span style={{ color: totalCards === 40 && partnerId && eventId ? "#86efac" : "#fcd34d", fontSize: 10 }}>현재 덱: {totalCards}/40장 · 파트너 {partnerId ? "선택됨" : "미선택"} · 사건 {eventId ? "선택됨" : "미선택"}</span><button type="submit" disabled={saving} style={buttonStyle}>{saving ? "업로드 중…" : "서버에 공개 업로드"}</button></div>
+          </form>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}><strong style={{ fontSize: 12 }}>공개된 덱 · {items.length}개</strong><button type="button" onClick={() => void loadItems()} disabled={loading} style={smallButtonStyle}>{loading ? "불러오는 중…" : "새로고침"}</button></div>
+          {loading && !items.length && <p style={mutedStyle}>공개 덱을 불러오고 있습니다…</p>}
+          {!loading && !items.length && <p style={mutedStyle}>아직 공개된 덱이 없습니다. 첫 덱을 업로드해 보세요.</p>}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 7 }}>
+            {items.map((item) => <article key={item.id} style={{ minWidth: 0, padding: 10, border: `1px solid ${selected?.id === item.id ? "rgba(252,211,77,.6)" : "rgba(255,255,255,.1)"}`, borderRadius: 8, background: "#0b1220" }}>
+              <button type="button" onClick={() => { setSelected(item); setError(""); }} style={{ display: "block", width: "100%", padding: 0, border: 0, textAlign: "left", background: "transparent", color: "#f8fafc", cursor: "pointer" }}><strong style={{ display: "block", fontSize: 12, overflowWrap: "anywhere" }}>{item.deck_name}</strong><span style={{ display: "block", color: "#94a3b8", fontSize: 10, marginTop: 4 }}>편성자: {item.composer_name}</span><span style={{ display: "block", color: "#64748b", fontSize: 9, marginTop: 3 }}>{new Date(item.created_at).toLocaleDateString("ko-KR")}</span><span style={{ display: "block", color: "#93c5fd", fontSize: 10, marginTop: 7 }}>상세 보기 →</span></button>
+              <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginTop: 8 }}><button type="button" style={smallButtonStyle} onClick={() => downloadJson(`${safeFileName(item.deck_name)}.json`, item.deck_json)}>JSON 다운로드</button>{item.created_by && item.created_by === currentUserId && <button type="button" style={smallButtonStyle} onClick={() => void deleteOwnDeck(item)}>삭제</button>}</div>
+            </article>)}
+          </div>
+        </div>
+      </section>
       {selected && <div role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setSelected(null); }} style={{ position: "fixed", inset: 0, zIndex: 100500, padding: 12, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,.88)" }}>
         <section role="dialog" aria-modal="true" aria-label={`${selected.deck_name} 상세 정보`} style={{ width: "min(100%,980px)", maxHeight: "92dvh", overflow: "hidden", display: "flex", flexDirection: "column", border: "1px solid rgba(147,197,253,.35)", borderRadius: 12, background: "#101827", color: "#e8edf7" }}>
-          <header style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start", padding: 13, borderBottom: "1px solid rgba(255,255,255,.1)" }}><div><h3 style={{ margin: 0, fontSize: 17 }}>{selected.deck_name}</h3><p style={{ margin: "5px 0 0", color: "#94a3b8", fontSize: 10 }}>편성자: {selected.composer_name} · {new Date(selected.created_at).toLocaleString("ko-KR")}</p></div><button type="button" onClick={() => setSelected(null)} style={smallButtonStyle}>닫기 ✕</button></header>
+          <header style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start", padding: 13, borderBottom: "1px solid rgba(255,255,255,.1)" }}><div><h3 style={{ margin: 0, fontSize: 17 }}>{selected.deck_name}</h3><p style={{ margin: "5px 0 0", color: "#94a3b8", fontSize: 10 }}>편성자: {selected.composer_name} · {new Date(selected.created_at).toLocaleString("ko-KR")}</p></div><button type="button" onClick={() => setSelected(null)} style={smallButtonStyle}>상세 닫기 ✕</button></header>
           <div style={{ padding: 12, overflowY: "auto" }}>
             <p style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere", fontSize: 11, lineHeight: 1.6, color: "#cbd5e1", marginTop: 0 }}>{selected.description || "등록된 설명이 없습니다."}</p>
             {selectedDeck ? <><section style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 8, marginBottom: 13 }}>
@@ -243,7 +258,8 @@ export default function PublicDeckLibrary({ cards = [], deck = {}, partnerId = "
         </section>
       </div>}
     </div>}
-  </section>;
+  </>;
+
 }
 
 function resolveImportedDeckSafe(cards, raw) {

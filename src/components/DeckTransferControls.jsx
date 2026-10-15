@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import PublicDeckLibrary from "./PublicDeckLibrary";
 
 function normalizeCardIdentifier(value) {
   const raw = String(value ?? "").trim().toLocaleUpperCase();
@@ -161,14 +162,16 @@ export default function DeckTransferControls({ cards = [], deck = {}, partnerId 
       gap: 2,
       position: "relative",
       top: 8,
-      width: 226,
-      minWidth: 226,
-      flex: "0 0 226px",
+      width: 312,
+      minWidth: 0,
+      maxWidth: "100%",
+      flex: "0 1 312px",
       boxSizing: "border-box",
     }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", flexWrap: "nowrap", gap: 6, minHeight: 36 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", flexWrap: "wrap", gap: 6, minHeight: 36 }}>
         <button type="button" style={button} onClick={exportFile} disabled={busy}>덱 JSON 저장</button>
         <button type="button" style={{ ...button, background: "#263d63" }} onClick={() => inputRef.current?.click()} disabled={busy}>{busy ? "읽는 중…" : "덱 JSON 불러오기"}</button>
+        <PublicDeckLibrary cards={cards} deck={deck} partnerId={partnerId} eventId={eventId} onImport={onImport} />
         <input ref={inputRef} type="file" accept="application/json,.json,.txt" onChange={importFile} style={{ display: "none" }} aria-label="덱 JSON 파일 선택" />
       </div>
       <div
@@ -180,7 +183,7 @@ export default function DeckTransferControls({ cards = [], deck = {}, partnerId 
           lineHeight: "13px",
           width: "100%",
           boxSizing: "border-box",
-          textAlign: "right",
+          textAlign: "left",
           color: statusIsError ? "#fda4af" : "#86efac",
           fontSize: 10,
           whiteSpace: "nowrap",
