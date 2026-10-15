@@ -61,43 +61,37 @@ BEGIN
     RAISE EXCEPTION 'v8 migration stopped: manual sleep status restriction did not match';
   END IF;
 
-  -- Patch cut-in handling in smaller fragments to tolerate differences in surrounding formatting.
-  IF position($old$      v_pending := jsonb_set(v_match.pending_action,'{attacker_bonus}',to_jsonb(v_bonus));
-    else
-      v_pending := jsonb_set(v_match.pending_action,'{target_bonus}',to_jsonb(v_bonus));
-    end if;$old$ in v_definition) > 0 THEN
+  -- Patch the cut-in bonus assignments using their distinctive expressions rather than an indentation-sensitive block.
+  IF position($old$'{attacker_bonus}',to_jsonb(v_bonus));$old$ in v_definition) > 0 THEN
     v_definition := replace(
       v_definition,
-      $old$      v_pending := jsonb_set(v_match.pending_action,'{attacker_bonus}',to_jsonb(v_bonus));
-    else
-      v_pending := jsonb_set(v_match.pending_action,'{target_bonus}',to_jsonb(v_bonus));
-    end if;$old$,
-      $new$      v_pending := jsonb_set(v_match.pending_action,'{attacker_bonus}',to_jsonb(v_bonus));
-      v_pending := jsonb_set(v_pending,'{attacker_cut_in_used}','true'::jsonb);
-    else
-      v_pending := jsonb_set(v_match.pending_action,'{target_bonus}',to_jsonb(v_bonus));
-      v_pending := jsonb_set(v_pending,'{target_cut_in_used}','true'::jsonb);
-    end if;$new$
+      $old$'{attacker_bonus}',to_jsonb(v_bonus));$old$,
+      $new$'{attacker_bonus}',to_jsonb(v_bonus));
+      v_pending := jsonb_set(v_pending,'{attacker_cut_in_used}','true'::jsonb);$new$
     );
-  ELSIF position($new$      v_pending := jsonb_set(v_match.pending_action,'{attacker_bonus}',to_jsonb(v_bonus));
-      v_pending := jsonb_set(v_pending,'{attacker_cut_in_used}','true'::jsonb);
-    else
-      v_pending := jsonb_set(v_match.pending_action,'{target_bonus}',to_jsonb(v_bonus));
-      v_pending := jsonb_set(v_pending,'{target_cut_in_used}','true'::jsonb);
-    end if;$new$ in v_definition) = 0 THEN
-    RAISE EXCEPTION 'v8 migration stopped: per-player cut-in bonus block did not match';
+  ELSIF position($new$'{attacker_bonus}',to_jsonb(v_bonus));
+      v_pending := jsonb_set(v_pending,'{attacker_cut_in_used}','true'::jsonb);$new$ in v_definition) = 0 THEN
+    RAISE EXCEPTION 'v8 migration stopped: attacker cut-in bonus assignment did not match';
   END IF;
 
-  IF position($old$v_pending := jsonb_set(v_pending,'{cut_in_used}','true'::jsonb);
-    perform public.resolve_private_character_contact(p_room_id,v_pending);
-    return public.get_private_turn_state_v2(p_room_id);$old$ in v_definition) > 0 THEN
+  IF position($old$'{target_bonus}',to_jsonb(v_bonus));$old$ in v_definition) > 0 THEN
     v_definition := replace(
       v_definition,
-      $old$v_pending := jsonb_set(v_pending,'{cut_in_used}','true'::jsonb);
-    perform public.resolve_private_character_contact(p_room_id,v_pending);
-    return public.get_private_turn_state_v2(p_room_id);$old$,
-      $new$v_pending := jsonb_set(v_pending,'{cut_in_used}','true'::jsonb);
+      $old$'{target_bonus}',to_jsonb(v_bonus));$old$,
+      $new$'{target_bonus}',to_jsonb(v_bonus));
+      v_pending := jsonb_set(v_pending,'{target_cut_in_used}','true'::jsonb);$new$
+    );
+  ELSIF position($new$'{target_bonus}',to_jsonb(v_bonus));
+      v_pending := jsonb_set(v_pending,'{target_cut_in_used}','true'::jsonb);$new$ in v_definition) = 0 THEN
+    RAISE EXCEPTION 'v8 migration stopped: target cut-in bonus assignment did not match';
+  END IF;
 
+  -- After the defender uses a cut-in, let the attacker answer before resolving contact.
+  IF position($old$v_pending := jsonb_set(v_pending,'{cut_in_used}','true'::jsonb);$old$ in v_definition) > 0 THEN
+    v_definition := replace(
+      v_definition,
+      $old$v_pending := jsonb_set(v_pending,'{cut_in_used}','true'::jsonb);$old$,
+      $new$v_pending := jsonb_set(v_pending,'{cut_in_used}','true'::jsonb);
     if v_user = (v_match.pending_action ->> 'target_user_id')::uuid then
       v_pending := jsonb_set(v_pending,'{next_responder_user_id}',to_jsonb((v_match.pending_action ->> 'attacker_user_id')));
       update public.room_match_states m
@@ -105,14 +99,11 @@ BEGIN
             last_action_label='수비자가 컷인을 사용했습니다. 이제 공격자가 컷인 사용 여부를 선택합니다.'
         where m.room_id=p_room_id;
       return public.get_private_turn_state_v2(p_room_id);
-    end if;
-
-    perform public.resolve_private_character_contact(p_room_id,v_pending);
-    return public.get_private_turn_state_v2(p_room_id);$new$
+    end if;$new$
     );
-  ELSIF position($new$if v_user = (v_match.pending_action ->> 'target_user_id')::uuid then
-      v_pending := jsonb_set(v_pending,'{next_responder_user_id}',to_jsonb((v_match.pending_action ->> 'attacker_user_id')));$new$ in v_definition) = 0 THEN
-    RAISE EXCEPTION 'v8 migration stopped: cut-in resolution block did not match';
+  ELSIF position($new$v_pending := jsonb_set(v_pending,'{cut_in_used}','true'::jsonb);
+    if v_user = (v_match.pending_action ->> 'target_user_id')::uuid then$new$ in v_definition) = 0 THEN
+    RAISE EXCEPTION 'v8 migration stopped: cut-in resolution insertion point did not match';
   END IF;
 
   -- Return an attached set card to the current player's hand.
