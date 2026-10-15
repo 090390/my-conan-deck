@@ -6,6 +6,11 @@ on:
     - cron: '12 18 * * 1'
   workflow_dispatch:
 
+# Avoid overlapping price-refresh runs.
+concurrency:
+  group: torecabirth-price-sync
+  cancel-in-progress: false
+
 permissions:
   contents: write
 
@@ -30,13 +35,42 @@ jobs:
           TORECABIRTH_SCRAPE_ALLOWED: ${{ vars.TORECABIRTH_SCRAPE_ALLOWED }}
         run: python tools/update_torecabirth_prices.py
       - name: Commit cache if it changed
+        shell: bash
         run: |
-          if git diff --quiet -- public/torecabirth-prices.json; then
-            echo "Price cache did not change."
-            exit 0
-          fi
+          set -euo pipefail
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/torecabirth-prices.json
-          git commit -m "chore: refresh TorecaBirth card prices"
-          git push
+
+          # Preserve the generated cache while syncing to the newest main.
+          cp public/torecabirth-prices.json "$RUNNER_TEMP/torecabirth-prices.json"
+
+          # A user may have committed other changes while the crawl ran.
+          # Reset to the latest main, then put the generated cache back.
+          # Retry if another commit lands between fetch and push.
+          for attempt in 1 2 3; do
+            echo "Syncing cache with origin/main (attempt $attempt/3)..."
+            git fetch origin main
+            git reset --hard origin/main
+            cp "$RUNNER_TEMP/torecabirth-prices.json" public/torecabirth-prices.json
+
+            if git diff --quiet -- public/torecabirth-prices.json; then
+              echo "Price cache did not change."
+              exit 0
+            fi
+
+            git add public/torecabirth-prices.json
+            git commit -m "chore: refresh TorecaBirth card prices"
+
+            if git push origin HEAD:main; then
+              echo "Price cache was pushed successfully."
+              exit 0
+            fi
+
+            if [ "$attempt" -eq 3 ]; then
+              echo "Push failed after 3 attempts. Check branch protection or Actions write permissions." >&2
+              exit 1
+            fi
+
+            sleep $((attempt * 2))
+          done
