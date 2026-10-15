@@ -464,6 +464,7 @@ function normalizeCard(card, translations, keywordTagData = {}) {
     colorKey: normalizeColorKey(translated.colorKo || firstValue([card], ['colorKo']) || originalColor),
     originalColor,
     rarity,
+    originalRarity: String(firstValue(objects, ['rarityJp', 'rarity', 'rare', 'rarity_code', 'rarityCode'])),
     cost,
     lp,
     ap,
@@ -540,6 +541,69 @@ function uniqueOptions(values) {
 
 function formatNumber(value) {
   return value === null || value === undefined || value === '' ? '-' : value;
+}
+
+function normalizePriceToken(value) {
+  return String(value ?? '').normalize('NFKC').toLocaleUpperCase().replace(/[\s〖〗《》【】［］\[\]「」『』]/gu, '');
+}
+
+function normalizePriceCardNumber(value) {
+  const token = normalizePriceToken(value).replace(/^(?:型番|NO\.?)/u, '');
+  if (/^P\d+$/u.test(token)) return `P${String(Number(token.slice(1)))}`;
+  if (/^\d+$/u.test(token)) return String(Number(token));
+  return token;
+}
+
+function getCardNumberTokens(card) {
+  const tokens = new Set();
+  for (const value of [card?.cardNum, card?.cardId]) {
+    const raw = String(value ?? '').normalize('NFKC').toLocaleUpperCase();
+    if (!raw) continue;
+    if (/^P\d+$/u.test(raw)) tokens.add(normalizePriceCardNumber(raw));
+    // CT-P10-1082 같은 표기는 카드 번호 쪽의 숫자(1082)도 비교 후보로 수집합니다.
+    for (const match of raw.matchAll(/P\d{3,4}|\d{3,4}/gu)) {
+      tokens.add(normalizePriceCardNumber(match[0]));
+    }
+  }
+  return tokens;
+}
+
+function normalizePriceRarity(value) {
+  const token = normalizePriceToken(value);
+  const match = token.match(/MRCP|SRCP|MRP|SRP|SEC|MR|SR|CP|RP|SP|PR|R|C|D|P/u);
+  return match ? match[0] : token;
+}
+
+function getTorecaPriceMatch(card, snapshot) {
+  const items = Array.isArray(snapshot?.items) ? snapshot.items : [];
+  const cardNumbers = getCardNumberTokens(card);
+  if (!cardNumbers.size) return { status: 'unmatched', item: null };
+
+  let candidates = items.filter((item) => cardNumbers.has(normalizePriceCardNumber(item.cardNumber)));
+  if (!candidates.length) return { status: 'unmatched', item: null };
+
+  const rarity = normalizePriceRarity(card.originalRarity || card.rarity);
+  if (rarity) {
+    candidates = candidates.filter((item) => normalizePriceRarity(item.rarity) === rarity);
+    if (!candidates.length) return { status: 'unmatched', item: null };
+  }
+
+  const originalName = normalizePriceToken(card.originalName);
+  if (originalName) {
+    candidates = candidates.filter((item) => normalizePriceToken(item.title || '').includes(originalName));
+    if (!candidates.length) return { status: 'unmatched', item: null };
+  }
+
+  // 같은 번호라도 사양이 여러 개 남으면 가격을 임의로 고르지 않습니다.
+  const unique = [...new Map(candidates.filter((item) => item.url).map((item) => [item.url, item])).values()];
+  if (unique.length !== 1) return { status: unique.length ? 'ambiguous' : 'unmatched', item: null };
+  return { status: 'match', item: unique[0] };
+}
+
+function formatPriceUpdatedAt(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '' : date.toLocaleString('ko-KR', { dateStyle: 'medium', timeStyle: 'short' });
 }
 
 function formatDeckCost(value) {
@@ -860,6 +924,8 @@ function FeatureDotLegend({ includeSystemEffects = false, className = '' }) {
 
 export default function App() {
   const [cards, setCards] = useState([]);
+  const [priceSnapshot, setPriceSnapshot] = useState({ items: [], updatedAt: null });
+  const [priceSyncState, setPriceSyncState] = useState('loading');
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -923,6 +989,31 @@ export default function App() {
     loadCards();
     return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => {
+  let cancelled = false;
+  async function loadTorecaPrices() {
+    try {
+      // 기존 App.jsx가 /cards.json을 불러오는 방식과 동일한 절대 경로입니다.
+      // GitHub Pages의 /my-conan-deck/ 같은 하위 경로에 배포한다면 아래 참고를 확인하세요.
+      const response = await fetch('/torecabirth-prices.json', { cache: 'no-cache' });
+      if (!response.ok) throw new Error(`가격 캐시 응답 오류 (${response.status})`);
+      const data = await response.json();
+      if (!cancelled) {
+        setPriceSnapshot({
+          items: Array.isArray(data?.items) ? data.items : [],
+          updatedAt: data?.updatedAt || null,
+        });
+        setPriceSyncState('ready');
+      }
+    } catch {
+      // 가격 정보는 부가 기능이므로 실패해도 카드 도감은 정상 작동하게 둡니다.
+      if (!cancelled) setPriceSyncState('unavailable');
+    }
+  }
+  loadTorecaPrices();
+  return () => { cancelled = true; };
+}, []);
 
   useEffect(() => { localStorage.setItem(DECK_STORAGE_KEY, JSON.stringify(deck)); }, [deck]);
   useEffect(() => {
@@ -1052,6 +1143,7 @@ export default function App() {
   const mainDeckCount = Object.values(deck).reduce((sum, count) => sum + Number(count || 0), 0);
   const partnerCard = cards.find((card) => card.key === partnerId) || null;
   const eventCard = cards.find((card) => card.key === eventId) || null;
+  const selectedCardPrice = selectedCard ?   getTorecaPriceMatch(selectedCard, priceSnapshot) : null;
   const deckCards = Object.entries(deck).flatMap(([key, count]) => {
     const card = cards.find((item) => item.key === key);
     const copyLimit = isUnlimitedCopyCard(card) ? MAIN_DECK_LIMIT : SAME_CARD_LIMIT;
@@ -1965,6 +2057,30 @@ export default function App() {
                 </div>
                 <div className="min-w-0 space-y-3">
                   <dl className="card-meta-grid grid grid-cols-2 gap-2 sm:grid-cols-3">{[['종류', selectedCard.type], ['색상', selectedCard.color], ['레어도', selectedCard.rarity], ['코스트', selectedCard.cost], ['LP', selectedCard.lp], ['수록 제품', selectedCard.set]].map(([label, value]) => <div key={label} className={`card-meta-item rounded-lg border border-white/[0.07] bg-[#090f1b] p-2.5${label === '수록 제품' ? ' card-meta-item-set' : ''}`}><dt className="text-[10px] font-medium text-slate-500">{label}</dt><dd className="mt-1 break-words text-xs font-semibold text-slate-200">{value === null || value === undefined || value === '' ? '-' : value}</dd></div>)}<div className="card-meta-item card-meta-item-traits rounded-lg border border-white/[0.07] bg-[#090f1b] p-2.5"><dt className="text-[10px] font-medium text-slate-500">특징</dt><dd className="mt-1">{selectedCard.traits?.length ? <div className="card-trait-list">{selectedCard.traits.map((trait) => <span key={trait} className="card-trait-chip">{trait}</span>)}</div> : <span className="text-xs font-semibold text-slate-500">없음</span>}</dd></div></dl>
+                  <section className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3">
+  <div className="flex flex-wrap items-center justify-between gap-2">
+    <h3 className="text-xs font-bold text-slate-300">트레카바스 온라인 판매가</h3>
+    <span className="text-[10px] text-slate-500">참고 정보</span>
+  </div>
+  {priceSyncState === 'loading' ? (
+    <p className="mt-2 text-xs text-slate-500">가격 정보를 불러오는 중이에요…</p>
+  ) : priceSyncState === 'unavailable' ? (
+    <p className="mt-2 text-xs leading-5 text-slate-500">가격 캐시를 불러오지 못했어요. 카드 정보는 계속 이용할 수 있어요.</p>
+  ) : selectedCardPrice?.status === 'match' ? (
+    <>
+      <div className="mt-2 flex flex-wrap items-baseline justify-between gap-2">
+        <span className="text-[11px] text-slate-400">현 판매가</span>
+        <strong className="text-lg font-black tabular-nums text-slate-100">¥{Number(selectedCardPrice.item.priceYen).toLocaleString('ja-JP')}</strong>
+      </div>
+      <p className="mt-1 text-[11px] text-slate-500">{selectedCardPrice.item.inStock === false ? '온라인 표시 재고: 품절' : selectedCardPrice.item.stockCount !== null && selectedCardPrice.item.stockCount !== undefined && Number.isFinite(Number(selectedCardPrice.item.stockCount)) ? `온라인 표시 재고: ${Number(selectedCardPrice.item.stockCount).toLocaleString('ja-JP')}개` : '온라인 표시 재고: 확인 불가'}</p>
+      <p className="mt-1 text-[10px] text-slate-600">가격 확인 시각: {formatPriceUpdatedAt(priceSnapshot.updatedAt) || '기록 없음'}</p>
+      <a href={selectedCardPrice.item.url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1 rounded-lg border border-white/10 px-2.5 py-1.5 text-[11px] font-semibold text-slate-300 transition hover:border-rose-300/40 hover:text-white">상품 페이지에서 확인 <span aria-hidden="true">↗</span></a>
+    </>
+  ) : (
+    <p className="mt-2 text-xs leading-5 text-slate-500">{selectedCardPrice?.status === 'ambiguous' ? '같은 카드 번호에 다른 사양의 상품이 있어 가격을 확정하지 않았어요.' : '일치하는 판매 상품을 확인하지 못했어요.'}</p>
+  )}
+  <p className="mt-2 border-t border-white/[0.06] pt-2 text-[10px] leading-4 text-slate-600">온라인 등록 판매가 기준이며 실제 거래가·매입가와 다를 수 있어요. 판매가와 재고는 변경되거나 주문 시점에 달라질 수 있습니다.</p>
+</section>
                   {selectedCard.keywordTags?.length > 0 && <div className="detail-keyword-badges effect-badges">{selectedCard.keywordTags.map((tag) => <span key={tag} className={`effect-badge ${keywordTagClass(tag)}${String(tag).startsWith('조건부 ') ? ' conditional' : ''}`}>{tag}</span>)}</div>}
                   {(selectedCard.hiramekiEffect || selectedCard.cutInEffect || selectedCard.hensoEffect) && <div className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><h3 className="mb-3 text-xs font-bold">게임 시스템 효과</h3><div className="space-y-2">{selectedCard.hiramekiEffect && <div className="card-system-effect-item"><h4 className="card-system-effect-label card-system-effect-label-hirameki">히라메키</h4><p className="card-system-effect-text whitespace-pre-wrap break-words text-xs leading-5 text-slate-200">{renderAbilityText(selectedCard.hiramekiEffect)}</p></div>}{selectedCard.cutInEffect && <div className="card-system-effect-item"><h4 className="card-system-effect-label card-system-effect-label-cutin">컷인</h4><p className="card-system-effect-text whitespace-pre-wrap break-words text-xs leading-5 text-slate-200">{renderAbilityText(selectedCard.cutInEffect)}</p></div>}{selectedCard.hensoEffect && <div className="card-system-effect-item"><h4 className="card-system-effect-label card-system-effect-label-henso">변장</h4><p className="card-system-effect-text whitespace-pre-wrap break-words text-xs leading-5 text-slate-200">{renderAbilityText(selectedCard.hensoEffect)}</p></div>}</div></div>}
                   <div className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><h3 className="mb-2 text-xs font-bold text-slate-300">카드 효과</h3><div className="card-effect-text text-xs leading-6 text-slate-200">{renderAbilityText(selectedCard.ability) || '효과 텍스트 없음'}</div></div>
