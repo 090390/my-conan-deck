@@ -1,5 +1,5 @@
 -- Conan TCG: allow event plays during pending Next Hint without satisfying its character requirement.
--- Does not clear next_hint_pending when an event enters/resolves; the chosen character still ends Next Hint.
+-- Event play/finish deliberately leaves next_hint_pending unchanged; playing the required character clears it.
 
 DO $next_hint_event_rules$
 DECLARE
@@ -12,16 +12,12 @@ DECLARE
       + case when v_board.partner_assist_used then 1 else 0 end
       + case when coalesce(v_board.next_hint_pending,false) then 1 else 0 end;$new_cost$;
   v_delegate_anchor text := $delegate_anchor$v_old_result := public.perform_private_turn_action(p_room_id, p_action, coalesce(p_payload, '{}'::jsonb));$delegate_anchor$;
-  v_guard_anchor text := $guard_anchor$  if p_action = 'end_turn' and coalesce(v_board.next_hint_pending,false) then
-    raise exception '넥스트 힌트로 가져온 캐릭터를 먼저 등장시켜야 턴을 종료할 수 있습니다.';
-  end if;
-
-  v_old_result := public.perform_private_turn_action(p_room_id, p_action, coalesce(p_payload, '{}'::jsonb));$guard_anchor$;
+  v_guard_marker text := $guard_marker$if p_action = 'end_turn' and coalesce(v_board.next_hint_pending,false) then$guard_marker$;
   v_guard text := $guard$  if p_action = 'end_turn' and coalesce(v_board.next_hint_pending,false) then
     raise exception '넥스트 힌트로 가져온 캐릭터를 먼저 등장시켜야 턴을 종료할 수 있습니다.';
   end if;
 
-  $guard$v_old_result := public.perform_private_turn_action(p_room_id, p_action, coalesce(p_payload, '{}'::jsonb));$guard$;
+  $guard$;
 BEGIN
   SELECT pg_get_functiondef('public.perform_private_turn_action_v2(uuid,text,jsonb)'::regprocedure)
     INTO v_definition;
@@ -45,12 +41,12 @@ BEGIN
       || substring(v_definition from v_end);
   END IF;
 
-  -- End-turn must be rejected server-side until the pending Next Hint character is played.
-  IF position(v_guard_anchor in v_definition) = 0 THEN
+  -- Reject end_turn before it delegates to the legacy action RPC; do not reset next_hint_pending early.
+  IF position(lower(v_guard_marker) in lower(v_definition)) = 0 THEN
     IF position(v_delegate_anchor in v_definition) = 0 THEN
       RAISE EXCEPTION 'next hint event migration stopped: standard action delegate anchor not found';
     END IF;
-    v_definition := replace(v_definition, v_delegate_anchor, v_guard);
+    v_definition := replace(v_definition, v_delegate_anchor, v_guard || v_delegate_anchor);
   END IF;
 
   IF v_definition IS NULL OR length(btrim(v_definition)) = 0 THEN
