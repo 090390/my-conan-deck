@@ -1,0 +1,42 @@
+name: Refresh TorecaBirth prices
+
+on:
+  schedule:
+    # Weekly, Tuesday 03:12 JST (Monday 18:12 UTC)
+    - cron: '12 18 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    # The repository owner must explicitly enable the variable only after
+    # reviewing TorecaBirth's terms and automated-access policy.
+    if: ${{ vars.TORECABIRTH_SCRAPE_ALLOWED == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install crawler dependencies
+        run: python -m pip install -r requirements-price-sync.txt
+      - name: Refresh public price cache
+        env:
+          TORECABIRTH_SCRAPE_ALLOWED: ${{ vars.TORECABIRTH_SCRAPE_ALLOWED }}
+        run: python tools/update_torecabirth_prices.py
+      - name: Commit cache if it changed
+        run: |
+          if git diff --quiet -- public/torecabirth-prices.json; then
+            echo "Price cache did not change."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/torecabirth-prices.json
+          git commit -m "chore: refresh TorecaBirth card prices"
+          git push
