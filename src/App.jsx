@@ -2055,28 +2055,33 @@ export default function App() {
                   <button onClick={() => addCard(selectedCard)} className="w-full max-w-[240px] rounded-xl bg-rose-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-rose-500">{getCardRole(selectedCard) === 'partner' ? (partnerId === selectedCard.key ? '파트너 선택 해제' : '파트너로 지정') : getCardRole(selectedCard) === 'event' ? (eventId === selectedCard.key ? '사건 카드 선택 해제' : '사건 카드로 지정') : `덱에 추가${Number(deck[selectedCard.key] || 0) ? ` · 현재 ${deck[selectedCard.key]}장` : ' +'}`}</button>
                   {modalNavigationCards.length > 1 && <p className="text-[10px] text-slate-600">← → 키로 {selectedCardSource === 'deck' ? '덱의 다른 카드' : '다른 카드'} 확인</p>}
                   <section className="card-meta-item card-meta-item-torecabirth w-full max-w-[240px] rounded-lg border border-white/[0.07] bg-[#090f1b] p-3">
-  <div className="flex flex-wrap items-center justify-between gap-2">
+  <div className="flex flex-col items-start gap-0.5">
     <h3 className="text-xs font-bold text-slate-300">トレカバース 온라인 판매가</h3>
-    <span className="text-[10px] text-slate-500">참고 정보</span>
+    {selectedCardPrice?.status === 'match' && (
+      <p className="text-[9px] italic text-slate-600">가격 확인 시각: {formatPriceUpdatedAt(priceSnapshot.updatedAt) || '기록 없음'}</p>
+    )}
   </div>
   {priceSyncState === 'loading' ? (
-    <p className="mt-2 text-xs text-slate-500">가격 정보를 불러오는 중이에요…</p>
+    <p className="mt-1.5 text-[11px] text-slate-500">가격 정보를 불러오는 중이에요…</p>
   ) : priceSyncState === 'unavailable' ? (
-    <p className="mt-2 text-xs leading-5 text-slate-500">가격 캐시를 불러오지 못했어요. 카드 정보는 계속 이용할 수 있어요.</p>
+    <p className="mt-1.5 text-[11px] leading-4 text-slate-500">가격 캐시를 불러오지 못했어요. 카드 정보는 계속 이용할 수 있어요.</p>
   ) : selectedCardPrice?.status === 'match' ? (
     <>
-      <div className="mt-2 flex flex-wrap items-baseline justify-between gap-2">
-        <span className="text-[11px] text-slate-400">현 판매가</span>
-        <strong className="text-lg font-black tabular-nums text-slate-100">¥{Number(selectedCardPrice.item.priceYen).toLocaleString('ja-JP')}</strong>
+      <div className="mt-1.5 flex items-baseline gap-1.5">
+        <span className="text-[10px] text-slate-400">현 판매가:</span>
+        <strong className="text-base font-black tabular-nums text-slate-100">¥{Number(selectedCardPrice.item.priceYen).toLocaleString('ja-JP')}</strong>
       </div>
-      <p className="mt-1 text-[11px] text-slate-500">{selectedCardPrice.item.inStock === false ? '온라인 표시 재고: 품절' : selectedCardPrice.item.stockCount !== null && selectedCardPrice.item.stockCount !== undefined && Number.isFinite(Number(selectedCardPrice.item.stockCount)) ? `온라인 표시 재고: ${Number(selectedCardPrice.item.stockCount).toLocaleString('ja-JP')}개` : '온라인 표시 재고: 확인 불가'}</p>
-      <p className="mt-1 text-[10px] text-slate-600">가격 확인 시각: {formatPriceUpdatedAt(priceSnapshot.updatedAt) || '기록 없음'}</p>
-      <a href={selectedCardPrice.item.url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1 rounded-lg border border-white/10 px-2.5 py-1.5 text-[11px] font-semibold text-slate-300 transition hover:border-rose-300/40 hover:text-white">상품 페이지에서 확인 <span aria-hidden="true">↗</span></a>
+      <p className="mt-0.5 text-[10px] text-slate-500">{selectedCardPrice.item.inStock === false ? '온라인 표시 재고: 품절' : selectedCardPrice.item.stockCount !== null && selectedCardPrice.item.stockCount !== undefined && Number.isFinite(Number(selectedCardPrice.item.stockCount)) ? `온라인 표시 재고: ${Number(selectedCardPrice.item.stockCount).toLocaleString('ja-JP')}개` : '온라인 표시 재고: 확인 불가'}</p>
     </>
   ) : (
-    <p className="mt-2 text-xs leading-5 text-slate-500">{selectedCardPrice?.status === 'ambiguous' ? '같은 카드 번호에 다른 사양의 상품이 있어 가격을 확정하지 않았어요.' : '일치하는 판매 상품을 확인하지 못했어요.'}</p>
+    <p className="mt-1.5 text-[11px] leading-4 text-slate-500">{selectedCardPrice?.status === 'ambiguous' ? '같은 카드 번호에 다른 사양의 상품이 있어 가격을 확정하지 않았어요.' : '일치하는 판매 상품을 확인하지 못했어요.'}</p>
   )}
   <p className="mt-2 border-t border-white/[0.06] pt-2 text-[10px] leading-4 text-slate-600">온라인 등록 판매가 기준이며 실제 거래가·매입가와 다를 수 있어요. 판매가와 재고는 변경되거나 주문 시점에 달라질 수 있습니다.</p>
+  {selectedCardPrice?.status === 'match' && (
+    <div className="mt-2 flex justify-end">
+      <a href={selectedCardPrice.item.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-lg border border-rose-300/20 bg-rose-300/[0.06] px-3 py-1.5 text-[10px] font-semibold text-slate-300 transition hover:border-rose-300/40 hover:bg-rose-300/[0.12] hover:text-white">상품 페이지에서 확인 <span aria-hidden="true">↗</span></a>
+    </div>
+  )}
 </section>
                 </div>
                 <div className="min-w-0 space-y-3">
