@@ -1,35 +1,29 @@
 # Private match v8 backend notes
 
-## Migration added
+## Migrations added
 
-The branch now includes `supabase/migrations/202610160001_match_v8_gameplay_fixes.sql`. It reads the current definition of `public.perform_private_turn_action_v2`, checks expected source fragments, and replaces only those fragments. If any required block has drifted, the migration raises an exception instead of silently applying a partial patch.
+Apply and review the two migrations in filename order on a staging database before production:
 
-It updates the gameplay handler to:
+1. `supabase/migrations/202610160001_match_v8_gameplay_fixes.sql`
+   - Patches `public.perform_private_turn_action_v2` using expected source fragments.
+   - Allows characters as well as events to be set.
+   - Adds actions to return an owned nested set card to hand, transfer an owned hand card to evidence face-up/down, and return owned evidence to hand.
+   - Allows manual stunned-to-sleep conversion.
+   - Adds defender-side disguise during the contact-guard window, moving the replaced target to the defender's deck bottom.
+   - Lets attacker and defender each use at most one cut-in, leaving the pending contact open for the attacker's decision after the defender uses a cut-in.
 
-- allow characters as well as events to be set;
-- add an action to return an owned nested set card to hand;
-- allow an owned hand card to become face-up or face-down evidence;
-- allow an owned evidence card to return to hand;
-- permit manual stunned-to-sleep conversion;
-- allow the contact defender to replace the current target with a disguise character from hand, putting the replaced target at the bottom of their deck;
-- let each contact participant use at most one cut-in, so the defender's cut-in no longer immediately resolves the contact and the attacker still receives a decision window.
+2. `supabase/migrations/202610160002_match_v8_private_evidence.sql`
+   - Patches `public.get_private_turn_state_v2` to return `evidence_private_cards` only on the signed-in user's own board. The opponent board receives an empty array so hidden card identities are not leaked.
+   - Allows face-down evidence to move to deck bottom or remove only when the current player owns that evidence. Opponent evidence remains movable only when face-up/public.
 
-This is a draft migration and has not been executed against a Supabase database. Test it on a staging database first.
+The migration scripts check expected source fragments and stop with an exception if the source shape has drifted. They have not been executed against a Supabase database.
 
-## Remaining evidence-area data requirement
+## Evidence UI
 
-The current UI gets face-up cards from `evidence_public_cards` and only a count of face-down evidence. As a result, it cannot render individual action buttons beside each face-down card without additional private data. To complete the requested vertical list for every evidence card, the state getter must expose card instance IDs / face-up flags to the owner only, while continuing to expose no hidden card identity to the opponent.
-
-Run this query in the Supabase SQL Editor and share the function definition:
-
-```sql
-select pg_get_functiondef('public.get_private_turn_state_v2(uuid)'::regprocedure);
-```
-
-That definition is not in the repository, so the data contract for private evidence cannot safely be patched by guessing.
+`src/components/MatchTurnBoard.jsx` now renders the owner's full evidence list from top to bottom using consistent card dimensions. Face-down cards remain visually hidden but have their own action buttons. Opponent face-down evidence remains represented only by anonymous backs and a count; opponent public evidence retains its available actions.
 
 ## Validation status
 
-- JSX edits were checked for the intended source anchors.
+- Relevant JSX source anchors and migration insertions were checked after writing the files.
 - No production Vite build, two-client game test, or database migration execution was available from this environment.
-- Do not merge or deploy the branch until the SQL migration has been reviewed and tested on staging, and the evidence getter/UI privacy behavior is finished.
+- Review both migrations and test them on staging before merging or deploying. In particular, confirm your existing `resolve_private_character_contact` function still accepts the updated pending-action JSON fields and compare the final AP results for all four cut-in combinations (neither player, defender only, attacker only, both players).
