@@ -712,6 +712,10 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
         {canSelectNextHintCard && <p style={{ ...st.muted, color: C.gold, marginTop: 8 }}>파일을 손패로 가져왔습니다. 캐릭터 카드 1장을 등장시켜야 넥스트 힌트가 끝납니다. 그 전에도 이벤트 카드는 사용할 수 있지만, 캐릭터 등장 전에는 턴을 종료할 수 없습니다.</p>}
         {(canActMain || canSelectNextHintCard) && <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 5 }}>
           {canActMain && myBoard?.base_action_done && n(myBoard?.file_count) > 0 && <button type="button" style={st.button} disabled={loading} onClick={() => void runAction("next_hint_take_file")}>넥스트 힌트 선언 · 파일을 손패로</button>}
+          {canSelectNextHintCard && <button type="button" style={{ ...st.button, background: "#7f1d1d", borderColor: "rgba(248,113,113,.65)" }} disabled={loading || pending} title="실수로 선언해 진행이 막힌 경우에만 사용하는 응급 복구입니다." onClick={() => {
+            const confirmed = window.confirm("넥스트 힌트의 캐릭터 등장 의무를 강제로 해제합니다. 파일에서 가져온 카드는 손패에 남고, 이미 진행한 다른 행동은 되돌리지 않습니다. 응급 복구용 기능입니다. 진행할까요?");
+            if (confirmed) void runAction("cancel_next_hint");
+          }}>넥스트 힌트 취소 · 응급 복구</button>}
           <button type="button" style={{ ...st.button, background: "#4b2637", opacity: myBoard?.next_hint_pending ? 0.55 : 1 }} disabled={loading || pending || Boolean(myBoard?.next_hint_pending)} title={myBoard?.next_hint_pending ? "넥스트 힌트로 가져온 카드 중 캐릭터 1장을 먼저 등장시켜야 합니다." : ""} onClick={() => void runAction("end_turn")}>턴 종료{myBoard?.next_hint_pending ? " · 캐릭터 등장 필요" : ""}</button>
         </div>}
         {myBoard?.base_action_done && game.turn_step === "main" && <p style={{ ...st.muted, marginTop: 8 }}>기본 행동을 완료했습니다. 파일이 남아 있는 동안 넥스트 힌트를 연속으로 사용할 수 있습니다. 넥스트 힌트 후에도 파트너 추리는 가능하지만 어시스트는 사용할 수 없습니다.</p>}
