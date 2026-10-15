@@ -280,6 +280,10 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
   const canWinCase = canActMain && myBoard?.case_phase === "solution" && n(myBoard?.evidence_count) >= winEvidenceThreshold
     && !myBoard?.partner_rested && !myBoard?.partner_assist_used;
   const activeSharedPeekCards = Array.isArray(game.shared_deck_peek_cards) ? game.shared_deck_peek_cards : [];
+  // Define the current private peek before checking which cards have been selected for sharing.
+  // Keeping this declaration order matters: const values are in the temporal dead zone until initialized.
+  const ownPeek = game.my_deck_peek || null;
+  const ownPeekCards = Array.isArray(ownPeek?.cards) ? ownPeek.cards : [];
   const allOwnPeekCardsShared = ownPeekCards.length > 0 && ownPeekCards.every((card) => (ownPeek?.shared_instance_ids || []).includes(card.instance_id));
   const deckRemovalPending = pending?.type === "deck_remove_reveal";
   const deckRemovalCards = Array.isArray(pending?.cards) ? pending.cards : [];
@@ -300,8 +304,6 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
     { key: "event", label: "이벤트 카드", cards: opponentDeckCards.filter((card) => opponentDeckCardGroup(card) === "event") },
     { key: "special", label: "파트너 · 기타 특수 카드", cards: opponentDeckCards.filter((card) => opponentDeckCardGroup(card) === "special") },
   ];
-  const ownPeek = game.my_deck_peek || null;
-  const ownPeekCards = Array.isArray(ownPeek?.cards) ? ownPeek.cards : [];
   const ownPeekOrder = peekOrderIds.map((id) => ownPeekCards.find((card) => card.instance_id === id)).filter(Boolean);
   const canSelectNextHintCard = isMyTurn && game?.turn_step === "main" && !game?.game_over && !pending && Boolean(myBoard?.next_hint_pending);
   const revealedEvidenceCard = pending?.type === "evidence_attack_reveal" ? pending.revealed_evidence_card : null;
