@@ -2,7 +2,7 @@
 
 ## Migrations added
 
-Apply and review the two migrations in filename order on a staging database before production:
+These two migrations were successfully run by the repository owner in the project's Supabase SQL Editor, in filename order. The database state was not independently inspected after execution:
 
 1. `supabase/migrations/202610160001_match_v8_gameplay_fixes.sql`
    - Patches `public.perform_private_turn_action_v2` using expected source fragments.
@@ -16,7 +16,7 @@ Apply and review the two migrations in filename order on a staging database befo
    - Patches `public.get_private_turn_state_v2` to return `evidence_private_cards` only on the signed-in user's own board. The opponent board receives an empty array so hidden card identities are not leaked.
    - Allows face-down evidence to move to deck bottom or remove only when the current player owns that evidence. Opponent evidence remains movable only when face-up/public.
 
-The migration scripts check expected source fragments and stop with an exception if the source shape has drifted. They have not been executed against a Supabase database.
+The migration scripts check expected source fragments and stop with an exception if the source shape has drifted. The owner reports that both scripts executed successfully in the project's Supabase SQL Editor; their final database definitions have not been independently inspected here.
 
 ## Evidence UI
 
@@ -25,5 +25,6 @@ The migration scripts check expected source fragments and stop with an exception
 ## Validation status
 
 - Relevant JSX source anchors and migration insertions were checked after writing the files.
-- No production Vite build, two-client game test, or database migration execution was available from this environment.
-- Review both migrations and test them on staging before merging or deploying. In particular, confirm your existing `resolve_private_character_contact` function still accepts the updated pending-action JSON fields and compare the final AP results for all four cut-in combinations (neither player, defender only, attacker only, both players).
+- The owner reports successful execution of both SQL migrations in Supabase SQL Editor.
+- No production Vite build or two-client game test has been run from this environment.
+- Before production use, run a production Vite build and a two-client game test. In particular, confirm your existing `resolve_private_character_contact` function still accepts the updated pending-action JSON fields and compare the final AP results for all four cut-in combinations (neither player, defender only, attacker only, both players).
