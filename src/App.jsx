@@ -406,6 +406,7 @@ function normalizeCard(card, translations, keywordTagData = {}) {
   const translated = translations?.[id] || translations?.[databaseId] || {};
   const hiramekiEffect = String(translated.hirameki || '').replace(/^【히라메키】\s*/u, '');
   const cutInEffect = String(translated.cut_in || '').replace(/^【컷인】\s*/u, '');
+  const hensoEffect = String(translated.henso || '').replace(/^【변장】\s*/u, '');
   const originalName = String(firstValue(objects, ['nameJp', 'title', 'name', 'cardName', 'card_name']));
   const originalType = String(firstValue(objects, ['typeJp', 'type', 'cardType', 'card_type', 'category1', 'category_1']));
   const originalColor = String(firstValue(objects, ['colorJp', 'color', 'colour']));
@@ -449,6 +450,7 @@ function normalizeCard(card, translations, keywordTagData = {}) {
     originalAbility,
     hiramekiEffect,
     cutInEffect,
+    hensoEffect,
     keywordTags,
     traits,
     flavor: String(translated.flavorKo || firstValue([card], ['flavorKo']) || originalFlavor),
@@ -646,6 +648,7 @@ function drawExportCard(ctx, card, image, x, y, width, options = {}) {
   });
   if (card?.hiramekiEffect) exportFeatureDots.push({ fill: '#fb923c', stroke: '#fdba74' });
   if (card?.cutInEffect) exportFeatureDots.push({ fill: '#7dd3fc', stroke: '#bae6fd' });
+  if (card?.hensoEffect) exportFeatureDots.push({ fill: '#c4b5fd', stroke: '#ddd6fe' });
   if (exportFeatureDots.length) {
     const dotSize = Math.max(9, 11 * scale);
     const dotGap = Math.max(4, 5 * scale);
@@ -792,6 +795,7 @@ const FEATURE_DOT_LEGEND_ITEMS = [
   { label: '수사', className: 'keyword-dot-investigation' },
   { label: '히라메키', className: 'deck-feature-dot-hirameki' },
   { label: '컷인', className: 'deck-feature-dot-cutin' },
+  { label: '변장', className: 'deck-feature-dot-henso' },
 ];
 
 function FeatureDotLegend({ includeSystemEffects = false, className = '' }) {
@@ -977,7 +981,7 @@ export default function App() {
         card.name, card.originalName, card.cardId, card.cardNum,
         card.type, card.originalType, card.color, card.colorKey, card.originalColor,
         card.ability, card.originalAbility, card.set, card.originalSet, card.rarity,
-        card.hiramekiEffect, card.cutInEffect, ...getCardSearchAliases(searchAliases, card),
+        card.hiramekiEffect, card.cutInEffect, card.hensoEffect, ...getCardSearchAliases(searchAliases, card),
       ].join(' ').toLocaleLowerCase();
       if (query) {
         if (exactKeywordQuery) {
@@ -1497,6 +1501,7 @@ export default function App() {
         .card-detail-layout > div:nth-child(2) .card-system-effect-item > .card-system-effect-label { display: inline-flex !important; align-items: center; width: fit-content; flex: 0 0 auto; margin: 0 !important; padding: 3px 7px !important; border: 1px solid; border-radius: 5px; box-sizing: border-box; font-size: 11px !important; font-weight: 800 !important; line-height: 1.4; }
         .card-detail-layout > div:nth-child(2) .card-system-effect-item > .card-system-effect-label-hirameki { color: #ffffff !important; background: rgba(249,115,22,.24) !important; border-color: #c62828 !important; }
         .card-detail-layout > div:nth-child(2) .card-system-effect-item > .card-system-effect-label-cutin { color: #bae6fd !important; background: rgba(56,189,248,.12) !important; border-color: #38bdf8 !important; }
+        .card-detail-layout > div:nth-child(2) .card-system-effect-item > .card-system-effect-label-henso { color: #ddd6fe !important; background: rgba(139,92,246,.14) !important; border-color: #8b5cf6 !important; }
         .card-detail-layout > div:nth-child(2) p { margin: 0; color: #d4dceb !important; font-size: 12px !important; line-height: 1.75 !important; overflow-wrap: anywhere; }
         .card-effect-text, .card-original-effect-text, .card-system-effect-text { white-space: pre-wrap !important; overflow-wrap: anywhere !important; word-break: normal; }
         .card-system-effect-item { display: flex !important; align-items: flex-start !important; gap: 8px !important; padding-left: 8px !important; box-sizing: border-box !important; } .card-system-effect-item > .card-system-effect-text { flex: 1 1 auto; min-width: 0; margin: 0 !important; }
@@ -1523,6 +1528,7 @@ export default function App() {
         .ability-color-white { background: #f8fafc; border-color: #94a3b8; color: #111827; }
         .effect-badge-hirameki { color: #ffffff; background: rgba(249,115,22,.20); border-color: #c62828; }
         .effect-badge-cutin { color: #7dd3fc; background: rgba(56,189,248,.11); border-color: rgba(56,189,248,.18); }
+        .effect-badge-henso { color: #ddd6fe; background: rgba(139,92,246,.14); border-color: rgba(167,139,250,.3); }
         .keyword-assault { color: #fda4af; background: rgba(244,63,94,.12); border-color: rgba(251,113,133,.22); }
         .keyword-swift { color: #86efac; background: rgba(34,197,94,.12); border-color: rgba(74,222,128,.22); }
         .keyword-gale { color: #7dd3fc; background: rgba(14,165,233,.12); border-color: rgba(56,189,248,.22); }
@@ -1536,6 +1542,7 @@ export default function App() {
         .feature-dot-legend-dot { display: inline-block; width: 7px; height: 7px; flex: 0 0 7px; border: 1px solid rgba(255,255,255,.32); border-radius: 999px; box-shadow: 0 1px 3px rgba(0,0,0,.35); }
         .deck-feature-dot-hirameki.feature-dot-legend-dot { width: 7px; height: 7px; flex-basis: 7px; }
         .deck-feature-dot-cutin.feature-dot-legend-dot { width: 7px; height: 7px; flex-basis: 7px; }
+        .deck-feature-dot-henso.feature-dot-legend-dot { width: 7px; height: 7px; flex-basis: 7px; }
         .deck-feature-dot-legend { margin: -4px 0 12px auto; }
         .keyword-tag-dots { display: flex; align-items: center; justify-content: flex-end; flex: 0 0 auto; flex-wrap: nowrap; gap: 3px; max-width: 38%; min-height: 0; margin: 3px 0 0; overflow: hidden; }
         .keyword-tag-dot { display: inline-block; width: 6px; height: 6px; flex: 0 0 6px; border-radius: 999px; box-shadow: 0 0 0 1px rgba(255,255,255,.18); }
@@ -1550,6 +1557,7 @@ export default function App() {
         .deck-feature-dot { display: block; width: 7px; height: 7px; flex: 0 0 7px; border: 1px solid rgba(255,255,255,.30); border-radius: 999px; box-shadow: 0 1px 3px rgba(0,0,0,.5), 0 0 0 1px rgba(0,0,0,.25); }
         .deck-feature-dot-hirameki { background: #fb923c; border-color: #fdba74; }
         .deck-feature-dot-cutin { background: #7dd3fc; border-color: #bae6fd; }
+        .deck-feature-dot-henso { background: #c4b5fd; border-color: #ddd6fe; }
         .card-search-alias-section { display: flex; flex-direction: column; gap: 6px; margin-top: 0; padding: 2px 8px 0; }
         .card-search-alias-display { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
         .card-search-alias-tags { min-width: 0; margin: 0; color: #8b96a8; font-size: 10px; line-height: 1.6; overflow-wrap: anywhere; }
@@ -1741,7 +1749,7 @@ export default function App() {
                           {featureDotItems.length > 0 && <div className="keyword-tag-dots" aria-label={`특성: ${featureDotItems.map((dot) => dot.title).join(', ')}`}>{featureDotItems.map((dot) => <span key={dot.key} className={`keyword-tag-dot keyword-dot-${dot.className.replace('keyword-', '')}`} title={dot.title} aria-label={dot.title} />)}</div>}
                         </div>
                         <div className="mt-1 flex min-w-0 items-center justify-between gap-1 text-[9px] text-slate-500 sm:text-[10px]"><span className="truncate">{card.rarity || card.type || '카드'}</span><span className="shrink-0">{`${formatNumber(card.cost)} / ${formatNumber(card.lp)}`}</span></div>
-                        {(card.hiramekiEffect || card.cutInEffect) && <div className="effect-badges">{card.hiramekiEffect && <span className="effect-badge effect-badge-hirameki">히라메키</span>}{card.cutInEffect && <span className="effect-badge effect-badge-cutin">컷인</span>}</div>}
+                        {(card.hiramekiEffect || card.cutInEffect || card.hensoEffect) && <div className="effect-badges">{card.hiramekiEffect && <span className="effect-badge effect-badge-hirameki">히라메키</span>}{card.cutInEffect && <span className="effect-badge effect-badge-cutin">컷인</span>}{card.hensoEffect && <span className="effect-badge effect-badge-henso">변장</span>}</div>}
                       </div>
                     </button>
                     <button onClick={() => addCard(card)} aria-label={role === 'partner' ? `${card.name} 파트너 지정` : role === 'event' ? `${card.name} 사건 카드 지정` : `${card.name} 덱에 추가`} className={`card-tile-action mt-auto border-t border-white/[0.07] px-1 py-1.5 text-[10px] font-semibold transition sm:text-[11px] ${role === 'partner' ? 'bg-amber-300/10 text-amber-200 hover:bg-amber-300/20' : role === 'event' ? 'bg-sky-300/10 text-sky-200 hover:bg-sky-300/20' : 'bg-white/[0.025] text-slate-400 hover:bg-rose-500/10 hover:text-rose-200'}`}>
@@ -1785,10 +1793,11 @@ export default function App() {
                     <button onClick={() => openCardDetail(partnerCard, 'cards')} className="deck-special-open" title={getDeckCardSummary(partnerCard)}>
                       <div className="deck-card-image-wrap">
                         {partnerCard.imageUrl ? <img src={partnerCard.imageUrl} loading="lazy" alt={partnerCard.name} className="deck-special-image" /> : <div className="deck-special-image flex items-center justify-center text-[9px] text-slate-500">이미지 없음</div>}
-                        {(getCardFeatureDotItems(partnerCard).length > 0 || partnerCard.hiramekiEffect || partnerCard.cutInEffect) && <div className="deck-feature-dots" aria-label={`특성: ${getCardFeatureDotItems(partnerCard).map((dot) => dot.title).concat(partnerCard.hiramekiEffect ? ['히라메키'] : [], partnerCard.cutInEffect ? ['컷인'] : []).join(', ')}`}>
+                        {(getCardFeatureDotItems(partnerCard).length > 0 || partnerCard.hiramekiEffect || partnerCard.cutInEffect || partnerCard.hensoEffect) && <div className="deck-feature-dots" aria-label={`특성: ${getCardFeatureDotItems(partnerCard).map((dot) => dot.title).concat(partnerCard.hiramekiEffect ? ['히라메키'] : [], partnerCard.cutInEffect ? ['컷인'] : [], partnerCard.hensoEffect ? ['변장'] : []).join(', ')}`}>
                           {getCardFeatureDotItems(partnerCard).map((dot) => <span key={`partner-${dot.key}`} className={`deck-feature-dot keyword-dot-${dot.className.replace('keyword-', '')}`} title={dot.title} />)}
                           {partnerCard.hiramekiEffect && <span className="deck-feature-dot deck-feature-dot-hirameki" title="히라메키" />}
                           {partnerCard.cutInEffect && <span className="deck-feature-dot deck-feature-dot-cutin" title="컷인" />}
+                          {partnerCard.hensoEffect && <span className="deck-feature-dot deck-feature-dot-henso" title="변장" />}
                         </div>}
                       </div>
                       <div className="deck-special-name"><span className="deck-card-primary">{getDeckCardNameLine(partnerCard)}</span></div>
@@ -1810,10 +1819,11 @@ export default function App() {
                     <button onClick={() => openCardDetail(eventCard, 'cards')} className="deck-special-open" title={getDeckCardSummary(eventCard)}>
                       <div className="deck-card-image-wrap">
                         {eventCard.imageUrl ? <img src={eventCard.imageUrl} loading="lazy" alt={eventCard.name} className="deck-special-image" /> : <div className="deck-special-image flex items-center justify-center text-[9px] text-slate-500">이미지 없음</div>}
-                        {(getCardFeatureDotItems(eventCard).length > 0 || eventCard.hiramekiEffect || eventCard.cutInEffect) && <div className="deck-feature-dots" aria-label={`특성: ${getCardFeatureDotItems(eventCard).map((dot) => dot.title).concat(eventCard.hiramekiEffect ? ['히라메키'] : [], eventCard.cutInEffect ? ['컷인'] : []).join(', ')}`}>
+                        {(getCardFeatureDotItems(eventCard).length > 0 || eventCard.hiramekiEffect || eventCard.cutInEffect || eventCard.hensoEffect) && <div className="deck-feature-dots" aria-label={`특성: ${getCardFeatureDotItems(eventCard).map((dot) => dot.title).concat(eventCard.hiramekiEffect ? ['히라메키'] : [], eventCard.cutInEffect ? ['컷인'] : [], eventCard.hensoEffect ? ['변장'] : []).join(', ')}`}>
                           {getCardFeatureDotItems(eventCard).map((dot) => <span key={`event-${dot.key}`} className={`deck-feature-dot keyword-dot-${dot.className.replace('keyword-', '')}`} title={dot.title} />)}
                           {eventCard.hiramekiEffect && <span className="deck-feature-dot deck-feature-dot-hirameki" title="히라메키" />}
                           {eventCard.cutInEffect && <span className="deck-feature-dot deck-feature-dot-cutin" title="컷인" />}
+                          {eventCard.hensoEffect && <span className="deck-feature-dot deck-feature-dot-henso" title="변장" />}
                         </div>}
                       </div>
                       <div className="deck-special-name"><span className="deck-card-primary">{getDeckCardNameLine(eventCard)}</span></div>
@@ -1856,10 +1866,11 @@ export default function App() {
                       <button onClick={() => openCardDetail(card, 'deck')} className="deck-card-open" title={getDeckCardSummary(card)}>
                         <div className="deck-card-image-wrap">
                           {card.imageUrl ? <img src={card.imageUrl} loading="lazy" alt={card.name} className="deck-card-image" /> : <div className="deck-card-image flex items-center justify-center text-[9px] text-slate-500">이미지 없음</div>}
-                          {(getCardFeatureDotItems(card).length > 0 || card.hiramekiEffect || card.cutInEffect) && <div className="deck-feature-dots" aria-label={`특성: ${getCardFeatureDotItems(card).map((dot) => dot.title).concat(card.hiramekiEffect ? ['히라메키'] : [], card.cutInEffect ? ['컷인'] : []).join(', ')}`}>
+                          {(getCardFeatureDotItems(card).length > 0 || card.hiramekiEffect || card.cutInEffect || card.hensoEffect) && <div className="deck-feature-dots" aria-label={`특성: ${getCardFeatureDotItems(card).map((dot) => dot.title).concat(card.hiramekiEffect ? ['히라메키'] : [], card.cutInEffect ? ['컷인'] : [], card.hensoEffect ? ['변장'] : []).join(', ')}`}>
                             {getCardFeatureDotItems(card).map((dot) => <span key={`deck-${dot.key}`} className={`deck-feature-dot keyword-dot-${dot.className.replace('keyword-', '')}`} title={dot.title} />)}
                             {card.hiramekiEffect && <span className="deck-feature-dot deck-feature-dot-hirameki" title="히라메키" />}
                             {card.cutInEffect && <span className="deck-feature-dot deck-feature-dot-cutin" title="컷인" />}
+                          {card.hensoEffect && <span className="deck-feature-dot deck-feature-dot-henso" title="변장" />}
                           </div>}
                         </div>
                         <div className="deck-card-name"><span className="deck-card-primary">{getDeckCardNameLine(card)}</span><span className="deck-card-secondary">{getDeckCardStatsLine(card)}</span></div>
@@ -1899,7 +1910,7 @@ export default function App() {
                 <div className="min-w-0 space-y-3">
                   <dl className="card-meta-grid grid grid-cols-2 gap-2 sm:grid-cols-3">{[['종류', selectedCard.type], ['색상', selectedCard.color], ['레어도', selectedCard.rarity], ['코스트', selectedCard.cost], ['LP', selectedCard.lp], ['수록 제품', selectedCard.set]].map(([label, value]) => <div key={label} className={`card-meta-item rounded-lg border border-white/[0.07] bg-[#090f1b] p-2.5${label === '수록 제품' ? ' card-meta-item-set' : ''}`}><dt className="text-[10px] font-medium text-slate-500">{label}</dt><dd className="mt-1 break-words text-xs font-semibold text-slate-200">{value === null || value === undefined || value === '' ? '-' : value}</dd></div>)}<div className="card-meta-item card-meta-item-traits rounded-lg border border-white/[0.07] bg-[#090f1b] p-2.5"><dt className="text-[10px] font-medium text-slate-500">특징</dt><dd className="mt-1">{selectedCard.traits?.length ? <div className="card-trait-list">{selectedCard.traits.map((trait) => <span key={trait} className="card-trait-chip">{trait}</span>)}</div> : <span className="text-xs font-semibold text-slate-500">없음</span>}</dd></div></dl>
                   {selectedCard.keywordTags?.length > 0 && <div className="detail-keyword-badges effect-badges">{selectedCard.keywordTags.map((tag) => <span key={tag} className={`effect-badge ${keywordTagClass(tag)}${String(tag).startsWith('조건부 ') ? ' conditional' : ''}`}>{tag}</span>)}</div>}
-                  {(selectedCard.hiramekiEffect || selectedCard.cutInEffect) && <div className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><h3 className="mb-3 text-xs font-bold">게임 시스템 효과</h3><div className="space-y-2">{selectedCard.hiramekiEffect && <div className="card-system-effect-item"><h4 className="card-system-effect-label card-system-effect-label-hirameki">히라메키</h4><p className="card-system-effect-text whitespace-pre-wrap break-words text-xs leading-5 text-slate-200">{renderAbilityText(selectedCard.hiramekiEffect)}</p></div>}{selectedCard.cutInEffect && <div className="card-system-effect-item"><h4 className="card-system-effect-label card-system-effect-label-cutin">컷인</h4><p className="card-system-effect-text whitespace-pre-wrap break-words text-xs leading-5 text-slate-200">{renderAbilityText(selectedCard.cutInEffect)}</p></div>}</div></div>}
+                  {(selectedCard.hiramekiEffect || selectedCard.cutInEffect || selectedCard.hensoEffect) && <div className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><h3 className="mb-3 text-xs font-bold">게임 시스템 효과</h3><div className="space-y-2">{selectedCard.hiramekiEffect && <div className="card-system-effect-item"><h4 className="card-system-effect-label card-system-effect-label-hirameki">히라메키</h4><p className="card-system-effect-text whitespace-pre-wrap break-words text-xs leading-5 text-slate-200">{renderAbilityText(selectedCard.hiramekiEffect)}</p></div>}{selectedCard.cutInEffect && <div className="card-system-effect-item"><h4 className="card-system-effect-label card-system-effect-label-cutin">컷인</h4><p className="card-system-effect-text whitespace-pre-wrap break-words text-xs leading-5 text-slate-200">{renderAbilityText(selectedCard.cutInEffect)}</p></div>}{selectedCard.hensoEffect && <div className="card-system-effect-item"><h4 className="card-system-effect-label card-system-effect-label-henso">변장</h4><p className="card-system-effect-text whitespace-pre-wrap break-words text-xs leading-5 text-slate-200">{renderAbilityText(selectedCard.hensoEffect)}</p></div>}</div></div>}
                   <div className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><h3 className="mb-2 text-xs font-bold text-slate-300">카드 효과</h3><div className="card-effect-text text-xs leading-6 text-slate-200">{renderAbilityText(selectedCard.ability) || '효과 텍스트 없음'}</div></div>
                   {selectedCard.flavor && <div className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><h3 className="mb-2 text-xs font-bold text-slate-300">플레이버 텍스트</h3><p className="whitespace-pre-wrap break-words text-xs leading-5 text-slate-300">{selectedCard.flavor}</p></div>}
                   {(selectedCard.originalName !== selectedCard.name || selectedCard.originalAbility !== selectedCard.ability) && <details className="rounded-xl border border-white/[0.07] bg-[#090f1b] p-3"><summary className="cursor-pointer text-xs font-semibold text-slate-300">일본어 원문 보기</summary><div className="mt-3 space-y-3 text-xs leading-5"><p className="card-original-name-text"><span className="text-slate-500">이름: </span>{selectedCard.originalName || '-'}</p><p className="card-original-effect-text whitespace-pre-wrap break-words"><span className="text-slate-500">효과: </span>{selectedCard.originalAbility || '-'}</p></div></details>}
