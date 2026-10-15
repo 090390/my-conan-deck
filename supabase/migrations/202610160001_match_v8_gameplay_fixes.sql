@@ -320,8 +320,8 @@ BEGIN
   END IF;
 
   -- Ensure the current definition still contains the function terminator before replacing it.
-  IF position($function$END;
-$function$ in v_definition) = 0 THEN
+  IF position($function$end;
+$function$ in lower(v_definition)) = 0 THEN
     RAISE EXCEPTION 'v8 migration stopped: function terminator not found';
   END IF;
 
