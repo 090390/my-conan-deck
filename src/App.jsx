@@ -603,7 +603,7 @@ function normalizePriceRarity(value) {
 
 function getTorecaSetCodes(value) {
   const normalized = String(value ?? '').normalize('NFKC').toLocaleUpperCase();
-  return [...new Set([...normalized.matchAll(/CT-[PD]\\d{1,2}/gu)].map((match) => match[0]))];
+  return [...new Set([...normalized.matchAll(/CT-[PD]\d{1,2}/gu)].map((match) => match[0]))];
 }
 
 function getTorecaVariantMarkers(value) {
@@ -662,7 +662,7 @@ function getTorecaPriceMatch(card, snapshot) {
 
   if (originalName) {
     candidates = candidates.filter((item) => normalizePriceToken(item.title || '').includes(originalName));
-    if (!candidates.length && !(rarity === 'SEC' && secVariant)) return { status: 'unmatched', item: null };
+    if (!candidates.length) return { status: 'unmatched', item: null };
   }
 
   // Sec1 is the non-signed listing; Sec2 is the signed listing.
