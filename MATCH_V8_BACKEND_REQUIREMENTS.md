@@ -1,30 +1,35 @@
-# Private match RPC work still required
+# Private match v8 backend notes
 
-This UI branch is based on `main` and updates `src/components/MatchTurnBoard.jsx`.
+## Migration added
 
-The repository does not contain the SQL definition for `public.perform_private_turn_action_v2`; the UI calls it through Supabase. The controls below call these action names, which must be implemented/verified in that function before this draft can be merged or deployed:
+The branch now includes `supabase/migrations/202610160001_match_v8_gameplay_fixes.sql`. It reads the current definition of `public.perform_private_turn_action_v2`, checks expected source fragments, and replaces only those fragments. If any required block has drifted, the migration raises an exception instead of silently applying a partial patch.
 
-- `move_set_card_to_hand`: detach the selected nested set card from its host and return it to the correct owner's hand.
-- `move_evidence_to_hand`: move a face-up evidence card into its owner's hand.
-- `move_hand_card_to_evidence`: move a hand card into evidence, respecting the `face_up` flag and evidence count.
-- `contact_use_disguise`: during a character contact, verify a disguise character in the target player's hand, put that character on the field as the contact target, and put the replaced target on the bottom of that player's deck.
-- `contact_use_cutin`: after the defender uses a cut-in, keep the contact pending and set the attacker as the next responder; determine the result only after the attacker uses/passes cut-in.
-- `rest_character_manual`: confirm that the existing activate-then-rest UI sequence works for stunned characters without violating other state constraints.
-- `set_card_to_field`: confirm that character cards can be set from hand, remove, and deck, not only events.
-- Evidence list privacy/data: currently the RPC only supplies public evidence card objects plus a hidden-card count, so this UI can show move controls only on face-up cards. To meet the per-card controls requirement for face-down evidence too, return the evidence instances privately to their owner (including instance IDs and face-up flags) without exposing hidden card identity to the opponent; then render opaque backs but keep their corresponding per-card buttons.
+It updates the gameplay handler to:
 
-The UI action names above are explicit integration points, not a claim that the deployed RPC already accepts them. Please do not merge this draft until the RPC behavior is implemented or confirmed. No production build was run from this environment; the repository has no GitHub Actions workflow configured, and the local container cannot clone from GitHub.
+- allow characters as well as events to be set;
+- add an action to return an owned nested set card to hand;
+- allow an owned hand card to become face-up or face-down evidence;
+- allow an owned evidence card to return to hand;
+- permit manual stunned-to-sleep conversion;
+- allow the contact defender to replace the current target with a disguise character from hand, putting the replaced target at the bottom of their deck;
+- let each contact participant use at most one cut-in, so the defender's cut-in no longer immediately resolves the contact and the attacker still receives a decision window.
 
-## Retrieve the existing RPC definition without attaching files
+This is a draft migration and has not been executed against a Supabase database. Test it on a staging database first.
 
-In the Supabase Dashboard's SQL Editor, run:
+## Remaining evidence-area data requirement
+
+The current UI gets face-up cards from `evidence_public_cards` and only a count of face-down evidence. As a result, it cannot render individual action buttons beside each face-down card without additional private data. To complete the requested vertical list for every evidence card, the state getter must expose card instance IDs / face-up flags to the owner only, while continuing to expose no hidden card identity to the opponent.
+
+Run this query in the Supabase SQL Editor and share the function definition:
 
 ```sql
-select pg_get_functiondef(p.oid)
-from pg_proc p
-join pg_namespace n on n.oid = p.pronamespace
-where n.nspname = 'public'
-  and p.proname = 'perform_private_turn_action_v2';
+select pg_get_functiondef('public.get_private_turn_state_v2(uuid)'::regprocedure);
 ```
 
-Copy the result into a migration file in the repository (be careful not to include any project secrets). That lets the RPC changes be based on the exact deployed function rather than guessing its existing game-state logic.
+That definition is not in the repository, so the data contract for private evidence cannot safely be patched by guessing.
+
+## Validation status
+
+- JSX edits were checked for the intended source anchors.
+- No production Vite build, two-client game test, or database migration execution was available from this environment.
+- Do not merge or deploy the branch until the SQL migration has been reviewed and tested on staging, and the evidence getter/UI privacy behavior is finished.
