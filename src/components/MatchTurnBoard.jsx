@@ -420,6 +420,8 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
   const roleText = game.first_player_user_id === userId ? "선공" : "후공";
   const currentTurnRole = game.current_turn_user_id === userId ? "내 턴" : "상대 턴";
   const canManualEffect = !game.game_over && !pending && !myBoard?.next_hint_pending && (!game.deck_peek_locked || Boolean(game.my_deck_peek));
+  // Next Hint only blocks ending the turn; deck actions remain available while the required character is pending.
+  const canUseDeckActions = !game.game_over && !pending && (!game.deck_peek_locked || Boolean(game.my_deck_peek));
   const canTransitionSolution = canActMain && myBoard?.case_phase === "incident" && n(myBoard?.file_count) >= solutionFileThreshold
     && !myBoard?.partner_rested && !myBoard?.partner_assist_used && !myBoard?.next_hint_used && !myBoard?.next_hint_pending;
   const hasCulpritsCrimeCase = cardHasRuleId(myEventCard || { key: myBoard?.event_key }, "1046");
@@ -637,7 +639,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
           <div style={{ marginTop: 7, fontSize: 11, textAlign: "center", fontWeight: 850 }}>내 덱 {game.my_deck_count ?? "-"}장</div>
           <div style={{ marginTop: 3, fontSize: 10, textAlign: "center", color: C.muted }}>상대 덱 {opponentBoard?.deck_count ?? "-"}장</div>
           <p style={{ ...st.muted, textAlign: "center", marginTop: 4 }}>{game.deck_peek_waiting_for_ack && !game.my_deck_peek ? (activeSharedPeekCards.length > 0 ? "공개된 덱 카드를 확인해 주세요" : "상대가 공개된 카드를 확인할 때까지 대기합니다") : game.deck_peek_in_progress && !game.my_deck_peek ? "상대가 덱을 살펴보고 있습니다" : "카드 순서는 기본적으로 비공개입니다"}</p>
-          {canManualEffect && <div style={{ display: "grid", gap: 5, marginTop: 8 }}>
+          {canUseDeckActions && <div style={{ display: "grid", gap: 5, marginTop: 8 }}>
             <button type="button" style={{ ...st.smallButton, width: "100%" }} disabled={loading || Boolean(game.deck_peek_locked)} onClick={() => void runAction("shuffle_deck")}>내 덱 전체 셔플</button>
             <button type="button" style={{ ...st.smallButton, width: "100%" }} disabled={loading || n(game.my_deck_count) < 1 || Boolean(game.deck_peek_locked)} onClick={() => invokeDeckPeek(userId, n(game.my_deck_count))}>N장 보기</button>
             <button type="button" style={{ ...st.smallButton, width: "100%" }} disabled={loading || n(game.my_deck_count) < 1 || Boolean(game.deck_peek_locked) || Boolean(pending)} onClick={invokeRemoveTopDeck}>N장 리무브</button>
