@@ -648,7 +648,8 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
           <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 8 }} disabled={loading || n(game?.my_deck_count) < 1 || Boolean(pending) || Boolean(game?.deck_peek_locked)} onClick={() => void runAction("gain_evidence_from_deck")}>덱에서 증거 획득</button>
           {[{ board: opponentBoard, mine: false }, { board: myBoard, mine: true }].map(({ board, mine }) => {
             const publicCards = Array.isArray(board?.evidence_public_cards) ? board.evidence_public_cards : [];
-            const hiddenCount = Math.max(0, n(board?.evidence_count) - publicCards.length);
+            const privateEvidenceCards = mine && Array.isArray(board?.evidence_private_cards) ? board.evidence_private_cards : null;
+            const hiddenCount = privateEvidenceCards ? privateEvidenceCards.filter((card) => !Boolean(card.face_up)).length : Math.max(0, n(board?.evidence_count) - publicCards.length);
             return <div key={`evidence-${mine ? "mine" : "opponent"}`} style={{ marginTop: 8, padding: 6, border: "1px solid rgba(255,255,255,.07)", borderRadius: 6, background: "#080d16" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6, marginBottom: 7 }}><span style={{ fontSize: 9, color: C.muted, fontWeight: 800 }}>{mine ? "내 증거" : "상대 증거"} · 뒷면 {hiddenCount}장 / 앞면 {publicCards.length}장</span><span style={{ fontSize: 8, color: "#6b7b94" }}>공개 카드는 아래에 표시됩니다.</span></div>
               <div style={{ display: "grid", gap: 6, marginTop: 4 }}>
