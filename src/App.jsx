@@ -403,7 +403,7 @@ function normalizeCard(card, translations, keywordTagData = {}) {
       : {};
   const objects = [card, source];
   // key는 기존 로컬 덱 저장값과 호환되도록 기존 우선순위를 유지합니다.
-  const id = String(firstValue(objects, ['id', 'databaseId', 'database_id', 'cardId', 'card_id', 'cardNum', 'card_num']));
+  const id = String(firstValue(objects, ['id', 'databaseId', 'database_id', 'cardId', 'card_id', 'cardNum', 'card_num', 'cardNumber', 'card_number']));
   const databaseId = String(firstValue(objects, ['databaseId', 'database_id', 'id']) || id);
   const translated = translations?.[id] || translations?.[databaseId] || {};
   const hiramekiEffect = String(translated.hirameki || '').replace(/^【히라메키】\s*/u, '');
@@ -426,7 +426,8 @@ function normalizeCard(card, translations, keywordTagData = {}) {
   const originalAbility = String(firstValue(objects, ['abilityJp', 'text', 'ability', 'feature', 'effect']));
   const originalFlavor = String(firstValue(objects, ['flavorJp', 'flavor_txt', 'flavor', 'flavorText', 'flavor_text']));
   const cardId = String(firstValue(objects, ['cardId', 'card_id']));
-  const cardNum = String(firstValue(objects, ['cardNum', 'card_num']));
+  const cardNum = String(firstValue(objects, ['cardNum', 'card_num', 'cardNumber', 'card_number']));
+  const cardNumber = String(firstValue(objects, ['cardNumber', 'card_number', 'cardNum', 'card_num']));
   const keywordTags = resolveKeywordTags(keywordTagData, [databaseId, id, cardId, cardNum]);
   const rarity = String(translated.rarityKo || firstValue(objects, ['rarity', 'rarityJp', 'rare', 'rarity_code', 'rarityCode']));
   const cost = numericValue(firstValue(objects, ['cost', 'costValue', 'cost_value']));
@@ -445,6 +446,7 @@ function normalizeCard(card, translations, keywordTagData = {}) {
     databaseId,
     cardId,
     cardNum,
+    cardNumber,
     name: String(translated.nameKo || firstValue([card], ['nameKo', 'translatedName']) || originalName || cardId || cardNum || '이름 없음'),
     originalName,
     type: String(translated.typeKo || firstValue([card], ['typeKo']) || originalType),
@@ -459,6 +461,7 @@ function normalizeCard(card, translations, keywordTagData = {}) {
     sourceData: {
       id: source?.id, databaseId: source?.databaseId, database_id: source?.database_id,
       cardId: source?.cardId, card_id: source?.card_id, cardNum: source?.cardNum, card_num: source?.card_num,
+      cardNumber: source?.cardNumber, card_number: source?.card_number,
     },
     color: normalizeColor(translated.colorKo || firstValue([card], ['colorKo']) || originalColor),
     colorKey: normalizeColorKey(translated.colorKo || firstValue([card], ['colorKo']) || originalColor),
@@ -556,7 +559,11 @@ function normalizePriceCardNumber(value) {
 
 function getCardNumberTokens(card) {
   const tokens = new Set();
-  for (const value of [card?.cardNum, card?.cardId]) {
+  const source = card?.sourceData && typeof card.sourceData === 'object' ? card.sourceData : {};
+  for (const value of [
+    card?.cardNum, card?.cardNumber, card?.cardId,
+    source?.cardNum, source?.card_num, source?.cardNumber, source?.card_number,
+  ]) {
     const raw = String(value ?? '').normalize('NFKC').toLocaleUpperCase();
     if (!raw) continue;
     if (/^P\d+$/u.test(raw)) tokens.add(normalizePriceCardNumber(raw));
@@ -566,6 +573,26 @@ function getCardNumberTokens(card) {
     }
   }
   return tokens;
+}
+
+function getTorecaSecVariant(card) {
+  const source = card?.sourceData && typeof card.sourceData === 'object' ? card.sourceData : {};
+  const values = [
+    card?.cardNum, card?.cardNumber, card?.cardId,
+    source?.cardNum, source?.card_num, source?.cardNumber, source?.card_number,
+  ];
+  for (const value of values) {
+    const token = normalizePriceToken(value);
+    const match = token.match(/SEC([12])$/u);
+    if (match) return Number(match[1]);
+  }
+  return null;
+}
+
+function getTorecaBaseCardName(value) {
+  return normalizePriceToken(value)
+    .replace(/青山剛昌先生サイン入り|サイン入り|サイン|直筆/gu, '')
+    .replace(/[・·:：()（）「」『』【】［］\[\]ー_-]+/gu, '');
 }
 
 function normalizePriceRarity(value) {
@@ -611,21 +638,41 @@ function preferDefaultTorecaVariant(items) {
 function getTorecaPriceMatch(card, snapshot) {
   const items = Array.isArray(snapshot?.items) ? snapshot.items : [];
   const cardNumbers = getCardNumberTokens(card);
-  if (!cardNumbers.size) return { status: 'unmatched', item: null };
+  const rarity = normalizePriceRarity(card.originalRarity || card.rarity);
+  const secVariant = getTorecaSecVariant(card);
+  const originalName = getTorecaBaseCardName(card.originalName);
 
   let candidates = items.filter((item) => cardNumbers.has(normalizePriceCardNumber(item.cardNumber)));
+
+  // Some SEC records use identifiers such as B02016Sec1/Sec2, while TorecaBirth
+  // lists the same print under P001/P002. Fall back to SEC rarity + base Japanese
+  // name only when the source explicitly identifies the Sec1/Sec2 variant.
+  if (!candidates.length && rarity === 'SEC' && secVariant && originalName.length >= 2) {
+    candidates = items.filter((item) =>
+      normalizePriceRarity(item.rarity) === 'SEC'
+      && normalizePriceToken(item.title || '').includes(originalName),
+    );
+  }
   if (!candidates.length) return { status: 'unmatched', item: null };
 
-  const rarity = normalizePriceRarity(card.originalRarity || card.rarity);
   if (rarity) {
     candidates = candidates.filter((item) => normalizePriceRarity(item.rarity) === rarity);
     if (!candidates.length) return { status: 'unmatched', item: null };
   }
 
-  const originalName = normalizePriceToken(card.originalName);
   if (originalName) {
     candidates = candidates.filter((item) => normalizePriceToken(item.title || '').includes(originalName));
-    if (!candidates.length) return { status: 'unmatched', item: null };
+    if (!candidates.length && !(rarity === 'SEC' && secVariant)) return { status: 'unmatched', item: null };
+  }
+
+  // Sec1 is the non-signed listing; Sec2 is the signed listing.
+  // Treat this as an explicit variant key rather than a weak display-name hint.
+  if (rarity === 'SEC' && secVariant) {
+    const variantMatches = secVariant === 2
+      ? candidates.filter((item) => /サイン|直筆/u.test(String(item.title || '')))
+      : candidates.filter((item) => !/サイン|直筆/u.test(String(item.title || '')));
+    if (variantMatches.length) candidates = variantMatches;
+    else return { status: 'unmatched', item: null };
   }
 
   // First match a known set code (e.g. CT-D01 vs CT-D08). The listing title
