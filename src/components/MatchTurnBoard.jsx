@@ -169,9 +169,11 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
     if (loading) return false;
     setLoading(true); setError(""); setNotice("");
     try {
-      const { data, error: rpcError } = await supabase.rpc("perform_private_turn_action_v2", {
-        p_room_id: roomId, p_action: action, p_payload: payload,
-      });
+      const { data, error: rpcError } = action === "cancel_next_hint"
+        ? await supabase.rpc("cancel_private_next_hint_v2", { p_room_id: roomId })
+        : await supabase.rpc("perform_private_turn_action_v2", {
+            p_room_id: roomId, p_action: action, p_payload: payload,
+          });
       if (rpcError) throw rpcError;
       setGame(data && typeof data === "object" ? data : null);
       setNotice(data?.last_action_label || "행동을 반영했습니다.");
