@@ -417,7 +417,6 @@ function normalizeCard(card, translations, keywordTagData = {}) {
   const cardNum = String(firstValue(objects, ['cardNum', 'card_num']));
   const keywordTags = resolveKeywordTags(keywordTagData, [databaseId, id, cardId, cardNum]);
   const traitsSource = firstValue([translated, ...objects], ['traitsKo', 'traits_ko', 'traits', 'trait', 'featureTags', 'feature_tags']);
-  const traits = localizeTraits(traitsSource);
   const rarity = String(translated.rarityKo || firstValue(objects, ['rarity', 'rarityJp', 'rare', 'rarity_code', 'rarityCode']));
   const cost = numericValue(firstValue(objects, ['cost', 'costValue', 'cost_value']));
   const lp = numericValue(firstValue(objects, ['lp', 'LP']));
@@ -426,6 +425,23 @@ function normalizeCard(card, translations, keywordTagData = {}) {
     'type', 'typeJp', 'typeKo', 'cardType', 'card_type', 'category1', 'category2', 'category3',
     'category1Ko', 'category2Ko', 'category3Ko', 'cardCategory', 'card_category',
   ])).filter(Boolean).join(' ');
+  const category1 = String(translated.category1Ko || firstValue(objects, ['category1Ko', 'category1', 'category_1']) || '').trim();
+  const category2 = String(translated.category2Ko || firstValue(objects, ['category2Ko', 'category2', 'category_2']) || '').trim();
+  const category3 = String(translated.category3Ko || firstValue(objects, ['category3Ko', 'category3', 'category_3']) || '').trim();
+  const traitCandidates = [
+    traitsSource, translated.category1Ko, translated.category2Ko, translated.category3Ko,
+    ...objects.flatMap((object) => [
+      object.traits, object.trait, object.characteristics, object.characteristic,
+      object.category1Ko, object.category1, object.category_1,
+      object.category2Ko, object.category2, object.category_2,
+      object.category3Ko, object.category3, object.category_3,
+    ]),
+  ];
+  const traits = [...new Set(traitCandidates.flatMap((value) => {
+    if (Array.isArray(value)) return value.map((item) => String(item ?? '').trim()).filter(Boolean);
+    if (value === null || value === undefined || String(value).trim() === '') return [];
+    return String(value).split(/[、,，;；|｜]/u).map((item) => item.trim()).filter(Boolean);
+  }).map((trait) => TRAIT_TRANSLATIONS[trait] || trait))];
 
   return {
     key: id,
@@ -437,6 +453,16 @@ function normalizeCard(card, translations, keywordTagData = {}) {
     type: String(translated.typeKo || firstValue([card], ['typeKo']) || originalType),
     originalType,
     roleText,
+    category1,
+    category2,
+    category3,
+    traits,
+    // Keep only source identifier fields so special-copy rules can inspect IDs without
+    // attaching the entire raw card payload to deck/match data.
+    sourceData: {
+      id: source?.id, databaseId: source?.databaseId, database_id: source?.database_id,
+      cardId: source?.cardId, card_id: source?.card_id, cardNum: source?.cardNum, card_num: source?.card_num,
+    },
     color: normalizeColor(translated.colorKo || firstValue([card], ['colorKo']) || originalColor),
     colorKey: normalizeColorKey(translated.colorKo || firstValue([card], ['colorKo']) || originalColor),
     originalColor,
@@ -452,7 +478,6 @@ function normalizeCard(card, translations, keywordTagData = {}) {
     cutInEffect,
     hensoEffect,
     keywordTags,
-    traits,
     flavor: String(translated.flavorKo || firstValue([card], ['flavorKo']) || originalFlavor),
     imageUrl: getImageUrl(card, source),
   };
@@ -481,10 +506,32 @@ function getCardRole(card) {
   return 'main';
 }
 
-// 다른 카드 번호(B01005/B01005P)라도 내부 카드 ID(예: 0001)가 같으면 동일 카드로 셉니다.
-function getSameCardLimitKey(card) {
-  const value = card?.cardId ?? card?.sourceData?.card_id ?? card?.databaseId ?? card?.key ?? '';
-  return String(value).trim().toLocaleUpperCase();
+// 카드 ID를 정규화해 숫자 ID의 앞쪽 0 차이를 통일합니다.
+function normalizeCardIdentifier(value) {
+  const raw = String(value ?? '').trim().toLocaleUpperCase();
+  if (!raw) return '';
+  return /^\d+$/.test(raw) ? String(Number(raw)) : raw;
+}
+
+function cardHasIdentifier(card, targetId) {
+  const source = card?.sourceData && typeof card.sourceData === 'object'
+    ? card.sourceData
+    : card?.raw && typeof card.raw === 'object' ? card.raw : {};
+  const target = normalizeCardIdentifier(targetId);
+  return [
+    card?.key, card?.databaseId, card?.cardId, card?.cardNum, card?.id,
+    source?.id, source?.databaseId, source?.database_id, source?.cardId,
+    source?.card_id, source?.cardNum, source?.card_num,
+  ].some((value) => normalizeCardIdentifier(value) === target);
+}
+
+function isUnlimitedCopyCard(card) {
+  return cardHasIdentifier(card, '0627') || cardHasIdentifier(card, '1039');
+}
+
+function sameCopyIdentity(card) {
+  return String(card?.cardId ?? card?.sourceData?.card_id ?? card?.databaseId ?? card?.key ?? '')
+    .trim().toLocaleUpperCase();
 }
 
 function uniqueOptions(values) {
@@ -749,7 +796,7 @@ function loadSavedDeck() {
     let total = 0;
     for (const [key, rawCount] of Object.entries(saved)) {
       const requested = Math.max(0, Math.floor(Number(rawCount) || 0));
-      const count = Math.min(requested, SAME_CARD_LIMIT, MAIN_DECK_LIMIT - total);
+      const count = Math.min(requested, MAIN_DECK_LIMIT - total);
       if (count > 0) {
         cleaned[key] = count;
         total += count;
@@ -888,15 +935,16 @@ export default function App() {
     else localStorage.removeItem(EVENT_STORAGE_KEY);
   }, [eventId]);
 
-  // 예전 버전에서 메인 덱에 들어간 사건 카드를 옮기고, 내부 카드 ID별 최대 3장 제한을 정리합니다.
+  // 예전 버전의 파트너/사건 카드를 별도 슬롯으로 옮기고, 일반 카드는 동일 ID 최대 3장으로 정리합니다.
+  // 카드 ID 0627과 1039는 동일 ID 장수 제한에서 제외하되 메인 덱 40장 제한은 유지합니다.
   useEffect(() => {
     if (!cards.length) return;
     let changed = false;
     let migratedPartner = '';
     let migratedEvent = '';
-    let totalMainCards = 0;
+    let deckTotal = 0;
+    const sameIdCounts = new Map();
     const nextDeck = {};
-    const identityCounts = new Map();
     const cardsByKey = new Map(cards.map((item) => [item.key, item]));
     for (const [key, rawCount] of Object.entries(deck)) {
       const card = cardsByKey.get(key);
@@ -909,17 +957,17 @@ export default function App() {
         migratedEvent ||= key;
         changed = true;
       } else {
-        const identity = getSameCardLimitKey(card) || key;
-        const alreadyUsed = identityCounts.get(identity) || 0;
-        const allowedByIdentity = Math.max(0, SAME_CARD_LIMIT - alreadyUsed);
-        const allowedByDeck = Math.max(0, MAIN_DECK_LIMIT - totalMainCards);
-        const count = Math.min(requestedCount, allowedByIdentity, allowedByDeck);
-        if (count > 0) {
-          nextDeck[key] = count;
-          identityCounts.set(identity, alreadyUsed + count);
-          totalMainCards += count;
-        }
-        if (count !== Number(rawCount)) changed = true;
+        const requested = Math.max(0, Math.floor(Number(rawCount) || 0));
+        const identity = sameCopyIdentity(card || { key }) || String(key);
+        const exempt = isUnlimitedCopyCard(card || { key });
+        const copyLimit = exempt
+          ? MAIN_DECK_LIMIT
+          : Math.max(0, SAME_CARD_LIMIT - (sameIdCounts.get(identity) || 0));
+        const safeCount = Math.min(requested, copyLimit, MAIN_DECK_LIMIT - deckTotal);
+        if (safeCount > 0) nextDeck[key] = safeCount;
+        if (!exempt) sameIdCounts.set(identity, (sameIdCounts.get(identity) || 0) + safeCount);
+        deckTotal += safeCount;
+        if (safeCount !== requested) changed = true;
       }
     }
     if (changed) setDeck(nextDeck);
@@ -1007,7 +1055,13 @@ export default function App() {
   const eventCard = cards.find((card) => card.key === eventId) || null;
   const deckCards = Object.entries(deck).flatMap(([key, count]) => {
     const card = cards.find((item) => item.key === key);
-    return card ? Array.from({ length: Math.min(Number(count) || 0, SAME_CARD_LIMIT) }, (_, copyIndex) => ({ ...card, deckSlotKey: `${key}-${copyIndex}` })) : [];
+    const copyLimit = isUnlimitedCopyCard(card) ? MAIN_DECK_LIMIT : SAME_CARD_LIMIT;
+    return card
+      ? Array.from({ length: Math.min(Number(count) || 0, copyLimit) }, (_, copyIndex) => ({
+          ...card,
+          deckSlotKey: `${key}-${copyIndex}`,
+        }))
+      : [];
   }).slice(0, MAIN_DECK_LIMIT);
   const sortedDeckCards = [...deckCards].sort((a, b) => {
     if (deckSort === 'cost') {
@@ -1103,16 +1157,19 @@ export default function App() {
     }
     setDeck((previous) => {
       const current = Number(previous[card.key] || 0);
-      const identity = getSameCardLimitKey(card);
-      const totalSameCardId = Object.entries(previous).reduce((sum, [key, count]) => {
-        const savedCard = cards.find((item) => item.key === key);
-        const savedIdentity = getSameCardLimitKey(savedCard) || key;
-        return savedIdentity === identity ? sum + Number(count || 0) : sum;
-      }, 0);
       const total = Object.values(previous).reduce((sum, count) => sum + Number(count || 0), 0);
-      if (totalSameCardId >= SAME_CARD_LIMIT) {
-        window.alert(`같은 카드 ID는 최대 ${SAME_CARD_LIMIT}장까지 넣을 수 있어요.`);
-        return previous;
+      if (!isUnlimitedCopyCard(card)) {
+        const identity = sameCopyIdentity(card);
+        const sameIdTotal = Object.entries(previous).reduce((sum, [key, count]) => {
+          const existing = cards.find((item) => String(item.key) === String(key));
+          return identity && sameCopyIdentity(existing) === identity
+            ? sum + Math.max(0, Number(count) || 0)
+            : sum;
+        }, 0);
+        if (sameIdTotal >= SAME_CARD_LIMIT) {
+          window.alert('같은 카드 ID는 최대 3장까지 넣을 수 있습니다. (0627, 1039 카드는 예외입니다.)');
+          return previous;
+        }
       }
       if (total >= MAIN_DECK_LIMIT) {
         window.alert(`메인 덱은 ${MAIN_DECK_LIMIT}장까지 넣을 수 있어요. 파트너와 사건 카드는 별도 슬롯이에요.`);
@@ -1768,7 +1825,7 @@ export default function App() {
             <div className="deck-topbar-info">
               <div className="deck-heading-copy">
                 <div className="deck-title-row"><h2 className="text-base font-bold">내 덱 구성</h2><span className="deck-count-pill">{mainDeckCount} / {MAIN_DECK_LIMIT}장</span></div>
-                <p className="mt-1 text-xs text-slate-400">메인 덱 최대 40장 · 같은 카드 최대 3장 · 파트너와 사건 카드는 별도 슬롯</p>
+                <p className="mt-1 text-xs text-slate-400">메인 덱 최대 40장 · 같은 카드 최대 3장 (ID 0627·1039 제외) · 파트너와 사건 카드는 별도 슬롯</p>
               </div>
             </div>
             <div className="deck-action-buttons">
