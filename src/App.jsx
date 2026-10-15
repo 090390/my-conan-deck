@@ -649,12 +649,12 @@ function getTorecaPriceMatch(card, snapshot) {
   const setHints = [...new Set([card.originalSet, card.set]
     .map((value) => normalizePriceToken(value))
     .filter((value) => value.length >= 6))];
-  if (setHints.length) {
-    const setMatches = candidates.filter((item) => {
-      const title = normalizePriceToken(item.title);
-      return setHints.some((hint) => title.includes(hint));
-    });
-    if (setMatches.length) candidates = setMatches;
+  for (const hint of setHints) {
+    const setMatches = candidates.filter((item) => normalizePriceToken(item.title).includes(hint));
+    if (setMatches.length) {
+      candidates = setMatches;
+      break;
+    }
   }
 
   // If the card metadata explicitly marks a finish/version, honor it.
