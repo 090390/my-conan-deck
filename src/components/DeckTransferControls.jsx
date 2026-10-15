@@ -141,11 +141,7 @@ export default function DeckTransferControls({ cards = [], deck = {}, partnerId 
       justifyContent: "flex-start",
       gap: 2,
       position: "relative",
-<<<<<<< HEAD
       top: 7,
-=======
-      top: 8,
->>>>>>> 082c8e7633ae7c62a174728f01e4bc24cd3b8c12
       width: 226,
       minWidth: 226,
       flex: "0 0 226px",
