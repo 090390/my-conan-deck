@@ -299,10 +299,11 @@ BEGIN
     RAISE EXCEPTION 'v8 migration stopped: contact disguise insertion anchor did not match';
   END IF;
 
-  -- Ensure the current definition still contains the function terminator before replacing it.
-  IF position($function$end;
-$function$ in lower(v_definition)) = 0 THEN
-    RAISE EXCEPTION 'v8 migration stopped: function terminator not found';
+  -- Verify the definition ends with a PL/pgSQL block terminator.
+  -- pg_get_functiondef formatting differs by PostgreSQL version; avoid newline-sensitive matching.
+  IF right(rtrim(lower(v_definition)), 4) <> 'end;' THEN
+    RAISE EXCEPTION 'v8 migration stopped: function terminator not found (definition ending: %)',
+      right(rtrim(lower(v_definition)), 40);
   END IF;
 
   EXECUTE v_definition;
