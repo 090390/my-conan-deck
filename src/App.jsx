@@ -439,20 +439,6 @@ function normalizeCard(card, translations, keywordTagData = {}) {
   const category1 = String(translated.category1Ko || firstValue(objects, ['category1Ko', 'category1', 'category_1']) || '').trim();
   const category2 = String(translated.category2Ko || firstValue(objects, ['category2Ko', 'category2', 'category_2']) || '').trim();
   const category3 = String(translated.category3Ko || firstValue(objects, ['category3Ko', 'category3', 'category_3']) || '').trim();
-  const traitCandidates = [
-    traitsSource, translated.category1Ko, translated.category2Ko, translated.category3Ko,
-    ...objects.flatMap((object) => [
-      object.traits, object.trait, object.characteristics, object.characteristic,
-      object.category1Ko, object.category1, object.category_1,
-      object.category2Ko, object.category2, object.category_2,
-      object.category3Ko, object.category3, object.category_3,
-    ]),
-  ];
-  const traits = [...new Set(traitCandidates.flatMap((value) => {
-    if (Array.isArray(value)) return value.map((item) => String(item ?? '').trim()).filter(Boolean);
-    if (value === null || value === undefined || String(value).trim() === '') return [];
-    return String(value).split(/[、,，;；|｜]/u).map((item) => item.trim()).filter(Boolean);
-  }).map((trait) => TRAIT_TRANSLATIONS[trait] || trait))];
 
   return {
     key: id,
