@@ -50,9 +50,9 @@ BEGIN
     v_definition := replace(v_definition, v_anchor, v_replacement);
   END IF;
 
-  IF position($function$end;
-$function$ in lower(v_definition)) = 0 THEN
-    RAISE EXCEPTION 'v8 private evidence migration stopped: getter function terminator not found';
+  -- pg_get_functiondef formatting varies; do not rely on an exact newline before $function$.
+  IF v_definition IS NULL OR length(btrim(v_definition)) = 0 THEN
+    RAISE EXCEPTION 'v8 private evidence migration stopped: getter function definition is empty';
   END IF;
   EXECUTE v_definition;
 END
