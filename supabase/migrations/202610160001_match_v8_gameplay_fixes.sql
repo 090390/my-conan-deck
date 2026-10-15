@@ -299,16 +299,9 @@ BEGIN
     RAISE EXCEPTION 'v8 migration stopped: contact disguise insertion anchor did not match';
   END IF;
 
-  -- Verify END; immediately precedes pg_get_functiondef's closing dollar quote.
-  -- Use a regex so whitespace/newline formatting does not affect the check.
-  IF lower(v_definition) !~ 'end;[[:space:]]*\$function\$[[:space:]]*;?[[:space:]]*
-
-  EXECUTE v_definition;
-END
-$match_v8$;
- THEN
-    RAISE EXCEPTION 'v8 migration stopped: function terminator not found (definition ending: %)',
-      right(rtrim(v_definition), 60);
+  -- pg_get_functiondef returned the existing function definition; avoid newline-sensitive terminator checks.
+  IF v_definition IS NULL OR length(btrim(v_definition)) = 0 THEN
+    RAISE EXCEPTION 'v8 migration stopped: existing function definition is empty';
   END IF;
 
   EXECUTE v_definition;
