@@ -574,6 +574,40 @@ function normalizePriceRarity(value) {
   return match ? match[0] : token;
 }
 
+function getTorecaSetCodes(value) {
+  const normalized = String(value ?? '').normalize('NFKC').toLocaleUpperCase();
+  return [...new Set([...normalized.matchAll(/CT-[PD]\\d{1,2}/gu)].map((match) => match[0]))];
+}
+
+function getTorecaVariantMarkers(value) {
+  const token = normalizePriceToken(value);
+  const markers = [];
+  if (/キラ加工|キラバージョン|ホイル|箔|ホログラム仕様/u.test(token)) markers.push('foil');
+  if (/ボーナスカード/u.test(token)) markers.push('bonus');
+  if (/未開封/u.test(token)) markers.push('sealed');
+  if (/開封済/u.test(token)) markers.push('opened');
+  if (/チャレンジ戦/u.test(token)) markers.push('challenge');
+  if (/サイン|直筆/u.test(token)) markers.push('signed');
+  if (/レンガ|ブリック/u.test(token)) markers.push('brick');
+  return markers;
+}
+
+function preferDefaultTorecaVariant(items) {
+  let candidates = items;
+  // The card database usually describes the card identity, not whether the
+  // shop is selling it sealed/opened. Prefer an ordinary single-card listing
+  // when that same print is available.
+  const conditioned = candidates.filter((item) => !getTorecaVariantMarkers(item.title).some((marker) => marker === 'sealed' || marker === 'opened'));
+  if (conditioned.length) candidates = conditioned;
+
+  // If the card data does not specify a foil/bonus/signed/challenge version,
+  // prefer a plain listing over premium variants. If no plain version exists,
+  // keep the premium options rather than guessing between them.
+  const plain = candidates.filter((item) => getTorecaVariantMarkers(item.title).length === 0);
+  if (plain.length) candidates = plain;
+  return candidates;
+}
+
 function getTorecaPriceMatch(card, snapshot) {
   const items = Array.isArray(snapshot?.items) ? snapshot.items : [];
   const cardNumbers = getCardNumberTokens(card);
@@ -594,9 +628,55 @@ function getTorecaPriceMatch(card, snapshot) {
     if (!candidates.length) return { status: 'unmatched', item: null };
   }
 
-  // 같은 번호라도 사양이 여러 개 남으면 가격을 임의로 고르지 않습니다.
+  // First match a known set code (e.g. CT-D01 vs CT-D08). The listing title
+  // contains these codes, while the numeric card number alone can be reused
+  // by different starter/theme decks.
+  const cardSetCodes = new Set([
+    ...getTorecaSetCodes(card.cardId),
+    ...getTorecaSetCodes(card.cardNum),
+    ...getTorecaSetCodes(card.originalSet),
+    ...getTorecaSetCodes(card.set),
+  ]);
+  if (cardSetCodes.size) {
+    const setMatches = candidates.filter((item) =>
+      [...getTorecaSetCodes(item.title)].some((code) => cardSetCodes.has(code)),
+    );
+    if (setMatches.length) candidates = setMatches;
+  }
+
+  // Some records carry the Japanese set/product name rather than a CT code.
+  // Use it as a tie-breaker only when it positively identifies a candidate.
+  const setHints = [...new Set([card.originalSet, card.set]
+    .map((value) => normalizePriceToken(value))
+    .filter((value) => value.length >= 6))];
+  if (setHints.length) {
+    const setMatches = candidates.filter((item) => {
+      const title = normalizePriceToken(item.title);
+      return setHints.some((hint) => title.includes(hint));
+    });
+    if (setMatches.length) candidates = setMatches;
+  }
+
+  // If the card metadata explicitly marks a finish/version, honor it.
+  const requestedMarkers = [...new Set([
+    ...getTorecaVariantMarkers(card.originalName),
+    ...getTorecaVariantMarkers(card.originalSet),
+  ])];
+  if (requestedMarkers.length) {
+    const variantMatches = candidates.filter((item) => {
+      const itemMarkers = getTorecaVariantMarkers(item.title);
+      return requestedMarkers.every((marker) => itemMarkers.includes(marker));
+    });
+    if (variantMatches.length) candidates = variantMatches;
+  } else {
+    candidates = preferDefaultTorecaVariant(candidates);
+  }
+
+  // If multiple ordinary printings still remain (e.g. identical card number
+  // reused across promo editions with no matching set metadata), do not invent
+  // a price for the wrong edition.
   const unique = [...new Map(candidates.filter((item) => item.url).map((item) => [item.url, item])).values()];
-  if (unique.length !== 1) return { status: unique.length ? 'ambiguous' : 'unmatched', item: null };
+  if (unique.length !== 1) return { status: unique.length ? 'ambiguous' : 'unmatched', item: null, candidates: unique };
   return { status: 'match', item: unique[0] };
 }
 
