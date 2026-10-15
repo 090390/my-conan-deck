@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import RoomLobby from "./components/RoomLobby";
 import DeckTransferControls from "./components/DeckTransferControls";
 import PublicDeckLibrary from "./components/PublicDeckLibrary";
+import FeedbackBoard from "./components/FeedbackBoard";
 
 const PAGE_SIZE = 100;
 const MAIN_DECK_LIMIT = 40;
@@ -427,7 +428,6 @@ function normalizeCard(card, translations, keywordTagData = {}) {
   const cardId = String(firstValue(objects, ['cardId', 'card_id']));
   const cardNum = String(firstValue(objects, ['cardNum', 'card_num']));
   const keywordTags = resolveKeywordTags(keywordTagData, [databaseId, id, cardId, cardNum]);
-  const traitsSource = firstValue([translated, ...objects], ['traitsKo', 'traits_ko', 'traits', 'trait', 'featureTags', 'feature_tags']);
   const rarity = String(translated.rarityKo || firstValue(objects, ['rarity', 'rarityJp', 'rare', 'rarity_code', 'rarityCode']));
   const cost = numericValue(firstValue(objects, ['cost', 'costValue', 'cost_value']));
   const lp = numericValue(firstValue(objects, ['lp', 'LP']));
@@ -439,20 +439,6 @@ function normalizeCard(card, translations, keywordTagData = {}) {
   const category1 = String(translated.category1Ko || firstValue(objects, ['category1Ko', 'category1', 'category_1']) || '').trim();
   const category2 = String(translated.category2Ko || firstValue(objects, ['category2Ko', 'category2', 'category_2']) || '').trim();
   const category3 = String(translated.category3Ko || firstValue(objects, ['category3Ko', 'category3', 'category_3']) || '').trim();
-  const traitCandidates = [
-    traitsSource, translated.category1Ko, translated.category2Ko, translated.category3Ko,
-    ...objects.flatMap((object) => [
-      object.traits, object.trait, object.characteristics, object.characteristic,
-      object.category1Ko, object.category1, object.category_1,
-      object.category2Ko, object.category2, object.category_2,
-      object.category3Ko, object.category3, object.category_3,
-    ]),
-  ];
-  const traits = [...new Set(traitCandidates.flatMap((value) => {
-    if (Array.isArray(value)) return value.map((item) => String(item ?? '').trim()).filter(Boolean);
-    if (value === null || value === undefined || String(value).trim() === '') return [];
-    return String(value).split(/[、,，;；|｜]/u).map((item) => item.trim()).filter(Boolean);
-  }).map((trait) => TRAIT_TRANSLATIONS[trait] || trait))];
 
   return {
     key: id,
@@ -1765,6 +1751,7 @@ export default function App() {
             <button onClick={() => setActiveView('match')} className={`rounded-lg px-3 py-2 text-xs font-bold transition sm:px-4 ${activeView === 'match'  ? 'bg-rose-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}>모의전</button>
           </nav>
           <a className="rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:border-rose-400/50 hover:text-white" href="https://www.takaratomy.co.jp/products/conan-cardgame/cardlist/" target="_blank" rel="noreferrer">일본 공식 카드 목록 ↗</a>
+          <FeedbackBoard />
         </div>
       </header>
       )}
