@@ -2055,7 +2055,7 @@ export default function App() {
                   <button onClick={() => addCard(selectedCard)} className="w-full max-w-[240px] rounded-xl bg-rose-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-rose-500">{getCardRole(selectedCard) === 'partner' ? (partnerId === selectedCard.key ? '파트너 선택 해제' : '파트너로 지정') : getCardRole(selectedCard) === 'event' ? (eventId === selectedCard.key ? '사건 카드 선택 해제' : '사건 카드로 지정') : `덱에 추가${Number(deck[selectedCard.key] || 0) ? ` · 현재 ${deck[selectedCard.key]}장` : ' +'}`}</button>
                   {modalNavigationCards.length > 1 && <p className="text-[10px] text-slate-600">← → 키로 {selectedCardSource === 'deck' ? '덱의 다른 카드' : '다른 카드'} 확인</p>}
                   <section className="card-meta-item card-meta-item-torecabirth w-full max-w-[240px] rounded-lg border border-white/[0.07] bg-[#090f1b] p-3" style={{ gap: 0 }}>
-  <h3 className="text-xs font-bold text-slate-300" style={{ fontSize: '12px', lineHeight: 1.4, margin: 0 }}>トレカバース 온라인 판매가</h3>
+  <h3 className="text-xs font-bold text-slate-300" style={{ fontSize: '12px', fontWeight: 750, lineHeight: 1.4, margin: 0 }}>トレカバース 온라인 판매가</h3>
   {selectedCardPrice?.status === 'match' && (
     <p style={{ fontSize: '9px', lineHeight: 1.35, fontStyle: 'italic', color: '#68758a', margin: '2px 0 0' }}>
       가격 확인 시각: {formatPriceUpdatedAt(priceSnapshot.updatedAt) || '기록 없음'}
@@ -2069,7 +2069,7 @@ export default function App() {
     <>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: '5px', marginTop: '7px', fontSize: '10px', lineHeight: 1.4 }}>
         <span style={{ color: '#a3afc2', fontSize: '10px' }}>현 판매가:</span>
-        <strong style={{ color: '#f1f5f9', fontSize: '14px', fontWeight: 850, lineHeight: 1.3, fontVariantNumeric: 'tabular-nums' }}>¥{Number(selectedCardPrice.item.priceYen).toLocaleString('ja-JP')}</strong>
+        <strong style={{ color: '#f1f5f9', fontSize: '13px', fontWeight: 800, lineHeight: 1.3, fontVariantNumeric: 'tabular-nums' }}>¥{Number(selectedCardPrice.item.priceYen).toLocaleString('ja-JP')}</strong>
       </div>
       <p style={{ fontSize: '10px', lineHeight: 1.4, color: '#8996aa', margin: '2px 0 0' }}>{selectedCardPrice.item.inStock === false ? '온라인 표시 재고: 품절' : selectedCardPrice.item.stockCount !== null && selectedCardPrice.item.stockCount !== undefined && Number.isFinite(Number(selectedCardPrice.item.stockCount)) ? `온라인 표시 재고: ${Number(selectedCardPrice.item.stockCount).toLocaleString('ja-JP')}개` : '온라인 표시 재고: 확인 불가'}</p>
     </>
