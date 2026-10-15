@@ -2069,7 +2069,7 @@ export default function App() {
     <>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: '5px', marginTop: '7px', fontSize: '10px', lineHeight: 1.4 }}>
         <span style={{ color: '#a3afc2', fontSize: '10px' }}>현 판매가:</span>
-        <strong style={{ color: '#f1f5f9', fontSize: '13px', fontWeight: 800, lineHeight: 1.3, fontVariantNumeric: 'tabular-nums' }}>¥{Number(selectedCardPrice.item.priceYen).toLocaleString('ja-JP')}</strong>
+        <strong style={{ color: '#f1f5f9', fontSize: '12px', fontWeight: 800, lineHeight: 1.3, fontVariantNumeric: 'tabular-nums' }}>¥{Number(selectedCardPrice.item.priceYen).toLocaleString('ja-JP')}</strong>
       </div>
       <p style={{ fontSize: '10px', lineHeight: 1.4, color: '#8996aa', margin: '2px 0 0' }}>{selectedCardPrice.item.inStock === false ? '온라인 표시 재고: 품절' : selectedCardPrice.item.stockCount !== null && selectedCardPrice.item.stockCount !== undefined && Number.isFinite(Number(selectedCardPrice.item.stockCount)) ? `온라인 표시 재고: ${Number(selectedCardPrice.item.stockCount).toLocaleString('ja-JP')}개` : '온라인 표시 재고: 확인 불가'}</p>
     </>
