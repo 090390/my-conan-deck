@@ -11,8 +11,9 @@ The repository does not contain the SQL definition for `public.perform_private_t
 - `contact_use_cutin`: after the defender uses a cut-in, keep the contact pending and set the attacker as the next responder; determine the result only after the attacker uses/passes cut-in.
 - `rest_character_manual`: confirm that the existing activate-then-rest UI sequence works for stunned characters without violating other state constraints.
 - `set_card_to_field`: confirm that character cards can be set from hand, remove, and deck, not only events.
+- Evidence list privacy/data: currently the RPC only supplies public evidence card objects plus a hidden-card count, so this UI can show move controls only on face-up cards. To meet the per-card controls requirement for face-down evidence too, return the evidence instances privately to their owner (including instance IDs and face-up flags) without exposing hidden card identity to the opponent; then render opaque backs but keep their corresponding per-card buttons.
 
-The UI action names above are explicit integration points, not a claim that the deployed RPC already accepts them. Please do not merge this draft until the RPC behavior is implemented or confirmed.
+The UI action names above are explicit integration points, not a claim that the deployed RPC already accepts them. Please do not merge this draft until the RPC behavior is implemented or confirmed. No production build was run from this environment; the repository has no GitHub Actions workflow configured, and the local container cannot clone from GitHub.
 
 ## Retrieve the existing RPC definition without attaching files
 
