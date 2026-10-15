@@ -566,7 +566,13 @@ function getCardNumberTokens(card) {
   ]) {
     const raw = String(value ?? '').normalize('NFKC').toLocaleUpperCase();
     if (!raw) continue;
-    if (/^P\d+$/u.test(raw)) tokens.add(normalizePriceCardNumber(raw));
+    if (/^P\d+$/u.test(raw)) {
+      tokens.add(normalizePriceCardNumber(raw));
+      continue;
+    }
+    // B02016 / B02016Sec1/Sec2 are internal SEC identifiers, not shop card numbers.
+    // Avoid extracting coincidental numeric fragments such as "0201" from them.
+    if (/^[A-Z]\d{5,}(?:SEC[12])?$/u.test(raw) || /^\d{5,}SEC[12]$/u.test(raw)) continue;
     // CT-P10-1082 같은 표기는 카드 번호 쪽의 숫자(1082)도 비교 후보로 수집합니다.
     for (const match of raw.matchAll(/P\d{3,4}|\d{3,4}/gu)) {
       tokens.add(normalizePriceCardNumber(match[0]));
