@@ -459,6 +459,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
   ];
   const ownPeekOrder = peekOrderIds.map((id) => ownPeekCards.find((card) => card.instance_id === id)).filter(Boolean);
   const canSelectNextHintCard = isMyTurn && game?.turn_step === "main" && !game?.game_over && !pending && Boolean(myBoard?.next_hint_pending);
+  const canPlayEventDuringNextHint = canSelectNextHintCard && (!game?.deck_peek_locked || Boolean(game?.my_deck_peek));
   const revealedEvidenceCard = pending?.type === "evidence_attack_reveal" ? pending.revealed_evidence_card : null;
   const winnerBoard = boards.find((board) => board.user_id === game?.winner_user_id);
   const winnerName = game?.winner_display_name || winnerBoard?.display_name || "플레이어";
@@ -707,9 +708,9 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
         {game.turn_step === "begin" && (isMyTurn ? <button type="button" style={st.button} disabled={loading || pending} onClick={() => void runAction("begin_turn")}>턴 시작 · 액티브화 · 손패 1장 드로우</button> : <p style={st.muted}>상대가 턴을 시작할 때까지 대기합니다.</p>)}
         {game.turn_step === "file" && <div><p style={{ ...st.muted, marginBottom: 8 }}>{isMyTurn ? `덱 위에서 파일 ${Math.max(0, fileTarget - filesPlaced)}장을 뒤집어 배치합니다.` : `상대가 파일 ${currentTurnBoard?.files_to_place ?? 0}장을 배치하고 있습니다.`}</p>{isMyTurn && <button type="button" style={st.button} disabled={loading} onClick={() => void runAction("place_files")}>덱 위에서 파일 {Math.max(0, fileTarget - filesPlaced)}장 배치</button>}</div>}
         {canSelectNextHintCard && <p style={{ ...st.muted, color: C.gold, marginTop: 8 }}>파일을 손패로 가져왔습니다. 아래 손패에서 등장할 캐릭터를 선택해 주세요. 선택 중에는 다른 행동이 일시 중지됩니다.</p>}
-        {canActMain && <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 5 }}>
-          {myBoard?.base_action_done && n(myBoard?.file_count) > 0 && <button type="button" style={st.button} disabled={loading} onClick={() => void runAction("next_hint_take_file")}>넥스트 힌트 선언 · 파일을 손패로</button>}
-          <button type="button" style={{ ...st.button, background: "#4b2637" }} disabled={loading || pending} onClick={() => void runAction("end_turn")}>턴 종료</button>
+        {(canActMain || canSelectNextHintCard) && <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 5 }}>
+          {canActMain && myBoard?.base_action_done && n(myBoard?.file_count) > 0 && <button type="button" style={st.button} disabled={loading} onClick={() => void runAction("next_hint_take_file")}>넥스트 힌트 선언 · 파일을 손패로</button>}
+          <button type="button" style={{ ...st.button, background: "#4b2637", opacity: myBoard?.next_hint_pending ? 0.55 : 1 }} disabled={loading || pending || Boolean(myBoard?.next_hint_pending)} title={myBoard?.next_hint_pending ? "넥스트 힌트로 가져온 카드 중 캐릭터 1장을 먼저 등장시켜야 합니다." : ""} onClick={() => void runAction("end_turn")}>턴 종료{myBoard?.next_hint_pending ? " · 캐릭터 등장 필요" : ""}</button>
         </div>}
         {myBoard?.base_action_done && game.turn_step === "main" && <p style={{ ...st.muted, marginTop: 8 }}>기본 행동을 완료했습니다. 파일이 남아 있는 동안 넥스트 힌트를 연속으로 사용할 수 있습니다. 넥스트 힌트 후에도 파트너 추리는 가능하지만 어시스트는 사용할 수 없습니다.</p>}
       </section>}
@@ -720,6 +721,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
           {myHand.map((card) => {
             const info = infoFor(card);
             const normalPlay = canActMain && card.card_type === "character" && !myBoard?.character_played_this_turn && n(card.cost) <= costLimit;
+            const eventPlayCostLimit = costLimit + (myBoard?.next_hint_pending ? 1 : 0);
             const nextSelected = selectedNextHint === card.instance_id;
             return <article key={card.instance_id} style={{ minWidth: 0, padding: 6, border: `1px solid ${nextSelected ? "#fb7185" : "rgba(148,163,184,.15)"}`, borderRadius: 7, background: "#080d16" }}>
               <button type="button" onClick={() => openDetails(card)} style={{ display: "block", width: "100%", border: 0, background: "transparent", color: C.text, padding: 0 }}><CardArt instance={card} /><div style={{ fontSize: 10, fontWeight: 800, lineHeight: 1.35, marginTop: 5, textAlign: "left", overflowWrap: "anywhere" }}>{info?.name || card.key}</div></button>
@@ -737,8 +739,8 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], onLeaveFiel
                   void runAction("next_hint", { instance_id: card.instance_id });
                 }}>이 카드로 넥스트 힌트 등장</button>}
               </div>}
-              {canActMain && card.card_type === "event" && <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 6, background: "#075985", opacity: n(card.cost) > costLimit || (myBoard?.field_cards?.length || 0) >= 5 ? .72 : 1 }} disabled={loading} onClick={() => {
-                if (n(card.cost) > costLimit) { showBlockedReason(`필요 레벨을 충족하지 않아 이벤트를 사용할 수 없습니다. 현재 레벨 상한은 ${costLimit}입니다.`); return; }
+              {(canActMain || canPlayEventDuringNextHint) && card.card_type === "event" && <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 6, background: "#075985", opacity: n(card.cost) > eventPlayCostLimit || (myBoard?.field_cards?.length || 0) >= 5 ? .72 : 1 }} disabled={loading} onClick={() => {
+                if (n(card.cost) > eventPlayCostLimit) { showBlockedReason(`필요 레벨을 충족하지 않아 이벤트를 사용할 수 없습니다. 현재 레벨 상한은 ${eventPlayCostLimit}입니다.`); return; }
                 if ((myBoard?.field_cards?.length || 0) >= 5) { showBlockedReason("현장에 이미 카드가 5장 있습니다. 먼저 현장 카드를 이동해 주세요."); return; }
                 void runAction("play_event", { instance_id: card.instance_id });
               }}>현장에 이벤트 사용</button>}
