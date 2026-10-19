@@ -598,7 +598,7 @@ function getTorecaSecVariant(card) {
 function getTorecaBaseCardName(value) {
   return normalizePriceToken(value)
     .replace(/青山剛昌先生サイン入り|サイン入り|サイン|直筆/gu, '')
-    .replace(/[・·:：()（）「」『』【】［］\[\]ー_-]+/gu, '');
+    .replace(/[・·:：()（）「」『』【】［］\[\]_-]+/gu, '');
 }
 
 function normalizePriceRarity(value) {
@@ -647,7 +647,7 @@ function preferDefaultTorecaVariant(items) {
 function getTorecaPriceMatch(card, snapshot) {
   const items = Array.isArray(snapshot?.items) ? snapshot.items : [];
   const cardNumbers = getCardNumberTokens(card);
-  const rarity = normalizePriceRarity(card.originalRarity || card.rarity);
+  const rarity = normalizePriceRarity(card.originalRarity) || normalizePriceRarity(card.rarity);
   const secVariant = getTorecaSecVariant(card);
   const source = card?.sourceData && typeof card.sourceData === 'object' ? card.sourceData : {};
   const originalName = getTorecaBaseCardName(
@@ -1362,7 +1362,7 @@ export default function App() {
   const deckPriceExcludedEntries = deckPriceResults.filter((entry) => entry.match.status !== 'match');
   const deckPriceExcludedCount = deckPriceExcludedEntries.length;
   const deckPriceExcludedUnique = [...new Map(deckPriceExcludedEntries.map(({ card }) => [
-    `${sameCopyIdentity(card) || card.key}|${normalizePriceRarity(card.originalRarity || card.rarity)}`,
+    `${sameCopyIdentity(card) || card.key}|${normalizePriceRarity(card.originalRarity) || normalizePriceRarity(card.rarity)}`,
     card,
   ])).values()];
   const deckPriceExcludedTooltip = deckPriceExcludedUnique.length
