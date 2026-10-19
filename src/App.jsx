@@ -217,7 +217,7 @@ function cardHasAbilityDot(card, kind) {
   if (kind === 'mislead' && tags.some((tag) => /미스리드|ミスリード/iu.test(String(tag)))) return true;
   if (kind === 'investigation' && tags.some((tag) => /수사|捜査/iu.test(String(tag)))) return true;
 
-  const sourceText = [card?.ability, card?.originalAbility, card?.hiramekiEffect, card?.cutInEffect]
+  const sourceText = [card?.ability, card?.originalAbility: fixKoreanCardText(originalAbility), card?.hiramekiEffect: fixKoreanCardText(hiramekiEffect), card?.cutInEffect]
     .map((value) => String(value ?? ''))
     .join('\n');
   // 숫자/X가 붙은 실제 능력 표기를 찾습니다. 능력을 가진 다른 캐릭터를 언급하는 문구만으로는 점을 붙이지 않습니다.
@@ -253,7 +253,7 @@ function getCardFeatureDotItems(card) {
 }
 
 function formatAbilityText(value) {
-  const text = String(value ?? '').replace(/\r\n?/gu, '\n').trim();
+  const text = String(value ?? '').replace(/<br\s*\/?\s*>/giu, '\n').replace(/\r\n?/gu, '\n').trim();
   if (!text) return '';
   // 마침표 뒤에 새 선언/자동/상시/기동 헤더가 오면 그 능력부터 새 줄로 표시합니다.
   // \s*는 일반 공백뿐 아니라 일본어 전각 공백도 처리합니다.
@@ -405,15 +405,51 @@ function normalizeCard(card, translations, keywordTagData = {}) {
   // key는 기존 로컬 덱 저장값과 호환되도록 기존 우선순위를 유지합니다.
   const id = String(firstValue(objects, ['id', 'databaseId', 'database_id', 'cardId', 'card_id', 'cardNum', 'card_num', 'cardNumber', 'card_number']));
   const databaseId = String(firstValue(objects, ['databaseId', 'database_id', 'id']) || id);
-  const translated = translations?.[id] || translations?.[databaseId] || {};
+  const sourceAbilityJp = String(firstValue(objects, ['abilityJp', 'text', 'ability', 'feature', 'effect']));
+  const translationIdentifierValues = objects.flatMap((object) => [
+    'id', 'databaseId', 'database_id', 'cardId', 'card_id', 'cardNum', 'card_num', 'cardNumber', 'card_number', 'key',
+  ].map((key) => normalizeCardIdentifier(object?.[key])).filter(Boolean));
+  const isCard1119 = translationIdentifierValues.includes('1119');
+  const isB06105P = translationIdentifierValues.includes('B06105P');
+  const originalJapaneseColorReference = [
+    sourceAbilityJp,
+    firstValue(objects, ['colorJp', 'color', 'colour']),
+    firstValue(objects, ['typeJp', 'type', 'cardType', 'card_type', 'category1']),
+  ].join(' ');
+  const japaneseRedYellowPair = /赤\\s*(?:[&＆/／・、]|と|及び|または|か)\\s*黄/u.test(originalJapaneseColorReference);
+  const japaneseYellowRedPair = /黄\\s*(?:[&＆/／・、]|と|及び|または|か)\\s*赤/u.test(originalJapaneseColorReference);
+  const fixKoreanCardText = (value) => {
+    let text = String(value ?? '').replace(/<br\\s*\\/?\\s*>/giu, '\\n');
+    text = text.replace(/카멜/gu, '캐멀');
+    text = text.replace(/뒷면인 증거 3개를 앞면으로 뒤집는다/gu, '뒷면 증거 3개를 앞면으로 뒤집는다');
+    if (isCard1119) {
+      text = text
+        .replace(/\\[적\\s*&\\s*적\\]/gu, '[적&황]')
+        .replace(/\\[적\\]\\s*또는\\s*\\[적\\](?=\\s*캐릭터)/gu, '[적] 또는 [황]');
+    } else if (japaneseRedYellowPair) {
+      text = text
+        .replace(/\\[적\\s*&\\s*적\\]/gu, '[적&황]')
+        .replace(/\\[적\\]\\s*또는\\s*\\[적\\](?=\\s*캐릭터)/gu, '[적] 또는 [황]');
+    } else if (japaneseYellowRedPair) {
+      text = text
+        .replace(/\\[적\\s*&\\s*적\\]/gu, '[황&적]')
+        .replace(/\\[적\\]\\s*또는\\s*\\[적\\](?=\\s*캐릭터)/gu, '[황] 또는 [적]');
+    }
+    return text;
+  };
+  const rawTranslated = translations?.[id] || translations?.[databaseId] || {};
+  const translated = Object.fromEntries(Object.entries(rawTranslated).map(([key, value]) => [
+    key,
+    typeof value === 'string' ? fixKoreanCardText(value) : value,
+  ]));
   const hiramekiEffect = String(translated.hirameki || '').replace(/^【히라메키】\s*/u, '');
   const cutInEffect = String(translated.cut_in || '').replace(/^【컷인】\s*/u, '');
   const hensoEffect = String(translated.henso || '').replace(/^【변장】\s*/u, '');
   const disguiseEffect = String(translated.disguise || translated.disguise_effect || translated.disguiseEffect || firstValue(objects, ['disguiseEffect', 'disguise_effect', 'disguise'])).trim();
   const traitAliases = new Map([['怪盗', '괴도'], ['高校生', '고등학생'], ['マジシャン', '마술사'], ['探偵', '탐정'], ['小学生', '초등학생'], ['警察', '경찰'], ['刑事', '형사'], ['公安', '공안'], ['黒ずくめの組織', '검은 조직'], ['犯人', '범인']]);
-  const traitRaw = [translated.traitsKo, translated.traits_ko, translated.traits, translated.category1Ko, translated.category2Ko, translated.category3Ko,
+  const traitRaw = [translated.traitsKo, translated.traits_ko, translated.traits: [...new Set(traits.map(fixKoreanCardText))], translated.category1Ko, translated.category2Ko, translated.category3Ko,
     ...objects.flatMap((object) => [object.traitsKo, object.traits_ko, object.traits, object.trait, object.characteristics, object.characteristic,
-      object.category1Ko, object.category2Ko, object.category3Ko, object.category1, object.category_1, object.category2, object.category_2, object.category3, object.category_3])];
+      object.category1Ko, object.category2Ko, object.category3Ko, object.category1: fixKoreanCardText(category1), object.category_1, object.category2: fixKoreanCardText(category2), object.category_2, object.category3: fixKoreanCardText(category3), object.category_3])];
   const traitTokens = traitRaw.flatMap((value) => Array.isArray(value) ? value : typeof value === 'string' ? value.split(/[|｜,，、/／·・]+/u) : [])
     .map((value) => String(value).trim()).filter(Boolean)
     .map((value) => traitAliases.get(value) || value)
@@ -423,7 +459,7 @@ function normalizeCard(card, translations, keywordTagData = {}) {
   const originalType = String(firstValue(objects, ['typeJp', 'type', 'cardType', 'card_type', 'category1', 'category_1']));
   const originalColor = String(firstValue(objects, ['colorJp', 'color', 'colour']));
   const originalSet = String(firstValue(objects, ['setJp', 'package', 'set', 'product']));
-  const originalAbility = String(firstValue(objects, ['abilityJp', 'text', 'ability', 'feature', 'effect']));
+  const originalAbility = sourceAbilityJp;
   const originalFlavor = String(firstValue(objects, ['flavorJp', 'flavor_txt', 'flavor', 'flavorText', 'flavor_text']));
   const cardId = String(firstValue(objects, ['cardId', 'card_id']));
   const cardNum = String(firstValue(objects, ['cardNum', 'card_num', 'cardNumber', 'card_number']));
@@ -447,10 +483,10 @@ function normalizeCard(card, translations, keywordTagData = {}) {
     cardId,
     cardNum,
     cardNumber,
-    name: String(translated.nameKo || firstValue([card], ['nameKo', 'translatedName']) || originalName || cardId || cardNum || '이름 없음'),
-    originalName,
-    type: String(translated.typeKo || firstValue([card], ['typeKo']) || originalType),
-    originalType,
+    name: fixKoreanCardText(translated.nameKo || firstValue([card], ['nameKo', 'translatedName']) || originalName || cardId || cardNum || '이름 없음'),
+    originalName: fixKoreanCardText(originalName),
+    type: fixKoreanCardText(translated.typeKo || firstValue([card], ['typeKo']) || originalType),
+    originalType: fixKoreanCardText(originalType),
     roleText,
     category1,
     category2,
@@ -463,25 +499,25 @@ function normalizeCard(card, translations, keywordTagData = {}) {
       cardId: source?.cardId, card_id: source?.card_id, cardNum: source?.cardNum, card_num: source?.card_num,
       cardNumber: source?.cardNumber, card_number: source?.card_number,
     },
-    color: normalizeColor(translated.colorKo || firstValue([card], ['colorKo']) || originalColor),
+    color: normalizeColor(fixKoreanCardText(translated.colorKo || firstValue([card], ['colorKo']) || originalColor)),
     colorKey: normalizeColorKey(translated.colorKo || firstValue([card], ['colorKo']) || originalColor),
-    originalColor,
+    originalColor: fixKoreanCardText(originalColor),
     rarity,
     originalRarity: String(firstValue(objects, ['rarityJp', 'rarity', 'rare', 'rarity_code', 'rarityCode'])),
     cost,
     lp,
     ap,
-    set: String(translated.setKo || firstValue([card], ['setKo']) || originalSet),
-    originalSet,
-    ability: String(translated.abilityKo || firstValue([card], ['abilityKo']) || originalAbility),
+    set: fixKoreanCardText(translated.setKo || firstValue([card], ['setKo']) || originalSet),
+    originalSet: fixKoreanCardText(originalSet),
+    ability: fixKoreanCardText(translated.abilityKo || firstValue([card], ['abilityKo']) || originalAbility),
     originalAbility,
     hiramekiEffect,
-    cutInEffect,
-    hensoEffect,
-    disguiseEffect,
+    cutInEffect: fixKoreanCardText(cutInEffect),
+    hensoEffect: fixKoreanCardText(hensoEffect),
+    disguiseEffect: fixKoreanCardText(disguiseEffect),
     traits,
     keywordTags,
-    flavor: String(translated.flavorKo || firstValue([card], ['flavorKo']) || originalFlavor),
+    flavor: fixKoreanCardText(translated.flavorKo || firstValue([card], ['flavorKo']) || originalFlavor),
     imageUrl: getImageUrl(card, source),
   };
 }
@@ -2020,7 +2056,6 @@ export default function App() {
           .card-meta-grid { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
         }
       `}</style>
-      {!gameFieldOnly && (
       <header className="app-header mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
         <h1 className="text-xl font-black tracking-tight md:text-2xl">명탐정 코난 TCG 도감</h1>
         <div className="flex flex-wrap items-center gap-2">
@@ -2033,7 +2068,6 @@ export default function App() {
           <FeedbackBoard />
         </div>
       </header>
-      )}
 
       <div style={{ display: activeView === 'match' ? 'block' : 'none' }}>
         <RoomLobby deck={deck} partnerId={partnerId} eventId={eventId} cards={cards} onGameFieldChange={setGameFieldOnly}/>
