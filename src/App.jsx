@@ -408,7 +408,7 @@ function normalizeCard(card, translations, keywordTagData = {}) {
   const sourceAbilityJp = String(firstValue(objects, ['abilityJp', 'text', 'ability', 'feature', 'effect']));
   const translationIdentifierValues = objects.flatMap((object) => [
     'id', 'databaseId', 'database_id', 'cardId', 'card_id', 'cardNum', 'card_num', 'cardNumber', 'card_number', 'key',
-  ].map((key) => normalizeCardIdentifier(String(object?.[key] ?? '').replace(/^ID\\s*[:#-]\\s*/iu, ''))).filter(Boolean));
+  ].map((key) => normalizeCardIdentifier(String(object?.[key] ?? '').replace(/^ID\s*[:#-]\s*/iu, ''))).filter(Boolean));
   const isCard1119 = translationIdentifierValues.includes('1119');
   const originalJapaneseColorReference = [
     sourceAbilityJp,
