@@ -13,6 +13,11 @@ export default function MatchGreetingStep({ roomId, userId, players = [], onComp
   const [submitted, setSubmitted] = useState(false);
   const completionTimer = useRef(null);
   const completedSignature = useRef("");
+  const onCompleteRef = useRef(onComplete);
+
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
 
   const refreshGreeting = useCallback(async () => {
     if (!roomId) return;
@@ -56,11 +61,11 @@ export default function MatchGreetingStep({ roomId, userId, players = [], onComp
     if (completedSignature.current === signature) return undefined;
     completedSignature.current = signature;
     setShowBubbles(true);
-    completionTimer.current = window.setTimeout(() => onComplete(), 7000);
+    completionTimer.current = window.setTimeout(() => onCompleteRef.current(), 7000);
     return () => {
       if (completionTimer.current) window.clearTimeout(completionTimer.current);
     };
-  }, [greeting?.is_complete, greeting?.seat1_message, greeting?.seat2_message, greeting?.completed_at, onComplete]);
+  }, [greeting?.is_complete, greeting?.seat1_message, greeting?.seat2_message, greeting?.completed_at]);
 
   async function submitGreeting(event) {
     event.preventDefault();
