@@ -228,16 +228,29 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
               p_owner_user_id: payload.owner_user_id,
               p_instance_id: payload.instance_id,
             })
-          : action === "move_mr_partner_card"
-            ? await supabase.rpc("move_private_mr_partner_to_zone_v1", {
+          : action === "move_field_mr_to_partner"
+            ? await supabase.rpc("move_private_field_mr_to_partner_v1", {
                 p_room_id: roomId,
                 p_owner_user_id: payload.owner_user_id,
                 p_instance_id: payload.instance_id,
-                p_destination: payload.destination,
               })
-            : await supabase.rpc("perform_private_turn_action_v2", {
-                p_room_id: roomId, p_action: action, p_payload: payload,
-              });
+            : action === "adjust_character_ap"
+              ? await supabase.rpc("adjust_private_character_ap_v1", {
+                  p_room_id: roomId,
+                  p_owner_user_id: payload.owner_user_id,
+                  p_instance_id: payload.instance_id,
+                  p_delta: payload.delta,
+                })
+              : action === "move_mr_partner_card"
+                ? await supabase.rpc("move_private_mr_partner_to_zone_v1", {
+                    p_room_id: roomId,
+                    p_owner_user_id: payload.owner_user_id,
+                    p_instance_id: payload.instance_id,
+                    p_destination: payload.destination,
+                  })
+                : await supabase.rpc("perform_private_turn_action_v2", {
+                    p_room_id: roomId, p_action: action, p_payload: payload,
+                  });
       if (rpcError) throw rpcError;
       let updatedGame = data && typeof data === "object" ? data : null;
       const oldBoards = Array.isArray(game?.boards) ? game.boards : [];
@@ -412,6 +425,17 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
     }
     void runAction("add_ap_bonus", { instance_id: card.instance_id, owner_user_id: ownerId, amount });
   }
+
+  function promptApPenalty(card, ownerId) {
+    const raw = window.prompt(`${nameOf(card)}의 AP에서 감소시킬 수치 (숫자)`, "1");
+    if (raw === null) return;
+    const amount = Math.floor(Number(raw));
+    if (!Number.isInteger(amount) || amount < 1 || amount > 10000) {
+      window.alert("1~10000 사이의 정수를 입력해 주세요.");
+      return;
+    }
+    void runAction("adjust_character_ap", { instance_id: card.instance_id, owner_user_id: ownerId, delta: -amount });
+  }
   function invokePromptDraw() {
     const count = promptCount("몇 장 드로우할까요?", 1, 20);
     if (count !== null) void runAction("draw_cards", { count });
@@ -452,6 +476,12 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
     if (count !== null) void runAction("investigate", { instance_id: instance.instance_id, evidence_count: count, allow_newly_played: Boolean(allowFreshlyPlayedByCard[instance.instance_id]) });
   }
   function moveField(card, ownerId, destination) {
+    const cardRarity = String(card?.rarity || cardsByKey.get(String(card?.key))?.rarity || "").trim().toUpperCase();
+    if (destination === "remove" && cardRarity === "MR") {
+      if (!window.confirm(`${nameOf(card)}는 MR 카드이므로 리무브로 보내지 않고 MR 파트너 에이리어로 이동합니다. 계속할까요?`)) return;
+      void runAction("move_field_mr_to_partner", { instance_id: card.instance_id, owner_user_id: ownerId });
+      return;
+    }
     const labels = { hand: "소유자의 손패", deck: "소유자의 덱 아래", remove: "리무브 영역" };
     if (!window.confirm(`${nameOf(card)} 카드를 ${labels[destination]}로 이동할까요? 효과 처리를 위한 수동 이동입니다.`)) return;
     void runAction("move_field_card", { instance_id: card.instance_id, owner_user_id: ownerId, destination });
@@ -534,7 +564,10 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
             {!isEvent && (cardStatus === "active" || cardStatus === "stunned") && <button type="button" style={st.smallButton} disabled={loading} onClick={() => { if (window.confirm(`${nameOf(instance)} 카드를 슬립 상태로 만들까요?`)) void restCharacterManually(instance, ownerId); }}>슬립</button>}
             {!isEvent && (cardStatus === "active" || cardStatus === "rested") && <button type="button" style={st.smallButton} disabled={loading} onClick={() => { if (window.confirm(`${nameOf(instance)} 카드를 스턴 상태로 만들까요?`)) void runAction("stun_character", { instance_id: instance.instance_id, owner_user_id: ownerId }); }}>스턴</button>}
             {!isEvent && (cardStatus === "rested" || cardStatus === "stunned") && <button type="button" style={st.smallButton} disabled={loading} onClick={() => void runAction("activate_character", { instance_id: instance.instance_id, owner_user_id: ownerId })}>액티브</button>}
-            {!isEvent && <button type="button" style={st.smallButton} disabled={loading} onClick={() => promptApBonus(instance, ownerId)}>AP +N</button>}
+            {!isEvent && <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 4 }}>
+              <button type="button" style={st.smallButton} disabled={loading} onClick={() => promptApBonus(instance, ownerId)}>AP +N</button>
+              <button type="button" style={{ ...st.smallButton, color: "#fca5a5", borderColor: "rgba(248,113,113,.35)" }} disabled={loading} onClick={() => promptApPenalty(instance, ownerId)}>AP −N</button>
+            </div>}
           </div></details>
           <details style={{ marginTop: 5 }}><summary style={{ cursor: "pointer", fontSize: 8, color: "#8796ac" }}>카드 이동</summary><div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 4, marginTop: 5 }}>
             <button type="button" style={st.smallButton} disabled={loading} onClick={() => moveField(instance, ownerId, "hand")}>손패로</button>
@@ -949,7 +982,14 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
               return <article key={card.instance_id} style={{ padding: 7, border: `1px solid ${selected ? "#60a5fa" : shared ? "rgba(252,211,77,.8)" : "rgba(255,255,255,.12)"}`, boxShadow: selected ? "0 0 0 2px rgba(96,165,250,.16)" : "none", borderRadius: 8, background: "#080d16", minWidth: 0 }}>
                 <button type="button" onClick={() => openDetails(card)} style={{ display: "block", width: "100%", padding: 0, border: 0, background: "transparent", color: C.text }}>{infoFor(card)?.imageUrl ? <img src={infoFor(card).imageUrl} alt={nameOf(card)} style={{ width: "100%", maxHeight: 220, aspectRatio: "3/4", objectFit: "contain" }} /> : <div style={st.faceDown} />}<div style={{ marginTop: 4, textAlign: "left", fontSize: 10, fontWeight: 800, overflowWrap: "anywhere" }}>{index + 1}. {nameOf(card)}</div></button>
                 <div style={{ display: "flex", gap: 4, marginTop: 7 }}><button type="button" style={st.smallButton} disabled={loading || index === 0} onClick={() => setPeekOrderIds((ids) => { const next = [...ids]; [next[index - 1], next[index]] = [next[index], next[index - 1]]; return next; })}>↑ 위</button><button type="button" style={st.smallButton} disabled={loading || index === ownPeekOrder.length - 1} onClick={() => setPeekOrderIds((ids) => { const next = [...ids]; [next[index], next[index + 1]] = [next[index + 1], next[index]]; return next; })}>↓ 아래</button></div>
-                {ownPeek.source_user_id === userId && <><button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 5, borderColor: selected ? "#60a5fa" : "rgba(255,255,255,.13)", color: selected ? "#bfdbfe" : st.smallButton.color }} disabled={loading} onClick={() => setSelectedPeekInstanceId((current) => current === card.instance_id ? "" : card.instance_id)}>{selected ? "공개할 카드로 선택됨" : "공개할 카드로 선택"}</button><button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 4, color: C.green, borderColor: "rgba(134,239,172,.25)" }} disabled={loading} onClick={() => void runAction("take_deck_peek_card", { instance_id: card.instance_id })}>이 카드를 손패로 가져오기</button></>}
+                {ownPeek.source_user_id === userId && <><button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 5, borderColor: shared ? "rgba(252,211,77,.8)" : selected ? "#60a5fa" : "rgba(255,255,255,.13)", color: shared ? "#fde68a" : selected ? "#bfdbfe" : st.smallButton.color }} disabled={loading} onClick={() => {
+                  if (shared) {
+                    setSelectedPeekInstanceId("");
+                    void runAction("share_deck_peek_card", { instance_id: card.instance_id });
+                    return;
+                  }
+                  setSelectedPeekInstanceId((current) => current === card.instance_id ? "" : card.instance_id);
+                }}>{shared ? "공개 지정 취소" : selected ? "공개할 카드로 선택됨" : "공개할 카드로 선택"}</button><button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 4, color: C.green, borderColor: "rgba(134,239,172,.25)" }} disabled={loading || shared} title={shared ? "먼저 위의 공개 지정 취소를 눌러 주세요." : "선택한 카드를 내 손패로 가져옵니다."} onClick={() => void runAction("take_deck_peek_card", { instance_id: card.instance_id })}>이 카드를 손패로 가져오기</button></>}
               </article>;
             })}
           </div>
