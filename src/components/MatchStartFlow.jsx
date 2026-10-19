@@ -190,8 +190,8 @@ export default function MatchStartFlow({
           <span style={{ background: "rgba(255,255,255,.05)", borderRadius: 7, padding: "7px 9px", color: "#dbe4f1", fontSize: 12 }}>
             내 덱: {matchState?.my_deck_count ?? "-"}장
           </span>
-          {matchState?.my_partner_key && <span style={{ background: "rgba(251,191,36,.10)", borderRadius: 7, padding: "7px 9px", color: "#fcd34d", fontSize: 12 }}>파트너 영역 준비됨</span>}
-          {matchState?.my_event_key && <span style={{ background: "rgba(125,211,252,.10)", borderRadius: 7, padding: "7px 9px", color: "#7dd3fc", fontSize: 12 }}>사건 영역 준비됨</span>}
+          {matchState?.my_partner_key && <span style={{ background: "rgba(251,191,36,.10)", borderRadius: 7, padding: "7px 9px", color: "#fcd34d", fontSize: 12 }}>파트너 에이리어 준비됨</span>}
+          {matchState?.my_event_key && <span style={{ background: "rgba(125,211,252,.10)", borderRadius: 7, padding: "7px 9px", color: "#7dd3fc", fontSize: 12 }}>사건 에이리어 준비됨</span>}
         </div>
       )}
 
