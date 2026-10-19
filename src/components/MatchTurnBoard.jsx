@@ -220,9 +220,15 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
     try {
       const { data, error: rpcError } = action === "cancel_next_hint"
         ? await supabase.rpc("cancel_private_next_hint_v2", { p_room_id: roomId })
-        : await supabase.rpc("perform_private_turn_action_v2", {
-            p_room_id: roomId, p_action: action, p_payload: payload,
-          });
+        : action === "move_evidence_to_deck_top"
+          ? await supabase.rpc("move_private_evidence_to_deck_top_v1", {
+              p_room_id: roomId,
+              p_owner_user_id: payload.owner_user_id,
+              p_instance_id: payload.instance_id,
+            })
+          : await supabase.rpc("perform_private_turn_action_v2", {
+              p_room_id: roomId, p_action: action, p_payload: payload,
+            });
       if (rpcError) throw rpcError;
       let updatedGame = data && typeof data === "object" ? data : null;
       const oldBoards = Array.isArray(game?.boards) ? game.boards : [];
@@ -787,6 +793,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
                     {Boolean(card.face_up) && infoFor(card)?.imageUrl ? <img src={infoFor(card).imageUrl} alt="" style={{ display: "block", width: 44, height: 58, objectFit: "contain", transform: "rotate(90deg)" }} /> : <div style={{ width: 58, height: 44, ...st.faceDown, aspectRatio: "auto" }} />}
                   </button>
                   {canManualEffect ? <div style={{ minWidth: 0, display: "grid", gap: 3, alignContent: "center" }}>
+                    <button type="button" style={{ ...st.smallButton, width: "100%", padding: "3px 2px", fontSize: 7, whiteSpace: "nowrap", borderColor: "rgba(147,197,253,.3)" }} disabled={loading} title="소유자의 덱 맨 위로 이동합니다. 비공개 증거도 이동할 수 있습니다." onClick={() => { if (window.confirm(`${card.face_up ? `${nameOf(card)} 공개 증거` : "비공개 증거"}를 소유자의 덱 맨 위로 이동할까요?`)) void runAction("move_evidence_to_deck_top", { instance_id: card.instance_id, owner_user_id: board.user_id }); }}>덱 위로</button>
                     <button type="button" style={{ ...st.smallButton, width: "100%", padding: "3px 2px", fontSize: 7, whiteSpace: "nowrap" }} disabled={loading} title="공개 증거를 소유자의 덱 맨 아래로 이동합니다." onClick={() => { if (window.confirm(`${card.face_up ? `${nameOf(card)} 공개 증거` : "비공개 증거"}를 소유자의 덱 맨 아래로 이동할까요?`)) void runAction("move_evidence_to_deck_bottom", { instance_id: card.instance_id, owner_user_id: board.user_id }); }}>덱 밑으로</button>
                     <button type="button" style={{ ...st.smallButton, width: "100%", padding: "3px 2px", fontSize: 7, whiteSpace: "nowrap" }} disabled={loading} title="공개 증거를 소유자의 리무브 에이리어로 이동합니다." onClick={() => { if (window.confirm(`${card.face_up ? `${nameOf(card)} 공개 증거` : "비공개 증거"}를 소유자의 리무브 에이리어로 이동할까요?`)) void runAction("move_evidence_to_remove", { instance_id: card.instance_id, owner_user_id: board.user_id }); }}>리무브로</button>
                     {mine && <button type="button" style={{ ...st.smallButton, width: "100%", padding: "3px 2px", fontSize: 7, whiteSpace: "nowrap", borderColor: "rgba(134,239,172,.35)" }} disabled={loading} title="내 공개 증거를 손패로 이동합니다." onClick={() => { if (window.confirm(`${card.face_up ? `${nameOf(card)} 공개 증거` : "비공개 증거"}를 내 손패로 이동할까요?`)) void runAction("move_evidence_to_hand", { instance_id: card.instance_id, owner_user_id: board.user_id }); }}>손패로</button>}
