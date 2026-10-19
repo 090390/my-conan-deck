@@ -92,26 +92,32 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
         });
         if (stateError) throw stateError;
         const phase = state?.phase || "waiting";
+        const phaseToken = String(phase).toLocaleLowerCase();
+        let finishedMatch = Boolean(state?.game_over)
+          || ["finished", "complete", "completed", "ended", "game_over"].includes(phaseToken);
 
-        // Finished matches are not resumable rooms. Clear stale cache so refresh returns to create/join.
-        if (phase === "playing") {
+        // Match state often keeps its phase as "playing" and records completion separately.
+        if (!finishedMatch && phase === "playing") {
           const { data: turnState, error: turnStateError } = await supabase.rpc("get_private_turn_state_v2", {
             p_room_id: savedRoom.id,
           });
           if (turnStateError) throw turnStateError;
-          if (turnState?.game_over === true) {
-            localStorage.removeItem(ACTIVE_ROOM_STORAGE_KEY);
-            localStorage.removeItem(COMPLETED_GREETING_ROOM_KEY);
-            if (active) {
-              setRoom(null);
-              setPlayers([]);
-              setMatchPhase("waiting");
-              setGreetingFinished(false);
-              setShowFieldOnly(true);
-              setNotice("이전 게임이 종료되어 새 대전을 시작할 수 있습니다. 새 방을 만들거나 초대 코드로 입장해 주세요.");
-            }
-            return;
+          finishedMatch = turnState?.game_over === true;
+        }
+
+        // Finished matches are not resumable rooms. Clear stale cache so refresh returns to create/join.
+        if (finishedMatch) {
+          localStorage.removeItem(ACTIVE_ROOM_STORAGE_KEY);
+          localStorage.removeItem(COMPLETED_GREETING_ROOM_KEY);
+          if (active) {
+            setRoom(null);
+            setPlayers([]);
+            setMatchPhase("waiting");
+            setGreetingFinished(false);
+            setShowFieldOnly(true);
+            setNotice("이전 게임이 종료되어 새 대전을 시작할 수 있습니다. 새 방을 만들거나 초대 코드로 입장해 주세요.");
           }
+          return;
         }
 
         if (!active) return;
