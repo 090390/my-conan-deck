@@ -5,6 +5,7 @@ import MatchTurnBoard from "./MatchTurnBoard";
 import MatchGreetingStep from "./MatchGreetingStep";
 
 const ACTIVE_ROOM_STORAGE_KEY = "conan-active-private-room-v1";
+const COMPLETED_GREETING_ROOM_KEY = "conan-completed-greeting-room-v1";
 
 function normalizeCardIdentifier(value) {
   const raw = String(value ?? "").trim().toLocaleUpperCase();
@@ -86,15 +87,39 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
           localStorage.removeItem(ACTIVE_ROOM_STORAGE_KEY);
           return;
         }
-        if (!active) return;
-        setUserId(session.user.id);
-        setRoom(savedRoom);
-        setInviteCodeInput(String(savedRoom.inviteCode).toUpperCase());
         const { data: state, error: stateError } = await supabase.rpc("get_private_match_state", {
           p_room_id: savedRoom.id,
         });
         if (stateError) throw stateError;
-        if (active && state?.phase) setMatchPhase(state.phase);
+        const phase = state?.phase || "waiting";
+
+        // Finished matches are not resumable rooms. Clear stale cache so refresh returns to create/join.
+        if (phase === "playing") {
+          const { data: turnState, error: turnStateError } = await supabase.rpc("get_private_turn_state_v2", {
+            p_room_id: savedRoom.id,
+          });
+          if (turnStateError) throw turnStateError;
+          if (turnState?.game_over === true) {
+            localStorage.removeItem(ACTIVE_ROOM_STORAGE_KEY);
+            localStorage.removeItem(COMPLETED_GREETING_ROOM_KEY);
+            if (active) {
+              setRoom(null);
+              setPlayers([]);
+              setMatchPhase("waiting");
+              setGreetingFinished(false);
+              setShowFieldOnly(true);
+              setNotice("이전 게임이 종료되어 새 대전을 시작할 수 있습니다. 새 방을 만들거나 초대 코드로 입장해 주세요.");
+            }
+            return;
+          }
+        }
+
+        if (!active) return;
+        setUserId(session.user.id);
+        setInviteCodeInput(String(savedRoom.inviteCode).toUpperCase());
+        setRoom(savedRoom);
+        setMatchPhase(phase);
+        setGreetingFinished(localStorage.getItem(COMPLETED_GREETING_ROOM_KEY) === savedRoom.id);
       } catch (err) {
         if (active) setNotice(err?.message || "이전 방 정보를 복원하지 못했습니다. 연결 상태를 확인해 주세요.");
       }
@@ -155,6 +180,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
         throw new Error("방 생성 결과를 확인할 수 없습니다.");
       }
 
+      localStorage.removeItem(COMPLETED_GREETING_ROOM_KEY);
       setRoom({ id: result.out_room_id, inviteCode: result.out_invite_code });
       setGreetingFinished(false);
       setNotice("방이 생성되었습니다. 친구에게 초대 코드를 전달해 주세요.");
@@ -186,6 +212,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
       const result = Array.isArray(data) ? data[0] : data;
       if (!result?.out_room_id) throw new Error("입장 결과를 확인할 수 없습니다.");
 
+      localStorage.removeItem(COMPLETED_GREETING_ROOM_KEY);
       setRoom({ id: result.out_room_id, inviteCode: code });
       setGreetingFinished(false);
       setNotice("방에 입장했습니다.");
@@ -264,7 +291,23 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
   const myPlayer = players.find((player) => player.user_id === userId);
   const bothReady = players.length === 2 && players.every((player) => player.is_ready === true);
   const handleMatchPhaseChange = useCallback((phase) => setMatchPhase(phase), []);
-  const completeGreeting = useCallback(() => setGreetingFinished(true), []);
+  const completeGreeting = useCallback(() => {
+    setGreetingFinished(true);
+    if (room?.id) localStorage.setItem(COMPLETED_GREETING_ROOM_KEY, room.id);
+  }, [room?.id]);
+  const returnToRoomLobby = useCallback(() => {
+    localStorage.removeItem(ACTIVE_ROOM_STORAGE_KEY);
+    localStorage.removeItem(COMPLETED_GREETING_ROOM_KEY);
+    setRoom(null);
+    setPlayers([]);
+    setReadyDeckSignature("");
+    setMatchPhase("waiting");
+    setGreetingFinished(false);
+    setShowFieldOnly(true);
+    setShowTermsModal(false);
+    setError("");
+    setNotice("이전 게임을 닫았습니다. 새 방을 만들거나 초대 코드로 입장해 주세요.");
+  }, []);
 
   useEffect(() => {
     if (!nicknameDirty && myPlayer) setNicknameDraft(myPlayer.temporary_nickname || "");
@@ -420,7 +463,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
 
   if (room?.id && matchPhase === "playing" && showFieldOnly) {
     return greetingFinished
-      ? <MatchTurnBoard roomId={room.id} userId={userId} cards={cards} inviteCode={room.inviteCode} onLeaveField={() => setShowFieldOnly(false)} />
+      ? <MatchTurnBoard roomId={room.id} userId={userId} cards={cards} inviteCode={room.inviteCode} onLeaveField={() => setShowFieldOnly(false)} onReturnToLobby={returnToRoomLobby} />
       : <MatchGreetingStep roomId={room.id} userId={userId} players={players} onComplete={completeGreeting} />;
   }
 
@@ -527,7 +570,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
             <p style={{ margin: "10px 0 0", color: "#74839a", fontSize: 11, lineHeight: 1.6 }}>상대에게는 준비 여부만 표시됩니다. 카드별 덱 목록은 별도의 비공개 테이블에 저장됩니다.</p>
           </div>
 
-          {bothReady && <MatchStartFlow roomId={room.id} userId={userId} players={players} cards={cards} inviteCode={room.inviteCode} onPhaseChange={handleMatchPhaseChange} />}
+          {bothReady && <MatchStartFlow roomId={room.id} userId={userId} players={players} cards={cards} inviteCode={room.inviteCode} onPhaseChange={handleMatchPhaseChange} onReturnToLobby={returnToRoomLobby} />}
         </>
       )}
 
