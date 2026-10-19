@@ -416,24 +416,24 @@ function normalizeCard(card, translations, keywordTagData = {}) {
     firstValue(objects, ['colorJp', 'color', 'colour']),
     firstValue(objects, ['typeJp', 'type', 'cardType', 'card_type', 'category1']),
   ].join(' ');
-  const japaneseRedYellowPair = /赤\\s*(?:[&＆/／・、]|と|及び|または|か)\\s*黄/u.test(originalJapaneseColorReference);
-  const japaneseYellowRedPair = /黄\\s*(?:[&＆/／・、]|と|及び|または|か)\\s*赤/u.test(originalJapaneseColorReference);
+  const japaneseRedYellowPair = /(?:【赤】|〔赤〕|［赤］|\[赤\]|赤)\s*(?:[&＆/／・、]|と|及び|または|か)?\s*(?:【黄】|〔黄〕|［黄］|\[黄\]|黄)/u.test(originalJapaneseColorReference);
+  const japaneseYellowRedPair = /(?:【黄】|〔黄〕|［黄］|\[黄\]|黄)\s*(?:[&＆/／・、]|と|及び|または|か)?\s*(?:【赤】|〔赤〕|［赤］|\[赤\]|赤)/u.test(originalJapaneseColorReference);
   const fixKoreanCardText = (value) => {
-    let text = String(value ?? '').replace(/<br\\s*\\/?\\s*>/giu, '\\n');
+    let text = String(value ?? '').replace(/<br\s*\/?\s*>/giu, '\n');
     text = text.replace(/카멜/gu, '캐멀');
     text = text.replace(/뒷면인 증거 3개를 앞면으로 뒤집는다/gu, '뒷면 증거 3개를 앞면으로 뒤집는다');
     if (isCard1119) {
       text = text
-        .replace(/\\[적\\s*&\\s*적\\]/gu, '[적&황]')
-        .replace(/\\[적\\]\\s*또는\\s*\\[적\\](?=\\s*캐릭터)/gu, '[적] 또는 [황]');
+        .replace(/\[적\s*&\s*적\]/gu, '[적&황]')
+        .replace(/\[적\]\s*또는\s*\[적\](?=\s*캐릭터)/gu, '[적] 또는 [황]');
     } else if (japaneseRedYellowPair) {
       text = text
-        .replace(/\\[적\\s*&\\s*적\\]/gu, '[적&황]')
-        .replace(/\\[적\\]\\s*또는\\s*\\[적\\](?=\\s*캐릭터)/gu, '[적] 또는 [황]');
+        .replace(/\[적\s*&\s*적\]/gu, '[적&황]')
+        .replace(/\[적\]\s*또는\s*\[적\](?=\s*캐릭터)/gu, '[적] 또는 [황]');
     } else if (japaneseYellowRedPair) {
       text = text
-        .replace(/\\[적\\s*&\\s*적\\]/gu, '[황&적]')
-        .replace(/\\[적\\]\\s*또는\\s*\\[적\\](?=\\s*캐릭터)/gu, '[황] 또는 [적]');
+        .replace(/\[적\s*&\s*적\]/gu, '[황&적]')
+        .replace(/\[적\]\s*또는\s*\[적\](?=\s*캐릭터)/gu, '[황] 또는 [적]');
     }
     return text;
   };
@@ -488,10 +488,10 @@ function normalizeCard(card, translations, keywordTagData = {}) {
     type: fixKoreanCardText(translated.typeKo || firstValue([card], ['typeKo']) || originalType),
     originalType: fixKoreanCardText(originalType),
     roleText,
-    category1,
-    category2,
-    category3,
-    traits,
+    category1: fixKoreanCardText(category1),
+    category2: fixKoreanCardText(category2),
+    category3: fixKoreanCardText(category3),
+    traits: [...new Set(traits.map(fixKoreanCardText))],
     // Keep only source identifier fields so special-copy rules can inspect IDs without
     // attaching the entire raw card payload to deck/match data.
     sourceData: {
@@ -500,7 +500,7 @@ function normalizeCard(card, translations, keywordTagData = {}) {
       cardNumber: source?.cardNumber, card_number: source?.card_number,
     },
     color: normalizeColor(fixKoreanCardText(translated.colorKo || firstValue([card], ['colorKo']) || originalColor)),
-    colorKey: normalizeColorKey(translated.colorKo || firstValue([card], ['colorKo']) || originalColor),
+    colorKey: normalizeColorKey(fixKoreanCardText(translated.colorKo || firstValue([card], ['colorKo']) || originalColor)),
     originalColor: fixKoreanCardText(originalColor),
     rarity,
     originalRarity: String(firstValue(objects, ['rarityJp', 'rarity', 'rare', 'rarity_code', 'rarityCode'])),
@@ -510,12 +510,12 @@ function normalizeCard(card, translations, keywordTagData = {}) {
     set: fixKoreanCardText(translated.setKo || firstValue([card], ['setKo']) || originalSet),
     originalSet: fixKoreanCardText(originalSet),
     ability: fixKoreanCardText(translated.abilityKo || firstValue([card], ['abilityKo']) || originalAbility),
-    originalAbility,
-    hiramekiEffect,
+    originalAbility: fixKoreanCardText(originalAbility),
+    hiramekiEffect: fixKoreanCardText(hiramekiEffect),
     cutInEffect: fixKoreanCardText(cutInEffect),
     hensoEffect: fixKoreanCardText(hensoEffect),
     disguiseEffect: fixKoreanCardText(disguiseEffect),
-    traits,
+    traits: [...new Set(traits.map(fixKoreanCardText))],
     keywordTags,
     flavor: fixKoreanCardText(translated.flavorKo || firstValue([card], ['flavorKo']) || originalFlavor),
     imageUrl: getImageUrl(card, source),
