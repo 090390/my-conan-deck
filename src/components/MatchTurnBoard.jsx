@@ -325,7 +325,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
 
   const boards = Array.isArray(game?.boards) ? game.boards : [];
   const myBoard = boards.find((board) => board.user_id === userId);
-  const myFieldCharacterCount = (myBoard?.field_cards || []).filter((card) => String(card?.card_type || "").toLowerCase() === "character").length;
+  const myFieldCharacterCount = (myBoard?.field_cards || []).filter((card) => String(card?.card_type || "").trim().toLowerCase() === "character").length;
   const opponentBoard = boards.find((board) => board.user_id !== userId);
   const currentTurnBoard = boards.find((board) => board.user_id === game?.current_turn_user_id);
   const myHand = Array.isArray(game?.my_hand) ? game.my_hand : [];
@@ -569,7 +569,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
             {!isEvent && (cardStatus === "active" || cardStatus === "stunned") && <button type="button" style={st.smallButton} disabled={loading} onClick={() => { if (window.confirm(`${nameOf(instance)} 카드를 슬립 상태로 만들까요?`)) void restCharacterManually(instance, ownerId); }}>슬립</button>}
             {!isEvent && (cardStatus === "active" || cardStatus === "rested") && <button type="button" style={st.smallButton} disabled={loading} onClick={() => { if (window.confirm(`${nameOf(instance)} 카드를 스턴 상태로 만들까요?`)) void runAction("stun_character", { instance_id: instance.instance_id, owner_user_id: ownerId }); }}>스턴</button>}
             {!isEvent && (cardStatus === "rested" || cardStatus === "stunned") && <button type="button" style={st.smallButton} disabled={loading} onClick={() => void runAction("activate_character", { instance_id: instance.instance_id, owner_user_id: ownerId })}>액티브</button>}
-            {!isEvent && <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 4 }}>
+            {String(instance?.card_type || "").trim().toLowerCase() === "character" && <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 4 }}>
               <button type="button" style={st.smallButton} disabled={loading} onClick={() => promptApBonus(instance, ownerId)}>AP +N</button>
               <button type="button" style={{ ...st.smallButton, color: "#fca5a5", borderColor: "rgba(248,113,113,.35)" }} disabled={loading} onClick={() => promptApPenalty(instance, ownerId)}>AP −N</button>
             </div>}
