@@ -58,7 +58,7 @@ BEGIN
       v_action_block := substring(v_definition from v_start for v_end - v_start);
       v_action_block := regexp_replace(
         v_action_block,
-        'raise exception[[:space:]]+''[^'']*(현장|카드)[^'']*5장[^'']*''[[:space:]]*;',
+        'raise exception[[:space:]]+''[^'']*5장[^'']*''[[:space:]]*;',
         'NULL;',
         'gi'
       );
@@ -69,7 +69,7 @@ BEGIN
     -- rather than the number of all field entries (which also include events).
     v_definition := regexp_replace(
       v_definition,
-      'raise exception[[:space:]]+''[^'']*(현장|카드)[^'']*5장[^'']*''[[:space:]]*;',
+      'raise exception[[:space:]]+''[^'']*5장[^'']*''[[:space:]]*;',
       v_new_character_guard,
       'gi'
     );
