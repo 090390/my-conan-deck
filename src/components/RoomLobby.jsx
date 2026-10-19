@@ -264,6 +264,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
   const myPlayer = players.find((player) => player.user_id === userId);
   const bothReady = players.length === 2 && players.every((player) => player.is_ready === true);
   const handleMatchPhaseChange = useCallback((phase) => setMatchPhase(phase), []);
+  const completeGreeting = useCallback(() => setGreetingFinished(true), []);
 
   useEffect(() => {
     if (!nicknameDirty && myPlayer) setNicknameDraft(myPlayer.temporary_nickname || "");
@@ -420,7 +421,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
   if (room?.id && matchPhase === "playing" && showFieldOnly) {
     return greetingFinished
       ? <MatchTurnBoard roomId={room.id} userId={userId} cards={cards} inviteCode={room.inviteCode} onLeaveField={() => setShowFieldOnly(false)} />
-      : <MatchGreetingStep roomId={room.id} userId={userId} players={players} onComplete={() => setGreetingFinished(true)} />;
+      : <MatchGreetingStep roomId={room.id} userId={userId} players={players} onComplete={completeGreeting} />;
   }
 
   const panelStyle = {
