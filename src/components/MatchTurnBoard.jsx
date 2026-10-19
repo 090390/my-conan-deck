@@ -146,9 +146,9 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   }, [roomId]);
 
   useEffect(() => {
-    if (!roomId || game?.state_version === undefined) return;
+    if (!roomId || !game) return;
     void refreshActionLog();
-  }, [roomId, game?.state_version, game?.last_action_label, refreshActionLog]);
+  }, [roomId, game, refreshActionLog]);
 
   async function openActionLog() {
     setShowActionLog(true);
