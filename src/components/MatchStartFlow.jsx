@@ -7,6 +7,7 @@ export default function MatchStartFlow({
   userId,
   players = [],
   cards = [],
+  inviteCode = "",
   onPhaseChange = () => {},
 }) {
   const [matchState, setMatchState] = useState(null);
@@ -256,7 +257,7 @@ export default function MatchStartFlow({
       )}
 
       {phase === "playing" && (
-        <MatchTurnBoard roomId={roomId} userId={userId} cards={cards} />
+        <MatchTurnBoard roomId={roomId} userId={userId} cards={cards} inviteCode={inviteCode} />
       )}
 
       {notice && <p role="status" style={{ margin: "12px 0 0", color: "#86efac", fontSize: 12 }}>{notice}</p>}
