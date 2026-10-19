@@ -325,7 +325,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
 
   const boards = Array.isArray(game?.boards) ? game.boards : [];
   const myBoard = boards.find((board) => board.user_id === userId);
-  const myFieldCharacterCount = (myBoard?.field_cards || []).filter((card) => card.card_type === "character").length;
+  const myFieldCharacterCount = (myBoard?.field_cards || []).filter((card) => String(card?.card_type || "").toLowerCase() === "character").length;
   const opponentBoard = boards.find((board) => board.user_id !== userId);
   const currentTurnBoard = boards.find((board) => board.user_id === game?.current_turn_user_id);
   const myHand = Array.isArray(game?.my_hand) ? game.my_hand : [];
