@@ -415,8 +415,8 @@ function normalizeCard(card, translations, keywordTagData = {}) {
     firstValue(objects, ['colorJp', 'color', 'colour']),
     firstValue(objects, ['typeJp', 'type', 'cardType', 'card_type', 'category1']),
   ].join(' ');
-  const japaneseRedYellowPair = /(?:【赤】|〔赤〕|［赤］|\[赤\]|赤)\s*(?:[&＆/／・、]|と|及び|または|か)?\s*(?:【黄】|〔黄〕|［黄］|\[黄\]|黄)/u.test(originalJapaneseColorReference);
-  const japaneseYellowRedPair = /(?:【黄】|〔黄〕|［黄］|\[黄\]|黄)\s*(?:[&＆/／・、]|と|及び|または|か)?\s*(?:【赤】|〔赤〕|［赤］|\[赤\]|赤)/u.test(originalJapaneseColorReference);
+  const japaneseRedYellowPair = /赤.{0,10}黄/u.test(originalJapaneseColorReference);
+  const japaneseYellowRedPair = /黄.{0,10}赤/u.test(originalJapaneseColorReference);
   const fixKoreanCardText = (value) => {
     let text = String(value ?? '').replace(/<br\s*\/?\s*>/giu, '\n');
     text = text.replace(/카멜/gu, '캐멀');
