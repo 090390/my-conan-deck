@@ -58,26 +58,28 @@ BEGIN
   LOOP
     EXECUTE format('SELECT %I FROM public.room_player_game_states WHERE room_id=$1 AND user_id=$2', v_col.column_name)
       INTO v_zone USING p_room_id,p_owner_user_id;
-    IF jsonb_typeof(v_zone)='array' AND EXISTS (
-      SELECT 1 FROM jsonb_array_elements(v_zone) e(value) WHERE e.value ->> 'instance_id'=v_card_id
-    ) THEN
-      EXECUTE format(
-        'UPDATE public.room_player_game_states SET %I=(' ||
-        'SELECT coalesce(jsonb_agg(e.value ORDER BY e.ordinality), ''[]''::jsonb) ' ||
-        'FROM jsonb_array_elements(coalesce(%I, ''[]''::jsonb)) WITH ORDINALITY e(value,ordinality) ' ||
-        'WHERE e.value ->> ''instance_id'' IS DISTINCT FROM $3), updated_at=now() ' ||
-        'WHERE room_id=$1 AND user_id=$2',
-        v_col.column_name,v_col.column_name
-      ) USING p_room_id,p_owner_user_id,v_card_id;
-      IF v_col.column_name ILIKE '%remove%' AND v_col.column_name NOT ILIKE '%count%' THEN
-        UPDATE public.room_player_turn_boards SET remove_count=greatest(0,coalesce(remove_count,0)-1),updated_at=now()
-          WHERE room_id=p_room_id AND user_id=p_owner_user_id;
-      ELSIF v_col.column_name ILIKE '%evidence%' AND v_col.column_name NOT ILIKE '%count%' THEN
-        UPDATE public.room_player_turn_boards SET evidence_count=greatest(0,coalesce(evidence_count,0)-1),updated_at=now()
-          WHERE room_id=p_room_id AND user_id=p_owner_user_id;
-      ELSIF v_col.column_name ILIKE '%file%' AND v_col.column_name NOT ILIKE '%count%' THEN
-        UPDATE public.room_player_turn_boards SET file_count=greatest(0,coalesce(file_count,0)-1),updated_at=now()
-          WHERE room_id=p_room_id AND user_id=p_owner_user_id;
+    IF jsonb_typeof(v_zone)='array' THEN
+      IF EXISTS (
+        SELECT 1 FROM jsonb_array_elements(v_zone) e(value) WHERE e.value ->> 'instance_id'=v_card_id
+      ) THEN
+        EXECUTE format(
+          'UPDATE public.room_player_game_states SET %I=(' ||
+          'SELECT coalesce(jsonb_agg(e.value ORDER BY e.ordinality), ''[]''::jsonb) ' ||
+          'FROM jsonb_array_elements(coalesce(%I, ''[]''::jsonb)) WITH ORDINALITY e(value,ordinality) ' ||
+          'WHERE e.value ->> ''instance_id'' IS DISTINCT FROM $3), updated_at=now() ' ||
+          'WHERE room_id=$1 AND user_id=$2',
+          v_col.column_name,v_col.column_name
+        ) USING p_room_id,p_owner_user_id,v_card_id;
+        IF v_col.column_name ILIKE '%remove%' AND v_col.column_name NOT ILIKE '%count%' THEN
+          UPDATE public.room_player_turn_boards SET remove_count=greatest(0,coalesce(remove_count,0)-1),updated_at=now()
+            WHERE room_id=p_room_id AND user_id=p_owner_user_id;
+        ELSIF v_col.column_name ILIKE '%evidence%' AND v_col.column_name NOT ILIKE '%count%' THEN
+          UPDATE public.room_player_turn_boards SET evidence_count=greatest(0,coalesce(evidence_count,0)-1),updated_at=now()
+            WHERE room_id=p_room_id AND user_id=p_owner_user_id;
+        ELSIF v_col.column_name ILIKE '%file%' AND v_col.column_name NOT ILIKE '%count%' THEN
+          UPDATE public.room_player_turn_boards SET file_count=greatest(0,coalesce(file_count,0)-1),updated_at=now()
+            WHERE room_id=p_room_id AND user_id=p_owner_user_id;
+        END IF;
       END IF;
     END IF;
   END LOOP;
