@@ -235,6 +235,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   const filesPlaced = n(myBoard?.files_placed_this_turn);
   const costLimit = n(myBoard?.file_count) + (myBoard?.partner_assist_used ? 1 : 0);
   const canActMain = isMyTurn && game?.turn_step === "main" && !game?.game_over && !pending && !myBoard?.next_hint_pending && (!game?.deck_peek_locked || Boolean(game?.my_deck_peek));
+  const canPartnerDeduce = canActMain && !myBoard?.partner_rested && !myBoard?.partner_assist_used && Boolean(myBoard?.partner_key);
   const canPartnerAssist = canActMain && !myBoard?.partner_rested && !myBoard?.partner_assist_used && !myBoard?.next_hint_pending && !myBoard?.next_hint_used;
 
   useEffect(() => {
@@ -396,6 +397,16 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
     const ownerLabel = ownerId === userId ? "내" : "상대";
     return (
       <article key={instance.instance_id} style={{ minWidth: 0, width: "100%", border: `1px solid ${canOfferContact ? "#fb7185" : "rgba(148,163,184,.16)"}`, borderRadius: 7, padding: 4, background: "#080d16" }}>
+        {mine && !isEvent && <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 4, margin: "0 1px 4px" }}>
+          <label title="액티브 상태 대상 공격 가능" style={{ display: "flex", alignItems: "center", gap: 3, color: "#93c5fd", cursor: "pointer", fontSize: 8, lineHeight: 1.2 }}>
+            <input type="checkbox" aria-label="액티브 상태 대상 공격 가능" title="액티브 상태 대상 공격 가능" checked={Boolean(allowActiveTargetsByCard[instance.instance_id])} onChange={(event) => setAllowActiveTargetsByCard((current) => ({ ...current, [instance.instance_id]: event.target.checked }))} style={{ width: 12, height: 12, margin: 0, accentColor: "#3b82f6" }} />
+            <span>액티브 대상</span>
+          </label>
+          <label title="등장한 턴부터 바로 행동 가능" style={{ display: "flex", alignItems: "center", gap: 3, color: "#fcd34d", cursor: "pointer", fontSize: 8, lineHeight: 1.2 }}>
+            <input type="checkbox" aria-label="등장한 턴부터 바로 행동 가능" title="등장한 턴부터 바로 행동 가능" checked={allowFreshForCard} onChange={(event) => setAllowFreshlyPlayedByCard((current) => ({ ...current, [instance.instance_id]: event.target.checked }))} style={{ width: 12, height: 12, margin: 0, accentColor: "#eab308" }} />
+            <span>즉시 행동</span>
+          </label>
+        </div>}
         <button type="button" onClick={() => openDetails(instance)} title={`${nameOf(instance)} 상세 정보`} style={{ display: "block", width: "100%", border: 0, background: "transparent", color: C.text, padding: 0 }}>
           <div style={{ position: "relative", overflow: "hidden", aspectRatio: "3 / 4", display: "grid", placeItems: "center", background: "#0c1422", borderRadius: 5 }}>
             <CardArt instance={instance} rested={rested} status={cardStatus} />
