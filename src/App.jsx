@@ -1350,7 +1350,7 @@ export default function App() {
   const deckPriceExcludedEntries = deckPriceResults.filter((entry) => entry.match.status !== 'match');
   const deckPriceExcludedCount = deckPriceExcludedEntries.length;
   const deckPriceExcludedUnique = [...new Map(deckPriceExcludedEntries.map(({ card }) => [
-    `${card.key}|${normalizePriceRarity(card.originalRarity || card.rarity)}`,
+    `${sameCopyIdentity(card) || card.key}|${normalizePriceRarity(card.originalRarity || card.rarity)}`,
     card,
   ])).values()];
   const deckPriceExcludedTooltip = deckPriceExcludedUnique.length
