@@ -603,8 +603,11 @@ function getTorecaBaseCardName(value) {
 
 function normalizePriceRarity(value) {
   const token = normalizePriceToken(value);
-  const match = token.match(/MRCP|SRCP|MRP|SRP|SEC|MR|SR|CP|RP|SP|PR|R|C|D|P/u);
-  return match ? match[0] : token;
+  // Rarity fields are normally a compact code. Do not mistake letters inside
+  // descriptive words (for example "CHARACTER") for a rarity marker.
+  return new Set(['MRCP', 'SRCP', 'MRP', 'SRP', 'SEC', 'MR', 'SR', 'CP', 'RP', 'SP', 'PR', 'R', 'C', 'D', 'P']).has(token)
+    ? token
+    : '';
 }
 
 function getTorecaSetCodes(value) {
@@ -658,7 +661,16 @@ function getTorecaPriceMatch(card, snapshot) {
   // The official card data often has only a database identifier (B0xxxx) rather than
   // the shop's printed number (e.g. 0367). If number matching fails, search by the
   // original Japanese card name and then narrow by rarity/set below instead of giving up.
-  let candidates = numberCandidates.length ? numberCandidates : nameCandidates;
+  let candidates = numberCandidates;
+  if (originalName) {
+    const correctlyNamedNumberCandidates = numberCandidates.filter((item) =>
+      getTorecaBaseCardName(item.title || '').includes(originalName),
+    );
+    if (correctlyNamedNumberCandidates.length) candidates = correctlyNamedNumberCandidates;
+    else if (nameCandidates.length) candidates = nameCandidates;
+  } else if (!candidates.length) {
+    candidates = nameCandidates;
+  }
 
   // Some SEC records use identifiers such as B02016Sec1/Sec2, while TorecaBirth
   // lists the same print under P001/P002. Fall back to SEC rarity + base Japanese
@@ -675,9 +687,9 @@ function getTorecaPriceMatch(card, snapshot) {
     const rarityMatches = candidates.filter((item) => normalizePriceRarity(item.rarity) === rarity);
     if (rarityMatches.length) {
       candidates = rarityMatches;
-    } else if (numberCandidates.length && nameCandidates.length) {
-      // A reused/inexact identifier can hit another printing; prefer a correctly named,
-      // same-rarity listing rather than prematurely reporting no match.
+    } else if (nameCandidates.length) {
+      // Fall back to Japanese name + rarity if an internal identifier points at
+      // a different print or the printed shop number is not part of the source record.
       const fallbackMatches = nameCandidates.filter((item) => normalizePriceRarity(item.rarity) === rarity);
       if (!fallbackMatches.length) return { status: 'unmatched', item: null };
       candidates = fallbackMatches;
