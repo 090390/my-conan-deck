@@ -78,7 +78,7 @@ function cardHasRuleId(card, targetId) {
     .some((value) => normalizeRuleCardId(value) === target);
 }
 
-export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode = "", onLeaveField = null }) {
+export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode = "", onLeaveField = null, onReturnToLobby = null }) {
   const [game, setGame] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -1050,7 +1050,8 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
           <p style={{ margin: "0 0 22px", color: "#a7b4c8", fontSize: 13 }}>턴 {n(game.winner_turn_number, n(game.turn_number))} 소요</p>
           <button type="button" disabled={loadingOpponentDeck} onClick={() => void openOpponentDeckAfterGame()} style={{ width: "100%", padding: "12px 16px", border: "1px solid #22c55e", borderRadius: 10, background: "#166534", color: "white", fontSize: 13, fontWeight: 900, cursor: loadingOpponentDeck ? "wait" : "pointer", opacity: loadingOpponentDeck ? .6 : 1 }}>{loadingOpponentDeck ? "상대 덱을 불러오는 중…" : "상대 덱 보기 →"}</button>
           <button type="button" disabled={loadingPlayHistory} onClick={() => void openPlayHistory()} style={{ width: "100%", padding: "11px 16px", marginTop: 8, border: "1px solid rgba(147,197,253,.45)", borderRadius: 10, background: "#17243a", color: "#dbeafe", fontSize: 12, fontWeight: 850 }}>{loadingPlayHistory ? "플레이 기록을 불러오는 중…" : "플레이 기록 보기 →"}</button>
-          <p style={{ ...st.muted, marginTop: 12 }}>상대 덱과 이번 게임의 턴별 기록을 확인할 수 있습니다.</p>
+          {onReturnToLobby && <button type="button" onClick={onReturnToLobby} style={{ width: "100%", padding: "12px 16px", marginTop: 10, border: "1px solid rgba(134,239,172,.4)", borderRadius: 10, background: "#14532d", color: "white", fontSize: 12, fontWeight: 900 }}>경기 종료 · 새 대전 준비하기</button>}
+          <p style={{ ...st.muted, marginTop: 12 }}>상대 덱과 이번 게임의 턴별 기록을 확인할 수 있습니다. 새 대전을 준비하면 이 방의 캐시가 정리됩니다.</p>
         </section>
       </div>}
 
