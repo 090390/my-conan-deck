@@ -86,8 +86,6 @@ export default function MatchGreetingStep({ roomId, userId, players = [], onComp
   const mySeat = Number(greeting?.my_seat || players.find((player) => player.user_id === userId)?.seat || 1);
   const myName = mySeat === 1 ? greeting?.seat1_name : greeting?.seat2_name;
   const opponentName = mySeat === 1 ? greeting?.seat2_name : greeting?.seat1_name;
-  const myStoredMessage = mySeat === 1 ? greeting?.seat1_message : greeting?.seat2_message;
-  const opponentStoredMessage = mySeat === 1 ? greeting?.seat2_message : greeting?.seat1_message;
   const myDisplayName = myName || players.find((player) => player.user_id === userId)?.temporary_nickname || "나";
   const opponentDisplayName = opponentName || "상대";
 
