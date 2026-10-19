@@ -226,9 +226,16 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
               p_owner_user_id: payload.owner_user_id,
               p_instance_id: payload.instance_id,
             })
-          : await supabase.rpc("perform_private_turn_action_v2", {
-              p_room_id: roomId, p_action: action, p_payload: payload,
-            });
+          : action === "move_mr_partner_card"
+            ? await supabase.rpc("move_private_mr_partner_to_zone_v1", {
+                p_room_id: roomId,
+                p_owner_user_id: payload.owner_user_id,
+                p_instance_id: payload.instance_id,
+                p_destination: payload.destination,
+              })
+            : await supabase.rpc("perform_private_turn_action_v2", {
+                p_room_id: roomId, p_action: action, p_payload: payload,
+              });
       if (rpcError) throw rpcError;
       let updatedGame = data && typeof data === "object" ? data : null;
       const oldBoards = Array.isArray(game?.boards) ? game.boards : [];
@@ -446,6 +453,12 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
     const labels = { hand: "소유자의 손패", deck: "소유자의 덱 아래", remove: "리무브 영역" };
     if (!window.confirm(`${nameOf(card)} 카드를 ${labels[destination]}로 이동할까요? 효과 처리를 위한 수동 이동입니다.`)) return;
     void runAction("move_field_card", { instance_id: card.instance_id, owner_user_id: ownerId, destination });
+  }
+
+  function moveMrPartnerCard(card, ownerId, destination) {
+    const labels = { hand: "소유자의 손패", deck: "소유자의 덱 맨 아래", remove: "리무브 에이리어" };
+    if (!window.confirm(`MR 파트너 ${nameOf(card)} 카드를 ${labels[destination]}로 직접 이동할까요?`)) return;
+    void runAction("move_mr_partner_card", { instance_id: card.instance_id, owner_user_id: ownerId, destination });
   }
   async function restCharacterManually(instance, ownerId) {
     if (instance?.status === "stunned") {
@@ -735,7 +748,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
                     {mr ? <>
                       <button type="button" onClick={() => openDetails(mr)} style={{ width: "100%", padding: 0, border: 0, background: "transparent" }}>{infoFor(mr)?.imageUrl ? <img src={infoFor(mr).imageUrl} alt={nameOf(mr)} style={{ width: "100%", maxHeight: 110, aspectRatio: "3/4", objectFit: "contain" }} /> : <div style={st.faceDown} />}</button>
                       <div style={{ fontSize: 9, fontWeight: 800, overflowWrap: "anywhere", marginTop: 4 }}>{nameOf(mr)}</div>
-                      {!game.game_over && !pending && <div style={{ display: "grid", gap: 3, marginTop: 5 }}><button type="button" style={st.smallButton} disabled={loading} onClick={() => moveField(mr, board.user_id, "hand")}>손패로</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => moveField(mr, board.user_id, "deck")}>덱 아래로</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => moveField(mr, board.user_id, "remove")}>리무브 에이리어로</button></div>}
+                      {!game.game_over && !pending && <div style={{ display: "grid", gap: 3, marginTop: 5 }}><button type="button" style={st.smallButton} disabled={loading} onClick={() => moveMrPartnerCard(mr, board.user_id, "hand")}>손패로</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => moveMrPartnerCard(mr, board.user_id, "deck")}>덱 아래로</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => moveMrPartnerCard(mr, board.user_id, "remove")}>리무브 에이리어로</button></div>}
                     </> : <div style={{ minHeight: 55, display: "grid", placeItems: "center", color: C.muted, fontSize: 9 }}>없음</div>}
                   </div>
                   <div style={{ padding: 6, border: "1px solid rgba(255,255,255,.08)", borderRadius: 6, background: "#080d16" }}>
