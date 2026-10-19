@@ -912,7 +912,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
                 {canActMain && !myBoard?.next_hint_pending && <button type="button" style={{ ...st.smallButton, opacity: n(card.cost) > costLimit || myBoard?.character_played_this_turn || myFieldCharacterCount >= 5 ? .72 : 1 }} disabled={loading} onClick={() => {
                   if (n(card.cost) > costLimit) { showBlockedReason(`필요 레벨을 충족하지 않아 사용할 수 없습니다. 현재 레벨 상한은 ${costLimit}입니다.`); return; }
                   if (myBoard?.character_played_this_turn) { showBlockedReason("이번 턴의 기본 등장을 이미 사용했습니다. 추가 등장은 효과 처리 버튼을 이용해 주세요."); return; }
-                  if (myFieldCharacterCount >= 5) { showBlockedReason("현장에 이미 카드가 5장 있습니다. 먼저 현장 카드를 이동해 주세요."); return; }
+                  if (myFieldCharacterCount >= 5) { showBlockedReason("현장에 캐릭터 카드가 이미 5장 있습니다. 먼저 현장 카드를 이동해 주세요."); return; }
                   void runAction("play_character", { instance_id: card.instance_id });
                 }}>기본 등장</button>}
                 {canSelectNextHintCard && <button type="button" style={{ ...st.smallButton, borderColor: "#fb7185", color: C.red, opacity: n(card.cost) > (costLimit + 1) ? .72 : 1 }} disabled={loading} onClick={() => {
@@ -925,7 +925,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
                 if (n(card.cost) > eventPlayCostLimit) { showBlockedReason(`필요 레벨을 충족하지 않아 이벤트를 사용할 수 없습니다. 현재 레벨 상한은 ${eventPlayCostLimit}입니다.`); return; }
                 void runAction("play_event", { instance_id: card.instance_id });
               }}>현장에 이벤트 사용</button>}
-              {canManualEffect && card.card_type === "character" && <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 5, background: "#3b2f5c" }} disabled={loading} onClick={() => { if (myFieldCharacterCount >= 5) { showBlockedReason("현장에 이미 카드가 5장 있습니다. 먼저 현장 카드를 이동해 주세요."); return; } void runAction("extra_play_character", { instance_id: card.instance_id, effect_override: true }); }}>효과로 추가 등장<br />(제한 무시)</button>}
+              {canManualEffect && card.card_type === "character" && <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 5, background: "#3b2f5c" }} disabled={loading} onClick={() => { if (myFieldCharacterCount >= 5) { showBlockedReason("현장에 캐릭터 카드가 이미 5장 있습니다. 먼저 현장 카드를 이동해 주세요."); return; } void runAction("extra_play_character", { instance_id: card.instance_id, effect_override: true }); }}>효과로 추가 등장<br />(제한 무시)</button>}
               {canManualEffect && <div style={{ display: "grid", gap: 4, marginTop: 5 }}><button type="button" style={st.smallButton} disabled={loading} onClick={() => { if (window.confirm(`${info?.name || card.key}를 리무브 에이리어로 옮길까요?`)) void runAction("move_hand_card", { instance_id: card.instance_id, destination: "remove" }); }}>리무브</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => openHandZoneChoice(card, "deck")}>덱으로</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => openHandZoneChoice(card, "file")}>파일로</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => setHandEvidenceChoice(card)}>증거로</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => void runAction("move_card_to_mr_partner", { source: "hand", instance_id: card.instance_id })}>파트너 영역으로</button></div>}
             </article>;
           })}
