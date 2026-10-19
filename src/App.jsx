@@ -646,9 +646,19 @@ function getTorecaPriceMatch(card, snapshot) {
   const cardNumbers = getCardNumberTokens(card);
   const rarity = normalizePriceRarity(card.originalRarity || card.rarity);
   const secVariant = getTorecaSecVariant(card);
-  const originalName = getTorecaBaseCardName(card.originalName);
+  const source = card?.sourceData && typeof card.sourceData === 'object' ? card.sourceData : {};
+  const originalName = getTorecaBaseCardName(
+    card.originalName || source.nameJp || source.title || source.name || source.cardName || card.name
+  );
 
-  let candidates = items.filter((item) => cardNumbers.has(normalizePriceCardNumber(item.cardNumber)));
+  const numberCandidates = items.filter((item) => cardNumbers.has(normalizePriceCardNumber(item.cardNumber)));
+  const nameCandidates = originalName.length >= 2
+    ? items.filter((item) => getTorecaBaseCardName(item.title || '').includes(originalName))
+    : [];
+  // The official card data often has only a database identifier (B0xxxx) rather than
+  // the shop's printed number (e.g. 0367). If number matching fails, search by the
+  // original Japanese card name and then narrow by rarity/set below instead of giving up.
+  let candidates = numberCandidates.length ? numberCandidates : nameCandidates;
 
   // Some SEC records use identifiers such as B02016Sec1/Sec2, while TorecaBirth
   // lists the same print under P001/P002. Fall back to SEC rarity + base Japanese
@@ -656,19 +666,31 @@ function getTorecaPriceMatch(card, snapshot) {
   if (!candidates.length && rarity === 'SEC' && secVariant && originalName.length >= 2) {
     candidates = items.filter((item) =>
       normalizePriceRarity(item.rarity) === 'SEC'
-      && normalizePriceToken(item.title || '').includes(originalName),
+      && getTorecaBaseCardName(item.title || '').includes(originalName),
     );
   }
   if (!candidates.length) return { status: 'unmatched', item: null };
 
   if (rarity) {
-    candidates = candidates.filter((item) => normalizePriceRarity(item.rarity) === rarity);
-    if (!candidates.length) return { status: 'unmatched', item: null };
+    const rarityMatches = candidates.filter((item) => normalizePriceRarity(item.rarity) === rarity);
+    if (rarityMatches.length) {
+      candidates = rarityMatches;
+    } else if (numberCandidates.length && nameCandidates.length) {
+      // A reused/inexact identifier can hit another printing; prefer a correctly named,
+      // same-rarity listing rather than prematurely reporting no match.
+      const fallbackMatches = nameCandidates.filter((item) => normalizePriceRarity(item.rarity) === rarity);
+      if (!fallbackMatches.length) return { status: 'unmatched', item: null };
+      candidates = fallbackMatches;
+    } else {
+      return { status: 'unmatched', item: null };
+    }
   }
 
   if (originalName) {
-    candidates = candidates.filter((item) => normalizePriceToken(item.title || '').includes(originalName));
-    if (!candidates.length) return { status: 'unmatched', item: null };
+    const nameMatches = candidates.filter((item) => getTorecaBaseCardName(item.title || '').includes(originalName));
+    if (nameMatches.length) candidates = nameMatches;
+    else if (!nameCandidates.length) return { status: 'unmatched', item: null };
+    else if (!numberCandidates.length) return { status: 'unmatched', item: null };
   }
 
   // Sec1 is the non-signed listing; Sec2 is the signed listing.
@@ -1322,6 +1344,26 @@ export default function App() {
       - deckCards.findIndex((item) => item.deckSlotKey === b.deckSlotKey);
   });
   const deckSlots = Array.from({ length: MAIN_DECK_LIMIT }, (_, index) => sortedDeckCards[index] || null);
+  const deckPriceResults = deckCards.map((card) => ({ card, match: getTorecaPriceMatch(card, priceSnapshot) }));
+  const deckPriceTotalYen = deckPriceResults.reduce((sum, entry) =>
+    sum + (entry.match.status === 'match' ? Math.max(0, Number(entry.match.item?.priceYen) || 0) : 0), 0);
+  const deckPriceExcludedEntries = deckPriceResults.filter((entry) => entry.match.status !== 'match');
+  const deckPriceExcludedCount = deckPriceExcludedEntries.length;
+  const deckPriceExcludedUnique = [...new Map(deckPriceExcludedEntries.map(({ card }) => [
+    `${card.key}|${normalizePriceRarity(card.originalRarity || card.rarity)}`,
+    card,
+  ])).values()];
+  const deckPriceExcludedTooltip = deckPriceExcludedUnique.length
+    ? `제외 목록: ${deckPriceExcludedUnique.map((card) => {
+        const cost = numericValue(card.cost);
+        const costGlyphs = ['⓪', '①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩'];
+        const costLabel = cost !== null && cost >= 0 && cost <= 10 ? costGlyphs[cost] : String(card.cost ?? '-');
+        const kind = /キャラ|character|캐릭터/iu.test(`${card.type || ''} ${card.originalType || ''}`) ? '캐릭터'
+          : /イベント|event|이벤트/iu.test(`${card.type || ''} ${card.originalType || ''}`) ? '이벤트' : (card.type || card.originalType || '카드');
+        const attack = card.ap ?? card.lp ?? '-';
+        return `[${costLabel} ${card.name || card.originalName || card.key} | ${kind} | ${attack}]`;
+      }).join(', ')}`
+    : '제외된 카드가 없습니다.';
 
   // 덱 화면에서 연 상세 창은 현재 덱 배열의 순서로, 카드 목록에서 연 창은 필터 결과 순서로 탐색합니다.
   const modalNavigationCards = selectedCardSource === 'deck' ? sortedDeckCards : filteredCards;
@@ -2169,6 +2211,14 @@ export default function App() {
                 {mainDeckCount === 0 && <p className="deck-empty-hint">카드를 추가하려면 ‘카드 목록’ 탭으로 이동해 원하는 카드에서 ‘덱에 추가’를 눌러 주세요.</p>}
               </div>
             </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-white/[0.08] pt-3 text-[10px] leading-5 text-slate-400" aria-label="덱 트レカバース 가격 합계">
+            <span className="font-semibold text-slate-300">トレカバース 현재 판매가 합계: ¥{deckPriceTotalYen.toLocaleString('ja-JP')}</span>
+            <span
+              title={deckPriceExcludedTooltip}
+              aria-label={deckPriceExcludedTooltip}
+              style={{ cursor: deckPriceExcludedCount ? 'help' : 'default', textDecoration: deckPriceExcludedCount ? 'underline dotted rgba(148,163,184,.65)' : 'none', textUnderlineOffset: '3px' }}
+            >(계산 제외 카드: {deckPriceExcludedCount}개)</span>
           </div>
           <p className="deck-footnote border-t border-white/[0.08] pt-3 text-[11px] leading-5 text-slate-500">덱 구성은 이 브라우저에 자동 저장돼요. 메인 덱은 빈 슬롯을 포함해 이미지로 저장할 수 있어요. 파트너 카드와 사건 카드는 각각 선택해야 해요.</p>
         </section>
