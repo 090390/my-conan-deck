@@ -694,9 +694,6 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
 
       {(error || notice) && <div role={error ? "alert" : "status"} style={{ marginBottom: 10, padding: 9, borderRadius: 6, border: `1px solid ${error ? "rgba(253,164,175,.3)" : "rgba(134,239,172,.24)"}`, color: error ? C.red : C.green, background: error ? "rgba(190,24,93,.07)" : "rgba(22,101,52,.07)", fontSize: 11 }}>{error || notice}</div>}
       {game.last_action_label && <div style={{ display: "grid", gap: 4, marginBottom: 10 }}>
-        <div style={{ ...st.muted, textAlign: "left", padding: "7px 9px", border: "1px solid rgba(134,239,172,.35)", borderRadius: 5, background: "rgba(20,83,45,.25)", color: C.green }}>
-          내 최근 처리 내역: {actionLog.find((entry) => entry.actor_user_id === userId)?.action_label || (actionLogError ? "로그 DB 적용 필요" : "기록을 불러오는 중…")}
-        </div>
         <button type="button" onClick={() => void openActionLog()} style={{ ...st.muted, textAlign: "left", padding: "7px 9px", border: "1px solid rgba(148,163,184,.24)", borderRadius: 5, background: "rgba(71,85,105,.22)", color: C.text, cursor: "pointer" }} title="눌러서 전체 게임 행동 로그를 최신순으로 확인">
           전체 게임 행동 내역: {actionLog[0]?.action_label || game.last_action_label}
         </button>
