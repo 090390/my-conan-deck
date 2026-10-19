@@ -26,8 +26,8 @@ BEGIN
   ] LOOP
     IF to_regprocedure(v_signature) IS NULL THEN CONTINUE; END IF;
     SELECT pg_get_functiondef(to_regprocedure(v_signature)) INTO v_definition;
-    v_original := v_definition;
     v_definition := replace(v_definition, chr(13), '');
+    v_original := v_definition;
 
     -- Remove only the obsolete guard that blocked hand-taking a card after revealing it.
     IF position('상대에게 공개하도록 지정한 카드는 먼저 공개 선택을 취소한 뒤 손패로 가져와 주세요.' in v_definition) > 0 THEN
