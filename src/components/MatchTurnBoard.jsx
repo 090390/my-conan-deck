@@ -107,6 +107,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   const [actionLog, setActionLog] = useState([]);
   const [showActionLog, setShowActionLog] = useState(false);
   const [loadingActionLog, setLoadingActionLog] = useState(false);
+  const [actionLogError, setActionLogError] = useState("");
 
   const myPeekSignature = useMemo(() => {
     const peek = game?.my_deck_peek;
@@ -138,8 +139,9 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
       if (rpcError) throw rpcError;
       const entries = Array.isArray(data) ? data : Array.isArray(data?.logs) ? data.logs : [];
       setActionLog([...entries].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
+      setActionLogError("");
     } catch (err) {
-      setError(err?.message || "게임 행동 로그를 불러오지 못했습니다.");
+      setActionLogError(err?.message || "게임 행동 로그를 불러오지 못했습니다. Supabase의 010 마이그레이션 적용 여부를 확인해 주세요.");
     } finally {
       setLoadingActionLog(false);
     }
@@ -659,7 +661,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
 
       {(error || notice) && <div role={error ? "alert" : "status"} style={{ marginBottom: 10, padding: 9, borderRadius: 6, border: `1px solid ${error ? "rgba(253,164,175,.3)" : "rgba(134,239,172,.24)"}`, color: error ? C.red : C.green, background: error ? "rgba(190,24,93,.07)" : "rgba(22,101,52,.07)", fontSize: 11 }}>{error || notice}</div>}
       {game.last_action_label && <div style={{ display: "grid", gap: 4, marginBottom: 10 }}>
-        <button type="button" onClick={() => void openActionLog()} style={{ ...st.muted, textAlign: "left", padding: "5px 7px", border: "1px solid rgba(147,197,253,.15)", borderRadius: 5, background: "rgba(30,58,95,.18)", cursor: "pointer" }} title="눌러서 내 과거 처리 내역 전체를 확인">내 최근 처리 내역: {actionLog.find((entry) => entry.actor_user_id === userId)?.action_label || "기록을 불러오는 중…"}</button>
+        <button type="button" onClick={() => void openActionLog()} style={{ ...st.muted, textAlign: "left", padding: "5px 7px", border: "1px solid rgba(147,197,253,.15)", borderRadius: 5, background: "rgba(30,58,95,.18)", cursor: "pointer" }} title="눌러서 내 과거 처리 내역 전체를 확인">내 최근 처리 내역: {actionLog.find((entry) => entry.actor_user_id === userId)?.action_label || (actionLogError ? "로그 DB 적용 필요" : "기록을 불러오는 중…")}</button>
         <button type="button" onClick={() => void openActionLog()} style={{ ...st.muted, textAlign: "left", padding: "5px 7px", border: "1px solid rgba(148,163,184,.14)", borderRadius: 5, background: "rgba(15,23,42,.45)", cursor: "pointer" }} title="눌러서 전체 게임의 과거 처리 내역을 최신순으로 확인">전체 게임 최근 처리 내역: {actionLog[0]?.action_label || game.last_action_label}</button>
       </div>}
       </div>
@@ -1017,6 +1019,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
           </header>
           <div style={{ padding: 10, overflowY: "auto", display: "grid", gap: 6 }}>
             {!actionLog.length && <p style={st.muted}>{loadingActionLog ? "기록을 불러오는 중…" : "저장된 행동 로그가 없습니다."}</p>}
+            {actionLogError && <p role="alert" style={{ color: C.red, fontSize: 10, lineHeight: 1.6 }}>{actionLogError}</p>}
             {actionLog.map((entry, index) => <article key={entry.id || (String(entry.created_at) + "-" + index)} style={{ display: "grid", gridTemplateColumns: "minmax(96px,auto) minmax(0,1fr)", gap: 10, alignItems: "start", padding: "9px 10px", border: "1px solid rgba(255,255,255,.08)", borderRadius: 7, background: index === 0 ? "rgba(30,58,95,.3)" : "#080d16" }}>
               <div><div style={{ color: C.gold, fontSize: 10, fontWeight: 850 }}>턴 {entry.turn_number ?? "-"}</div><div style={{ marginTop: 3, color: C.muted, fontSize: 9 }}>{entry.created_at ? new Date(entry.created_at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "시간 미상"}</div></div>
               <div><div style={{ color: entry.actor_user_id === userId ? C.green : C.blue, fontSize: 9, fontWeight: 800, marginBottom: 3 }}>{entry.actor_user_id === userId ? "나" : (entry.actor_display_name || "플레이어")}{entry.actor_seat ? " · 좌석 " + entry.actor_seat : ""}</div><div style={{ overflowWrap: "anywhere", fontSize: 11, lineHeight: 1.6 }}>{entry.action_label}</div></div>
