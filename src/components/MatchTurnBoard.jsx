@@ -141,7 +141,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
       setActionLog([...entries].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
       setActionLogError("");
     } catch (err) {
-      setActionLogError(err?.message || "게임 행동 로그를 불러오지 못했습니다. Supabase의 010 마이그레이션 적용 여부를 확인해 주세요.");
+      setActionLogError(err?.message || "게임 행동 로그를 불러오지 못했습니다. Supabase의 202610200002 행동 로그 복구 마이그레이션 적용 여부를 확인해 주세요.");
     } finally {
       setLoadingActionLog(false);
     }
