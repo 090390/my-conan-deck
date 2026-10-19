@@ -95,6 +95,53 @@ BEGIN
 END
 $followup_function_patch$;
 
+-- Return the full game history (not only the newest 500 entries), newest first.
+CREATE OR REPLACE FUNCTION public.get_private_match_action_log_v1(p_room_id uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $get_private_match_action_log_v1$
+DECLARE
+  v_user uuid := auth.uid();
+  v_result jsonb;
+BEGIN
+  IF v_user IS NULL OR NOT EXISTS (
+    SELECT 1 FROM public.room_players WHERE room_id=p_room_id AND user_id=v_user
+  ) THEN
+    RAISE EXCEPTION '이 방의 참가자만 게임 행동 로그를 확인할 수 있습니다.';
+  END IF;
+
+  SELECT coalesce(jsonb_agg(jsonb_build_object(
+    'id', entries.id,
+    'room_id', entries.room_id,
+    'turn_number', entries.turn_number,
+    'actor_user_id', entries.actor_user_id,
+    'actor_seat', entries.actor_seat,
+    'actor_display_name', entries.actor_display_name,
+    'action_label', entries.action_label,
+    'created_at', entries.created_at
+  ) ORDER BY entries.created_at DESC, entries.id DESC), '[]'::jsonb)
+  INTO v_result
+  FROM (
+    SELECT l.id, l.room_id, l.turn_number, l.actor_user_id, l.action_label, l.created_at,
+      rp.seat AS actor_seat,
+      coalesce(
+        nullif(trim(rp.temporary_nickname),''),
+        CASE WHEN rp.seat IS NOT NULL THEN '플레이어 '||rp.seat::text ELSE '알 수 없는 플레이어' END
+      ) AS actor_display_name
+    FROM public.private_match_action_logs l
+    LEFT JOIN public.room_players rp ON rp.room_id=l.room_id AND rp.user_id=l.actor_user_id
+    WHERE l.room_id=p_room_id
+  ) entries;
+
+  RETURN coalesce(v_result,'[]'::jsonb);
+END;
+$get_private_match_action_log_v1$;
+
+REVOKE ALL ON FUNCTION public.get_private_match_action_log_v1(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.get_private_match_action_log_v1(uuid) TO authenticated;
+
 CREATE OR REPLACE FUNCTION public.move_private_field_mr_to_partner_v1(
   p_room_id uuid,
   p_owner_user_id uuid,
