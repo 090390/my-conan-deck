@@ -201,14 +201,37 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
       const newBoards = Array.isArray(updatedGame?.boards) ? updatedGame.boards : [];
       if (action !== "move_field_card" && updatedGame) {
         const departedMrs = [];
+        const enteredMrs = [];
         for (const oldBoard of oldBoards) {
           const newBoard = newBoards.find((board) => board.user_id === oldBoard.user_id);
+          const oldFieldIds = new Set((oldBoard?.field_cards || []).map((card) => String(card.instance_id)));
           const newFieldIds = new Set((newBoard?.field_cards || []).map((card) => String(card.instance_id)));
           for (const card of oldBoard.field_cards || []) {
             const rarity = String(card.rarity || cardsByKey.get(String(card.key))?.rarity || "").toUpperCase();
             if (rarity === "MR" && card.instance_id && !newFieldIds.has(String(card.instance_id))) {
               departedMrs.push({ owner_user_id: oldBoard.user_id, card });
             }
+          }
+          for (const card of newBoard?.field_cards || []) {
+            const rarity = String(card.rarity || cardsByKey.get(String(card.key))?.rarity || "").toUpperCase();
+            if (rarity === "MR" && card.instance_id && !oldFieldIds.has(String(card.instance_id))) {
+              enteredMrs.push({ owner_user_id: oldBoard.user_id, card });
+            }
+          }
+        }
+        // The new MR enters the field first: any older MR already in the MR partner area
+        // is then moved to Remove. After that, any MR that left the field is stored there.
+        for (const entry of enteredMrs) {
+          try {
+            const { data: recovered, error: recoveryError } = await supabase.rpc("remove_replaced_mr_partner_on_new_mr_v2", {
+              p_room_id: roomId,
+              p_owner_user_id: entry.owner_user_id,
+              p_new_field_mr_instance_id: String(entry.card.instance_id),
+            });
+            if (recoveryError) throw recoveryError;
+            if (recovered && typeof recovered === "object") updatedGame = recovered;
+          } catch (recoveryError) {
+            setError(recoveryError?.message || "새 MR 등장 시 기존 MR 파트너를 리무브로 이동하지 못했습니다.");
           }
         }
         for (const departure of departedMrs) {
