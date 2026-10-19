@@ -108,6 +108,10 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   const [showActionLog, setShowActionLog] = useState(false);
   const [loadingActionLog, setLoadingActionLog] = useState(false);
   const [actionLogError, setActionLogError] = useState("");
+  const [actionLogScope, setActionLogScope] = useState("all");
+  const visibleActionLog = actionLogScope === "mine"
+    ? actionLog.filter((entry) => entry.actor_user_id === userId)
+    : actionLog;
 
   const myPeekSignature = useMemo(() => {
     const peek = game?.my_deck_peek;
@@ -152,7 +156,8 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
     void refreshActionLog();
   }, [roomId, game, refreshActionLog]);
 
-  async function openActionLog() {
+  async function openActionLog(scope = "all") {
+    setActionLogScope(scope);
     setShowActionLog(true);
     await refreshActionLog();
   }
@@ -694,8 +699,8 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
 
       {(error || notice) && <div role={error ? "alert" : "status"} style={{ marginBottom: 10, padding: 9, borderRadius: 6, border: `1px solid ${error ? "rgba(253,164,175,.3)" : "rgba(134,239,172,.24)"}`, color: error ? C.red : C.green, background: error ? "rgba(190,24,93,.07)" : "rgba(22,101,52,.07)", fontSize: 11 }}>{error || notice}</div>}
       {game.last_action_label && <div style={{ display: "grid", gap: 4, marginBottom: 10 }}>
-        <button type="button" onClick={() => void openActionLog()} style={{ ...st.muted, textAlign: "left", padding: "5px 7px", border: "1px solid rgba(147,197,253,.15)", borderRadius: 5, background: "rgba(30,58,95,.18)", cursor: "pointer" }} title="눌러서 내 과거 처리 내역 전체를 확인">내 최근 처리 내역: {actionLog.find((entry) => entry.actor_user_id === userId)?.action_label || (actionLogError ? "로그 DB 적용 필요" : "기록을 불러오는 중…")}</button>
-        <button type="button" onClick={() => void openActionLog()} style={{ ...st.muted, textAlign: "left", padding: "5px 7px", border: "1px solid rgba(148,163,184,.14)", borderRadius: 5, background: "rgba(15,23,42,.45)", cursor: "pointer" }} title="눌러서 전체 게임의 과거 처리 내역을 최신순으로 확인">전체 게임 최근 처리 내역: {actionLog[0]?.action_label || game.last_action_label}</button>
+        <button type="button" onClick={() => void openActionLog("mine")} style={{ ...st.muted, textAlign: "left", padding: "5px 7px", border: "1px solid rgba(147,197,253,.15)", borderRadius: 5, background: "rgba(30,58,95,.18)", cursor: "pointer" }} title="눌러서 내 과거 처리 내역 전체를 확인">내 최근 처리 내역: {actionLog.find((entry) => entry.actor_user_id === userId)?.action_label || (actionLogError ? "로그 DB 적용 필요" : "기록을 불러오는 중…")}</button>
+        <button type="button" onClick={() => void openActionLog("all")} style={{ ...st.muted, textAlign: "left", padding: "5px 7px", border: "1px solid rgba(148,163,184,.14)", borderRadius: 5, background: "rgba(15,23,42,.45)", cursor: "pointer" }} title="눌러서 전체 게임의 과거 처리 내역을 최신순으로 확인">전체 게임 최근 처리 내역: {actionLog[0]?.action_label || game.last_action_label}</button>
       </div>}
       </div>
 
@@ -1051,16 +1056,16 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
 
 
       {showActionLog && <div role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowActionLog(false); }} style={{ position: "fixed", inset: 0, zIndex: 100250, display: "flex", alignItems: "center", justifyContent: "center", padding: 12, background: "rgba(0,0,0,.9)", backdropFilter: "blur(5px)" }}>
-        <section role="dialog" aria-modal="true" aria-label="전체 게임 행동 로그" style={{ width: "min(100%, 760px)", maxHeight: "92dvh", display: "flex", flexDirection: "column", overflow: "hidden", border: "1px solid rgba(147,197,253,.35)", borderRadius: 12, background: "#101827", color: C.text }}>
+        <section role="dialog" aria-modal="true" aria-label={actionLogScope === "mine" ? "내 행동 로그" : "전체 게임 행동 로그"} style={{ width: "min(100%, 760px)", maxHeight: "92dvh", display: "flex", flexDirection: "column", overflow: "hidden", border: "1px solid rgba(147,197,253,.35)", borderRadius: 12, background: "#101827", color: C.text }}>
           <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, padding: 12, borderBottom: "1px solid rgba(255,255,255,.1)" }}>
-            <div><h2 style={{ margin: 0, fontSize: 16, fontWeight: 900 }}>게임 행동 로그</h2><p style={{ ...st.muted, marginTop: 4 }}>가장 최근 행동부터 과거 순서로 표시됩니다. 아래로 스크롤해 이전 기록을 확인하세요.</p></div>
+            <div><h2 style={{ margin: 0, fontSize: 16, fontWeight: 900 }}>{actionLogScope === "mine" ? "내 행동 로그" : "전체 게임 행동 로그"}</h2><p style={{ ...st.muted, marginTop: 4 }}>가장 최근 행동부터 과거 순서로 표시됩니다. 아래로 스크롤해 이전 기록을 확인하세요.</p></div>
             <button type="button" style={st.button} disabled={loadingActionLog} onClick={() => void refreshActionLog()}>{loadingActionLog ? "새로고침 중…" : "새로고침"}</button>
             <button type="button" style={st.smallButton} onClick={() => setShowActionLog(false)}>닫기 ✕</button>
           </header>
           <div style={{ padding: 10, overflowY: "auto", display: "grid", gap: 6 }}>
-            {!actionLog.length && <p style={st.muted}>{loadingActionLog ? "기록을 불러오는 중…" : "저장된 행동 로그가 없습니다."}</p>}
+            {!visibleActionLog.length && <p style={st.muted}>{loadingActionLog ? "기록을 불러오는 중…" : actionLogScope === "mine" ? "내가 처리한 로그가 없습니다." : "저장된 행동 로그가 없습니다."}</p>}
             {actionLogError && <p role="alert" style={{ color: C.red, fontSize: 10, lineHeight: 1.6 }}>{actionLogError}</p>}
-            {actionLog.map((entry, index) => <article key={entry.id || (String(entry.created_at) + "-" + index)} style={{ display: "grid", gridTemplateColumns: "minmax(96px,auto) minmax(0,1fr)", gap: 10, alignItems: "start", padding: "9px 10px", border: "1px solid rgba(255,255,255,.08)", borderRadius: 7, background: index === 0 ? "rgba(30,58,95,.3)" : "#080d16" }}>
+            {visibleActionLog.map((entry, index) => <article key={entry.id || (String(entry.created_at) + "-" + index)} style={{ display: "grid", gridTemplateColumns: "minmax(96px,auto) minmax(0,1fr)", gap: 10, alignItems: "start", padding: "9px 10px", border: "1px solid rgba(255,255,255,.08)", borderRadius: 7, background: index === 0 ? "rgba(30,58,95,.3)" : "#080d16" }}>
               <div><div style={{ color: C.gold, fontSize: 10, fontWeight: 850 }}>턴 {entry.turn_number ?? "-"}</div><div style={{ marginTop: 3, color: C.muted, fontSize: 9 }}>{entry.created_at ? new Date(entry.created_at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "시간 미상"}</div></div>
               <div><div style={{ color: entry.actor_user_id === userId ? C.green : C.blue, fontSize: 9, fontWeight: 800, marginBottom: 3 }}>{entry.actor_user_id === userId ? "나" : (entry.actor_display_name || "플레이어")}{entry.actor_seat ? " · 좌석 " + entry.actor_seat : ""}</div><div style={{ overflowWrap: "anywhere", fontSize: 11, lineHeight: 1.6 }}>{entry.action_label}</div></div>
             </article>)}
