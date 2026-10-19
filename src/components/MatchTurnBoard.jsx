@@ -104,6 +104,9 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   const [showPlayHistory, setShowPlayHistory] = useState(false);
   const [playHistory, setPlayHistory] = useState([]);
   const [loadingPlayHistory, setLoadingPlayHistory] = useState(false);
+  const [actionLog, setActionLog] = useState([]);
+  const [showActionLog, setShowActionLog] = useState(false);
+  const [loadingActionLog, setLoadingActionLog] = useState(false);
 
   const myPeekSignature = useMemo(() => {
     const peek = game?.my_deck_peek;
@@ -126,6 +129,31 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
     traits: normalizeCardTraits(card),
     disguiseEffect: cardDisguiseEffect(card),
   }])), [cards]);
+
+  const refreshActionLog = useCallback(async () => {
+    if (!roomId) return;
+    setLoadingActionLog(true);
+    try {
+      const { data, error: rpcError } = await supabase.rpc("get_private_match_action_log_v1", { p_room_id: roomId });
+      if (rpcError) throw rpcError;
+      const entries = Array.isArray(data) ? data : Array.isArray(data?.logs) ? data.logs : [];
+      setActionLog([...entries].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
+    } catch (err) {
+      setError(err?.message || "게임 행동 로그를 불러오지 못했습니다.");
+    } finally {
+      setLoadingActionLog(false);
+    }
+  }, [roomId]);
+
+  useEffect(() => {
+    if (!roomId || game?.state_version === undefined) return;
+    void refreshActionLog();
+  }, [roomId, game?.state_version, game?.last_action_label, refreshActionLog]);
+
+  async function openActionLog() {
+    setShowActionLog(true);
+    await refreshActionLog();
+  }
 
   async function beginTurnAndPlaceFiles() {
     const started = await runAction("begin_turn");
@@ -199,7 +227,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
       let updatedGame = data && typeof data === "object" ? data : null;
       const oldBoards = Array.isArray(game?.boards) ? game.boards : [];
       const newBoards = Array.isArray(updatedGame?.boards) ? updatedGame.boards : [];
-      if (action !== "move_field_card" && updatedGame) {
+      if ((action !== "move_field_card" || payload.destination === "remove") && updatedGame) {
         const departedMrs = [];
         const enteredMrs = [];
         for (const oldBoard of oldBoards) {
@@ -264,6 +292,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
 
   const boards = Array.isArray(game?.boards) ? game.boards : [];
   const myBoard = boards.find((board) => board.user_id === userId);
+  const myFieldCharacterCount = (myBoard?.field_cards || []).filter((card) => card.card_type === "character").length;
   const opponentBoard = boards.find((board) => board.user_id !== userId);
   const currentTurnBoard = boards.find((board) => board.user_id === game?.current_turn_user_id);
   const myHand = Array.isArray(game?.my_hand) ? game.my_hand : [];
@@ -610,7 +639,10 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
       </header>
 
       {(error || notice) && <div role={error ? "alert" : "status"} style={{ marginBottom: 10, padding: 9, borderRadius: 6, border: `1px solid ${error ? "rgba(253,164,175,.3)" : "rgba(134,239,172,.24)"}`, color: error ? C.red : C.green, background: error ? "rgba(190,24,93,.07)" : "rgba(22,101,52,.07)", fontSize: 11 }}>{error || notice}</div>}
-      {game.last_action_label && <p style={{ ...st.muted, marginBottom: 10 }}>최근 처리: {game.last_action_label}</p>}
+      {game.last_action_label && <div style={{ display: "grid", gap: 4, marginBottom: 10 }}>
+        <button type="button" onClick={() => void openActionLog()} style={{ ...st.muted, textAlign: "left", padding: "5px 7px", border: "1px solid rgba(147,197,253,.15)", borderRadius: 5, background: "rgba(30,58,95,.18)", cursor: "pointer" }} title="눌러서 내 과거 처리 내역 전체를 확인">내 최근 처리 내역: {actionLog.find((entry) => entry.actor_user_id === userId)?.action_label || "기록을 불러오는 중…"}</button>
+        <button type="button" onClick={() => void openActionLog()} style={{ ...st.muted, textAlign: "left", padding: "5px 7px", border: "1px solid rgba(148,163,184,.14)", borderRadius: 5, background: "rgba(15,23,42,.45)", cursor: "pointer" }} title="눌러서 전체 게임의 과거 처리 내역을 최신순으로 확인">전체 게임 최근 처리 내역: {actionLog[0]?.action_label || game.last_action_label}</button>
+      </div>}
       </div>
 
       {pending?.type === "evidence_attack" && <div style={{ position: "fixed", inset: 0, zIndex: 100140, padding: 12, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,.86)", backdropFilter: "blur(5px)" }}>
@@ -817,10 +849,10 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
               <button type="button" onClick={() => openDetails(card)} style={{ display: "block", width: "100%", border: 0, background: "transparent", color: C.text, padding: 0 }}><CardArt instance={card} /><div style={{ fontSize: 10, fontWeight: 800, lineHeight: 1.35, marginTop: 5, textAlign: "left", overflowWrap: "anywhere" }}>{info?.name || card.key}</div></button>
               <div style={{ fontSize: 9, color: C.muted, marginTop: 3 }}>레벨 {card.cost ?? "-"} · AP {card.ap ?? "-"}</div>
               {(canActMain || canSelectNextHintCard) && card.card_type === "character" && <div style={{ display: "grid", gap: 4, marginTop: 6 }}>
-                {canActMain && !myBoard?.next_hint_pending && <button type="button" style={{ ...st.smallButton, opacity: n(card.cost) > costLimit || myBoard?.character_played_this_turn || (myBoard?.field_cards?.length || 0) >= 5 ? .72 : 1 }} disabled={loading} onClick={() => {
+                {canActMain && !myBoard?.next_hint_pending && <button type="button" style={{ ...st.smallButton, opacity: n(card.cost) > costLimit || myBoard?.character_played_this_turn || myFieldCharacterCount >= 5 ? .72 : 1 }} disabled={loading} onClick={() => {
                   if (n(card.cost) > costLimit) { showBlockedReason(`필요 레벨을 충족하지 않아 사용할 수 없습니다. 현재 레벨 상한은 ${costLimit}입니다.`); return; }
                   if (myBoard?.character_played_this_turn) { showBlockedReason("이번 턴의 기본 등장을 이미 사용했습니다. 추가 등장은 효과 처리 버튼을 이용해 주세요."); return; }
-                  if ((myBoard?.field_cards?.length || 0) >= 5 && String(card.rarity || "").toUpperCase() !== "MR") { showBlockedReason("현장에 이미 카드가 5장 있습니다. 먼저 현장 카드를 이동해 주세요."); return; }
+                  if (myFieldCharacterCount >= 5 && String(card.rarity || "").toUpperCase() !== "MR") { showBlockedReason("현장에 이미 카드가 5장 있습니다. 먼저 현장 카드를 이동해 주세요."); return; }
                   void runAction("play_character", { instance_id: card.instance_id });
                 }}>기본 등장</button>}
                 {canSelectNextHintCard && <button type="button" style={{ ...st.smallButton, borderColor: "#fb7185", color: C.red, opacity: n(card.cost) > (costLimit + 1) ? .72 : 1 }} disabled={loading} onClick={() => {
@@ -829,12 +861,11 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
                   void runAction("next_hint", { instance_id: card.instance_id });
                 }}>이 카드로 넥스트 힌트 등장</button>}
               </div>}
-              {(canActMain || canPlayEventDuringNextHint) && card.card_type === "event" && <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 6, background: "#075985", opacity: n(card.cost) > eventPlayCostLimit || (myBoard?.field_cards?.length || 0) >= 5 ? .72 : 1 }} disabled={loading} onClick={() => {
+              {(canActMain || canPlayEventDuringNextHint) && card.card_type === "event" && <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 6, background: "#075985", opacity: n(card.cost) > eventPlayCostLimit ? .72 : 1 }} disabled={loading} onClick={() => {
                 if (n(card.cost) > eventPlayCostLimit) { showBlockedReason(`필요 레벨을 충족하지 않아 이벤트를 사용할 수 없습니다. 현재 레벨 상한은 ${eventPlayCostLimit}입니다.`); return; }
-                if ((myBoard?.field_cards?.length || 0) >= 5) { showBlockedReason("현장에 이미 카드가 5장 있습니다. 먼저 현장 카드를 이동해 주세요."); return; }
                 void runAction("play_event", { instance_id: card.instance_id });
               }}>현장에 이벤트 사용</button>}
-              {canManualEffect && card.card_type === "character" && <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 5, background: "#3b2f5c" }} disabled={loading} onClick={() => { if ((myBoard?.field_cards?.length || 0) >= 5 && String(card.rarity || "").toUpperCase() !== "MR") { showBlockedReason("현장에 이미 카드가 5장 있습니다. 먼저 현장 카드를 이동해 주세요."); return; } void runAction("extra_play_character", { instance_id: card.instance_id, effect_override: true }); }}>효과로 추가 등장<br />(제한 무시)</button>}
+              {canManualEffect && card.card_type === "character" && <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 5, background: "#3b2f5c" }} disabled={loading} onClick={() => { if (myFieldCharacterCount >= 5 && String(card.rarity || "").toUpperCase() !== "MR") { showBlockedReason("현장에 이미 카드가 5장 있습니다. 먼저 현장 카드를 이동해 주세요."); return; } void runAction("extra_play_character", { instance_id: card.instance_id, effect_override: true }); }}>효과로 추가 등장<br />(제한 무시)</button>}
               {canManualEffect && <div style={{ display: "grid", gap: 4, marginTop: 5 }}><button type="button" style={st.smallButton} disabled={loading} onClick={() => { if (window.confirm(`${info?.name || card.key}를 리무브 에이리어로 옮길까요?`)) void runAction("move_hand_card", { instance_id: card.instance_id, destination: "remove" }); }}>리무브</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => openHandZoneChoice(card, "deck")}>덱으로</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => openHandZoneChoice(card, "file")}>파일로</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => setHandEvidenceChoice(card)}>증거로</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => void runAction("move_card_to_mr_partner", { source: "hand", instance_id: card.instance_id })}>파트너 영역으로</button></div>}
             </article>;
           })}
@@ -854,7 +885,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
       {showRemoveArea && minimizedModal !== "remove" && <div role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowRemoveArea(false); }} style={{ position: "fixed", inset: 0, zIndex: 100000, padding: 12, display: "flex", justifyContent: "center", alignItems: "center", background: "rgba(0,0,0,.84)", backdropFilter: "blur(4px)" }}>
         <section onDoubleClick={(event) => minimizeOnDoubleClick(event, "remove")} role="dialog" aria-modal="true" aria-label="리무브 영역 목록" style={{ width: "min(100%, 920px)", maxHeight: "92dvh", overflow: "hidden", display: "flex", flexDirection: "column", border: "1px solid rgba(148,163,184,.24)", borderRadius: 12, background: "#111a2a", color: C.text, boxShadow: "0 24px 70px rgba(0,0,0,.7)" }}>
           <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: 12, borderBottom: "1px solid rgba(255,255,255,.09)" }}><div><h2 style={{ margin: 0, fontSize: 17 }}>리무브 영역</h2><p style={{ ...st.muted, marginTop: 4 }}>내 리무브 {myRemoveCards.length}장 · 상대 리무브 {opponentRemoveCards.length}장</p></div><button type="button" style={st.button} onClick={() => setShowRemoveArea(false)}>닫기 ✕</button></header>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 10, padding: 12, overflowY: "auto" }}>{[{ label: "내 리무브", cards: myRemoveCards }, { label: "상대 리무브", cards: opponentRemoveCards }].map((pile) => <div key={pile.label} style={{ minWidth: 0, padding: 8, border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, background: "#080d16" }}><h3 style={{ margin: "0 0 8px", fontSize: 11, color: C.blue }}>{pile.label} · {pile.cards.length}장</h3><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(86px,1fr))", gap: 6 }}>{pile.cards.map((card) => <article key={card.instance_id} style={{ border: "1px solid rgba(255,255,255,.1)", borderRadius: 6, padding: 5, background: "#101827", color: C.text, minWidth: 0 }}><button type="button" onClick={() => openDetails(card)} style={{ width: "100%", border: 0, padding: 0, background: "transparent", color: C.text }}>{infoFor(card)?.imageUrl ? <img src={infoFor(card).imageUrl} alt={nameOf(card)} style={{ width: "100%", aspectRatio: "3/4", objectFit: "contain" }} /> : <div style={st.faceDown} />}<div style={{ fontSize: 9, lineHeight: 1.3, overflowWrap: "anywhere", marginTop: 4 }}>{nameOf(card)}</div></button>{pile.label === "내 리무브" && !game.game_over && !pending && <div style={{ display: "grid", gap: 3, marginTop: 5 }}><button type="button" style={st.smallButton} disabled={loading} onClick={() => void runAction("move_remove_card_to_hand", { instance_id: card.instance_id })}>손패로 가져오기</button><button type="button" style={st.smallButton} disabled={loading || (myBoard?.field_cards?.length || 0) >= 5} onClick={() => void runAction("play_remove_character", { instance_id: card.instance_id })}>현장에 등장</button><button type="button" style={st.smallButton} disabled={loading || Boolean(myBoard?.partner_mr_card)} onClick={() => void runAction("move_card_to_mr_partner", { source: "remove", instance_id: card.instance_id })}>파트너 영역으로</button></div>}</article>)}</div>{!pile.cards.length && <p style={st.muted}>비어 있습니다.</p>}</div>)}</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 10, padding: 12, overflowY: "auto" }}>{[{ label: "내 리무브", cards: myRemoveCards }, { label: "상대 리무브", cards: opponentRemoveCards }].map((pile) => <div key={pile.label} style={{ minWidth: 0, padding: 8, border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, background: "#080d16" }}><h3 style={{ margin: "0 0 8px", fontSize: 11, color: C.blue }}>{pile.label} · {pile.cards.length}장</h3><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(86px,1fr))", gap: 6 }}>{pile.cards.map((card) => <article key={card.instance_id} style={{ border: "1px solid rgba(255,255,255,.1)", borderRadius: 6, padding: 5, background: "#101827", color: C.text, minWidth: 0 }}><button type="button" onClick={() => openDetails(card)} style={{ width: "100%", border: 0, padding: 0, background: "transparent", color: C.text }}>{infoFor(card)?.imageUrl ? <img src={infoFor(card).imageUrl} alt={nameOf(card)} style={{ width: "100%", aspectRatio: "3/4", objectFit: "contain" }} /> : <div style={st.faceDown} />}<div style={{ fontSize: 9, lineHeight: 1.3, overflowWrap: "anywhere", marginTop: 4 }}>{nameOf(card)}</div></button>{pile.label === "내 리무브" && !game.game_over && !pending && <div style={{ display: "grid", gap: 3, marginTop: 5 }}><button type="button" style={st.smallButton} disabled={loading} onClick={() => void runAction("move_remove_card_to_hand", { instance_id: card.instance_id })}>손패로 가져오기</button><button type="button" style={st.smallButton} disabled={loading || myFieldCharacterCount >= 5} onClick={() => void runAction("play_remove_character", { instance_id: card.instance_id })}>현장에 등장</button><button type="button" style={st.smallButton} disabled={loading || Boolean(myBoard?.partner_mr_card)} onClick={() => void runAction("move_card_to_mr_partner", { source: "remove", instance_id: card.instance_id })}>파트너 영역으로</button></div>}</article>)}</div>{!pile.cards.length && <p style={st.muted}>비어 있습니다.</p>}</div>)}</div>
         </section>
       </div>}
 
@@ -953,6 +984,24 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
           <button type="button" disabled={loadingOpponentDeck} onClick={() => void openOpponentDeckAfterGame()} style={{ width: "100%", padding: "12px 16px", border: "1px solid #22c55e", borderRadius: 10, background: "#166534", color: "white", fontSize: 13, fontWeight: 900, cursor: loadingOpponentDeck ? "wait" : "pointer", opacity: loadingOpponentDeck ? .6 : 1 }}>{loadingOpponentDeck ? "상대 덱을 불러오는 중…" : "상대 덱 보기 →"}</button>
           <button type="button" disabled={loadingPlayHistory} onClick={() => void openPlayHistory()} style={{ width: "100%", padding: "11px 16px", marginTop: 8, border: "1px solid rgba(147,197,253,.45)", borderRadius: 10, background: "#17243a", color: "#dbeafe", fontSize: 12, fontWeight: 850 }}>{loadingPlayHistory ? "플레이 기록을 불러오는 중…" : "플레이 기록 보기 →"}</button>
           <p style={{ ...st.muted, marginTop: 12 }}>상대 덱과 이번 게임의 턴별 기록을 확인할 수 있습니다.</p>
+        </section>
+      </div>}
+
+
+      {showActionLog && <div role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowActionLog(false); }} style={{ position: "fixed", inset: 0, zIndex: 100250, display: "flex", alignItems: "center", justifyContent: "center", padding: 12, background: "rgba(0,0,0,.9)", backdropFilter: "blur(5px)" }}>
+        <section role="dialog" aria-modal="true" aria-label="전체 게임 행동 로그" style={{ width: "min(100%, 760px)", maxHeight: "92dvh", display: "flex", flexDirection: "column", overflow: "hidden", border: "1px solid rgba(147,197,253,.35)", borderRadius: 12, background: "#101827", color: C.text }}>
+          <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, padding: 12, borderBottom: "1px solid rgba(255,255,255,.1)" }}>
+            <div><h2 style={{ margin: 0, fontSize: 16, fontWeight: 900 }}>게임 행동 로그</h2><p style={{ ...st.muted, marginTop: 4 }}>가장 최근 행동부터 과거 순서로 표시됩니다. 아래로 스크롤해 이전 기록을 확인하세요.</p></div>
+            <button type="button" style={st.button} disabled={loadingActionLog} onClick={() => void refreshActionLog()}>{loadingActionLog ? "새로고침 중…" : "새로고침"}</button>
+            <button type="button" style={st.smallButton} onClick={() => setShowActionLog(false)}>닫기 ✕</button>
+          </header>
+          <div style={{ padding: 10, overflowY: "auto", display: "grid", gap: 6 }}>
+            {!actionLog.length && <p style={st.muted}>{loadingActionLog ? "기록을 불러오는 중…" : "저장된 행동 로그가 없습니다."}</p>}
+            {actionLog.map((entry, index) => <article key={entry.id || (String(entry.created_at) + "-" + index)} style={{ display: "grid", gridTemplateColumns: "minmax(96px,auto) minmax(0,1fr)", gap: 10, alignItems: "start", padding: "9px 10px", border: "1px solid rgba(255,255,255,.08)", borderRadius: 7, background: index === 0 ? "rgba(30,58,95,.3)" : "#080d16" }}>
+              <div><div style={{ color: C.gold, fontSize: 10, fontWeight: 850 }}>턴 {entry.turn_number ?? "-"}</div><div style={{ marginTop: 3, color: C.muted, fontSize: 9 }}>{entry.created_at ? new Date(entry.created_at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "시간 미상"}</div></div>
+              <div><div style={{ color: entry.actor_user_id === userId ? C.green : C.blue, fontSize: 9, fontWeight: 800, marginBottom: 3 }}>{entry.actor_user_id === userId ? "나" : (entry.actor_display_name || "플레이어")}{entry.actor_seat ? " · 좌석 " + entry.actor_seat : ""}</div><div style={{ overflowWrap: "anywhere", fontSize: 11, lineHeight: 1.6 }}>{entry.action_label}</div></div>
+            </article>)}
+          </div>
         </section>
       </div>}
 
