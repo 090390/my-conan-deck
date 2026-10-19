@@ -424,8 +424,8 @@ function normalizeCard(card, translations, keywordTagData = {}) {
     if (isCard1119) {
       text = text
         .replace(/적\s*&\s*적/gu, '적&황')
-        .replace(/【적】\s*(?:또는|혹은)\s*【적】(?=\s*캐릭터)/gu, '【적】 또는 【황】')
-        .replace(/\[적\]\s*(?:또는|혹은)\s*\[적\](?=\s*캐릭터)/gu, '[적] 또는 [황]');
+        .replace(/【적】\s*(?:또는|혹은)\s*【적】(?=\s*(?:캐릭터|카드))/gu, '【적】 또는 【황】')
+        .replace(/\[적\]\s*(?:또는|혹은)\s*\[적\](?=\s*(?:캐릭터|카드))/gu, '[적] 또는 [황]');
     } else if (japaneseRedYellowPair) {
       text = text
         .replace(/적\s*&\s*적/gu, '적&황')
@@ -434,8 +434,8 @@ function normalizeCard(card, translations, keywordTagData = {}) {
     } else if (japaneseYellowRedPair) {
       text = text
         .replace(/적\s*&\s*적/gu, '황&적')
-        .replace(/【적】\s*(?:또는|혹은)\s*【적】(?=\s*캐릭터)/gu, '【황】 또는 【적】')
-        .replace(/\[적\]\s*(?:또는|혹은)\s*\[적\](?=\s*캐릭터)/gu, '[황] 또는 [적]');
+        .replace(/【적】\s*(?:또는|혹은)\s*【적】(?=\s*(?:캐릭터|카드))/gu, '【황】 또는 【적】')
+        .replace(/\[적\]\s*(?:또는|혹은)\s*\[적\](?=\s*(?:캐릭터|카드))/gu, '[황] 또는 [적]');
     }
     return text;
   };
