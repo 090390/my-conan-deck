@@ -18,7 +18,7 @@ DECLARE
     FROM jsonb_array_elements(coalesce(v_board.field_cards,'[]'::jsonb)) AS field_card(value)
     WHERE upper(coalesce(field_card.value ->> 'card_type','')) = 'CHARACTER'
   ) >= 5 THEN
-    RAISE EXCEPTION '현장에 캐릭터 카드가 이미 5장 있습니다.';
+    RAISE EXCEPTION '현장 캐릭터 수 제한을 초과했습니다.';
   END IF;$char_guard$;
   v_marker text;
 BEGIN
