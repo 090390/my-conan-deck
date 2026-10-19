@@ -21,6 +21,7 @@ DECLARE
   v_remove_column text;
   v_clean_card jsonb;
   v_clean_existing jsonb;
+  v_found_card boolean := false;
 BEGIN
   IF v_user IS NULL OR NOT EXISTS (SELECT 1 FROM public.room_players WHERE room_id=p_room_id AND user_id=v_user) THEN
     RAISE EXCEPTION '이 방의 참가자만 MR 이동 처리를 할 수 있습니다.';
@@ -70,7 +71,8 @@ BEGIN
           'WHERE room_id=$1 AND user_id=$2',
           v_col.column_name,v_col.column_name
         ) USING p_room_id,p_owner_user_id,v_card_id;
-        IF v_col.column_name ILIKE '%remove%' AND v_col.column_name NOT ILIKE '%count%' THEN
+        v_found_card := true;
+      IF v_col.column_name ILIKE '%remove%' AND v_col.column_name NOT ILIKE '%count%' THEN
           UPDATE public.room_player_turn_boards SET remove_count=greatest(0,coalesce(remove_count,0)-1),updated_at=now()
             WHERE room_id=p_room_id AND user_id=p_owner_user_id;
         ELSIF v_col.column_name ILIKE '%evidence%' AND v_col.column_name NOT ILIKE '%count%' THEN
@@ -83,6 +85,9 @@ BEGIN
       END IF;
     END IF;
   END LOOP;
+  IF NOT v_found_card THEN
+    RAISE EXCEPTION '현장을 떠난 MR 카드를 현재 카드 영역에서 찾지 못했습니다.';
+  END IF;
 
   -- If an MR is already in the partner area, a newly departed MR replaces it and the previous one moves to remove.
   IF v_existing IS NOT NULL AND coalesce(v_existing ->> 'instance_id','') <> '' THEN
