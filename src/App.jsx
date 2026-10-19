@@ -423,7 +423,7 @@ function normalizeCard(card, translations, keywordTagData = {}) {
     text = text.replace(/뒷면인 증거 3개를 앞면으로 뒤집는다/gu, '뒷면 증거 3개를 앞면으로 뒤집는다');
     if (isCard1119) {
       text = text
-        .replace(/\[적\s*&\s*적\]/gu, '[적&황]')
+        .replace(/적\s*&\s*적/gu, '적&황')
         .replace(/\[적\]\s*또는\s*\[적\](?=\s*캐릭터)/gu, '[적] 또는 [황]');
     } else if (japaneseRedYellowPair) {
       text = text
@@ -431,7 +431,7 @@ function normalizeCard(card, translations, keywordTagData = {}) {
         .replace(/\[적\]\s*또는\s*\[적\](?=\s*캐릭터)/gu, '[적] 또는 [황]');
     } else if (japaneseYellowRedPair) {
       text = text
-        .replace(/\[적\s*&\s*적\]/gu, '[황&적]')
+        .replace(/적\s*&\s*적/gu, '황&적')
         .replace(/\[적\]\s*또는\s*\[적\](?=\s*캐릭터)/gu, '[황] 또는 [적]');
     }
     return text;
