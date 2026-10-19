@@ -448,7 +448,7 @@ function normalizeCard(card, translations, keywordTagData = {}) {
   const traitAliases = new Map([['怪盗', '괴도'], ['高校生', '고등학생'], ['マジシャン', '마술사'], ['探偵', '탐정'], ['小学生', '초등학생'], ['警察', '경찰'], ['刑事', '형사'], ['公安', '공안'], ['黒ずくめの組織', '검은 조직'], ['犯人', '범인']]);
   const traitRaw = [translated.traitsKo, translated.traits_ko, translated.traits, translated.category1Ko, translated.category2Ko, translated.category3Ko,
     ...objects.flatMap((object) => [object.traitsKo, object.traits_ko, object.traits, object.trait, object.characteristics, object.characteristic,
-      object.category1Ko, object.category2Ko, object.category3Ko, object.category1: fixKoreanCardText(category1), object.category_1, object.category2: fixKoreanCardText(category2), object.category_2, object.category3: fixKoreanCardText(category3), object.category_3])];
+      object.category1Ko, object.category2Ko, object.category3Ko, object.category1, object.category_1, object.category2, object.category_2, object.category3, object.category_3])];
   const traitTokens = traitRaw.flatMap((value) => Array.isArray(value) ? value : typeof value === 'string' ? value.split(/[|｜,，、/／·・]+/u) : [])
     .map((value) => String(value).trim()).filter(Boolean)
     .map((value) => traitAliases.get(value) || value)
