@@ -196,8 +196,37 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
             p_room_id: roomId, p_action: action, p_payload: payload,
           });
       if (rpcError) throw rpcError;
-      setGame(data && typeof data === "object" ? data : null);
-      setNotice(data?.last_action_label || "행동을 반영했습니다.");
+      let updatedGame = data && typeof data === "object" ? data : null;
+      const oldBoards = Array.isArray(game?.boards) ? game.boards : [];
+      const newBoards = Array.isArray(updatedGame?.boards) ? updatedGame.boards : [];
+      if (action !== "move_field_card" && updatedGame) {
+        const departedMrs = [];
+        for (const oldBoard of oldBoards) {
+          const newBoard = newBoards.find((board) => board.user_id === oldBoard.user_id);
+          const newFieldIds = new Set((newBoard?.field_cards || []).map((card) => String(card.instance_id)));
+          for (const card of oldBoard.field_cards || []) {
+            const rarity = String(card.rarity || cardsByKey.get(String(card.key))?.rarity || "").toUpperCase();
+            if (rarity === "MR" && card.instance_id && !newFieldIds.has(String(card.instance_id))) {
+              departedMrs.push({ owner_user_id: oldBoard.user_id, card });
+            }
+          }
+        }
+        for (const departure of departedMrs) {
+          try {
+            const { data: recovered, error: recoveryError } = await supabase.rpc("auto_store_departed_mr_partner_v2", {
+              p_room_id: roomId,
+              p_owner_user_id: departure.owner_user_id,
+              p_card: departure.card,
+            });
+            if (recoveryError) throw recoveryError;
+            if (recovered && typeof recovered === "object") updatedGame = recovered;
+          } catch (recoveryError) {
+            setError(recoveryError?.message || "현장을 떠난 MR 카드를 MR 파트너 에이리어로 이동하지 못했습니다.");
+          }
+        }
+      }
+      setGame(updatedGame);
+      setNotice(updatedGame?.last_action_label || data?.last_action_label || "행동을 반영했습니다.");
       if (action === "next_hint") setSelectedNextHint("");
       if (["declare_contact", "attack_character", "attack_evidence", "guard_with_character", "decline_guard", "guard_contact_with_character", "decline_contact_guard", "contact_use_cutin", "contact_pass_cutin"].includes(action)) setSelectedAttacker("");
       if ((action === "move_field_card" || action === "move_hand_card") && (payload.owner_user_id || userId) === userId) setDetailCard(null);
@@ -208,7 +237,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
       showBlockedReason(message);
       return false;
     } finally { setLoading(false); }
-  }, [roomId, userId, loading]);
+  }, [roomId, userId, loading, game, cardsByKey]);
 
   const boards = Array.isArray(game?.boards) ? game.boards : [];
   const myBoard = boards.find((board) => board.user_id === userId);
