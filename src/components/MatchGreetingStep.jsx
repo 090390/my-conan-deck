@@ -56,7 +56,7 @@ export default function MatchGreetingStep({ roomId, userId, players = [], onComp
     if (completedSignature.current === signature) return undefined;
     completedSignature.current = signature;
     setShowBubbles(true);
-    completionTimer.current = window.setTimeout(() => onComplete(), 1800);
+    completionTimer.current = window.setTimeout(() => onComplete(), 7000);
     return () => {
       if (completionTimer.current) window.clearTimeout(completionTimer.current);
     };
