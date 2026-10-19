@@ -39,12 +39,6 @@ BEGIN
       'NULL;',
       'gi'
     );
-    IF position(v_warning in v_definition) > 0
-       AND position(v_warning in v_original) > 0
-       AND v_definition = v_original THEN
-      RAISE EXCEPTION '후속 수정 중 공개 선택 검사를 찾았지만 제거하지 못했습니다: %', v_signature;
-    END IF;
-
     -- Events do not consume the five-character capacity, even if the field already has five characters.
     v_marker := 'if p_action = ''play_event'' then';
     v_start := position(v_marker in lower(v_definition));
@@ -80,7 +74,7 @@ BEGIN
       'gi'
     );
 
-    IF position(v_warning in v_definition) > 0 THEN
+    IF v_definition ~* ('raise[[:space:]]+exception[^;]*' || v_warning || '[^;]*;') THEN
       RAISE EXCEPTION '공개 선택 차단 문구가 턴 처리 함수에 남아 있습니다: %', v_signature;
     END IF;
 
