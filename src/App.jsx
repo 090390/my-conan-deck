@@ -217,7 +217,7 @@ function cardHasAbilityDot(card, kind) {
   if (kind === 'mislead' && tags.some((tag) => /미스리드|ミスリード/iu.test(String(tag)))) return true;
   if (kind === 'investigation' && tags.some((tag) => /수사|捜査/iu.test(String(tag)))) return true;
 
-  const sourceText = [card?.ability, card?.originalAbility: fixKoreanCardText(originalAbility), card?.hiramekiEffect: fixKoreanCardText(hiramekiEffect), card?.cutInEffect]
+  const sourceText = [card?.ability, card?.originalAbility, card?.hiramekiEffect, card?.cutInEffect]
     .map((value) => String(value ?? ''))
     .join('\n');
   // 숫자/X가 붙은 실제 능력 표기를 찾습니다. 능력을 가진 다른 캐릭터를 언급하는 문구만으로는 점을 붙이지 않습니다.
