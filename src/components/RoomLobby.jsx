@@ -2,6 +2,9 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import MatchStartFlow from "./MatchStartFlow";
 import MatchTurnBoard from "./MatchTurnBoard";
+import MatchGreetingStep from "./MatchGreetingStep";
+
+const ACTIVE_ROOM_STORAGE_KEY = "conan-active-private-room-v1";
 
 function normalizeCardIdentifier(value) {
   const raw = String(value ?? "").trim().toLocaleUpperCase();
@@ -38,6 +41,8 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
   const [inviteCodeInput, setInviteCodeInput] = useState("");
   const [room, setRoom] = useState(null);
   const [players, setPlayers] = useState([]);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [greetingFinished, setGreetingFinished] = useState(false);
   const [userId, setUserId] = useState("");
   const [readyDeckSignature, setReadyDeckSignature] = useState("");
   const [matchPhase, setMatchPhase] = useState("waiting");
@@ -48,6 +53,61 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    let savedRoom = null;
+    try {
+      savedRoom = JSON.parse(localStorage.getItem(ACTIVE_ROOM_STORAGE_KEY) || "null");
+    } catch {
+      localStorage.removeItem(ACTIVE_ROOM_STORAGE_KEY);
+    }
+    if (!savedRoom?.id || !savedRoom?.inviteCode) return undefined;
+
+    async function restoreRoom() {
+      try {
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) throw sessionError;
+        let session = sessionData?.session;
+        if (!session) {
+          const { data, error: signInError } = await supabase.auth.signInAnonymously();
+          if (signInError) throw signInError;
+          session = data?.session;
+        }
+        if (!session?.user?.id) throw new Error("로그인 세션을 복원하지 못했습니다.");
+        const { data: member, error: memberError } = await supabase
+          .from("room_players")
+          .select("room_id")
+          .eq("room_id", savedRoom.id)
+          .eq("user_id", session.user.id)
+          .maybeSingle();
+        if (memberError) throw memberError;
+        if (!member) {
+          localStorage.removeItem(ACTIVE_ROOM_STORAGE_KEY);
+          return;
+        }
+        if (!active) return;
+        setUserId(session.user.id);
+        setRoom(savedRoom);
+        setInviteCodeInput(String(savedRoom.inviteCode).toUpperCase());
+        const { data: state, error: stateError } = await supabase.rpc("get_private_match_state", {
+          p_room_id: savedRoom.id,
+        });
+        if (stateError) throw stateError;
+        if (active && state?.phase) setMatchPhase(state.phase);
+      } catch (err) {
+        if (active) setNotice(err?.message || "이전 방 정보를 복원하지 못했습니다. 연결 상태를 확인해 주세요.");
+      }
+    }
+    void restoreRoom();
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    if (room?.id && room?.inviteCode) {
+      localStorage.setItem(ACTIVE_ROOM_STORAGE_KEY, JSON.stringify(room));
+    }
+  }, [room?.id, room?.inviteCode]);
 
   async function ensureSignedIn() {
     const {
@@ -96,6 +156,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
       }
 
       setRoom({ id: result.out_room_id, inviteCode: result.out_invite_code });
+      setGreetingFinished(false);
       setNotice("방이 생성되었습니다. 친구에게 초대 코드를 전달해 주세요.");
     } catch (err) {
       setError(err?.message || "방을 만들지 못했습니다.");
@@ -126,6 +187,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
       if (!result?.out_room_id) throw new Error("입장 결과를 확인할 수 없습니다.");
 
       setRoom({ id: result.out_room_id, inviteCode: code });
+      setGreetingFinished(false);
       setNotice("방에 입장했습니다.");
     } catch (err) {
       setError(err?.message || "방에 입장하지 못했습니다.");
@@ -356,7 +418,9 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
   }
 
   if (room?.id && matchPhase === "playing" && showFieldOnly) {
-    return <MatchTurnBoard roomId={room.id} userId={userId} cards={cards} onLeaveField={() => setShowFieldOnly(false)} />;
+    return greetingFinished
+      ? <MatchTurnBoard roomId={room.id} userId={userId} cards={cards} inviteCode={room.inviteCode} onLeaveField={() => setShowFieldOnly(false)} />
+      : <MatchGreetingStep roomId={room.id} userId={userId} players={players} onComplete={() => setGreetingFinished(true)} />;
   }
 
   const panelStyle = {
@@ -457,15 +521,31 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
             {myPlayer?.is_ready ? (
               <button type="button" style={{ ...buttonStyle, background: "#4b2637" }} disabled={loading} onClick={cancelReady}>{loading ? "처리 중..." : "준비 취소 · 덱 수정하기"}</button>
             ) : (
-              <button type="button" style={{ ...buttonStyle, background: canReady ? "#166534" : "#263040", opacity: !canReady || loading ? 0.55 : 1 }} disabled={!canReady || loading} onClick={markReady}>{loading ? "저장 중..." : "덱을 비공개로 제출하고 준비 완료"}</button>
+              <button type="button" style={{ ...buttonStyle, background: canReady ? "#166534" : "#263040", opacity: !canReady || loading ? 0.55 : 1 }} disabled={!canReady || loading} onClick={() => setShowTermsModal(true)}>{loading ? "저장 중..." : "덱을 비공개로 제출하고 준비 완료"}</button>
             )}
             <p style={{ margin: "10px 0 0", color: "#74839a", fontSize: 11, lineHeight: 1.6 }}>상대에게는 준비 여부만 표시됩니다. 카드별 덱 목록은 별도의 비공개 테이블에 저장됩니다.</p>
           </div>
 
-          {bothReady && <MatchStartFlow roomId={room.id} userId={userId} players={players} cards={cards} onPhaseChange={handleMatchPhaseChange} />}
+          {bothReady && <MatchStartFlow roomId={room.id} userId={userId} players={players} cards={cards} inviteCode={room.inviteCode} onPhaseChange={handleMatchPhaseChange} />}
         </>
       )}
 
+      {showTermsModal && room && <div role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowTermsModal(false); }} style={{ position: "fixed", inset: 0, zIndex: 100500, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, background: "rgba(0,0,0,.88)", backdropFilter: "blur(5px)" }}>
+        <section role="dialog" aria-modal="true" aria-label="사이트 이용 안내" style={{ width: "min(100%, 620px)", maxHeight: "90dvh", overflowY: "auto", padding: 22, border: "1px solid rgba(147,197,253,.35)", borderRadius: 14, background: "#101827", color: "#e8edf7", boxShadow: "0 24px 70px rgba(0,0,0,.7)" }}>
+          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 900 }}>시작 전 안내</h2>
+          <div style={{ marginTop: 12, color: "#cbd5e1", fontSize: 12, lineHeight: 1.9, whiteSpace: "pre-line" }}>{[
+            "본 사이트는 개인 사용 목적의 비영리 웹사이트로, AI 바이브코딩을 이용해 만들어졌습니다.",
+            "카드 데이터 및 이미지를 영리적으로 사용하거나 구현해 둔 모의전 페이지의 기능으로 수익을 낼 생각은 전혀 없으며, 만일 개인적 사용이라는 취지에 부합하지 않는 사용 사례가 발견될 경우 사이트를 즉시 폐쇄하거나 지인제로 전환할 예정입니다.",
+            "부디 물의를 일으키지 않을 범위 내에서만 사용해 주세요.",
+            "",
+            "이상의 안내를 모두 확인하셨다면 확인 버튼을 눌러 다음으로 진행해 주세요."
+          ].join("\n")}</div>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 18 }}>
+            <button type="button" style={{ ...buttonStyle, background: "#374151" }} disabled={loading} onClick={() => setShowTermsModal(false)}>취소</button>
+            <button type="button" style={{ ...buttonStyle, background: "#166534" }} disabled={loading} onClick={() => { setShowTermsModal(false); void markReady(); }}>확인 · 제출하고 준비 완료</button>
+          </div>
+        </section>
+      </div>}
       {notice && <p role="status" style={{ color: "#86efac", marginTop: 16, fontSize: 13 }}>{notice}</p>}
       {error && <p role="alert" style={{ color: "#fda4af", marginTop: 16, fontSize: 13, overflowWrap: "anywhere" }}>오류: {error}</p>}
     </section>
