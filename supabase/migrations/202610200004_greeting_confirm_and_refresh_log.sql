@@ -235,6 +235,7 @@ DECLARE
   v_new_remove_count integer := 0;
   v_old_deck_count integer := 0;
   v_new_deck_count integer := 0;
+  v_refresh_detected boolean := false;
   v_turn_number integer;
   v_actor uuid := auth.uid();
 BEGIN
@@ -257,17 +258,30 @@ BEGIN
     EXIT;
   END LOOP;
 
+  v_refresh_detected := false;
   IF v_old_remove IS NOT NULL THEN
     v_old_remove_count := jsonb_array_length(v_old_remove);
     v_new_remove_count := jsonb_array_length(coalesce(v_new_remove,'[]'::jsonb));
+
+    -- Detect the refill from deck contents, even if the server updates deck and remove pile in separate statements.
+    IF v_old_remove_count > 0 AND v_old_deck IS DISTINCT FROM v_new_deck THEN
+      SELECT EXISTS (
+        SELECT 1
+        FROM jsonb_array_elements(v_old_remove) AS old_remove_card(value)
+        JOIN jsonb_array_elements(v_new_deck) AS new_deck_card(value)
+          ON old_remove_card.value ->> 'instance_id' = new_deck_card.value ->> 'instance_id'
+        WHERE coalesce(old_remove_card.value ->> 'instance_id','') <> ''
+          AND NOT EXISTS (
+            SELECT 1
+            FROM jsonb_array_elements(v_old_deck) AS prior_deck_card(value)
+            WHERE prior_deck_card.value ->> 'instance_id' = old_remove_card.value ->> 'instance_id'
+          )
+      ) INTO v_refresh_detected;
+    END IF;
   END IF;
 
-  -- A refresh empties the remove pile into a newly shuffled deck after the player's deck runs out.
-  -- Requiring a changed, non-empty deck distinguishes this from simply taking the final remove card into hand.
-  IF v_old_remove_count > 0
-     AND v_new_remove_count = 0
-     AND v_new_deck_count > 0
-     AND v_old_deck IS DISTINCT FROM v_new_deck THEN
+  -- A refresh is confirmed when at least one card from the old remove pile reappears in a changed deck.
+  IF v_refresh_detected THEN
     SELECT turn_number INTO v_turn_number
       FROM public.room_match_states
       WHERE room_id=NEW.room_id;
