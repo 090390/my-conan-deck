@@ -245,8 +245,13 @@ BEGIN
     SET evidence_count=coalesce(evidence_count,0)+1,updated_at=now()
     WHERE room_id=p_room_id AND user_id=v_opponent_id;
 
-  SELECT turn_number INTO v_turn_number
-    FROM public.room_match_states
+  SELECT CASE
+      WHEN coalesce(to_jsonb(m)->>'turn_number','') ~ '^[0-9]+$'
+        THEN (to_jsonb(m)->>'turn_number')::integer
+      ELSE NULL
+    END
+    INTO v_turn_number
+    FROM public.room_match_states m
     WHERE room_id=p_room_id;
   v_action_label := format(
     '리프레시: %s가 리무브 에이리어의 %s장을 전체 셔플해 덱으로 되돌렸고, 상대에게 증거 1장을 추가했습니다.',
@@ -262,6 +267,7 @@ BEGIN
     WHERE n.nspname='public' AND c.relname='room_match_states'
       AND t.tgname='private_match_action_log_capture'
       AND NOT t.tgisinternal
+      AND t.tgenabled <> 'D'
   ) INTO v_has_action_log_trigger;
 
   IF v_has_action_log_trigger THEN
