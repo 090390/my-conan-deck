@@ -220,9 +220,11 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
     if (loading) return false;
     setLoading(true); setError(""); setNotice("");
     try {
-      const { data, error: rpcError } = action === "cancel_next_hint"
-        ? await supabase.rpc("cancel_private_next_hint_v2", { p_room_id: roomId })
-        : action === "move_evidence_to_deck_top"
+      const { data, error: rpcError } = action === "refresh_deck"
+        ? await supabase.rpc("refresh_private_deck_v1", { p_room_id: roomId })
+        : action === "cancel_next_hint"
+          ? await supabase.rpc("cancel_private_next_hint_v2", { p_room_id: roomId })
+          : action === "move_evidence_to_deck_top"
           ? await supabase.rpc("move_private_evidence_to_deck_top_v1", {
               p_room_id: roomId,
               p_owner_user_id: payload.owner_user_id,
@@ -306,7 +308,9 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
         }
       }
       setGame(updatedGame);
-      setNotice(updatedGame?.last_action_label || data?.last_action_label || "행동을 반영했습니다.");
+      setNotice(action === "refresh_deck"
+        ? "리프레시를 완료했습니다. 리무브 에이리어의 카드를 셔플해 덱으로 되돌렸고, 상대에게 증거 1장을 추가했습니다."
+        : updatedGame?.last_action_label || data?.last_action_label || "행동을 반영했습니다.");
       if (action === "next_hint") setSelectedNextHint("");
       if (["declare_contact", "attack_character", "attack_evidence", "guard_with_character", "decline_guard", "guard_contact_with_character", "decline_contact_guard", "contact_use_cutin", "contact_pass_cutin"].includes(action)) setSelectedAttacker("");
       if ((action === "move_field_card" || action === "move_hand_card") && (payload.owner_user_id || userId) === userId) setDetailCard(null);
@@ -822,6 +826,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
             <button type="button" style={{ ...st.smallButton, width: "100%" }} disabled={loading || n(game.my_deck_count) < 1 || Boolean(game.deck_peek_locked)} onClick={() => invokeDeckPeek(userId, n(game.my_deck_count))}>N장 보기</button>
             <button type="button" style={{ ...st.smallButton, width: "100%" }} disabled={loading || n(game.my_deck_count) < 1 || Boolean(game.deck_peek_locked) || Boolean(pending)} onClick={invokeRemoveTopDeck}>N장 리무브</button>
             <button type="button" style={{ ...st.smallButton, width: "100%" }} disabled={loading} onClick={invokePromptDraw}>N장 드로우</button>
+            {n(game.my_deck_count) === 0 && <button type="button" style={{ ...st.smallButton, width: "100%", background: "#263b56", borderColor: "rgba(147,197,253,.48)", color: "#eaf2ff", fontWeight: 900 }} disabled={loading || Boolean(pending) || Boolean(game.deck_peek_locked)} onClick={() => void runAction("refresh_deck")}>리프레시</button>}
           </div>}
         </div>
 
