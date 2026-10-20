@@ -11,7 +11,6 @@ export default function MatchGreetingStep({ roomId, userId, players = [], onComp
   const [secondsLeft, setSecondsLeft] = useState(30);
   const [showBubbles, setShowBubbles] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const completionTimer = useRef(null);
   const completedSignature = useRef("");
   const onCompleteRef = useRef(onComplete);
 
