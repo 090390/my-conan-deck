@@ -231,10 +231,11 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
               p_instance_id: payload.instance_id,
             })
           : action === "move_field_mr_to_partner"
-            ? await supabase.rpc("move_private_field_mr_to_partner_v1", {
+            ? await supabase.rpc("move_private_field_mr_to_partner_v2", {
                 p_room_id: roomId,
                 p_owner_user_id: payload.owner_user_id,
                 p_instance_id: payload.instance_id,
+                p_card_rarity: payload.rarity,
               })
             : action === "adjust_character_ap"
               ? await supabase.rpc("adjust_private_character_ap_v1", {
@@ -266,7 +267,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
           const newFieldIds = new Set((newBoard?.field_cards || []).map((card) => String(card.instance_id)));
           for (const card of oldBoard.field_cards || []) {
             const rarity = String(card.rarity || cardsByKey.get(String(card.key))?.rarity || "").trim().toUpperCase();
-            if (rarity === "MR" && card.instance_id && !newFieldIds.has(String(card.instance_id))) {
+            if (action !== "contact_use_disguise" && rarity === "MR" && card.instance_id && !newFieldIds.has(String(card.instance_id))) {
               // The server helper requires rarity on the card object; pass the resolved, normalized rarity.
               departedMrs.push({ owner_user_id: oldBoard.user_id, card: { ...card, rarity } });
             }
@@ -362,7 +363,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   const opponentEventCard = opponentBoard ? cardsByKey.get(String(opponentBoard.event_key)) : null;
 
   const st = {
-    root: { minHeight: "100vh", padding: "clamp(10px, 2vw, 22px)", background: C.bg, color: C.text, fontFamily: 'Inter, Pretendard, "Noto Sans KR", sans-serif' },
+    root: { position: "fixed", inset: 0, boxSizing: "border-box", width: "100vw", height: "100dvh", overflowY: "auto", zIndex: 90000, padding: "clamp(10px, 2vw, 22px)", background: C.bg, color: C.text, fontFamily: 'Inter, Pretendard, "Noto Sans KR", sans-serif' },
     panel: { minWidth: 0, padding: 12, border: `2px solid ${C.border}`, borderRadius: 7, background: C.panel2 },
     zoneTitle: { margin: "0 0 10px", fontSize: 12, letterSpacing: ".04em", color: C.blue, fontWeight: 900 },
     button: { border: "1px solid rgba(255,255,255,.16)", borderRadius: 7, padding: "8px 10px", background: "#263d63", color: "white", cursor: loading ? "wait" : "pointer", fontSize: 11, fontWeight: 800, opacity: loading ? 0.6 : 1 },
@@ -484,7 +485,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
     const cardRarity = String(card?.rarity || cardsByKey.get(String(card?.key))?.rarity || "").trim().toUpperCase();
     if (destination === "remove" && cardRarity === "MR") {
       if (!window.confirm(`${nameOf(card)}는 MR 카드이므로 리무브로 보내지 않고 MR 파트너 에이리어로 이동합니다. 계속할까요?`)) return;
-      void runAction("move_field_mr_to_partner", { instance_id: card.instance_id, owner_user_id: ownerId });
+      void runAction("move_field_mr_to_partner", { instance_id: card.instance_id, owner_user_id: ownerId, rarity: cardRarity });
       return;
     }
     const labels = { hand: "소유자의 손패", deck: "소유자의 덱 아래", remove: "리무브 에이리어" };
@@ -1014,11 +1015,11 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
 
       {isContactPending && minimizedModal !== "contact" && <div style={{ position: "fixed", inset: 0, zIndex: 100030, padding: 12, display: "flex", justifyContent: "center", alignItems: "center", background: "rgba(0,0,0,.86)", backdropFilter: "blur(5px)" }}>
         <section onDoubleClick={(event) => minimizeOnDoubleClick(event, "contact")} role="dialog" aria-modal="true" aria-label="컨택 및 컷인 선택" style={{ width: "min(100%, 700px)", maxHeight: "90dvh", overflowY: "auto", padding: 15, border: "1px solid rgba(251,113,133,.6)", borderRadius: 12, background: "#111a2a", color: C.text, boxShadow: "0 24px 70px rgba(0,0,0,.7)" }}>
-          <div style={{ color: C.red, fontSize: 9, letterSpacing: ".15em", fontWeight: 900 }}>CONTACT</div><h2 style={{ margin: "4px 0 7px", fontSize: 18 }}>컨택 발생 · 컷인 선택</h2><p style={{ ...st.muted, marginBottom: 10 }}>수비자가 먼저 컷인 사용 여부를 선택하고, 사용하거나 패스하면 공격자가 차례를 이어받습니다. 공격자와 수비자는 각각 최대 1회 컷인을 사용할 수 있으며, 두 선택이 끝나면 최종 AP를 비교합니다.</p>
+          <div style={{ color: C.red, fontSize: 9, letterSpacing: ".15em", fontWeight: 900 }}>CONTACT</div><h2 style={{ margin: "4px 0 7px", fontSize: 18 }}>컨택 발생 · 컷인 선택</h2><p style={{ ...st.muted, marginBottom: 10 }}>컨택 시점의 AP가 낮은 플레이어부터 컷인 사용 여부를 결정합니다. AP가 같으면 수비자가 먼저입니다. 공격자와 수비자는 각각 최대 1회 컷인을 사용할 수 있으며, 두 선택이 끝나면 최종 AP를 비교합니다.</p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 9 }}>
             {[{ title: "공격자", board: contactAttackerBoard, card: contactAttackerCard, ap: n(pending.attacker_ap) + n(pending.attacker_bonus) }, { title: "수비자", board: contactTargetBoard, card: contactTargetCard, ap: n(pending.target_ap) + n(pending.target_bonus) }].map((entry) => <div key={entry.title} style={{ padding: 8, border: "1px solid rgba(255,255,255,.1)", borderRadius: 8, background: "#080d16", minWidth: 0 }}><div style={{ fontSize: 9, color: C.muted }}>{entry.title} · {entry.board?.display_name || "플레이어"}</div>{entry.card && <button type="button" onClick={() => openDetails(entry.card)} style={{ display: "block", width: "100%", padding: 0, marginTop: 6, border: 0, background: "transparent", color: C.text }}>{infoFor(entry.card)?.imageUrl ? <img src={infoFor(entry.card).imageUrl} alt={nameOf(entry.card)} style={{ width: "100%", maxHeight: 175, aspectRatio: "3/4", objectFit: "contain" }} /> : <div style={st.faceDown} />}<span style={{ display: "block", fontSize: 10, marginTop: 5, overflowWrap: "anywhere" }}>{nameOf(entry.card)}</span></button>}<strong style={{ display: "block", marginTop: 8, fontSize: 16 }}>AP {entry.ap}</strong></div>)}
           </div>
-          {pending.next_responder_user_id === userId ? <><p style={{ fontSize: 11, color: C.gold, margin: "12px 0 7px" }}>{userId === pending.target_user_id ? "수비자 차례: 컷인 사용 여부를 선택해 주세요." : "수비자가 패스했습니다. 이제 공격자가 컷인 사용 여부를 선택합니다."}</p><div style={{ display: "grid", gap: 6 }}>{myHand.filter((card) => n(card.cut_in_bonus) > 0).map((card) => <button key={card.instance_id} type="button" style={{ ...st.button, background: "#164e63" }} disabled={loading} onClick={() => void runAction("contact_use_cutin", { instance_id: card.instance_id })}>{nameOf(card)} · 컷인 +{n(card.cut_in_bonus)}</button>)}</div>{myHand.every((card) => n(card.cut_in_bonus) <= 0) && <p style={{ ...st.muted, marginTop: 6 }}>컷인 사용 여부를 선택해 주세요. 사용하지 않으면 다음 단계로 진행됩니다.</p>}<button type="button" style={{ ...st.button, background: "#273244", width: "100%", marginTop: 8 }} disabled={loading} onClick={() => void runAction("contact_pass_cutin")}>{userId === pending.target_user_id ? "컷인 없이 공격자에게 넘기기" : "컷인 없이 최종 AP 비교"}</button></> : <p style={{ margin: "12px 0 0", fontSize: 11, color: C.muted }}>{pending.next_responder_user_id === pending.target_user_id ? "수비자가 컷인 사용 여부를 선택하고 있습니다." : "공격자가 컷인 사용 여부를 선택하고 있습니다."}</p>}
+          {pending.next_responder_user_id === userId ? <><p style={{ fontSize: 11, color: C.gold, margin: "12px 0 7px" }}>{userId === pending.target_user_id ? "현재 순서: 수비자 · 컷인 사용 여부를 선택해 주세요." : "현재 순서: 공격자 · 컷인 사용 여부를 선택해 주세요."}</p><div style={{ display: "grid", gap: 6 }}>{myHand.filter((card) => n(card.cut_in_bonus) > 0).map((card) => <button key={card.instance_id} type="button" style={{ ...st.button, background: "#164e63" }} disabled={loading} onClick={() => void runAction("contact_use_cutin", { instance_id: card.instance_id })}>{nameOf(card)} · 컷인 +{n(card.cut_in_bonus)}</button>)}</div>{myHand.every((card) => n(card.cut_in_bonus) <= 0) && <p style={{ ...st.muted, marginTop: 6 }}>컷인 사용 여부를 선택해 주세요. 사용하지 않으면 다음 단계로 진행됩니다.</p>}<button type="button" style={{ ...st.button, background: "#273244", width: "100%", marginTop: 8 }} disabled={loading} onClick={() => void runAction("contact_pass_cutin")}>{userId === pending.target_user_id ? "컷인 없이 공격자에게 넘기기" : "컷인 없이 최종 AP 비교"}</button></> : <p style={{ margin: "12px 0 0", fontSize: 11, color: C.muted }}>{pending.next_responder_user_id === pending.target_user_id ? "수비자가 컷인 사용 여부를 선택하고 있습니다." : "공격자가 컷인 사용 여부를 선택하고 있습니다."}</p>}
         </section>
       </div>}
 
