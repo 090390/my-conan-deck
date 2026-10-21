@@ -461,6 +461,7 @@ function normalizeCard(card, translations, keywordTagData = {}) {
   const originalType = String(firstValue(objects, ['typeJp', 'type', 'cardType', 'card_type', 'category1', 'category_1']));
   const originalColor = String(firstValue(objects, ['colorJp', 'color', 'colour']));
   const originalSet = String(firstValue(objects, ['setJp', 'package', 'set', 'product']));
+  const originalContain = String(firstValue(objects, ['contain', 'distribution', 'productName', 'product_name']));
   const originalAbility = sourceAbilityJp;
   const originalFlavor = String(firstValue(objects, ['flavorJp', 'flavor_txt', 'flavor', 'flavorText', 'flavor_text']));
   const cardId = String(firstValue(objects, ['cardId', 'card_id']));
@@ -511,6 +512,7 @@ function normalizeCard(card, translations, keywordTagData = {}) {
     ap,
     set: fixKoreanCardText(translated.setKo || firstValue([card], ['setKo']) || originalSet),
     originalSet: fixKoreanCardText(originalSet),
+    originalContain: fixKoreanCardText(originalContain),
     ability: fixKoreanCardText(translated.abilityKo || firstValue([card], ['abilityKo']) || originalAbility),
     originalAbility: fixKoreanCardText(originalAbility),
     hiramekiEffect: fixKoreanCardText(hiramekiEffect),
@@ -634,6 +636,8 @@ function getTorecaSecVariant(card) {
 
 function getTorecaBaseCardName(value) {
   return normalizePriceToken(value)
+    // The source card list uses 羽田秀𠮷 while shop listings commonly use 羽田秀吉.
+    .replace(/𠮷/gu, '吉')
     .replace(/青山剛昌先生サイン入り|サイン入り|サイン|直筆/gu, '')
     .replace(/[・·:：()（）「」『』【】［］\[\]_-]+/gu, '');
 }
@@ -665,6 +669,154 @@ function getTorecaVariantMarkers(value) {
   return markers;
 }
 
+function getTorecaPromoPackInfo(value) {
+  const token = normalizePriceToken(value);
+  const match = token.match(/プロモーションパックVOL\.?(\d+)/u);
+  if (!match) return null;
+  return {
+    volume: Number(match[1]),
+    foil: /キラバージョン|キラ加工|ホイル|箔|ホログラム仕様/u.test(token),
+  };
+}
+
+function getTorecaSourceContain(card) {
+  return String(card?.originalContain || card?.sourceData?.contain || '').trim();
+}
+
+function getTorecaCardIdentity(card) {
+  return String(card?.cardId ?? card?.sourceData?.card_id ?? card?.databaseId ?? '').trim().toLocaleUpperCase();
+}
+
+function getTorecaPrVariantNumber(card) {
+  const source = card?.sourceData && typeof card.sourceData === 'object' ? card.sourceData : {};
+  for (const value of [
+    card?.cardNumber, card?.cardNum,
+    source?.cardNumber, source?.card_number, source?.cardNum, source?.card_num,
+  ]) {
+    const match = String(value ?? '').normalize('NFKC').trim().match(/^PR\s*(\d{3})$/iu);
+    if (match) return Number(match[1]);
+  }
+  return null;
+}
+
+function getTorecaListingNamePrefix(title) {
+  const normalized = String(title ?? '').normalize('NFKC').replace(/𠮷/gu, '吉');
+  const marker = normalized.match(/^(.*?)(?:〖\s*PR\s*〗|【\s*PR\s*】|\[\s*PR\s*\]|［\s*PR\s*］)/iu);
+  const prefix = marker ? marker[1] : normalized.split('《')[0];
+  return getTorecaBaseCardName(prefix);
+}
+
+function getTorecaAssociatedPromoVolume(card, allCards) {
+  const identity = getTorecaCardIdentity(card);
+  const variantNumber = getTorecaPrVariantNumber(card);
+  if (!identity || variantNumber === null || !Array.isArray(allCards)) return null;
+  const siblings = allCards
+    .filter((sibling) =>
+      getTorecaCardIdentity(sibling) === identity
+      && normalizePriceRarity(sibling.originalRarity) === 'PR'
+      && getTorecaPrVariantNumber(sibling) !== null
+    )
+    .sort((a, b) => getTorecaPrVariantNumber(a) - getTorecaPrVariantNumber(b));
+  const currentIndex = siblings.findIndex((sibling) => getTorecaPrVariantNumber(sibling) === variantNumber);
+  if (currentIndex < 0) return null;
+
+  // A challenge-event PR usually precedes its regular/foil promo-pack pair.
+  // Stop at the next challenge-event PR so repeated IDs (e.g. different artwork
+  // across Vol.9 and Vol.15) are attached to the correct nearby pack family.
+  for (let index = currentIndex + 1; index < siblings.length; index += 1) {
+    if (/チャレンジ戦/u.test(normalizePriceToken(getTorecaSourceContain(siblings[index])))) break;
+    const pack = getTorecaPromoPackInfo(getTorecaSourceContain(siblings[index]));
+    if (pack) return pack.volume;
+  }
+  for (let index = currentIndex - 1; index >= 0; index -= 1) {
+    if (/チャレンジ戦/u.test(normalizePriceToken(getTorecaSourceContain(siblings[index])))) break;
+    const pack = getTorecaPromoPackInfo(getTorecaSourceContain(siblings[index]));
+    if (pack) return pack.volume;
+  }
+  return null;
+}
+
+function getTorecaSourceVariantCandidates(card, candidates, allCards, allItems) {
+  if (normalizePriceRarity(card?.originalRarity) !== 'PR') return null;
+  const sourceContain = getTorecaSourceContain(card);
+  const sourceToken = normalizePriceToken(sourceContain);
+  if (!sourceToken) return null;
+
+  if (/チャレンジ戦/u.test(sourceToken)) {
+    let matches = candidates.filter((item) => /チャレンジ戦/u.test(normalizePriceToken(item.title || '')));
+    const sealedMatches = matches.filter((item) =>
+      /未開封/u.test(normalizePriceToken(item.title || ''))
+      && !/開封済/u.test(normalizePriceToken(item.title || ''))
+    );
+    if (sealedMatches.length) matches = sealedMatches;
+
+    // The same card ID can have multiple challenge-event artworks. Use the
+    // neighboring PR number's promo-pack volume to pair the correct listing.
+    if (matches.length > 1) {
+      const volume = getTorecaAssociatedPromoVolume(card, allCards);
+      if (volume !== null) {
+        const identity = getTorecaCardIdentity(card);
+        const relatedPackListings = allItems.filter((item) =>
+          String(item.cardNumber ?? '').normalize('NFKC').trim().toLocaleUpperCase() === identity
+          && normalizePriceRarity(item.rarity) === 'PR'
+          && getTorecaPromoPackInfo(item.title)?.volume === volume
+        );
+        const relatedPrefixes = new Set(relatedPackListings.map((item) => getTorecaListingNamePrefix(item.title)));
+        const artworkMatches = matches.filter((item) => relatedPrefixes.has(getTorecaListingNamePrefix(item.title)));
+        if (artworkMatches.length) matches = artworkMatches;
+      }
+    }
+    return matches;
+  }
+
+  const sourcePack = getTorecaPromoPackInfo(sourceContain);
+  if (sourcePack) {
+    // Exact pack volume + foil status; never let Vol.6 plain and Vol.6 foil
+    // collapse to a generic match on card ID/name alone.
+    return candidates.filter((item) => {
+      const itemPack = getTorecaPromoPackInfo(item.title);
+      return itemPack
+        && itemPack.volume === sourcePack.volume
+        && itemPack.foil === sourcePack.foil;
+    });
+  }
+  return null;
+}
+
+function getTorecaOrdinalVariantCandidates(card, candidates, allCards) {
+  // Fallback for older card data lacking a source-containment label:
+  // use the user's three-card ordering only when the group and shop variants
+  // form one unambiguous challenge / regular-pack / foil-pack trio.
+  const identity = getTorecaCardIdentity(card);
+  if (!identity || !Array.isArray(allCards)) return null;
+  const siblings = allCards
+    .filter((sibling) =>
+      getTorecaCardIdentity(sibling) === identity
+      && normalizePriceRarity(sibling.originalRarity) === 'PR'
+      && getTorecaPrVariantNumber(sibling) !== null
+    )
+    .sort((a, b) => getTorecaPrVariantNumber(a) - getTorecaPrVariantNumber(b));
+  if (siblings.length !== 3) return null;
+  const currentNumber = getTorecaPrVariantNumber(card);
+  const currentIndex = siblings.findIndex((sibling) => getTorecaPrVariantNumber(sibling) === currentNumber);
+  if (currentIndex < 0) return null;
+
+  const challenge = candidates.filter((item) =>
+    /チャレンジ戦/u.test(normalizePriceToken(item.title || ''))
+    && /未開封/u.test(normalizePriceToken(item.title || ''))
+    && !/開封済/u.test(normalizePriceToken(item.title || ''))
+  );
+  const packs = candidates.map((item) => ({ item, pack: getTorecaPromoPackInfo(item.title) }))
+    .filter((entry) => entry.pack);
+  const volumes = [...new Set(packs.map((entry) => entry.pack.volume))];
+  if (challenge.length !== 1 || volumes.length !== 1) return null;
+  const volume = volumes[0];
+  const regular = packs.filter((entry) => entry.pack.volume === volume && !entry.pack.foil);
+  const foil = packs.filter((entry) => entry.pack.volume === volume && entry.pack.foil);
+  if (regular.length !== 1 || foil.length !== 1) return null;
+  return [[challenge[0]], [regular[0].item], [foil[0].item]][currentIndex];
+}
+
 function preferDefaultTorecaVariant(items) {
   let candidates = items;
   // The card database usually describes the card identity, not whether the
@@ -681,7 +833,7 @@ function preferDefaultTorecaVariant(items) {
   return candidates;
 }
 
-function getTorecaPriceMatch(card, snapshot) {
+function getTorecaPriceMatch(card, snapshot, allCards = []) {
   const items = Array.isArray(snapshot?.items) ? snapshot.items : [];
   const cardNumbers = getCardNumberTokens(card);
   const rarity = normalizePriceRarity(card.originalRarity) || normalizePriceRarity(card.rarity);
@@ -781,19 +933,33 @@ function getTorecaPriceMatch(card, snapshot) {
     }
   }
 
+  const sourceVariantCandidates = getTorecaSourceVariantCandidates(card, candidates, allCards, items);
+  let sourceVariantWasApplied = sourceVariantCandidates !== null;
+  if (sourceVariantWasApplied) {
+    candidates = sourceVariantCandidates;
+  } else {
+    const ordinalVariantCandidates = getTorecaOrdinalVariantCandidates(card, candidates, allCards);
+    if (ordinalVariantCandidates !== null) {
+      candidates = ordinalVariantCandidates;
+      sourceVariantWasApplied = true;
+    }
+  }
+
   // If the card metadata explicitly marks a finish/version, honor it.
   const requestedMarkers = [...new Set([
     ...getTorecaVariantMarkers(card.originalName),
     ...getTorecaVariantMarkers(card.originalSet),
   ])];
-  if (requestedMarkers.length) {
-    const variantMatches = candidates.filter((item) => {
-      const itemMarkers = getTorecaVariantMarkers(item.title);
-      return requestedMarkers.every((marker) => itemMarkers.includes(marker));
-    });
-    if (variantMatches.length) candidates = variantMatches;
-  } else {
-    candidates = preferDefaultTorecaVariant(candidates);
+  if (!sourceVariantWasApplied) {
+    if (requestedMarkers.length) {
+      const variantMatches = candidates.filter((item) => {
+        const itemMarkers = getTorecaVariantMarkers(item.title);
+        return requestedMarkers.every((marker) => itemMarkers.includes(marker));
+      });
+      if (variantMatches.length) candidates = variantMatches;
+    } else {
+      candidates = preferDefaultTorecaVariant(candidates);
+    }
   }
 
   // If multiple ordinary printings still remain (e.g. identical card number
@@ -1347,7 +1513,7 @@ export default function App() {
   const mainDeckCount = Object.values(deck).reduce((sum, count) => sum + Number(count || 0), 0);
   const partnerCard = cards.find((card) => card.key === partnerId) || null;
   const eventCard = cards.find((card) => card.key === eventId) || null;
-  const selectedCardPrice = selectedCard ?   getTorecaPriceMatch(selectedCard, priceSnapshot) : null;
+  const selectedCardPrice = selectedCard ? getTorecaPriceMatch(selectedCard, priceSnapshot, cards) : null;
   const deckCards = Object.entries(deck).flatMap(([key, count]) => {
     const card = cards.find((item) => item.key === key);
     const copyLimit = isUnlimitedCopyCard(card) ? MAIN_DECK_LIMIT : SAME_CARD_LIMIT;
@@ -1393,7 +1559,7 @@ export default function App() {
       - deckCards.findIndex((item) => item.deckSlotKey === b.deckSlotKey);
   });
   const deckSlots = Array.from({ length: MAIN_DECK_LIMIT }, (_, index) => sortedDeckCards[index] || null);
-  const deckPriceResults = deckCards.map((card) => ({ card, match: getTorecaPriceMatch(card, priceSnapshot) }));
+  const deckPriceResults = deckCards.map((card) => ({ card, match: getTorecaPriceMatch(card, priceSnapshot, cards) }));
   const deckPriceTotalYen = deckPriceResults.reduce((sum, entry) =>
     sum + (entry.match.status === 'match' ? Math.max(0, Number(entry.match.item?.priceYen) || 0) : 0), 0);
   const deckPriceExcludedEntries = deckPriceResults.filter((entry) => entry.match.status !== 'match');
