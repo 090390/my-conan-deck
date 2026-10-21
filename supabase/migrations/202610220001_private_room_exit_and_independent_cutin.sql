@@ -4,12 +4,7 @@
 DO $patch_independent_contact_cutin$
 DECLARE
   v_definition text;
-  v_start integer;
-  v_tail text;
-  v_rel integer;
-  v_end integer;
-  v_block text;
-  v_patched_block text;
+  v_patched_definition text;
   v_guard text := $guard$if (
   (
     v_user::text = (v_match.pending_action ->> 'target_user_id')
@@ -35,33 +30,19 @@ BEGIN
   END IF;
   v_definition := replace(v_definition, chr(13), '');
 
-  v_start := position('if p_action = ''contact_use_cutin'' then' in lower(v_definition));
-  IF v_start = 0 THEN
-    RAISE EXCEPTION 'Independent cut-in migration stopped: contact_use_cutin action was not found';
-  END IF;
-
-  v_tail := substring(v_definition from v_start);
-  v_rel := position('if p_action = ' in lower(substring(v_tail from length('if p_action = ''contact_use_cutin'' then') + 1)));
-  IF v_rel = 0 THEN
-    RAISE EXCEPTION 'Independent cut-in migration stopped: end of contact_use_cutin action was not found';
-  END IF;
-  v_end := v_start + length('if p_action = ''contact_use_cutin'' then') + v_rel - 1;
-  v_block := substring(v_definition from v_start for v_end - v_start);
-
-  IF position(lower(v_guard) in lower(v_block)) = 0 THEN
-    v_patched_block := regexp_replace(
-      v_block,
-      'if[[:space:]]+(coalesce[(]|v_match|v_pending)[^;]*cut_in_used[^;]*then',
+  -- The deployed version may place the shared cut-in check outside the action branch.
+  -- Search the entire function body instead of assuming it is nested under contact_use_cutin.
+  IF position(lower(v_guard) in lower(v_definition)) = 0 THEN
+    v_patched_definition := regexp_replace(
+      v_definition,
+      'if[[:space:]]+[^;]*cut_in_used[^;]*then',
       v_guard,
       'gi'
     );
-    IF v_patched_block = v_block THEN
-      RAISE EXCEPTION 'Independent cut-in migration stopped: global cut_in_used guard did not match the deployed action';
+    IF v_patched_definition = v_definition THEN
+      RAISE EXCEPTION 'Independent cut-in migration stopped: no legacy IF condition containing cut_in_used was found anywhere in perform_private_turn_action_v2. No function changes were applied; retrieve the deployed function definition before retrying.';
     END IF;
-    v_definition := substring(v_definition from 1 for v_start - 1)
-      || v_patched_block
-      || substring(v_definition from v_end);
-    EXECUTE v_definition;
+    EXECUTE v_patched_definition;
   END IF;
 END
 $patch_independent_contact_cutin$;
