@@ -660,6 +660,16 @@ function normalizePriceRarity(value) {
     : '';
 }
 
+function getTorecaListingRarity(item) {
+  const recorded = normalizePriceRarity(item?.rarity);
+  if (recorded) return recorded;
+  // A few price-cache rows omit the structured rarity field although the
+  // product title still carries an explicit Japanese rarity badge.
+  const title = String(item?.title || '').normalize('NFKC');
+  const match = title.match(/(?:【|〖|\[|［)\s*(MRCP|SRCP|MRP|SRP|CP2|RP2|SP2|SEC|MR|SR|CP|RP|SP|PR|R|C|D|P)\s*(?:】|〗|\]|］)/iu);
+  return match ? normalizePriceRarity(match[1]) : '';
+}
+
 function getTorecaSetCodes(value) {
   const normalized = String(value ?? '').normalize('NFKC').toLocaleUpperCase();
   const codes = [...normalized.matchAll(/CT-[PD]\d{1,2}/gu)].map((match) => match[0]);
@@ -805,7 +815,7 @@ function getTorecaSourceVariantCandidates(card, candidates, allCards, allItems) 
         const identity = getTorecaCardIdentity(card);
         const relatedPackListings = allItems.filter((item) =>
           String(item.cardNumber ?? '').normalize('NFKC').trim().toLocaleUpperCase() === identity
-          && normalizePriceRarity(item.rarity) === 'PR'
+          && getTorecaListingRarity(item) === 'PR'
           && getTorecaPromoPackInfo(item.title)?.volume === volume
         );
         const relatedPrefixes = new Set(relatedPackListings.map((item) => getTorecaListingNamePrefix(item.title)));
@@ -1077,20 +1087,20 @@ function getTorecaPriceMatch(card, snapshot, allCards = []) {
   // name only when the source explicitly identifies the Sec1/Sec2 variant.
   if (!candidates.length && rarity === 'SEC' && secVariant && originalName.length >= 2) {
     candidates = items.filter((item) =>
-      normalizePriceRarity(item.rarity) === 'SEC'
+      getTorecaListingRarity(item) === 'SEC'
       && getTorecaBaseCardName(item.title || '').includes(originalName),
     );
   }
   if (!candidates.length) return { status: 'unmatched', item: null };
 
   if (rarity) {
-    const rarityMatches = candidates.filter((item) => normalizePriceRarity(item.rarity) === rarity);
+    const rarityMatches = candidates.filter((item) => getTorecaListingRarity(item) === rarity);
     if (rarityMatches.length) {
       candidates = rarityMatches;
     } else if (nameCandidates.length) {
       // Fall back to Japanese name + rarity if an internal identifier points at
       // a different print or the printed shop number is not part of the source record.
-      const fallbackMatches = nameCandidates.filter((item) => normalizePriceRarity(item.rarity) === rarity);
+      const fallbackMatches = nameCandidates.filter((item) => getTorecaListingRarity(item) === rarity);
       if (!fallbackMatches.length) return { status: 'unmatched', item: null };
       candidates = fallbackMatches;
     } else {
