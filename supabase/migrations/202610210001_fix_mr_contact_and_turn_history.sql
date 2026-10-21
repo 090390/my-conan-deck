@@ -54,6 +54,24 @@ DECLARE
   v_target_if_pos integer;
   v_end_if_pos integer;
   v_block text;
+  v_responder_anchor text := $responder_anchor$v_pending := jsonb_set(v_pending,'{next_responder_user_id}',to_jsonb(v_user::text));$responder_anchor$;
+  v_responder_replacement text := $responder_replacement$
+v_pending := jsonb_set(v_pending,'{cut_in_priority_user_id}',to_jsonb(
+  CASE
+    WHEN coalesce(nullif(v_pending ->> 'target_ap','')::numeric,0) + coalesce(nullif(v_pending ->> 'target_bonus','')::numeric,0)
+       <= coalesce(nullif(v_pending ->> 'attacker_ap','')::numeric,0) + coalesce(nullif(v_pending ->> 'attacker_bonus','')::numeric,0)
+    THEN v_pending ->> 'target_user_id'
+    ELSE v_pending ->> 'attacker_user_id'
+  END
+));
+v_pending := jsonb_set(v_pending,'{next_responder_user_id}',to_jsonb(
+  CASE
+    WHEN coalesce(nullif(v_pending ->> 'target_ap','')::numeric,0) + coalesce(nullif(v_pending ->> 'target_bonus','')::numeric,0)
+       <= coalesce(nullif(v_pending ->> 'attacker_ap','')::numeric,0) + coalesce(nullif(v_pending ->> 'attacker_bonus','')::numeric,0)
+    THEN v_pending ->> 'target_user_id'
+    ELSE v_pending ->> 'attacker_user_id'
+  END
+));$responder_replacement$;
   v_new_transition text := $transition$
 if (coalesce(nullif(v_pending ->> 'attacker_cut_in_used','')::boolean,false)
       or coalesce(nullif(v_pending ->> 'attacker_cut_in_passed','')::boolean,false))
@@ -209,6 +227,23 @@ $ap_priority$
     || substring(v_block from v_rel);
   v_definition := substring(v_definition from 1 for v_start - 1) || v_block
     || substring(v_definition from v_end);
+
+  -- If the defender selected a different character to guard, decide cut-in priority from the two cards' AP too.
+  v_start := position('if p_action = ''guard_contact_with_character'' then' in lower(v_definition));
+  IF v_start = 0 THEN RAISE EXCEPTION 'Contact patch stopped: guard_contact_with_character action not found'; END IF;
+  v_tail := substring(v_definition from v_start);
+  v_rel := position('if p_action = ' in lower(substring(v_tail from length('if p_action = ''guard_contact_with_character'' then') + 1)));
+  IF v_rel = 0 THEN RAISE EXCEPTION 'Contact patch stopped: guard_contact_with_character end anchor not found'; END IF;
+  v_end := v_start + length('if p_action = ''guard_contact_with_character'' then') + v_rel - 1;
+  v_block := substring(v_definition from v_start for v_end - v_start);
+  IF position('cut_in_priority_user_id' in v_block) = 0 THEN
+    IF position(v_responder_anchor in v_block) = 0 THEN
+      RAISE EXCEPTION 'Contact patch stopped: guard cut-in responder anchor not found';
+    END IF;
+    v_block := replace(v_block,v_responder_anchor,v_responder_replacement);
+    v_definition := substring(v_definition from 1 for v_start - 1) || v_block
+      || substring(v_definition from v_end);
+  END IF;
 
   -- After either player uses a cut-in, ask the other player if they have not already passed/used.
   v_cut_pos := position(v_cut_marker in lower(v_definition));
