@@ -46,6 +46,7 @@ DECLARE
   v_original text;
   v_start integer;
   v_end integer;
+  v_disguise_end integer;
   v_rel integer;
   v_cut_marker text := $marker$v_pending := jsonb_set(v_pending,'{cut_in_used}','true'::jsonb);$marker$;
   v_cut_pos integer;
@@ -126,6 +127,7 @@ BEGIN
   -- Disguise action: the new card stays slipped in the field, not auto-routed as a departed MR.
   v_start := position('if p_action = ''contact_use_disguise'' then' in lower(v_definition));
   v_end := position('if p_action = ''guard_contact_with_character'' then' in lower(v_definition));
+  v_disguise_end := v_end;
   IF v_start = 0 OR v_end <= v_start THEN
     RAISE EXCEPTION 'Contact patch stopped: could not isolate contact_use_disguise action';
   END IF;
@@ -169,7 +171,7 @@ return public.get_private_turn_state_v2(p_room_id);$disguise_return$
   END IF;
 
   v_definition := substring(v_definition from 1 for v_start - 1) || v_block
-    || substring(v_definition from v_end);
+    || substring(v_definition from v_disguise_end);
 
   -- Guard declined: compare the AP values that were captured for this contact and override the
   -- default defender-first responder. AP values include the cards' current AP at contact time.
