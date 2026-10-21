@@ -1064,7 +1064,8 @@ const TORECA_PRICE_MATCH_OVERRIDES = Object.freeze({
   D06019: { url: 'https://www.torecabirth.jp/product/141' }, // 平次ver
   D06020: { url: 'https://www.torecabirth.jp/product/143' }, // キッドver
 
-  // CT-P04 partner card, not the similarly numbered CT-D03 starter-deck card.
+  // CT-D03 starter-deck D print and CT-P04 partner R print share printed number 0130.
+  D03014: { url: 'https://www.torecabirth.jp/product/51' },
   B04040: { url: 'https://www.torecabirth.jp/product/2498' },
 
   // CT-P10: 羽田秀?? regular R and RP are separate products.
