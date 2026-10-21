@@ -1,51 +1,29 @@
 -- Allow each contact participant to use one cut-in independently, and leave a private room before mulligan.
 -- Apply this migration to the linked Supabase database after it is committed.
 
-DO $patch_independent_contact_cutin$
+DO $verify_independent_contact_cutin$
 DECLARE
   v_definition text;
-  v_patched_definition text;
-  v_guard text := $guard$if (
-  (
-    v_user::text = (v_match.pending_action ->> 'target_user_id')
-    AND (
-      COALESCE(NULLIF(v_match.pending_action ->> 'target_cut_in_used','')::boolean,false)
-      OR COALESCE(NULLIF(v_match.pending_action ->> 'target_cut_in_passed','')::boolean,false)
-    )
-  )
-  OR
-  (
-    v_user::text = (v_match.pending_action ->> 'attacker_user_id')
-    AND (
-      COALESCE(NULLIF(v_match.pending_action ->> 'attacker_cut_in_used','')::boolean,false)
-      OR COALESCE(NULLIF(v_match.pending_action ->> 'attacker_cut_in_passed','')::boolean,false)
-    )
-  )
-) then$guard$;
 BEGIN
   SELECT pg_get_functiondef('public.perform_private_turn_action_v2(uuid,text,jsonb)'::regprocedure)
     INTO v_definition;
   IF v_definition IS NULL THEN
-    RAISE EXCEPTION 'Independent cut-in migration stopped: action function was not found';
+    RAISE EXCEPTION 'Independent cut-in check stopped: perform_private_turn_action_v2 was not found';
   END IF;
-  v_definition := replace(v_definition, chr(13), '');
 
-  -- The deployed version may place the shared cut-in check outside the action branch.
-  -- Search the entire function body instead of assuming it is nested under contact_use_cutin.
-  IF position(lower(v_guard) in lower(v_definition)) = 0 THEN
-    v_patched_definition := regexp_replace(
-      v_definition,
-      'if[[:space:]]+[^;]*cut_in_used[^;]*then',
-      v_guard,
-      'gi'
-    );
-    IF v_patched_definition = v_definition THEN
-      RAISE EXCEPTION 'Independent cut-in migration stopped: no legacy IF condition containing cut_in_used was found anywhere in perform_private_turn_action_v2. No function changes were applied; retrieve the deployed function definition before retrying.';
-    END IF;
-    EXECUTE v_patched_definition;
+  -- The supplied live function definition already checks usage separately for each participant.
+  -- Validate those exact actor-specific checks rather than trying to replace a legacy shared guard
+  -- that is no longer present in the deployed function.
+  IF position('v_user::text = (v_match.pending_action ->> ''target_user_id'')' in v_definition) = 0
+     OR position('v_match.pending_action ->> ''target_cut_in_used''' in v_definition) = 0
+     OR position('v_match.pending_action ->> ''target_cut_in_passed''' in v_definition) = 0
+     OR position('v_user::text = (v_match.pending_action ->> ''attacker_user_id'')' in v_definition) = 0
+     OR position('v_match.pending_action ->> ''attacker_cut_in_used''' in v_definition) = 0
+     OR position('v_match.pending_action ->> ''attacker_cut_in_passed''' in v_definition) = 0 THEN
+    RAISE EXCEPTION 'Independent cut-in check stopped: the deployed function does not contain both participants'' separate used/passed checks. The live function definition must be reviewed before changing it.';
   END IF;
 END
-$patch_independent_contact_cutin$;
+$verify_independent_contact_cutin$;
 
 REVOKE ALL ON FUNCTION public.perform_private_turn_action_v2(uuid,text,jsonb) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.perform_private_turn_action_v2(uuid,text,jsonb) TO authenticated;
