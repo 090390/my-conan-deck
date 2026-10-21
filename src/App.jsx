@@ -735,7 +735,7 @@ function getTorecaIfParallelVariant(card, rarity) {
     card?.cardNum, card?.cardNumber, card?.cardId,
     source?.cardNum, source?.card_num, source?.cardNumber, source?.card_number,
   ].map((value) => String(value ?? '').normalize('NFKC').trim().toLocaleUpperCase());
-  // B10xxxP2 is the IF-parallel MRP print; B10xxxP is the ordinary MRP print.
+  // For CT-P10, B10xxxP2 is the IF-parallel print (SRP/MRP); B10xxxP is ordinary.
   if (identifiers.some((value) => /^B10\d{3}P2$/u.test(value))) return true;
   if (identifiers.some((value) => /^B10\d{3}P$/u.test(value))) return false;
   return null;
