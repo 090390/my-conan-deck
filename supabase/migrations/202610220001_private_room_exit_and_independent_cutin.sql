@@ -51,7 +51,7 @@ BEGIN
   IF position(lower(v_guard) in lower(v_block)) = 0 THEN
     v_patched_block := regexp_replace(
       v_block,
-      'if[[:space:]]+coalesce[(][^;]*cut_in_used[^;]*[)][[:space:]]+then',
+      'if[[:space:]]+[^;]*cut_in_used[^;]*then',
       v_guard,
       'gi'
     );
