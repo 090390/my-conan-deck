@@ -1071,6 +1071,13 @@ const TORECA_PRICE_MATCH_OVERRIDES = Object.freeze({
   // CT-P10: 羽田秀?? regular R and RP are separate products.
   B10052:  { url: 'https://www.torecabirth.jp/product/8574' },
   B10052P: { url: 'https://www.torecabirth.jp/product/8575' },
+
+  // Manually verified listings for cards that previously failed automatic name matching.
+  B03117: { url: 'https://www.torecabirth.jp/product/1422' }, // カルトバス C
+  B08087: { url: 'https://www.torecabirth.jp/product/6863' }, // ?口重彦 C
+  B10048: { url: 'https://www.torecabirth.jp/product/8567' }, // 「真さんガンバッてー?」 C
+  B10048P: { url: 'https://www.torecabirth.jp/product/8568' }, // 「真さんガンバッてー?」 CP
+  SP019:  { url: 'https://www.torecabirth.jp/product/8691' }, // コナン界のかっ飛び女大集合！ SP
 });
 
 const TORECA_PRICE_UNAVAILABLE_MESSAGE = 'トレカバース 내에 대응 가능한 상품의 정보가 존재하지 않습니다.';
