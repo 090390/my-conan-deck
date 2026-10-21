@@ -294,8 +294,11 @@ BEGIN
   v_definition := replace(v_definition,v_old,v_new);
 
   v_start := position('if p_action = ''culprits_crime'' then' in lower(v_definition));
-  v_end := position('if p_action = ''begin_turn'' then' in lower(v_definition));
-  IF v_start=0 OR v_end<=v_start THEN RAISE EXCEPTION 'Culprits review patch stopped: existing Culprits'' Crime action block was not found.'; END IF;
+  IF v_start=0 THEN RAISE EXCEPTION 'Culprits review patch stopped: existing Culprits'' Crime action block was not found.'; END IF;
+  -- Find the action that follows this specific culprit block, not an earlier begin_turn guard.
+  v_end := position('if p_action = ''begin_turn'' then' in lower(substring(v_definition from v_start + length('if p_action = ''culprits_crime'' then'))));
+  IF v_end=0 THEN RAISE EXCEPTION 'Culprits review patch stopped: end anchor after the culprit block was not found.'; END IF;
+  v_end := v_start + length('if p_action = ''culprits_crime'' then') + v_end - 1;
 
   v_action_block := $culprits_actions$
   if p_action = 'acknowledge_culprits_crime' then
