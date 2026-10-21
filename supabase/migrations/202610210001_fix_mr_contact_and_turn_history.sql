@@ -237,10 +237,19 @@ $ap_priority$
   v_end := v_start + length('if p_action = ''guard_contact_with_character'' then') + v_rel - 1;
   v_block := substring(v_definition from v_start for v_end - v_start);
   IF position('cut_in_priority_user_id' in v_block) = 0 THEN
-    IF position(v_responder_anchor in v_block) = 0 THEN
-      RAISE EXCEPTION 'Contact patch stopped: guard cut-in responder anchor not found';
+    IF position(v_responder_anchor in v_block) > 0 THEN
+      v_block := replace(v_block,v_responder_anchor,v_responder_replacement);
+    ELSE
+      -- Some deployed revisions inherit the previous responder without reassigning it here.
+      -- In that case, set AP priority immediately before persisting the updated pending contact.
+      v_rel := position('update public.room_match_states' in lower(v_block));
+      IF v_rel = 0 THEN
+        RAISE EXCEPTION 'Contact patch stopped: guard contact state update anchor not found';
+      END IF;
+      v_block := substring(v_block from 1 for v_rel - 1)
+        || v_responder_replacement || chr(10)
+        || substring(v_block from v_rel);
     END IF;
-    v_block := replace(v_block,v_responder_anchor,v_responder_replacement);
     v_definition := substring(v_definition from 1 for v_start - 1) || v_block
       || substring(v_definition from v_end);
   END IF;
