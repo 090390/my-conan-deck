@@ -262,7 +262,7 @@ function getCardFeatureDotItems(card) {
 }
 
 function formatAbilityText(value) {
-  const text = String(value ?? '').replace(/<br\s*\/?\s*>/giu, '\n').replace(/\r\n?/gu, '\n').trim();
+  const text = String(value ?? '').replace(/[“”]/gu, (quote) => quote === '“' ? '「' : '」').replace(/<br\s*\/?\s*>/giu, '\n').replace(/\r\n?/gu, '\n').trim();
   if (!text) return '';
   // 마침표 뒤에 새 선언/자동/상시/기동 헤더가 오면 그 능력부터 새 줄로 표시합니다.
   // \s*는 일반 공백뿐 아니라 일본어 전각 공백도 처리합니다.
