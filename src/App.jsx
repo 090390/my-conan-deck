@@ -1060,6 +1060,7 @@ function getTorecaPriceMatch(card, snapshot, allCards = []) {
     }
   }
 
+  const sourceVariantInputCount = candidates.length;
   const sourceVariantCandidates = getTorecaSourceVariantCandidates(card, candidates, allCards, items);
   let sourceVariantWasApplied = sourceVariantCandidates !== null;
   if (sourceVariantWasApplied) candidates = sourceVariantCandidates;
@@ -1094,7 +1095,7 @@ function getTorecaPriceMatch(card, snapshot, allCards = []) {
   // reused across promo editions with no matching set metadata), do not invent
   // a price for the wrong edition.
   const unique = [...new Map(candidates.filter((item) => item.url).map((item) => [item.url, item])).values()];
-  if (unique.length === 1 && !ordinalVariantWasApplied && hasTorecaSharedSourceListingCollision(card, unique, allCards)) {
+  if (unique.length === 1 && !ordinalVariantWasApplied && sourceVariantInputCount === 1 && hasTorecaSharedSourceListingCollision(card, unique, allCards)) {
     return { status: 'ambiguous', item: null, candidates: unique };
   }
   if (unique.length !== 1) return { status: unique.length ? 'ambiguous' : 'unmatched', item: null, candidates: unique };
