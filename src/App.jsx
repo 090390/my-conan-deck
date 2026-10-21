@@ -24,6 +24,15 @@ function firstValue(objects, keys) {
 }
 
 function getImageUrl(card, source) {
+  // 카드 원본 이미지 2,292장은 public/card-images/<sourceData.id>.jpg로
+  // 저장소에 보관되어 있습니다. 외부 서버 요청 지연/제한으로 전체 카드 이미지가
+  // 깨지지 않도록 로컬 사본을 먼저 사용합니다.
+  const localRecordId = [source?.id, source?.databaseId, source?.database_id, card?.sourceRecordId, card?.source_record_id]
+    .map((value) => String(value ?? '').trim())
+    .find((value) => /^\d+$/.test(value));
+  if (localRecordId) return `/card-images/${Number(localRecordId)}.jpg`;
+
+  // 로컬 사본을 식별할 수 없는 구형/외부 데이터만 기존 URL 규칙으로 처리합니다.
   const direct = firstValue([card, source], ['imageUrl', 'image_url', 'image', 'imageURL']);
   if (direct && /^https?:\/\//i.test(String(direct))) return String(direct);
   const path = firstValue([card, source], [
