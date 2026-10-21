@@ -427,8 +427,9 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
         let cardType = "other";
         if (/イベント|이벤트|(?:^|\s)event(?:\s|$)/iu.test(typeText)) cardType = "event";
         else if (/キャラ|character|캐릭터/iu.test(typeText)) cardType = "character";
-        const cutInText = String(card?.cutInEffect || "");
-        const cutInBonus = /2000/u.test(cutInText) ? 2000 : /1000/u.test(cutInText) ? 1000 : 0;
+        const cutInText = String(card?.cutInEffect || "").trim();
+        const cutInMatch = cutInText.normalize("NFKC").match(/AP\s*\+\s*(\d{1,5})/iu);
+        const cutInBonus = cutInMatch ? Math.max(0, Number(cutInMatch[1]) || 0) : 0;
         const misleadSource = [...(card?.keywordTags || []), card?.ability || "", card?.originalAbility || ""].join(" ");
         const misleadMatch = misleadSource.match(/[【〚［\[]\s*(?:미스리드|ミスリード)\s*([0-9０-９]+)\s*[】〛］\]]/iu)
           || misleadSource.match(/[【〚［\[]\s*(?:미스리드|ミスリード)\s*[】〛］\]]\s*([0-9０-９]+)/iu)
@@ -451,6 +452,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
           ap: Math.max(0, Number(card?.ap ?? card?.sourceData?.ap ?? card?.sourceData?.AP) || 0),
           lp: Math.max(0, Number(card?.lp ?? card?.sourceData?.lp ?? card?.sourceData?.LP) || 0),
           cut_in_bonus: cutInBonus,
+          cut_in_effect: cutInText,
           mislead_value: misleadValue,
         };
       })
