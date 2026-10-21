@@ -694,6 +694,12 @@ function getTorecaSourceContain(card) {
   return String(card?.originalContain || card?.sourceData?.contain || '').trim();
 }
 
+function normalizePriceProductToken(value) {
+  // Product labels sometimes differ only by Japanese/Unicode hyphen variants.
+  // Keep the long-vowel mark ー intact (e.g. サンデー) while ignoring dash punctuation.
+  return normalizePriceToken(value).replace(/[‐‑‒–—−-]/gu, '');
+}
+
 function getTorecaSourceContainKey(card) {
   const raw = getTorecaSourceContain(card).normalize('NFKC');
   if (!raw) return '';
@@ -703,7 +709,7 @@ function getTorecaSourceContainKey(card) {
     .replace(/[）)]+$/u, '')
     .replace(/^名探偵コナンカードゲーム\s*/u, '')
     .trim();
-  return normalizePriceToken(product);
+  return normalizePriceProductToken(product);
 }
 
 function getTorecaIfParallelVariant(card, rarity) {
@@ -845,7 +851,7 @@ function getTorecaSourceVariantCandidates(card, candidates, allCards, allItems) 
   const sourceProductKey = getTorecaSourceContainKey(card);
   if (sourceProductKey) {
     const productMatches = candidates.filter((item) =>
-      normalizePriceToken(item.title || '').includes(sourceProductKey),
+      normalizePriceProductToken(item.title || '').includes(sourceProductKey),
     );
     if (productMatches.length) return productMatches;
   }
@@ -1059,10 +1065,12 @@ function getTorecaPriceMatch(card, snapshot, allCards = []) {
   if (sourceVariantWasApplied) candidates = sourceVariantCandidates;
 
   // Run ordinal disambiguation even after source narrowing when multiple prices remain.
+  let ordinalVariantWasApplied = false;
   const ordinalVariantCandidates = getTorecaOrdinalVariantCandidates(card, candidates, allCards);
   if (ordinalVariantCandidates !== null) {
     candidates = ordinalVariantCandidates;
     sourceVariantWasApplied = true;
+    ordinalVariantWasApplied = true;
   }
 
   // If the card metadata explicitly marks a finish/version, honor it.
@@ -1086,7 +1094,7 @@ function getTorecaPriceMatch(card, snapshot, allCards = []) {
   // reused across promo editions with no matching set metadata), do not invent
   // a price for the wrong edition.
   const unique = [...new Map(candidates.filter((item) => item.url).map((item) => [item.url, item])).values()];
-  if (unique.length === 1 && hasTorecaSharedSourceListingCollision(card, unique, allCards)) {
+  if (unique.length === 1 && !ordinalVariantWasApplied && hasTorecaSharedSourceListingCollision(card, unique, allCards)) {
     return { status: 'ambiguous', item: null, candidates: unique };
   }
   if (unique.length !== 1) return { status: unique.length ? 'ambiguous' : 'unmatched', item: null, candidates: unique };
