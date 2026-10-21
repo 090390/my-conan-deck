@@ -950,8 +950,63 @@ function preferDefaultTorecaVariant(items) {
   return candidates;
 }
 
+const TORECA_PRICE_MATCH_OVERRIDES = Object.freeze({
+  // ID P001: these PR printings have a known one-to-one shop listing.
+  PR001: { url: 'https://www.torecabirth.jp/product/55' },    // 少年サンデー付録
+  PR002: { url: 'https://www.torecabirth.jp/product/56' },    // 先行体験会PR
+  PR007: { url: 'https://www.torecabirth.jp/product/152' },   // セブンイレブンキャンペーン
+  PR022: { url: 'https://www.torecabirth.jp/product/194' },   // 月刊コロコロコミック付録
+  PR069: { url: 'https://www.torecabirth.jp/product/5103' },  // 探偵マスターズ2025 ブロック1位
+  PR070: { url: 'https://www.torecabirth.jp/product/5104' },  // 探偵マスターズ2025 ブロック2位
+  PR071: { url: 'https://www.torecabirth.jp/product/5105' },  // 探偵マスターズ2025 ブロック3位
+  PR072: { url: 'https://www.torecabirth.jp/product/2422' },  // 探偵マスターズ2025 4勝賞
+  PR074: { url: 'https://www.torecabirth.jp/product/4702' },  // 探偵マスターズ2025 各ブロック青1位
+  PR119: { url: 'https://www.torecabirth.jp/product/4155' },  // CT-P05 BOX特典プロモーションパック
+  PR214: { url: 'https://www.torecabirth.jp/product/6199' },  // 探偵マスターズ2026 ブロック1位
+  PR215: { url: 'https://www.torecabirth.jp/product/6200' },  // 探偵マスターズ2026 ブロック2位
+  PR216: { url: 'https://www.torecabirth.jp/product/6201' },  // 探偵マスターズ2026 ブロック3位
+  PR217: { url: 'https://www.torecabirth.jp/product/6190' },  // 探偵マスターズ2026 4勝賞
+  PR225: { url: 'https://www.torecabirth.jp/product/6212' },  // サプライズパートナーパック
+
+  // Stamp-rally variants without a separate current listing should say so explicitly.
+  PR110: { unavailable: true },
+  PR112: { url: 'https://www.torecabirth.jp/product/3036' },
+  PR111: { unavailable: true },
+  PR113: { url: 'https://www.torecabirth.jp/product/3037' },
+  PR258: { unavailable: true },
+  PR260: { url: 'https://www.torecabirth.jp/product/7461' },
+  PR259: { unavailable: true },
+  PR261: { url: 'https://www.torecabirth.jp/product/7462' },
+
+  // The printed P001 CP from CT-P09; do not collapse it with the P001 CP
+  // printings from CT-P01 and CT-P02.
+  B09001P: { url: 'https://www.torecabirth.jp/product/7249' },
+});
+
+const TORECA_PRICE_UNAVAILABLE_MESSAGE = 'トレカバース 내에 대응 가능한 상품의 정보가 존재하지 않습니다.';
+
+function getTorecaExplicitPriceOverride(card, items) {
+  const source = card?.sourceData && typeof card.sourceData === 'object' ? card.sourceData : {};
+  const identifiers = [
+    card?.cardNumber, card?.cardNum, source?.cardNumber, source?.card_number, source?.cardNum, source?.card_num,
+  ].map((value) => String(value ?? '').normalize('NFKC').trim().toLocaleUpperCase()).filter(Boolean);
+  const overrideKey = identifiers.find((identifier) => Object.prototype.hasOwnProperty.call(TORECA_PRICE_MATCH_OVERRIDES, identifier));
+  if (!overrideKey) return null;
+  const override = TORECA_PRICE_MATCH_OVERRIDES[overrideKey];
+  if (override.unavailable) {
+    return { status: 'unmatched', item: null, message: TORECA_PRICE_UNAVAILABLE_MESSAGE, explicitOverride: true };
+  }
+  const item = items.find((candidate) => candidate.url === override.url);
+  if (item) return { status: 'match', item, explicitOverride: true };
+  // A configured listing URL missing from the current cache should not fall back
+  // to another edition with the same card number.
+  return { status: 'unmatched', item: null, message: TORECA_PRICE_UNAVAILABLE_MESSAGE, explicitOverride: true };
+}
+
 function getTorecaPriceMatch(card, snapshot, allCards = []) {
   const items = Array.isArray(snapshot?.items) ? snapshot.items : [];
+  const explicitOverride = getTorecaExplicitPriceOverride(card, items);
+  if (explicitOverride) return explicitOverride;
   const cardNumbers = getCardNumberTokens(card);
   const rarity = normalizePriceRarity(card.originalRarity) || normalizePriceRarity(card.rarity);
   const secVariant = getTorecaSecVariant(card);
@@ -2602,7 +2657,7 @@ export default function App() {
       <p style={{ fontSize: '10px', lineHeight: 1.4, color: '#8996aa', margin: '2px 0 0' }}>{selectedCardPrice.item.inStock === false ? '온라인 표시 재고: 품절' : selectedCardPrice.item.stockCount !== null && selectedCardPrice.item.stockCount !== undefined && Number.isFinite(Number(selectedCardPrice.item.stockCount)) ? `온라인 표시 재고: ${Number(selectedCardPrice.item.stockCount).toLocaleString('ja-JP')}개` : '온라인 표시 재고: 확인 불가'}</p>
     </>
   ) : (
-    <p style={{ fontSize: '10px', lineHeight: 1.45, color: '#94a3b8', margin: '7px 0 0' }}>{selectedCardPrice?.status === 'ambiguous' ? '같은 카드 번호에 다른 사양의 상품이 있어 가격을 확정하지 않았어요.' : '일치하는 판매 상품을 확인하지 못했어요.'}</p>
+    <p style={{ fontSize: '10px', lineHeight: 1.45, color: '#94a3b8', margin: '7px 0 0' }}>{selectedCardPrice?.message || (selectedCardPrice?.status === 'ambiguous' ? '같은 카드 번호에 다른 사양의 상품이 있어 가격을 확정하지 않았어요.' : '일치하는 판매 상품을 확인하지 못했어요.')}</p>
   )}
   <p style={{ fontSize: '9px', lineHeight: 1.5, color: '#778397', fontStyle: 'normal', borderTop: '1px solid rgba(255,255,255,.06)', paddingTop: '7px', margin: '8px 0 0' }}>온라인 등록 판매가 기준이며 실제 거래가·매입가와 다를 수 있어요. 판매가와 재고는 변경되거나 주문 시점에 달라질 수 있습니다.</p>
   {selectedCardPrice?.status === 'match' && (
