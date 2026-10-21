@@ -178,17 +178,23 @@ export default function PublicDeckLibrary({ cards = [], deck = {}, partnerId = "
     } finally { setSaving(false); }
   }
 
-  function applySelectedDeck() {
-    if (!selected) return;
+  function applyDeckItem(item) {
+    if (!item) return;
+    setError("");
+    setNotice("");
     try {
-      const resolved = resolveImportedDeck(cards, selected.deck_json);
+      const resolved = resolveImportedDeck(cards, item.deck_json);
       if (typeof onImport !== "function") throw new Error("덱 구성 화면과 연결되어 있지 않습니다.");
       onImport(resolved);
-      setNotice(`'${selected.deck_name}' 덱을 내 덱 구성에 적용했습니다.`);
+      setNotice(`'${item.deck_name}' 덱을 내 덱 구성에 적용했습니다.`);
       setSelected(null);
     } catch (err) {
       setError(err?.message || "덱을 적용하지 못했습니다.");
     }
+  }
+
+  function applySelectedDeck() {
+    applyDeckItem(selected);
   }
 
   async function deleteOwnDeck(item) {
@@ -237,7 +243,7 @@ export default function PublicDeckLibrary({ cards = [], deck = {}, partnerId = "
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 7 }}>
             {items.map((item) => <article key={item.id} style={{ minWidth: 0, padding: 10, border: `1px solid ${selected?.id === item.id ? "rgba(252,211,77,.6)" : "rgba(255,255,255,.1)"}`, borderRadius: 8, background: "#0b1220" }}>
               <button type="button" onClick={() => { setSelected(item); setError(""); }} style={{ display: "block", width: "100%", padding: 0, border: 0, textAlign: "left", background: "transparent", color: "#f8fafc", cursor: "pointer" }}><strong style={{ display: "block", fontSize: 12, overflowWrap: "anywhere" }}>{item.deck_name}</strong><span style={{ display: "block", color: "#94a3b8", fontSize: 10, marginTop: 4 }}>편성자: {item.composer_name}</span><span style={{ display: "block", color: "#64748b", fontSize: 9, marginTop: 3 }}>{new Date(item.created_at).toLocaleDateString("ko-KR")}</span><span style={{ display: "block", color: "#93c5fd", fontSize: 10, marginTop: 7 }}>상세 보기 →</span></button>
-              <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginTop: 8 }}><button type="button" style={smallButtonStyle} onClick={() => downloadJson(`${safeFileName(item.deck_name)}.json`, item.deck_json)}>JSON 다운로드</button>{item.created_by && item.created_by === currentUserId && <button type="button" style={smallButtonStyle} onClick={() => void deleteOwnDeck(item)}>삭제</button>}</div>
+              <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginTop: 8 }}><button type="button" style={smallButtonStyle} disabled={!resolveImportedDeckSafe(cards, item.deck_json)} onClick={() => applyDeckItem(item)}>내 덱으로 적용</button>{item.created_by && item.created_by === currentUserId && <button type="button" style={smallButtonStyle} onClick={() => void deleteOwnDeck(item)}>삭제</button>}</div>
             </article>)}
           </div>
         </div>
