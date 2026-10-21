@@ -78,6 +78,14 @@ function cardHasRuleId(card, targetId) {
     .some((value) => normalizeRuleCardId(value) === target);
 }
 
+function cardHasCulpritTrait(card) {
+  const values = Array.isArray(card?.traits) ? card.traits : card?.traits == null ? [] : [card.traits];
+  return values.some((value) => {
+    const token = String(value ?? "").normalize("NFKC").replace(/\s+/gu, "").toLocaleLowerCase();
+    return token === "범인" || (token.includes("특징") && token.includes("범인"));
+  });
+}
+
 export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode = "", onLeaveField = null, onReturnToLobby = null }) {
   const [game, setGame] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -340,6 +348,11 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   const myFileCards = Array.isArray(game?.my_file_cards) ? game.my_file_cards : [];
   const opponentRemoveCards = Array.isArray(game?.opponent_remove_cards) ? game.opponent_remove_cards : [];
   const pending = game?.pending_action || null;
+  const culpritRevealPending = pending?.type === "culprits_crime_reveal" ? pending : null;
+  const culpritRevealCards = Array.isArray(culpritRevealPending?.revealed_evidence_cards) ? culpritRevealPending.revealed_evidence_cards : [];
+  const culpritTraitCount = culpritRevealCards.filter(cardHasCulpritTrait).length;
+  const culpritAcknowledgedIds = Array.isArray(culpritRevealPending?.acknowledged_user_ids) ? culpritRevealPending.acknowledged_user_ids : [];
+  const myCulpritRevealAcknowledged = culpritAcknowledgedIds.includes(userId);
   const pendingIsForMe = pending?.target_user_id === userId;
   const isContactGuardPending = pending?.type === "character_contact_guard";
   const isContactPending = pending?.type === "character_contact";
@@ -615,7 +628,8 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
     .some((ruleId) => cardHasRuleId(myEventCard || { key: myBoard?.event_key }, ruleId));
   const canWinCase = canActMain && myBoard?.case_phase === "solution" && !hasCulpritsCrimeCase && n(myBoard?.evidence_count) >= winEvidenceThreshold
     && !myBoard?.partner_rested && !myBoard?.partner_assist_used;
-  const canDeclareCulpritsCrime = canActMain && myBoard?.case_phase === "solution" && hasCulpritsCrimeCase && n(myBoard?.evidence_count) >= 8;
+  const canDeclareCulpritsCrime = canActMain && myBoard?.case_phase === "solution" && hasCulpritsCrimeCase && n(myBoard?.evidence_count) >= 8
+    && !myBoard?.partner_rested && !myBoard?.partner_assist_used;
   const activeSharedPeekCards = Array.isArray(game.shared_deck_peek_cards) ? game.shared_deck_peek_cards : [];
   // Define the current private peek before checking which cards have been selected for sharing.
   // Keeping this declaration order matters: const values are in the temporal dead zone until initialized.
@@ -1027,6 +1041,35 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
         <section onDoubleClick={(event) => minimizeOnDoubleClick(event, "sharedPeek")} role="dialog" aria-modal="true" aria-label="기존 덱 공개 확인" style={{ width: "min(100%, 760px)", maxHeight: "90dvh", overflowY: "auto", padding: 13, border: "1px solid rgba(252,211,77,.55)", borderRadius: 12, background: "#111a2a", color: C.text }}><h2 style={{ margin: "0 0 5px", fontSize: 16 }}>공개된 덱 카드 확인</h2><p style={{ ...st.muted, marginBottom: 10 }}>카드 내용을 확인한 뒤 확인 버튼을 누르면 공개 창이 닫힙니다. 덱을 살펴본 플레이어는 별도로 카드를 덱에 되돌립니다.</p><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(110px,1fr))", gap: 8 }}>{activeSharedPeekCards.map((entry) => <button key={`${entry.source_user_id}-${entry.card?.instance_id}`} type="button" onClick={() => openDetails(entry.card)} style={{ padding: 7, border: "1px solid rgba(252,211,77,.3)", borderRadius: 7, background: "#080d16", color: C.text }}>{infoFor(entry.card)?.imageUrl ? <img src={infoFor(entry.card).imageUrl} alt={nameOf(entry.card)} style={{ width: "100%", maxHeight: 210, aspectRatio: "3/4", objectFit: "contain" }} /> : <div style={st.faceDown} />}<span style={{ display: "block", marginTop: 4, fontSize: 10, fontWeight: 800, overflowWrap: "anywhere" }}>{nameOf(entry.card)}</span><span style={{ display: "block", fontSize: 8, color: C.gold }}>{entry.source_display_name || "상대 덱"}</span></button>)}</div><div style={{ display: "flex", justifyContent: "flex-end", marginTop: 11 }}><button type="button" style={st.button} disabled={loading} onClick={() => void runAction("acknowledge_shared_deck_peek")}>확인하고 공개 종료</button></div></section>
       </div>}
 
+      {culpritRevealPending && <div style={{ position: "fixed", inset: 0, zIndex: 100220, padding: 12, display: "flex", justifyContent: "center", alignItems: "center", background: "rgba(0,0,0,.9)", backdropFilter: "blur(6px)" }}>
+        <section role="dialog" aria-modal="true" aria-label="범인들의 범행 증거 확인" style={{ width: "min(100%, 900px)", maxHeight: "92dvh", overflowY: "auto", padding: 15, border: "1px solid rgba(248,113,113,.72)", borderRadius: 14, background: "#111a2a", color: C.text, boxShadow: "0 24px 75px rgba(0,0,0,.75)" }}>
+          <div style={{ color: "#f87171", fontSize: 10, letterSpacing: ".14em", fontWeight: 900 }}>CULPRITS' CRIME · EVIDENCE CHECK</div>
+          <h2 style={{ margin: "5px 0 7px", fontSize: 20 }}>범인들의 범행 · 증거 확인</h2>
+          <p style={{ ...st.muted, fontSize: 11, lineHeight: 1.65, marginBottom: 12 }}>선언한 플레이어의 증거 카드가 모두 앞면으로 공개되었습니다. 두 플레이어가 카드의 특징을 확인해 주세요. <b>특징 [범인]</b> 카드만 승리 조건에 포함됩니다.</p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", gap: 8, marginBottom: 12 }}>
+            <div style={{ padding: 10, borderRadius: 8, background: "#080d16", border: "1px solid rgba(255,255,255,.09)" }}><div style={{ color: C.muted, fontSize: 9 }}>공개된 증거</div><strong style={{ display: "block", fontSize: 19, marginTop: 3 }}>{culpritRevealCards.length}장</strong></div>
+            <div style={{ padding: 10, borderRadius: 8, background: "#080d16", border: "1px solid rgba(255,255,255,.09)" }}><div style={{ color: C.muted, fontSize: 9 }}>특징 [범인]</div><strong style={{ display: "block", fontSize: 19, marginTop: 3, color: culpritTraitCount >= 8 ? "#86efac" : "#fca5a5" }}>{culpritTraitCount} / 8장</strong></div>
+            <div style={{ padding: 10, borderRadius: 8, background: "#080d16", border: "1px solid rgba(255,255,255,.09)" }}><div style={{ color: C.muted, fontSize: 9 }}>확인 완료</div><strong style={{ display: "block", fontSize: 19, marginTop: 3 }}>{culpritAcknowledgedIds.length} / {boards.length || 2}명</strong></div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(92px,1fr))", gap: 7 }}>
+            {culpritRevealCards.map((card, index) => {
+              const hasTrait = cardHasCulpritTrait(card);
+              return <button key={card.instance_id || index} type="button" onClick={() => openDetails(card)} style={{ minWidth: 0, padding: 6, textAlign: "left", border: `1px solid ${hasTrait ? "rgba(74,222,128,.65)" : "rgba(255,255,255,.1)"}`, borderRadius: 7, background: hasTrait ? "rgba(20,83,45,.22)" : "#080d16", color: C.text }}>
+                {infoFor(card)?.imageUrl ? <img src={infoFor(card).imageUrl} alt={nameOf(card)} style={{ width: "100%", aspectRatio: "3/4", objectFit: "contain" }} /> : <div style={st.faceDown} />}
+                <span style={{ display: "block", marginTop: 5, fontSize: 9, fontWeight: 800, lineHeight: 1.4, overflowWrap: "anywhere" }}>{nameOf(card)}</span>
+                <span style={{ display: "block", marginTop: 4, fontSize: 8, fontWeight: 900, color: hasTrait ? "#86efac" : C.muted }}>{hasTrait ? "✓ 특징 [범인]" : "특징 [범인] 없음"}</span>
+              </button>;
+            })}
+          </div>
+          <div style={{ marginTop: 12, padding: 10, borderRadius: 8, background: "rgba(127,29,29,.16)", border: "1px solid rgba(248,113,113,.22)", fontSize: 10, lineHeight: 1.6 }}>
+            {culpritAcknowledgedIds.length < (boards.length || 2) ? "두 플레이어가 각각 확인해야 승리 조건 판정을 완료합니다." : "양쪽 플레이어가 확인했습니다. 서버가 특징 [범인] 카드 수를 다시 계산합니다."}
+          </div>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 12 }}>
+            <button type="button" style={st.button} disabled={loading || myCulpritRevealAcknowledged} onClick={() => void runAction("acknowledge_culprits_crime")}>{myCulpritRevealAcknowledged ? "확인 완료 · 상대 확인 대기" : "카드 특징을 확인했습니다"}</button>
+          </div>
+        </section>
+      </div>}
+
       {isContactGuardPending && minimizedModal !== "contact" && <div style={{ position: "fixed", inset: 0, zIndex: 100025, padding: 12, display: "flex", justifyContent: "center", alignItems: "center", background: "rgba(0,0,0,.88)", backdropFilter: "blur(5px)" }}><section onDoubleClick={(event) => minimizeOnDoubleClick(event, "contact")} role="dialog" aria-modal="true" aria-label="컨택 가드 선택" style={{ width: "min(100%, 760px)", maxHeight: "90dvh", overflowY: "auto", padding: 15, border: "1px solid rgba(252,211,77,.6)", borderRadius: 12, background: "#111a2a", color: C.text }}><h2 style={{ margin: "0 0 7px", fontSize: 18 }}>컨택 공격 · 가드 지정</h2><p style={{ ...st.muted, marginBottom: 10 }}>{pending.target_user_id === userId ? "공격을 받을 캐릭터 대신 액티브 캐릭터를 지정하여 가드할 수 있습니다. 가드 캐릭터는 슬립됩니다." : "상대가 공격 가드를 선택하고 있습니다."}</p>{pending.target_user_id === userId ? <><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(110px,1fr))", gap: 7 }}>{(myBoard?.field_cards || []).filter((card) => card.card_type === "character" && card.instance_id !== pending.target_instance_id && !card.rested && (card.status || "active") === "active").map((card) => <button key={card.instance_id} type="button" style={{ ...st.smallButton, padding: 7 }} disabled={loading} onClick={() => void runAction("guard_contact_with_character", { instance_id: card.instance_id })}>{infoFor(card)?.imageUrl ? <img src={infoFor(card).imageUrl} alt={nameOf(card)} style={{ width: "100%", aspectRatio: "3/4", objectFit: "contain" }} /> : <div style={st.faceDown} />}<span style={{ display: "block", marginTop: 4 }}>{nameOf(card)}<br/>AP {n(card.ap)+n(card.ap_bonus)}</span></button>)}</div>{myHand.some((card) => card.card_type === "character" && Boolean(infoFor(card)?.disguiseEffect)) && <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid rgba(255,255,255,.09)" }}><h3 style={{ margin: "0 0 5px", color: C.gold, fontSize: 12 }}>손패에서 변장으로 컨택 대상 교체</h3><p style={{ ...st.muted, marginBottom: 8 }}>변장 캐릭터가 현장에 등장하고, 기존 컨택 대상은 덱 맨 아래로 이동합니다.</p><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(105px,1fr))", gap: 7 }}>{myHand.filter((card) => card.card_type === "character" && Boolean(infoFor(card)?.disguiseEffect)).map((card) => <button key={card.instance_id} type="button" style={{ ...st.smallButton, padding: 7, borderColor: "rgba(252,211,77,.4)" }} disabled={loading} onClick={() => void runAction("contact_use_disguise", { instance_id: card.instance_id, disguise_effect: infoFor(card)?.disguiseEffect || infoFor(card)?.hensoEffect || "" })}>{infoFor(card)?.imageUrl ? <img src={infoFor(card).imageUrl} alt={nameOf(card)} style={{ width: "100%", aspectRatio: "3/4", objectFit: "contain" }} /> : <div style={st.faceDown} />}<span style={{ display: "block", marginTop: 4 }}>{nameOf(card)}</span><span style={{ display: "block", fontSize: 8, color: C.gold }}>변장으로 교체</span></button>)}</div></div>}<button type="button" style={{ ...st.button, width: "100%", marginTop: 10 }} disabled={loading} onClick={() => void runAction("decline_contact_guard")}>가드하지 않고 진행</button></> : <p style={{ marginTop: 10, color: C.gold, fontSize: 11 }}>수비자의 선택을 기다리는 중입니다.</p>}</section></div>}
 
       {isContactPending && minimizedModal !== "contact" && <div style={{ position: "fixed", inset: 0, zIndex: 100030, padding: 12, display: "flex", justifyContent: "center", alignItems: "center", background: "rgba(0,0,0,.86)", backdropFilter: "blur(5px)" }}>
@@ -1035,7 +1078,14 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 9 }}>
             {[{ title: "공격자", board: contactAttackerBoard, card: contactAttackerCard, ap: n(pending.attacker_ap) + n(pending.attacker_bonus) }, { title: "수비자", board: contactTargetBoard, card: contactTargetCard, ap: n(pending.target_ap) + n(pending.target_bonus) }].map((entry) => <div key={entry.title} style={{ padding: 8, border: "1px solid rgba(255,255,255,.1)", borderRadius: 8, background: "#080d16", minWidth: 0 }}><div style={{ fontSize: 9, color: C.muted }}>{entry.title} · {entry.board?.display_name || "플레이어"}</div>{entry.card && <button type="button" onClick={() => openDetails(entry.card)} style={{ display: "block", width: "100%", padding: 0, marginTop: 6, border: 0, background: "transparent", color: C.text }}>{infoFor(entry.card)?.imageUrl ? <img src={infoFor(entry.card).imageUrl} alt={nameOf(entry.card)} style={{ width: "100%", maxHeight: 175, aspectRatio: "3/4", objectFit: "contain" }} /> : <div style={st.faceDown} />}<span style={{ display: "block", fontSize: 10, marginTop: 5, overflowWrap: "anywhere" }}>{nameOf(entry.card)}</span></button>}<strong style={{ display: "block", marginTop: 8, fontSize: 16 }}>AP {entry.ap}</strong></div>)}
           </div>
-          {pending.next_responder_user_id === userId ? <><p style={{ fontSize: 11, color: C.gold, margin: "12px 0 7px" }}>{userId === pending.target_user_id ? "현재 순서: 수비자 · 컷인 사용 여부를 선택해 주세요." : "현재 순서: 공격자 · 컷인 사용 여부를 선택해 주세요."}</p><div style={{ display: "grid", gap: 6 }}>{myHand.filter((card) => n(card.cut_in_bonus) > 0).map((card) => <button key={card.instance_id} type="button" style={{ ...st.button, background: "#164e63" }} disabled={loading} onClick={() => void runAction("contact_use_cutin", { instance_id: card.instance_id })}>{nameOf(card)} · 컷인 +{n(card.cut_in_bonus)}</button>)}</div>{myHand.every((card) => n(card.cut_in_bonus) <= 0) && <p style={{ ...st.muted, marginTop: 6 }}>컷인 사용 여부를 선택해 주세요. 사용하지 않으면 다음 단계로 진행됩니다.</p>}<button type="button" style={{ ...st.button, background: "#273244", width: "100%", marginTop: 8 }} disabled={loading} onClick={() => void runAction("contact_pass_cutin")}>{userId === pending.target_user_id
+          {pending.next_responder_user_id === userId ? <><p style={{ fontSize: 11, color: C.gold, margin: "12px 0 7px" }}>{userId === pending.target_user_id ? "현재 순서: 수비자 · 컷인 사용 여부를 선택해 주세요." : "현재 순서: 공격자 · 컷인 사용 여부를 선택해 주세요."}</p><div style={{ display: "grid", gap: 6 }}>{myHand.filter((card) => n(card.cut_in_bonus) > 0 || Boolean(String(infoFor(card)?.cutInEffect || card.cut_in_effect || "").trim())).map((card) => {
+            const effectText = String(infoFor(card)?.cutInEffect || card.cut_in_effect || "").trim();
+            const bonus = n(card.cut_in_bonus);
+            return <button key={card.instance_id} type="button" style={{ ...st.button, background: "#164e63", textAlign: "left" }} disabled={loading} onClick={() => void runAction("contact_use_cutin", { instance_id: card.instance_id })}>
+              <strong style={{ display: "block", marginBottom: 4 }}>{nameOf(card)} · {bonus > 0 ? `AP +${bonus}` : "AP 증가 없음"}</strong>
+              <span style={{ display: "block", whiteSpace: "pre-wrap", overflowWrap: "anywhere", fontSize: 10, lineHeight: 1.5 }}>{effectText || "컷인 효과 문구를 확인할 수 없습니다."}</span>
+            </button>;
+          })}</div>{myHand.every((card) => n(card.cut_in_bonus) <= 0 && !String(infoFor(card)?.cutInEffect || card.cut_in_effect || "").trim()) && <p style={{ ...st.muted, marginTop: 6 }}>컷인 사용 여부를 선택해 주세요. 사용하지 않으면 다음 단계로 진행됩니다.</p>}<button type="button" style={{ ...st.button, background: "#273244", width: "100%", marginTop: 8 }} disabled={loading} onClick={() => void runAction("contact_pass_cutin")}>{userId === pending.target_user_id
   ? ((pending.attacker_cut_in_used || pending.attacker_cut_in_passed) ? "컷인 없이 최종 AP 비교" : "컷인 없이 공격자에게 넘기기")
   : ((pending.target_cut_in_used || pending.target_cut_in_passed) ? "컷인 없이 최종 AP 비교" : "컷인 없이 수비자에게 넘기기")}</button></> : <p style={{ margin: "12px 0 0", fontSize: 11, color: C.muted }}>{pending.next_responder_user_id === pending.target_user_id ? "수비자가 컷인 사용 여부를 선택하고 있습니다." : "공격자가 컷인 사용 여부를 선택하고 있습니다."}</p>}
         </section>
