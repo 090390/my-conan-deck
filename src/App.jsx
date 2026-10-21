@@ -655,14 +655,19 @@ function normalizePriceRarity(value) {
   const token = normalizePriceToken(value);
   // Rarity fields are normally a compact code. Do not mistake letters inside
   // descriptive words (for example "CHARACTER") for a rarity marker.
-  return new Set(['MRCP', 'SRCP', 'MRP', 'SRP', 'SEC', 'MR', 'SR', 'CP', 'RP', 'SP', 'PR', 'R', 'C', 'D', 'P']).has(token)
+  return new Set(['MRCP', 'SRCP', 'MRP', 'SRP', 'CP2', 'RP2', 'SP2', 'SEC', 'MR', 'SR', 'CP', 'RP', 'SP', 'PR', 'R', 'C', 'D', 'P']).has(token)
     ? token
     : '';
 }
 
 function getTorecaSetCodes(value) {
   const normalized = String(value ?? '').normalize('NFKC').toLocaleUpperCase();
-  return [...new Set([...normalized.matchAll(/CT-[PD]\d{1,2}/gu)].map((match) => match[0]))];
+  const codes = [...normalized.matchAll(/CT-[PD]\d{1,2}/gu)].map((match) => match[0]);
+  // Shop titles sometimes omit CT-Pxx and use a Japanese booster label instead.
+  for (const match of normalized.matchAll(/(\d{1,2})\s*弾/gu)) {
+    codes.push(`CT-P${String(Number(match[1])).padStart(2, '0')}`);
+  }
+  return [...new Set(codes)];
 }
 
 function getTorecaVariantMarkers(value) {
@@ -919,6 +924,40 @@ function getTorecaOrdinalVariantCandidates(card, candidates, allCards) {
   return [[challenge[0]], [regular[0].item], [foil[0].item]][currentIndex];
 }
 
+function getTorecaInternalPromoVariant(card) {
+  const source = card?.sourceData && typeof card.sourceData === 'object' ? card.sourceData : {};
+  for (const value of [
+    card?.cardNumber, card?.cardNum, source?.cardNumber, source?.card_number, source?.cardNum, source?.card_num,
+  ]) {
+    const token = String(value ?? '').normalize('NFKC').trim().toLocaleUpperCase();
+    const match = token.match(/^(B\d{5})(P2?)$/u);
+    if (match) return { base: match[1], side: match[2] === 'P2' ? 'special' : 'regular' };
+  }
+  return null;
+}
+
+function getTorecaAnniversaryVariantCandidates(card, candidates, allCards) {
+  const variant = getTorecaInternalPromoVariant(card);
+  if (!variant || !Array.isArray(allCards) || candidates.length !== 2) return null;
+  const identity = getTorecaCardIdentity(card);
+  const rarity = normalizePriceRarity(card?.originalRarity);
+  if (!identity || !rarity) return null;
+  const siblings = allCards.filter((sibling) => {
+    const siblingVariant = getTorecaInternalPromoVariant(sibling);
+    return getTorecaCardIdentity(sibling) === identity
+      && normalizePriceRarity(sibling?.originalRarity) === rarity
+      && siblingVariant?.base === variant.base;
+  });
+  if (siblings.length !== 2
+    || !siblings.some((sibling) => getTorecaInternalPromoVariant(sibling)?.side === 'special')
+    || !siblings.some((sibling) => getTorecaInternalPromoVariant(sibling)?.side === 'regular')) return null;
+  const commemorative = candidates.filter((item) => /★\d+周年記念/u.test(String(item.title || '').normalize('NFKC')));
+  if (commemorative.length !== 1) return null;
+  const ordinary = candidates.filter((item) => item.url !== commemorative[0].url);
+  if (ordinary.length !== 1) return null;
+  return variant.side === 'special' ? [commemorative[0]] : [ordinary[0]];
+}
+
 function hasTorecaSharedSourceListingCollision(card, matchingItems, allCards) {
   if (normalizePriceRarity(card?.originalRarity) !== 'PR' || matchingItems.length !== 1) return false;
   const identity = getTorecaCardIdentity(card);
@@ -1099,7 +1138,12 @@ function getTorecaPriceMatch(card, snapshot, allCards = []) {
     const setMatches = candidates.filter((item) =>
       [...getTorecaSetCodes(item.title)].some((code) => cardSetCodes.has(code)),
     );
-    if (setMatches.length) candidates = setMatches;
+    if (setMatches.length) {
+      candidates = setMatches;
+    } else if (candidates.length && candidates.every((item) => getTorecaSetCodes(item.title).length > 0)) {
+      // All remaining listings explicitly name a different booster edition.
+      return { status: 'unmatched', item: null };
+    }
   }
 
   // Some records carry the Japanese set/product name rather than a CT code.
@@ -1114,6 +1158,9 @@ function getTorecaPriceMatch(card, snapshot, allCards = []) {
       break;
     }
   }
+
+  const anniversaryVariantCandidates = getTorecaAnniversaryVariantCandidates(card, candidates, allCards);
+  if (anniversaryVariantCandidates !== null) candidates = anniversaryVariantCandidates;
 
   const sourceVariantInputCount = candidates.length;
   const sourceVariantCandidates = getTorecaSourceVariantCandidates(card, candidates, allCards, items);
