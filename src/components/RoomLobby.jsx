@@ -323,7 +323,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
 
   async function leaveRoom() {
     if (!room?.id || loading || !canLeaveBeforeMulligan) return;
-    if (!window.confirm("아직 누구도 멀리건을 확정하지 않았습니다. 대기실에서 나가시겠습니까?")) return;
+    if (!window.confirm("현재 입장한 대전 대기실에서 나가 로비로 돌아가시겠습니까?")) return;
     setLoading(true);
     setError("");
     setNotice("");
@@ -553,7 +553,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
         </div>
         {room && <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <span style={{ padding: "5px 9px", border: "1px solid rgba(134,239,172,.22)", borderRadius: 7, color: "#86efac", background: "rgba(34,197,94,.08)", fontSize: 11, fontWeight: 750 }}>대기실 입장 중</span>
-          {canLeaveBeforeMulligan && <button type="button" style={{ ...buttonStyle, padding: "7px 10px", background: "#7f1d1d", borderColor: "rgba(251,113,133,.7)", fontSize: 12, boxShadow: "0 0 0 1px rgba(251,113,133,.10)" }} disabled={loading} onClick={() => void leaveRoom()}>{loading ? "나가는 중…" : "대기실 나가기"}</button>}
+          {canLeaveBeforeMulligan && <button type="button" style={{ ...buttonStyle, padding: "5px 9px", borderRadius: 7, background: "#7f1d1d", borderColor: "rgba(251,113,133,.7)", fontSize: 11, fontWeight: 750, boxShadow: "0 0 0 1px rgba(251,113,133,.10)" }} disabled={loading} onClick={() => void leaveRoom()}>{loading ? "나가는 중…" : "대기실 나가기"}</button>}
         </div>}
       </div>
 
