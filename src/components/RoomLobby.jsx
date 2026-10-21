@@ -315,6 +315,36 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
     setNotice("이전 게임을 닫았습니다. 새 방을 만들거나 초대 코드로 입장해 주세요.");
   }, []);
 
+  async function leaveRoom() {
+    if (!room?.id || loading || matchPhase !== "waiting") return;
+    if (!window.confirm("멀리건이 시작되기 전 대기실에서 나가시겠습니까?")) return;
+    setLoading(true);
+    setError("");
+    setNotice("");
+    try {
+      await ensureSignedIn();
+      const { error: rpcError } = await supabase.rpc("leave_private_room_before_mulligan_v1", {
+        p_room_id: room.id,
+      });
+      if (rpcError) throw rpcError;
+
+      localStorage.removeItem(ACTIVE_ROOM_STORAGE_KEY);
+      localStorage.removeItem(COMPLETED_GREETING_ROOM_KEY);
+      setRoom(null);
+      setPlayers([]);
+      setReadyDeckSignature("");
+      setMatchPhase("waiting");
+      setGreetingFinished(false);
+      setShowFieldOnly(true);
+      setShowTermsModal(false);
+      setNotice("대기실에서 나왔습니다. 새 방을 만들거나 초대 코드로 다시 입장할 수 있습니다.");
+    } catch (err) {
+      setError(err?.message || "대기실에서 나가지 못했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
     if (!nicknameDirty && myPlayer) setNicknameDraft(myPlayer.temporary_nickname || "");
   }, [myPlayer?.temporary_nickname, nicknameDirty, userId]);
@@ -515,7 +545,10 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
           <h2 style={{ margin: 0, fontSize: 22, fontWeight: 850 }}>비공개 대전 방</h2>
           <p style={{ color: "#9aa8bd", marginTop: 7, fontSize: 13 }}>친구와 2인 비공개 방에서 각자 준비한 덱을 사용하여 모의전을 진행합니다.</p>
         </div>
-        {room && <span style={{ padding: "5px 9px", border: "1px solid rgba(134,239,172,.22)", borderRadius: 7, color: "#86efac", background: "rgba(34,197,94,.08)", fontSize: 11, fontWeight: 750 }}>대기실 입장 중</span>}
+        {room && <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <span style={{ padding: "5px 9px", border: "1px solid rgba(134,239,172,.22)", borderRadius: 7, color: "#86efac", background: "rgba(34,197,94,.08)", fontSize: 11, fontWeight: 750 }}>대기실 입장 중</span>
+          {matchPhase === "waiting" && <button type="button" style={{ ...buttonStyle, padding: "7px 10px", background: "#4b2637", borderColor: "rgba(251,113,133,.35)", fontSize: 11 }} disabled={loading} onClick={() => void leaveRoom()}>{loading ? "나가는 중…" : "대기실 나가기"}</button>}
+        </div>}
       </div>
 
       {room && matchPhase === "playing" && !showFieldOnly && <div style={{ marginTop: 14, padding: 12, borderRadius: 10, border: "1px solid rgba(147,197,253,.24)", background: "rgba(30,58,95,.2)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}><div><strong style={{ display: "block", fontSize: 13, color: "#dbeafe" }}>대전 진행 중</strong><span style={{ display: "block", marginTop: 3, color: "#9aa8bd", fontSize: 11 }}>필드 화면이 접혀 있습니다. 버튼을 눌러 게임 필드 전체 화면으로 돌아갈 수 있습니다.</span></div><button type="button" style={buttonStyle} onClick={() => setShowFieldOnly(true)}>게임 필드 전체 화면으로 돌아가기</button></div>}

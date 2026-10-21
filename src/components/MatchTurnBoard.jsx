@@ -799,11 +799,17 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
                 return <div key={board.user_id} style={{ minWidth: 0, display: "grid", gap: 7, alignContent: "start" }}>
                   <div style={{ padding: 6, border: "1px solid rgba(255,255,255,.08)", borderRadius: 6, background: "#080d16" }}>
                     <div style={{ color: C.muted, fontSize: 8, marginBottom: 4 }}>{mine ? "내 MR" : "상대 MR"}</div>
-                    {mr ? <>
-                      <button type="button" onClick={() => openDetails(mr)} style={{ width: "100%", padding: 0, border: 0, background: "transparent" }}>{infoFor(mr)?.imageUrl ? <img src={infoFor(mr).imageUrl} alt={nameOf(mr)} style={{ width: "100%", maxHeight: 110, aspectRatio: "3/4", objectFit: "contain" }} /> : <div style={st.faceDown} />}</button>
-                      <div style={{ fontSize: 9, fontWeight: 800, overflowWrap: "anywhere", marginTop: 4 }}>{nameOf(mr)}</div>
-                      {!game.game_over && !pending && <div style={{ display: "grid", gap: 3, marginTop: 5 }}><button type="button" style={st.smallButton} disabled={loading} onClick={() => moveMrPartnerCard(mr, board.user_id, "hand")}>손패로</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => moveMrPartnerCard(mr, board.user_id, "deck")}>덱 아래로</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => moveMrPartnerCard(mr, board.user_id, "remove")}>리무브 에이리어로</button></div>}
-                    </> : <div style={{ minHeight: 55, display: "grid", placeItems: "center", color: C.muted, fontSize: 9 }}>없음</div>}
+                    {mr ? <div style={{ display: "grid", gridTemplateColumns: !game.game_over && !pending ? "minmax(48px, .72fr) minmax(0, 1.28fr)" : "minmax(0, 1fr)", alignItems: "center", gap: 7 }}>
+                      <div style={{ minWidth: 0 }}>
+                        <button type="button" onClick={() => openDetails(mr)} style={{ display: "block", width: "100%", padding: 0, border: 0, background: "transparent" }}>{infoFor(mr)?.imageUrl ? <img src={infoFor(mr).imageUrl} alt={nameOf(mr)} style={{ display: "block", width: "100%", maxHeight: 94, aspectRatio: "3/4", objectFit: "contain" }} /> : <div style={st.faceDown} />}</button>
+                        <div style={{ fontSize: 8, fontWeight: 800, lineHeight: 1.3, overflowWrap: "anywhere", textAlign: "center", marginTop: 4 }}>{nameOf(mr)}</div>
+                      </div>
+                      {!game.game_over && !pending && <div style={{ display: "grid", gap: 4, minWidth: 0 }}>
+                        <button type="button" style={{ ...st.smallButton, width: "100%", padding: "5px 2px", fontSize: 8 }} disabled={loading} onClick={() => moveMrPartnerCard(mr, board.user_id, "hand")}>손패로</button>
+                        <button type="button" style={{ ...st.smallButton, width: "100%", padding: "5px 2px", fontSize: 8 }} disabled={loading} onClick={() => moveMrPartnerCard(mr, board.user_id, "deck")}>덱 아래로</button>
+                        <button type="button" style={{ ...st.smallButton, width: "100%", padding: "5px 2px", fontSize: 8 }} disabled={loading} onClick={() => moveMrPartnerCard(mr, board.user_id, "remove")}>리무브 에이리어로</button>
+                      </div>}
+                    </div> : <div style={{ minHeight: 55, display: "grid", placeItems: "center", color: C.muted, fontSize: 9 }}>없음</div>}
                   </div>
                   <div style={{ padding: 6, border: "1px solid rgba(255,255,255,.08)", borderRadius: 6, background: "#080d16" }}>
                     <div style={{ color: C.muted, fontSize: 8, marginBottom: 5 }}>MR 외 카드 · {nonMrCards.length}장</div>
