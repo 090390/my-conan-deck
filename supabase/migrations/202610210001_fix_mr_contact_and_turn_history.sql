@@ -220,7 +220,7 @@ $ap_priority$
   v_tail := substring(v_definition from v_target_if_pos);
   v_end_if_pos := position('end if;' in lower(v_tail));
   IF v_end_if_pos = 0 THEN RAISE EXCEPTION 'Contact patch stopped: cut-in transition end not found'; END IF;
-  v_end_if_pos := v_target_if_pos + v_end_if_pos + length('end if;') - 1;
+  v_end_if_pos := v_target_if_pos + v_end_if_pos + length('end if;');
   v_definition := substring(v_definition from 1 for v_cut_pos - 1)
     || v_cut_marker || chr(10) || v_new_transition || chr(10)
     || substring(v_definition from v_end_if_pos);
