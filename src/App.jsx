@@ -728,7 +728,8 @@ function getTorecaSourceContainKey(card) {
 }
 
 function getTorecaIfParallelVariant(card, rarity) {
-  if (rarity !== 'MRP') return null;
+  // The IF-parallel split also applies to SRP in CT-P10; it is not limited to MRP.
+  if (!['MRP', 'SRP'].includes(rarity)) return null;
   const source = card?.sourceData && typeof card.sourceData === 'object' ? card.sourceData : {};
   const identifiers = [
     card?.cardNum, card?.cardNumber, card?.cardId,
@@ -1030,6 +1031,45 @@ const TORECA_PRICE_MATCH_OVERRIDES = Object.freeze({
   // The printed P001 CP from CT-P09; do not collapse it with the P001 CP
   // printings from CT-P01 and CT-P02.
   B09001P: { url: 'https://www.torecabirth.jp/product/7249' },
+
+  // CT-P10: the P2 internal print is the product whose title contains IFパラレル.
+  B10066P:  { url: 'https://www.torecabirth.jp/product/8600' }, // 伊達航 🌸 SRP
+  B10066P2: { url: 'https://www.torecabirth.jp/product/8601' }, // 伊達航 IFパラレル SRP
+  B10067P:  { url: 'https://www.torecabirth.jp/product/8603' }, // 降谷零 🌸 SRP
+  B10067P2: { url: 'https://www.torecabirth.jp/product/8604' }, // 降谷零 IFパラレル SRP
+  B10068P:  { url: 'https://www.torecabirth.jp/product/8607' }, // 諸伏景光 🌸 SRP
+  B10068P2: { url: 'https://www.torecabirth.jp/product/8608' }, // 諸伏景光 IFパラレル SRP
+
+  // CT-P09: anniversary/ordinary RP are different listings even when the prices match.
+  B09074P:  { url: 'https://www.torecabirth.jp/product/7371' }, // ★2周年記念 松田陣平 RP
+  B09074P2: { url: 'https://www.torecabirth.jp/product/7372' }, // 松田陣平 RP
+
+  // These prints have no corresponding listing in the current TorecaBirth cache.
+  B02056: { unavailable: true },
+  B04058: { unavailable: true },
+
+  // CT-P06 shared printed number P060; use name/artwork and rarity together.
+  B06014:  { url: 'https://www.torecabirth.jp/product/4747' }, // 鬼丸猛(YAIBA) C
+  B06014P: { url: 'https://www.torecabirth.jp/product/4748' }, // 鬼丸猛(YAIBA) CP
+  B06015:  { url: 'https://www.torecabirth.jp/product/4749' }, // 鬼丸猛(高校生) C
+  B06015P: { url: 'https://www.torecabirth.jp/product/4750' }, // 鬼丸猛(高校生) CP
+
+  // CT-P07: the same printed number has two different artwork variants.
+  B07007P:  { url: 'https://www.torecabirth.jp/product/5379' }, // 沖野ヨーコ(帽子ヨーコ) CP
+  B07007P2: { url: 'https://www.torecabirth.jp/product/5380' }, // 沖野ヨーコ(ドレスヨーコ) CP
+  B07033P:  { url: 'https://www.torecabirth.jp/product/5430' }, // 怪盗キッド(スポットライト青子) RP
+  B07033P2: { url: 'https://www.torecabirth.jp/product/5429' }, // 怪盗キッド(青背景) RP
+
+  // CT-D06: 妖精の唇 has two different illustrations under the same printed number.
+  D06019: { url: 'https://www.torecabirth.jp/product/141' }, // 平次ver
+  D06020: { url: 'https://www.torecabirth.jp/product/143' }, // キッドver
+
+  // CT-P04 partner card, not the similarly numbered CT-D03 starter-deck card.
+  B04040: { url: 'https://www.torecabirth.jp/product/2498' },
+
+  // CT-P10: 羽田秀?? regular R and RP are separate products.
+  B10052:  { url: 'https://www.torecabirth.jp/product/8574' },
+  B10052P: { url: 'https://www.torecabirth.jp/product/8575' },
 });
 
 const TORECA_PRICE_UNAVAILABLE_MESSAGE = 'トレカバース 내에 대응 가능한 상품의 정보가 존재하지 않습니다.';
@@ -1037,7 +1077,8 @@ const TORECA_PRICE_UNAVAILABLE_MESSAGE = 'トレカバース 내에 대응 가�
 function getTorecaExplicitPriceOverride(card, items) {
   const source = card?.sourceData && typeof card.sourceData === 'object' ? card.sourceData : {};
   const identifiers = [
-    card?.cardNumber, card?.cardNum, source?.cardNumber, source?.card_number, source?.cardNum, source?.card_num,
+    card?.cardNumber, card?.cardNum, card?.cardId, card?.key,
+    source?.cardNumber, source?.card_number, source?.cardNum, source?.card_num, source?.cardId, source?.card_id,
   ].map((value) => String(value ?? '').normalize('NFKC').trim().toLocaleUpperCase()).filter(Boolean);
   const overrideKey = identifiers.find((identifier) => Object.prototype.hasOwnProperty.call(TORECA_PRICE_MATCH_OVERRIDES, identifier));
   if (!overrideKey) return null;
@@ -2714,7 +2755,7 @@ export default function App() {
       <p style={{ fontSize: '10px', lineHeight: 1.4, color: '#8996aa', margin: '2px 0 0' }}>{selectedCardPrice.item.inStock === false ? '온라인 표시 재고: 품절' : selectedCardPrice.item.stockCount !== null && selectedCardPrice.item.stockCount !== undefined && Number.isFinite(Number(selectedCardPrice.item.stockCount)) ? `온라인 표시 재고: ${Number(selectedCardPrice.item.stockCount).toLocaleString('ja-JP')}개` : '온라인 표시 재고: 확인 불가'}</p>
     </>
   ) : (
-    <p style={{ fontSize: '10px', lineHeight: 1.45, color: '#94a3b8', margin: '7px 0 0' }}>{selectedCardPrice?.message || (selectedCardPrice?.status === 'ambiguous' ? '같은 카드 번호에 다른 사양의 상품이 있어 가격을 확정하지 않았어요.' : '일치하는 판매 상품을 확인하지 못했어요.')}</p>
+    <p style={{ fontSize: '10px', lineHeight: 1.45, color: '#94a3b8', margin: '7px 0 0' }}>{selectedCardPrice?.message || (selectedCardPrice?.status === 'ambiguous' ? '같은 카드 번호에 다른 사양의 상품이 있어 가격을 확정하지 않았어요.' : TORECA_PRICE_UNAVAILABLE_MESSAGE)}</p>
   )}
   <p style={{ fontSize: '9px', lineHeight: 1.5, color: '#778397', fontStyle: 'normal', borderTop: '1px solid rgba(255,255,255,.06)', paddingTop: '7px', margin: '8px 0 0' }}>온라인 등록 판매가 기준이며 실제 거래가·매입가와 다를 수 있어요. 판매가와 재고는 변경되거나 주문 시점에 달라질 수 있습니다.</p>
   {selectedCardPrice?.status === 'match' && (
