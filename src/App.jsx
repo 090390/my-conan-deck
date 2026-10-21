@@ -668,7 +668,9 @@ function getTorecaSetCodes(value) {
 function getTorecaVariantMarkers(value) {
   const token = normalizePriceToken(value);
   const markers = [];
-  if (/キラ加工|キラバージョン|ホイル|箔|ホログラム仕様/u.test(token)) markers.push('foil');
+  // TorecaBirth has a few titles that spell the foil marker as キラ化工.
+  if (/キラ加工|キラバージョン|キラ化工|キラ未開封|ホイル|箔|ホログラム仕様/u.test(token)) markers.push('foil');
+  if (/IFパラレル/u.test(token)) markers.push('ifParallel');
   if (/ボーナスカード/u.test(token)) markers.push('bonus');
   if (/未開封/u.test(token)) markers.push('sealed');
   if (/開封済/u.test(token)) markers.push('opened');
@@ -684,12 +686,37 @@ function getTorecaPromoPackInfo(value) {
   if (!match) return null;
   return {
     volume: Number(match[1]),
-    foil: /キラバージョン|キラ加工|ホイル|箔|ホログラム仕様/u.test(token),
+    foil: /キラバージョン|キラ加工|キラ化工|キラ未開封|ホイル|箔|ホログラム仕様/u.test(token),
   };
 }
 
 function getTorecaSourceContain(card) {
   return String(card?.originalContain || card?.sourceData?.contain || '').trim();
+}
+
+function getTorecaSourceContainKey(card) {
+  const raw = getTorecaSourceContain(card).normalize('NFKC');
+  if (!raw) return '';
+  const product = raw
+    .replace(/^PRカード\s*/iu, '')
+    .replace(/^[（(]+/u, '')
+    .replace(/[）)]+$/u, '')
+    .replace(/^名探偵コナンカードゲーム\s*/u, '')
+    .trim();
+  return normalizePriceToken(product);
+}
+
+function getTorecaIfParallelVariant(card, rarity) {
+  if (rarity !== 'MRP') return null;
+  const source = card?.sourceData && typeof card.sourceData === 'object' ? card.sourceData : {};
+  const identifiers = [
+    card?.cardNum, card?.cardNumber, card?.cardId,
+    source?.cardNum, source?.card_num, source?.cardNumber, source?.card_number,
+  ].map((value) => String(value ?? '').normalize('NFKC').trim().toLocaleUpperCase());
+  // B10xxxP2 is the IF-parallel MRP print; B10xxxP is the ordinary MRP print.
+  if (identifiers.some((value) => /^B10\d{3}P2$/u.test(value))) return true;
+  if (identifiers.some((value) => /^B10\d{3}P$/u.test(value))) return false;
+  return null;
 }
 
 function getTorecaCardIdentity(card) {
@@ -789,13 +816,45 @@ function getTorecaSourceVariantCandidates(card, candidates, allCards, allItems) 
         && itemPack.foil === sourcePack.foil;
     });
   }
+
+  // Shop uses a different label for the subscription hologram edition.
+  if (/サンデーS定期購読|定期購読特典/u.test(sourceToken)) {
+    const hologramMatches = candidates.filter((item) => {
+      const title = normalizePriceToken(item.title || '');
+      return /少年サンデーS/u.test(title)
+        && /定期購読/u.test(title)
+        && /ホログラム仕様/u.test(title);
+    });
+    if (hologramMatches.length) return hologramMatches;
+  }
+
+  // Map the official source wording for book/box bonuses to shop wording.
+  if (/CT-P01.*BOX封入特典/u.test(sourceToken)) {
+    const boxBonusMatches = candidates.filter((item) => {
+      const title = normalizePriceToken(item.title || '');
+      return /ボックス特典/u.test(title) && /ホイル|箔|ホログラム仕様/u.test(title);
+    });
+    if (boxBonusMatches.length) return boxBonusMatches;
+  }
+  if (/CT-D01.*CT-D05.*購入特典/u.test(sourceToken)) {
+    const deckBonusMatches = candidates.filter((item) => /デッキ特典/u.test(normalizePriceToken(item.title || '')));
+    if (deckBonusMatches.length) return deckBonusMatches;
+  }
+
+  // Compare the product/supplement wording and issue number from the source.
+  const sourceProductKey = getTorecaSourceContainKey(card);
+  if (sourceProductKey) {
+    const productMatches = candidates.filter((item) =>
+      normalizePriceToken(item.title || '').includes(sourceProductKey),
+    );
+    if (productMatches.length) return productMatches;
+  }
   return null;
 }
 
 function getTorecaOrdinalVariantCandidates(card, candidates, allCards) {
-  // Fallback for older card data lacking a source-containment label:
-  // use the user's three-card ordering only when the group and shop variants
-  // form one unambiguous challenge / regular-pack / foil-pack trio.
+  // When two official PR variants share a source label, use a marked foil or
+  // the Sunday-S/subscription hologram wording to make the pairing explicit.
   const identity = getTorecaCardIdentity(card);
   if (!identity || !Array.isArray(allCards)) return null;
   const siblings = allCards
@@ -805,11 +864,39 @@ function getTorecaOrdinalVariantCandidates(card, candidates, allCards) {
       && getTorecaPrVariantNumber(sibling) !== null
     )
     .sort((a, b) => getTorecaPrVariantNumber(a) - getTorecaPrVariantNumber(b));
-  if (siblings.length !== 3) return null;
   const currentNumber = getTorecaPrVariantNumber(card);
   const currentIndex = siblings.findIndex((sibling) => getTorecaPrVariantNumber(sibling) === currentNumber);
   if (currentIndex < 0) return null;
 
+  if (siblings.length === 2 && candidates.length === 2) {
+    const sourceKeys = siblings.map(getTorecaSourceContainKey);
+    const sameSource = sourceKeys[0] && sourceKeys.every((key) => key === sourceKeys[0]);
+    const uniqueUrls = new Set(candidates.map((item) => item.url).filter(Boolean));
+    if (sameSource && uniqueUrls.size === 2) {
+      const titles = candidates.map((item) => normalizePriceToken(item.title || ''));
+      const sundayIndex = titles.findIndex((title) =>
+        /サンデーS/u.test(title) && !/週刊少年サンデー|定期購読|ホログラム仕様/u.test(title),
+      );
+      const hologramIndex = titles.findIndex((title) =>
+        /少年サンデーS/u.test(title) && /定期購読/u.test(title) && /ホログラム仕様/u.test(title),
+      );
+      if (sundayIndex >= 0 && hologramIndex >= 0 && sundayIndex !== hologramIndex) {
+        return [[candidates[sundayIndex]], [candidates[hologramIndex]]][currentIndex];
+      }
+
+      const foilIndexes = candidates
+        .map((item, index) => getTorecaVariantMarkers(item.title).includes('foil') ? index : -1)
+        .filter((index) => index >= 0);
+      if (foilIndexes.length === 1) {
+        const foilIndex = foilIndexes[0];
+        const regularIndex = foilIndex === 0 ? 1 : 0;
+        return [[candidates[regularIndex]], [candidates[foilIndex]]][currentIndex];
+      }
+    }
+  }
+
+  // Keep the existing challenge / regular-pack / foil-pack trio fallback.
+  if (siblings.length !== 3) return null;
   const challenge = candidates.filter((item) =>
     /チャレンジ戦/u.test(normalizePriceToken(item.title || ''))
     && /未開封/u.test(normalizePriceToken(item.title || ''))
@@ -824,6 +911,21 @@ function getTorecaOrdinalVariantCandidates(card, candidates, allCards) {
   const foil = packs.filter((entry) => entry.pack.volume === volume && entry.pack.foil);
   if (regular.length !== 1 || foil.length !== 1) return null;
   return [[challenge[0]], [regular[0].item], [foil[0].item]][currentIndex];
+}
+
+function hasTorecaSharedSourceListingCollision(card, matchingItems, allCards) {
+  if (normalizePriceRarity(card?.originalRarity) !== 'PR' || matchingItems.length !== 1) return false;
+  const identity = getTorecaCardIdentity(card);
+  const sourceKey = getTorecaSourceContainKey(card);
+  if (!identity || !sourceKey || !Array.isArray(allCards)) return false;
+  const siblings = allCards.filter((sibling) =>
+    getTorecaCardIdentity(sibling) === identity
+    && normalizePriceRarity(sibling.originalRarity) === 'PR'
+    && getTorecaPrVariantNumber(sibling) !== null
+    && getTorecaSourceContainKey(sibling) === sourceKey,
+  );
+  // Do not assign a lone shop listing to multiple different official card numbers.
+  return siblings.length > 1;
 }
 
 function preferDefaultTorecaVariant(items) {
@@ -903,6 +1005,16 @@ function getTorecaPriceMatch(card, snapshot, allCards = []) {
     else if (!numberCandidates.length) return { status: 'unmatched', item: null };
   }
 
+  // B10xxxP2 is the IF-parallel print; B10xxxP is the ordinary MRP print.
+  const ifParallelVariant = getTorecaIfParallelVariant(card, rarity);
+  if (ifParallelVariant !== null) {
+    candidates = candidates.filter((item) => {
+      const isIfParallel = /IFパラレル/u.test(normalizePriceToken(item.title || ''));
+      return ifParallelVariant ? isIfParallel : !isIfParallel;
+    });
+    if (!candidates.length) return { status: 'unmatched', item: null };
+  }
+
   // Sec1 is the non-signed listing; Sec2 is the signed listing.
   // Treat this as an explicit variant key rather than a weak display-name hint.
   if (rarity === 'SEC' && secVariant) {
@@ -944,14 +1056,13 @@ function getTorecaPriceMatch(card, snapshot, allCards = []) {
 
   const sourceVariantCandidates = getTorecaSourceVariantCandidates(card, candidates, allCards, items);
   let sourceVariantWasApplied = sourceVariantCandidates !== null;
-  if (sourceVariantWasApplied) {
-    candidates = sourceVariantCandidates;
-  } else {
-    const ordinalVariantCandidates = getTorecaOrdinalVariantCandidates(card, candidates, allCards);
-    if (ordinalVariantCandidates !== null) {
-      candidates = ordinalVariantCandidates;
-      sourceVariantWasApplied = true;
-    }
+  if (sourceVariantWasApplied) candidates = sourceVariantCandidates;
+
+  // Run ordinal disambiguation even after source narrowing when multiple prices remain.
+  const ordinalVariantCandidates = getTorecaOrdinalVariantCandidates(card, candidates, allCards);
+  if (ordinalVariantCandidates !== null) {
+    candidates = ordinalVariantCandidates;
+    sourceVariantWasApplied = true;
   }
 
   // If the card metadata explicitly marks a finish/version, honor it.
@@ -975,6 +1086,9 @@ function getTorecaPriceMatch(card, snapshot, allCards = []) {
   // reused across promo editions with no matching set metadata), do not invent
   // a price for the wrong edition.
   const unique = [...new Map(candidates.filter((item) => item.url).map((item) => [item.url, item])).values()];
+  if (unique.length === 1 && hasTorecaSharedSourceListingCollision(card, unique, allCards)) {
+    return { status: 'ambiguous', item: null, candidates: unique };
+  }
   if (unique.length !== 1) return { status: unique.length ? 'ambiguous' : 'unmatched', item: null, candidates: unique };
   return { status: 'match', item: unique[0] };
 }
