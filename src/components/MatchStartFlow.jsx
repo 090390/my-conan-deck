@@ -2,6 +2,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 import MatchTurnBoard from "./MatchTurnBoard";
 
+function canLeaveBeforeMulligan(matchState) {
+  const phase = String(matchState?.phase || "waiting").toLocaleLowerCase();
+  if (phase === "waiting") return true;
+  return phase === "mulligan"
+    && matchState?.seat1_mulligan_done !== true
+    && matchState?.seat2_mulligan_done !== true;
+}
+
 export default function MatchStartFlow({
   roomId,
   userId,
@@ -34,7 +42,7 @@ export default function MatchStartFlow({
       : { phase: "waiting", my_hand: [] };
 
     setMatchState(normalized);
-    onPhaseChange(normalized.phase);
+    onPhaseChange(normalized.phase, canLeaveBeforeMulligan(normalized));
     setSelectedInstanceIds((current) => current.filter((id) =>
       normalized.my_hand.some((card) => card.instance_id === id)
     ));
@@ -55,7 +63,7 @@ export default function MatchStartFlow({
           ? { ...data, phase: data.phase || "waiting", my_hand: Array.isArray(data.my_hand) ? data.my_hand : [] }
           : { phase: "waiting", my_hand: [] };
         setMatchState(normalized);
-        onPhaseChange(normalized.phase);
+        onPhaseChange(normalized.phase, canLeaveBeforeMulligan(normalized));
         setSelectedInstanceIds((current) => current.filter((id) =>
           normalized.my_hand.some((card) => card.instance_id === id)
         ));

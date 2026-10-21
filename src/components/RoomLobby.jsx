@@ -47,6 +47,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
   const [userId, setUserId] = useState("");
   const [readyDeckSignature, setReadyDeckSignature] = useState("");
   const [matchPhase, setMatchPhase] = useState("waiting");
+  const [canLeaveBeforeMulligan, setCanLeaveBeforeMulligan] = useState(true);
   const [showFieldOnly, setShowFieldOnly] = useState(true);
   const [nicknameDraft, setNicknameDraft] = useState("");
   const [nicknameDirty, setNicknameDirty] = useState(false);
@@ -125,6 +126,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
         setInviteCodeInput(String(savedRoom.inviteCode).toUpperCase());
         setRoom(savedRoom);
         setMatchPhase(phase);
+        setCanLeaveBeforeMulligan(phase === "waiting" || (String(phase).toLocaleLowerCase() === "mulligan" && state?.seat1_mulligan_done !== true && state?.seat2_mulligan_done !== true));
         setGreetingFinished(localStorage.getItem(COMPLETED_GREETING_ROOM_KEY) === savedRoom.id);
       } catch (err) {
         if (active) setNotice(err?.message || "이전 방 정보를 복원하지 못했습니다. 연결 상태를 확인해 주세요.");
@@ -296,7 +298,10 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
   const canReady = deckTotal === 40 && partnerLooksValid && eventLooksValid && allDeckKeysExist;
   const myPlayer = players.find((player) => player.user_id === userId);
   const bothReady = players.length === 2 && players.every((player) => player.is_ready === true);
-  const handleMatchPhaseChange = useCallback((phase) => setMatchPhase(phase), []);
+  const handleMatchPhaseChange = useCallback((phase, canLeave = phase === "waiting") => {
+    setMatchPhase(phase);
+    setCanLeaveBeforeMulligan(Boolean(canLeave));
+  }, []);
   const completeGreeting = useCallback(() => {
     setGreetingFinished(true);
     if (room?.id) localStorage.setItem(COMPLETED_GREETING_ROOM_KEY, room.id);
@@ -308,6 +313,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
     setPlayers([]);
     setReadyDeckSignature("");
     setMatchPhase("waiting");
+    setCanLeaveBeforeMulligan(true);
     setGreetingFinished(false);
     setShowFieldOnly(true);
     setShowTermsModal(false);
@@ -316,8 +322,8 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
   }, []);
 
   async function leaveRoom() {
-    if (!room?.id || loading || matchPhase !== "waiting") return;
-    if (!window.confirm("멀리건이 시작되기 전 대기실에서 나가시겠습니까?")) return;
+    if (!room?.id || loading || !canLeaveBeforeMulligan) return;
+    if (!window.confirm("아직 누구도 멀리건을 확정하지 않았습니다. 대기실에서 나가시겠습니까?")) return;
     setLoading(true);
     setError("");
     setNotice("");
@@ -547,7 +553,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
         </div>
         {room && <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <span style={{ padding: "5px 9px", border: "1px solid rgba(134,239,172,.22)", borderRadius: 7, color: "#86efac", background: "rgba(34,197,94,.08)", fontSize: 11, fontWeight: 750 }}>대기실 입장 중</span>
-          {matchPhase === "waiting" && <button type="button" style={{ ...buttonStyle, padding: "7px 10px", background: "#4b2637", borderColor: "rgba(251,113,133,.35)", fontSize: 11 }} disabled={loading} onClick={() => void leaveRoom()}>{loading ? "나가는 중…" : "대기실 나가기"}</button>}
+          {canLeaveBeforeMulligan && <button type="button" style={{ ...buttonStyle, padding: "7px 10px", background: "#7f1d1d", borderColor: "rgba(251,113,133,.7)", fontSize: 12, boxShadow: "0 0 0 1px rgba(251,113,133,.10)" }} disabled={loading} onClick={() => void leaveRoom()}>{loading ? "나가는 중…" : "대기실 나가기"}</button>}
         </div>}
       </div>
 

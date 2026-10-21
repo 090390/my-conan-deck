@@ -91,8 +91,16 @@ BEGIN
   END IF;
 
   v_match_state := public.get_private_match_state(p_room_id);
-  IF lower(coalesce(v_match_state ->> 'phase','waiting')) <> 'waiting' THEN
-    RAISE EXCEPTION '멀리건이 시작된 뒤에는 대기실에서 나갈 수 없습니다.';
+  IF lower(coalesce(v_match_state ->> 'phase','waiting')) NOT IN ('waiting','mulligan') THEN
+    RAISE EXCEPTION '게임이 본격적으로 진행된 뒤에는 대기실에서 나갈 수 없습니다.';
+  END IF;
+
+  IF lower(coalesce(v_match_state ->> 'phase','waiting')) = 'mulligan'
+     AND (
+       COALESCE(NULLIF(v_match_state ->> 'seat1_mulligan_done','')::boolean,false)
+       OR COALESCE(NULLIF(v_match_state ->> 'seat2_mulligan_done','')::boolean,false)
+     ) THEN
+    RAISE EXCEPTION '한 명이라도 멀리건을 확정한 뒤에는 대기실에서 나갈 수 없습니다.';
   END IF;
 
   DELETE FROM public.room_players
