@@ -1001,7 +1001,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
                     <button type="button" style={st.smallButton} disabled={loading || Boolean(myBoard?.partner_mr_card)} onClick={() => void runAction("move_card_to_mr_partner", { source: "remove", instance_id: card.instance_id })}>파트너 에이리어으로</button>
                   </div>}
                 </article>;
-              })}h && <p style={st.muted}>비어 있습니다.</p>}</div>)}</div>
+              })}</div>{!pile.cards.length && <p style={st.muted}>비어 있습니다.</p>}</div>)}</div>
         </section>
       </div>}
 
