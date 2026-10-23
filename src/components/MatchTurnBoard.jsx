@@ -10,6 +10,9 @@ function n(value, fallback = 0) {
   const valueNumber = Number(value);
   return Number.isFinite(valueNumber) ? valueNumber : fallback;
 }
+function normalizeEffectQuotes(value) {
+  return String(value ?? "").replace(/[“”]/gu, (quote) => quote === "“" ? "「" : "」");
+}
 function countDelta(current, previous) {
   const delta = Number(current || 0) - Number(previous ?? current ?? 0);
   return delta === 0 ? "±0" : `${delta > 0 ? "+" : ""}${delta}`;
@@ -137,7 +140,11 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   const cardsByKey = useMemo(() => new Map(cards.map((card) => [String(card.key), {
     ...card,
     traits: normalizeCardTraits(card),
-    disguiseEffect: cardDisguiseEffect(card),
+    ability: normalizeEffectQuotes(card.ability),
+    originalAbility: normalizeEffectQuotes(card.originalAbility),
+    hiramekiEffect: normalizeEffectQuotes(card.hiramekiEffect),
+    cutInEffect: normalizeEffectQuotes(card.cutInEffect),
+    disguiseEffect: normalizeEffectQuotes(cardDisguiseEffect(card)),
   }])), [cards]);
 
   const refreshActionLog = useCallback(async () => {
@@ -736,7 +743,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
         <section role="dialog" aria-modal="true" aria-label="증거 공격 가드 선택" style={{ width: "min(100%, 620px)", maxHeight: "90dvh", overflowY: "auto", ...st.panel, borderColor: "rgba(252,211,77,.55)", boxShadow: "0 24px 70px rgba(0,0,0,.72)" }}>
           <h2 style={{ ...st.zoneTitle, color: C.gold, fontSize: 16 }}>증거 공격 · 가드 선택</h2>
           {pendingIsForMe ? <>
-            <p style={{ ...st.muted, marginBottom: 12, fontSize: 11 }}>상대가 내 증거 에이리어을 공격했습니다. 액티브 캐릭터로 가드하거나 가드하지 않을 수 있습니다.</p>
+            <p style={{ ...st.muted, marginBottom: 12, fontSize: 11 }}>상대가 내 증거 에이리어를 공격했습니다. 액티브 캐릭터로 가드하거나 가드하지 않을 수 있습니다.</p>
             <div style={{ display: "grid", gap: 7 }}>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(112px,1fr))", gap: 8 }}>{(myBoard?.field_cards || []).filter((card) => !card.rested && card.card_type !== "event" && (card.status || "active") === "active").map((card) => <button key={card.instance_id} type="button" style={{ ...st.smallButton, textAlign: "left", padding: 7 }} disabled={loading} onClick={() => void runAction("guard_with_character", { instance_id: card.instance_id })}>{infoFor(card)?.imageUrl ? <img src={infoFor(card).imageUrl} alt={nameOf(card)} style={{ display: "block", width: "100%", aspectRatio: "3/4", objectFit: "contain" }} /> : <div style={st.faceDown} />}<strong style={{ display: "block", marginTop: 4, fontSize: 10 }}>{nameOf(card)}</strong><span style={{ display: "block", fontSize: 9, color: C.muted, marginTop: 3 }}>AP {n(card.ap)+n(card.ap_bonus)} · 가드 선택</span></button>)}</div>
               <button type="button" style={{ ...st.button, background: "#7f1d1d" }} disabled={loading} onClick={() => void runAction("decline_guard")}>가드하지 않기</button>
@@ -980,7 +987,21 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
       {showRemoveArea && minimizedModal !== "remove" && <div role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowRemoveArea(false); }} style={{ position: "fixed", inset: 0, zIndex: 100000, padding: 12, display: "flex", justifyContent: "center", alignItems: "center", background: "rgba(0,0,0,.84)", backdropFilter: "blur(4px)" }}>
         <section onDoubleClick={(event) => minimizeOnDoubleClick(event, "remove")} role="dialog" aria-modal="true" aria-label="리무브 에이리어 목록" style={{ width: "min(100%, 920px)", maxHeight: "92dvh", overflow: "hidden", display: "flex", flexDirection: "column", border: "1px solid rgba(148,163,184,.24)", borderRadius: 12, background: "#111a2a", color: C.text, boxShadow: "0 24px 70px rgba(0,0,0,.7)" }}>
           <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: 12, borderBottom: "1px solid rgba(255,255,255,.09)" }}><div><h2 style={{ margin: 0, fontSize: 17 }}>리무브 에이리어</h2><p style={{ ...st.muted, marginTop: 4 }}>내 리무브 {myRemoveCards.length}장 · 상대 리무브 {opponentRemoveCards.length}장</p></div><button type="button" style={st.button} onClick={() => setShowRemoveArea(false)}>닫기 ✕</button></header>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 10, padding: 12, overflowY: "auto" }}>{[{ label: "내 리무브", cards: myRemoveCards }, { label: "상대 리무브", cards: opponentRemoveCards }].map((pile) => <div key={pile.label} style={{ minWidth: 0, padding: 8, border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, background: "#080d16" }}><h3 style={{ margin: "0 0 8px", fontSize: 11, color: C.blue }}>{pile.label} · {pile.cards.length}장</h3><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(86px,1fr))", gap: 6 }}>{pile.cards.map((card) => <article key={card.instance_id} style={{ border: "1px solid rgba(255,255,255,.1)", borderRadius: 6, padding: 5, background: "#101827", color: C.text, minWidth: 0 }}><button type="button" onClick={() => openDetails(card)} style={{ width: "100%", border: 0, padding: 0, background: "transparent", color: C.text }}>{infoFor(card)?.imageUrl ? <img src={infoFor(card).imageUrl} alt={nameOf(card)} style={{ width: "100%", aspectRatio: "3/4", objectFit: "contain" }} /> : <div style={st.faceDown} />}<div style={{ fontSize: 9, lineHeight: 1.3, overflowWrap: "anywhere", marginTop: 4 }}>{nameOf(card)}</div></button>{pile.label === "내 리무브" && !game.game_over && !pending && <div style={{ display: "grid", gap: 3, marginTop: 5 }}><button type="button" style={st.smallButton} disabled={loading} onClick={() => void runAction("move_remove_card_to_hand", { instance_id: card.instance_id })}>손패로 가져오기</button><button type="button" style={st.smallButton} disabled={loading || myFieldCharacterCount >= 5} onClick={() => void runAction("play_remove_character", { instance_id: card.instance_id })}>현장에 등장</button><button type="button" style={st.smallButton} disabled={loading || Boolean(myBoard?.partner_mr_card)} onClick={() => void runAction("move_card_to_mr_partner", { source: "remove", instance_id: card.instance_id })}>파트너 에이리어으로</button></div>}</article>)}</div>{!pile.cards.length && <p style={st.muted}>비어 있습니다.</p>}</div>)}</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 10, padding: 12, overflowY: "auto" }}>{[{ label: "내 리무브", cards: myRemoveCards }, { label: "상대 리무브", cards: opponentRemoveCards }].map((pile) => <div key={pile.label} style={{ minWidth: 0, padding: 8, border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, background: "#080d16" }}><h3 style={{ margin: "0 0 8px", fontSize: 11, color: C.blue }}>{pile.label} · {pile.cards.length}장</h3><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(86px,1fr))", gap: 6 }}>{pile.cards.map((card) => {
+                const hiramekiAchieved = Boolean(card.hirameki_achieved && infoFor(card)?.hiramekiEffect);
+                return <article key={card.instance_id} style={{ border: hiramekiAchieved ? "2px solid #ec4899" : "1px solid rgba(255,255,255,.1)", boxShadow: hiramekiAchieved ? "0 0 0 1px rgba(236,72,153,.35), 0 0 14px rgba(236,72,153,.22)" : "none", borderRadius: 6, padding: 5, background: "#101827", color: C.text, minWidth: 0 }}>
+                  {hiramekiAchieved && <div style={{ marginBottom: 5, padding: "3px 5px", borderRadius: 4, background: "#9d174d", border: "1px solid #f472b6", color: "#fff", fontSize: 8, fontWeight: 900, textAlign: "center", letterSpacing: ".02em" }}>❗ 히라메키 달성</div>}
+                  <button type="button" onClick={() => openDetails(card)} style={{ width: "100%", border: 0, padding: 0, background: "transparent", color: C.text }}>
+                    {infoFor(card)?.imageUrl ? <img src={infoFor(card).imageUrl} alt={nameOf(card)} style={{ width: "100%", aspectRatio: "3/4", objectFit: "contain" }} /> : <div style={st.faceDown} />}
+                    <div style={{ fontSize: 9, lineHeight: 1.3, overflowWrap: "anywhere", marginTop: 4 }}>{nameOf(card)}</div>
+                  </button>
+                  {pile.label === "내 리무브" && !game.game_over && !pending && <div style={{ display: "grid", gap: 3, marginTop: 5 }}>
+                    <button type="button" style={st.smallButton} disabled={loading} onClick={() => void runAction("move_remove_card_to_hand", { instance_id: card.instance_id })}>손패로 가져오기</button>
+                    <button type="button" style={st.smallButton} disabled={loading || myFieldCharacterCount >= 5} onClick={() => void runAction("play_remove_character", { instance_id: card.instance_id })}>현장에 등장</button>
+                    <button type="button" style={st.smallButton} disabled={loading || Boolean(myBoard?.partner_mr_card)} onClick={() => void runAction("move_card_to_mr_partner", { source: "remove", instance_id: card.instance_id })}>파트너 에이리어으로</button>
+                  </div>}
+                </article>;
+              })}h && <p style={st.muted}>비어 있습니다.</p>}</div>)}</div>
         </section>
       </div>}
 
