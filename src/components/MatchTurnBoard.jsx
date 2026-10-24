@@ -694,7 +694,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   return (
     <main style={st.root}>
       <style>{`
-        .mock-sticky-status { position: sticky; top: 0; z-index: 1000; margin-top: calc(-1 * clamp(10px, 2vw, 22px)); margin-left: calc(-1 * clamp(10px, 2vw, 22px)); margin-right: calc(-1 * clamp(10px, 2vw, 22px)); padding: calc(clamp(10px, 2vw, 22px) + 4px) clamp(10px, 2vw, 22px) 0; background: #080d17; backdrop-filter: blur(12px); border-bottom: 1px solid rgba(148,163,184,.18); box-shadow: 0 8px 20px rgba(0,0,0,.16); }
+        .mock-sticky-status { position: sticky; top: calc(-1 * clamp(10px, 2vw, 22px)); z-index: 1000; margin-top: calc(-1 * clamp(10px, 2vw, 22px)); margin-left: calc(-1 * clamp(10px, 2vw, 22px)); margin-right: calc(-1 * clamp(10px, 2vw, 22px)); padding: calc(clamp(10px, 2vw, 22px) + 4px) clamp(10px, 2vw, 22px) 0; background: #080d17; backdrop-filter: blur(12px); border-bottom: 1px solid rgba(148,163,184,.18); box-shadow: 0 8px 20px rgba(0,0,0,.16); }
         .mock-sticky-status::before { content: ""; position: absolute; top: calc(-1 * clamp(10px, 2vw, 22px)); left: 0; right: 0; height: calc(clamp(10px, 2vw, 22px) + 4px); background: #080d17; pointer-events: none; z-index: 0; }
         .mock-board-grid { display:grid; grid-template-columns:minmax(145px,1.05fr) minmax(0,7fr) minmax(145px,1.05fr); grid-template-rows:auto auto auto; gap:10px; align-items:stretch; }
         .mock-zone-case {grid-column:1;grid-row:1;} .mock-zone-center {grid-column:2;grid-row:1 / span 2;} .mock-zone-deck {grid-column:3;grid-row:1;}
@@ -1113,7 +1113,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
               if (hasReadableName) return names.some((name) => name === "범인" || name === "犯人");
               return cardHasRuleId({ ...removedInfo, ...removedCard }, "0627") || cardHasRuleId({ ...removedInfo, ...removedCard }, "1039");
             }).length : 0;
-            const bonus = isCulpritScalingCutIn ? culpritCardCount * 2000 : n(card.cut_in_bonus);
+            const bonus = isCulpritScalingCutIn ? (culpritCardCount + 1) * 2000 : n(card.cut_in_bonus);
             return <button key={card.instance_id} type="button" style={{ ...st.button, background: "#164e63", textAlign: "left" }} disabled={loading} onClick={() => void runAction("contact_use_cutin", { instance_id: card.instance_id })}>
               <strong style={{ display: "block", marginBottom: 4 }}>{nameOf(card)} · {bonus > 0 ? `AP +${bonus}` : "AP 증가 없음"}</strong>
               <span style={{ display: "block", whiteSpace: "pre-wrap", overflowWrap: "anywhere", fontSize: 10, lineHeight: 1.5 }}>{effectText || "컷인 효과 문구를 확인할 수 없습니다."}</span>
