@@ -1113,7 +1113,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
               if (hasReadableName) return names.some((name) => name === "범인" || name === "犯人");
               return cardHasRuleId({ ...removedInfo, ...removedCard }, "0627") || cardHasRuleId({ ...removedInfo, ...removedCard }, "1039");
             }).length : 0;
-            const bonus = isCulpritScalingCutIn ? (culpritCardCount + 1) * 2000 : n(card.cut_in_bonus);
+            const bonus = isCulpritScalingCutIn ? culpritCardCount * 2000 : n(card.cut_in_bonus);
             return <button key={card.instance_id} type="button" style={{ ...st.button, background: "#164e63", textAlign: "left" }} disabled={loading} onClick={() => void runAction("contact_use_cutin", { instance_id: card.instance_id })}>
               <strong style={{ display: "block", marginBottom: 4 }}>{nameOf(card)} · {bonus > 0 ? `AP +${bonus}` : "AP 증가 없음"}</strong>
               <span style={{ display: "block", whiteSpace: "pre-wrap", overflowWrap: "anywhere", fontSize: 10, lineHeight: 1.5 }}>{effectText || "컷인 효과 문구를 확인할 수 없습니다."}</span>
