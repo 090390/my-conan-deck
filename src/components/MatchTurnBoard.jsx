@@ -5,6 +5,7 @@ const C = {
   bg: "#080d17", panel: "#101827", panel2: "#0b1220", border: "rgba(148,163,184,.22)",
   text: "#e8edf7", muted: "#94a3b8", blue: "#93c5fd", red: "#fda4af", green: "#86efac", gold: "#fcd34d",
 };
+const HAND_TO_PARTNER_LABEL = "파트너로";
 
 function n(value, fallback = 0) {
   const valueNumber = Number(value);
@@ -693,7 +694,8 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   return (
     <main style={st.root}>
       <style>{`
-        .mock-sticky-status { position: sticky; top: 0; z-index: 1000; margin-top: calc(-1 * clamp(10px, 2vw, 22px)); margin-left: calc(-1 * clamp(10px, 2vw, 22px)); margin-right: calc(-1 * clamp(10px, 2vw, 22px)); padding: calc(clamp(10px, 2vw, 22px) + 4px) clamp(10px, 2vw, 22px) 0; background: rgba(8,13,23,.97); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(148,163,184,.18); box-shadow: 0 8px 20px rgba(0,0,0,.16); }
+        .mock-sticky-status { position: sticky; top: 0; z-index: 1000; margin-top: calc(-1 * clamp(10px, 2vw, 22px)); margin-left: calc(-1 * clamp(10px, 2vw, 22px)); margin-right: calc(-1 * clamp(10px, 2vw, 22px)); padding: calc(clamp(10px, 2vw, 22px) + 4px) clamp(10px, 2vw, 22px) 0; background: #080d17; backdrop-filter: blur(12px); border-bottom: 1px solid rgba(148,163,184,.18); box-shadow: 0 8px 20px rgba(0,0,0,.16); }
+        .mock-sticky-status::before { content: ""; position: absolute; top: calc(-1 * clamp(10px, 2vw, 22px)); left: 0; right: 0; height: calc(clamp(10px, 2vw, 22px) + 4px); background: #080d17; pointer-events: none; z-index: 0; }
         .mock-board-grid { display:grid; grid-template-columns:minmax(145px,1.05fr) minmax(0,7fr) minmax(145px,1.05fr); grid-template-rows:auto auto auto; gap:10px; align-items:stretch; }
         .mock-zone-case {grid-column:1;grid-row:1;} .mock-zone-center {grid-column:2;grid-row:1 / span 2;} .mock-zone-deck {grid-column:3;grid-row:1;}
         .mock-zone-evidence {grid-column:1;grid-row:2 / span 1;} .mock-zone-remove {grid-column:3;grid-row:2 / span 1;} .mock-zone-files {grid-column:1 / span 3;grid-row:3;}
@@ -968,7 +970,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
                 void runAction("play_event", { instance_id: card.instance_id });
               }}>현장에 이벤트 사용</button>}
               {canManualEffect && card.card_type === "character" && <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 5, background: "#3b2f5c" }} disabled={loading} onClick={() => { if (myFieldCharacterCount >= 5) { showBlockedReason("현장에 캐릭터 카드가 이미 5장 있습니다. 먼저 현장 카드를 이동해 주세요."); return; } void runAction("extra_play_character", { instance_id: card.instance_id, effect_override: true }); }}>효과로 추가 등장<br />(제한 무시)</button>}
-              {canManualEffect && <div style={{ display: "grid", gap: 4, marginTop: 5 }}><button type="button" style={st.smallButton} disabled={loading} onClick={() => { if (window.confirm(`${info?.name || card.key}를 리무브 에이리어로 옮길까요?`)) void runAction("move_hand_card", { instance_id: card.instance_id, destination: "remove" }); }}>리무브</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => openHandZoneChoice(card, "deck")}>덱으로</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => openHandZoneChoice(card, "file")}>파일로</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => setHandEvidenceChoice(card)}>증거로</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => void runAction("move_card_to_mr_partner", { source: "hand", instance_id: card.instance_id })}>파트너로</button></div>}
+              {canManualEffect && <div style={{ display: "grid", gap: 4, marginTop: 5 }}><button type="button" style={st.smallButton} disabled={loading} onClick={() => { if (window.confirm(`${info?.name || card.key}를 리무브 에이리어로 옮길까요?`)) void runAction("move_hand_card", { instance_id: card.instance_id, destination: "remove" }); }}>리무브</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => openHandZoneChoice(card, "deck")}>덱으로</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => openHandZoneChoice(card, "file")}>파일로</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => setHandEvidenceChoice(card)}>증거로</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => void runAction("move_card_to_mr_partner", { source: "hand", instance_id: card.instance_id })} aria-label={HAND_TO_PARTNER_LABEL}>{HAND_TO_PARTNER_LABEL}</button></div>}
             </article>;
           })}
           {!myHand.length && <p style={st.muted}>손패가 비어 있습니다.</p>}
@@ -1101,7 +1103,17 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
           </div>
           {pending.next_responder_user_id === userId ? <><p style={{ fontSize: 11, color: C.gold, margin: "12px 0 7px" }}>{userId === pending.target_user_id ? "현재 순서: 수비자 · 컷인 사용 여부를 선택해 주세요." : "현재 순서: 공격자 · 컷인 사용 여부를 선택해 주세요."}</p><div style={{ display: "grid", gap: 6 }}>{myHand.filter((card) => n(card.cut_in_bonus) > 0 || Boolean(String(infoFor(card)?.cutInEffect || card.cut_in_effect || "").trim())).map((card) => {
             const effectText = String(infoFor(card)?.cutInEffect || card.cut_in_effect || "").trim();
-            const bonus = n(card.cut_in_bonus);
+            const cardInfo = infoFor(card);
+            const isCulpritScalingCutIn = cardHasRuleId({ ...cardInfo, ...card }, "0627");
+            const culpritCardCount = isCulpritScalingCutIn ? myRemoveCards.filter((removedCard) => {
+              const removedInfo = infoFor(removedCard);
+              const names = [removedInfo?.name, removedInfo?.originalName, removedCard?.name, removedCard?.nameKo, removedCard?.name_ko, removedCard?.originalName]
+                .map((value) => String(value ?? "").normalize("NFKC").replace(/\\s+/gu, "").toLocaleLowerCase());
+              const hasReadableName = names.some(Boolean);
+              if (hasReadableName) return names.some((name) => name === "범인" || name === "犯人");
+              return cardHasRuleId({ ...removedInfo, ...removedCard }, "0627") || cardHasRuleId({ ...removedInfo, ...removedCard }, "1039");
+            }).length : 0;
+            const bonus = isCulpritScalingCutIn ? culpritCardCount * 2000 : n(card.cut_in_bonus);
             return <button key={card.instance_id} type="button" style={{ ...st.button, background: "#164e63", textAlign: "left" }} disabled={loading} onClick={() => void runAction("contact_use_cutin", { instance_id: card.instance_id })}>
               <strong style={{ display: "block", marginBottom: 4 }}>{nameOf(card)} · {bonus > 0 ? `AP +${bonus}` : "AP 증가 없음"}</strong>
               <span style={{ display: "block", whiteSpace: "pre-wrap", overflowWrap: "anywhere", fontSize: 10, lineHeight: 1.5 }}>{effectText || "컷인 효과 문구를 확인할 수 없습니다."}</span>
