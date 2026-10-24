@@ -693,7 +693,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   return (
     <main style={st.root}>
       <style>{`
-        .mock-sticky-status { position: sticky; top: 0; z-index: 1000; padding-top: 4px; background: rgba(8,13,23,.97); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(148,163,184,.18); box-shadow: 0 8px 20px rgba(0,0,0,.16); }
+        .mock-sticky-status { position: sticky; top: 0; z-index: 1000; margin-top: calc(-1 * clamp(10px, 2vw, 22px)); margin-left: calc(-1 * clamp(10px, 2vw, 22px)); margin-right: calc(-1 * clamp(10px, 2vw, 22px)); padding: calc(clamp(10px, 2vw, 22px) + 4px) clamp(10px, 2vw, 22px) 0; background: rgba(8,13,23,.97); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(148,163,184,.18); box-shadow: 0 8px 20px rgba(0,0,0,.16); }
         .mock-board-grid { display:grid; grid-template-columns:minmax(145px,1.05fr) minmax(0,7fr) minmax(145px,1.05fr); grid-template-rows:auto auto auto; gap:10px; align-items:stretch; }
         .mock-zone-case {grid-column:1;grid-row:1;} .mock-zone-center {grid-column:2;grid-row:1 / span 2;} .mock-zone-deck {grid-column:3;grid-row:1;}
         .mock-zone-evidence {grid-column:1;grid-row:2 / span 1;} .mock-zone-remove {grid-column:3;grid-row:2 / span 1;} .mock-zone-files {grid-column:1 / span 3;grid-row:3;}
@@ -943,16 +943,16 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(104px,1fr))", gap: 7, marginTop: 9 }}>
           {myHand.map((card) => {
             const info = infoFor(card);
-            const normalPlay = canActMain && card.card_type === "character" && !myBoard?.character_played_this_turn && n(card.cost) <= costLimit;
+            const normalPlay = canActMain && card.card_type === "character" && !myBoard?.base_card_played_this_turn && !myBoard?.character_played_this_turn && n(card.cost) <= costLimit;
             const eventPlayCostLimit = costLimit + (myBoard?.next_hint_pending ? 1 : 0);
             const nextSelected = selectedNextHint === card.instance_id;
             return <article key={card.instance_id} style={{ minWidth: 0, padding: 6, border: `1px solid ${nextSelected ? "#fb7185" : "rgba(148,163,184,.15)"}`, borderRadius: 7, background: "#080d16" }}>
               <button type="button" onClick={() => openDetails(card)} style={{ display: "block", width: "100%", border: 0, background: "transparent", color: C.text, padding: 0 }}><CardArt instance={card} /><div style={{ fontSize: 10, fontWeight: 800, lineHeight: 1.35, marginTop: 5, textAlign: "left", overflowWrap: "anywhere" }}>{info?.name || card.key}</div></button>
               <div style={{ fontSize: 9, color: C.muted, marginTop: 3 }}>레벨 {card.cost ?? "-"} · AP {card.ap ?? "-"}</div>
               {(canActMain || canSelectNextHintCard) && card.card_type === "character" && <div style={{ display: "grid", gap: 4, marginTop: 6 }}>
-                {canActMain && !myBoard?.next_hint_pending && <button type="button" style={{ ...st.smallButton, opacity: n(card.cost) > costLimit || myBoard?.character_played_this_turn || myFieldCharacterCount >= 5 ? .72 : 1 }} disabled={loading} onClick={() => {
+                {canActMain && !myBoard?.next_hint_pending && <button type="button" style={{ ...st.smallButton, opacity: !normalPlay || myFieldCharacterCount >= 5 ? .72 : 1 }} disabled={loading} onClick={() => {
                   if (n(card.cost) > costLimit) { showBlockedReason(`필요 레벨을 충족하지 않아 사용할 수 없습니다. 현재 레벨 상한은 ${costLimit}입니다.`); return; }
-                  if (myBoard?.character_played_this_turn) { showBlockedReason("이번 턴의 기본 등장을 이미 사용했습니다. 추가 등장은 효과 처리 버튼을 이용해 주세요."); return; }
+                  if (myBoard?.base_card_played_this_turn || myBoard?.character_played_this_turn) { showBlockedReason("이번 턴의 기본 카드 사용을 이미 완료했습니다. 추가 카드를 내려면 넥스트 힌트를 사용해 주세요."); return; }
                   if (myFieldCharacterCount >= 5) { showBlockedReason("현장에 캐릭터 카드가 이미 5장 있습니다. 먼저 현장 카드를 이동해 주세요."); return; }
                   void runAction("play_character", { instance_id: card.instance_id });
                 }}>기본 등장</button>}
@@ -962,12 +962,13 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
                   void runAction("next_hint", { instance_id: card.instance_id });
                 }}>이 카드로 넥스트 힌트 등장</button>}
               </div>}
-              {(canActMain || canPlayEventDuringNextHint) && card.card_type === "event" && <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 6, background: "#075985", opacity: n(card.cost) > eventPlayCostLimit ? .72 : 1 }} disabled={loading} onClick={() => {
+              {(canActMain || canPlayEventDuringNextHint) && card.card_type === "event" && <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 6, background: "#075985", opacity: n(card.cost) > eventPlayCostLimit || (myBoard?.base_card_played_this_turn && !myBoard?.next_hint_pending) ? .72 : 1 }} disabled={loading} onClick={() => {
                 if (n(card.cost) > eventPlayCostLimit) { showBlockedReason(`필요 레벨을 충족하지 않아 이벤트를 사용할 수 없습니다. 현재 레벨 상한은 ${eventPlayCostLimit}입니다.`); return; }
+                if (myBoard?.base_card_played_this_turn && !myBoard?.next_hint_pending) { showBlockedReason("이번 턴의 기본 카드 사용을 이미 완료했습니다. 추가 카드를 내려면 넥스트 힌트를 사용해 주세요."); return; }
                 void runAction("play_event", { instance_id: card.instance_id });
               }}>현장에 이벤트 사용</button>}
               {canManualEffect && card.card_type === "character" && <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 5, background: "#3b2f5c" }} disabled={loading} onClick={() => { if (myFieldCharacterCount >= 5) { showBlockedReason("현장에 캐릭터 카드가 이미 5장 있습니다. 먼저 현장 카드를 이동해 주세요."); return; } void runAction("extra_play_character", { instance_id: card.instance_id, effect_override: true }); }}>효과로 추가 등장<br />(제한 무시)</button>}
-              {canManualEffect && <div style={{ display: "grid", gap: 4, marginTop: 5 }}><button type="button" style={st.smallButton} disabled={loading} onClick={() => { if (window.confirm(`${info?.name || card.key}를 리무브 에이리어로 옮길까요?`)) void runAction("move_hand_card", { instance_id: card.instance_id, destination: "remove" }); }}>리무브</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => openHandZoneChoice(card, "deck")}>덱으로</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => openHandZoneChoice(card, "file")}>파일로</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => setHandEvidenceChoice(card)}>증거로</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => void runAction("move_card_to_mr_partner", { source: "hand", instance_id: card.instance_id })}>파트너 에이리어으로</button></div>}
+              {canManualEffect && <div style={{ display: "grid", gap: 4, marginTop: 5 }}><button type="button" style={st.smallButton} disabled={loading} onClick={() => { if (window.confirm(`${info?.name || card.key}를 리무브 에이리어로 옮길까요?`)) void runAction("move_hand_card", { instance_id: card.instance_id, destination: "remove" }); }}>리무브</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => openHandZoneChoice(card, "deck")}>덱으로</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => openHandZoneChoice(card, "file")}>파일로</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => setHandEvidenceChoice(card)}>증거로</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => void runAction("move_card_to_mr_partner", { source: "hand", instance_id: card.instance_id })}>파트너로</button></div>}
             </article>;
           })}
           {!myHand.length && <p style={st.muted}>손패가 비어 있습니다.</p>}
@@ -997,7 +998,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
                   {pile.label === "내 리무브" && !game.game_over && !pending && <div style={{ display: "grid", gap: 3, marginTop: 5 }}>
                     <button type="button" style={st.smallButton} disabled={loading} onClick={() => void runAction("move_remove_card_to_hand", { instance_id: card.instance_id })}>손패로 가져오기</button>
                     <button type="button" style={st.smallButton} disabled={loading || myFieldCharacterCount >= 5} onClick={() => void runAction("play_remove_character", { instance_id: card.instance_id })}>현장에 등장</button>
-                    <button type="button" style={st.smallButton} disabled={loading || Boolean(myBoard?.partner_mr_card)} onClick={() => void runAction("move_card_to_mr_partner", { source: "remove", instance_id: card.instance_id })}>파트너 에이리어으로</button>
+                    <button type="button" style={st.smallButton} disabled={loading || Boolean(myBoard?.partner_mr_card)} onClick={() => void runAction("move_card_to_mr_partner", { source: "remove", instance_id: card.instance_id })}>파트너로</button>
                   </div>}
                 </article>;
               })}</div>{!pile.cards.length && <p style={st.muted}>비어 있습니다.</p>}</div>)}</div>
