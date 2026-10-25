@@ -375,6 +375,15 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   const canPartnerDeduce = canActMain && !myBoard?.partner_rested && !myBoard?.partner_assist_used && Boolean(myBoard?.partner_key);
   const canPartnerAssist = canActMain && !myBoard?.partner_rested && !myBoard?.partner_assist_used && !myBoard?.next_hint_pending;
 
+  // When the defender selects a guard character, the server changes the pending action
+  // from guard selection to character contact. Always unminimize that transition so
+  // both players see the cut-in choice window for the guarded character.
+  useEffect(() => {
+    if (pending?.type === "character_contact") {
+      setMinimizedModal((current) => current === "contact" ? "" : current);
+    }
+  }, [pending?.type]);
+
   useEffect(() => {
     if (!isMyTurn || game?.turn_step !== "main" || game?.game_over) {
       setAllowActiveTargetsByCard({});
@@ -672,7 +681,10 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   const ownPeekOrder = peekOrderIds.map((id) => ownPeekCards.find((card) => card.instance_id === id)).filter(Boolean);
   const canSelectNextHintCard = isMyTurn && game?.turn_step === "main" && !game?.game_over && !pending && Boolean(myBoard?.next_hint_pending);
   const canPlayEventDuringNextHint = canSelectNextHintCard && (!game?.deck_peek_locked || Boolean(game?.my_deck_peek));
-  const revealedEvidenceCard = pending?.type === "evidence_attack_reveal" ? pending.revealed_evidence_card : null;
+  const isManualEvidenceRemovePending = pending?.type === "evidence_remove_reveal";
+  const revealedEvidenceCard = pending?.type === "evidence_attack_reveal" || isManualEvidenceRemovePending ? pending.revealed_evidence_card : null;
+  const evidenceRemoveAcknowledgedIds = Array.isArray(pending?.acknowledged_user_ids) ? pending.acknowledged_user_ids : [];
+  const myEvidenceRemoveAcknowledged = evidenceRemoveAcknowledgedIds.includes(userId);
   const winnerBoard = boards.find((board) => board.user_id === game?.winner_user_id);
   const winnerName = game?.winner_display_name || winnerBoard?.display_name || "플레이어";
   const minimizedModalLabels = { remove: "리무브 에이리어", peek: "덱 위 카드 살펴보기", sharedPeek: "상대가 공개한 카드", handReveal: "상대 손패 공개 확인", contact: "컨택 · 컷인 선택", evidence: "증거 카드 공개", detail: "카드 상세 정보", opponentDeck: "상대 덱 보기", deckRemove: "덱 위 카드 리무브 확인" };
@@ -797,12 +809,12 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
             <h3 style={{ ...st.zoneTitle, textAlign: "center", marginBottom: 8 }}>파트너 에이리어</h3>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 8 }}>
               {[{ board: opponentBoard, mine: false }, { board: myBoard, mine: true }].map(({ board, mine }) => {
-                if (!board || board.partner_assist_used) return null;
+                if (!board || !board.partner_key) return null;
                 const partner = cardsByKey.get(String(board.partner_key));
                 return <div key={board.user_id} style={{ display: "grid", gridTemplateColumns: "minmax(55px,90px) minmax(0,1fr)", gap: 8, alignItems: "center", padding: 6, border: "1px solid rgba(255,255,255,.09)", borderRadius: 6, background: "#080d16" }}>
                   {partner?.imageUrl ? <button type="button" onClick={() => openDetails({ key: board.partner_key, instance_id: `partner-${board.user_id}` })} style={{ width: "100%", height: 122, overflow: "hidden", display: "grid", placeItems: "center", border: 0, background: "transparent", padding: 0 }}><img src={partner.imageUrl} alt={partner.name} style={board.partner_rested ? { width: 68, height: 90, objectFit: "contain", transform: "rotate(90deg)", transformOrigin: "center" } : { width: "100%", height: 122, objectFit: "contain" }} /></button> : <div style={st.faceDown} />}
                   <div style={{ minWidth: 0 }}><div style={{ color: C.muted, fontSize: 8, marginBottom: 3 }}>{board.display_name || (mine ? "내 파트너" : "상대 파트너")}</div><div style={{ fontSize: 10, fontWeight: 850, overflowWrap: "anywhere" }}>{partner?.name || board.partner_key}</div><div style={{ color: board.partner_rested ? C.red : C.green, fontSize: 9, marginTop: 4 }}>{board.partner_rested ? "슬립" : "액티브"}</div>
-                    {mine && canActMain && !board.partner_rested && !board.next_hint_pending && <div style={{ display: "grid", gap: 4, marginTop: 6 }}><button type="button" style={st.smallButton} disabled={loading || board.partner_assist_used} onClick={() => void runAction("partner_assist")}>어시스트 · 레벨 +1</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => invokeInvestigate(null, true)}>파트너 추리 · 증거 1장</button><button type="button" style={st.smallButton} disabled={loading || !board.partner_key} onClick={() => void runAction("rest_partner_manual")}>슬립</button></div>}
+                    {mine && Boolean(board.partner_key) && <div style={{ display: "grid", gap: 4, marginTop: 6 }}><button type="button" style={st.smallButton} disabled={loading || !canActMain || board.partner_rested || board.partner_assist_used || board.next_hint_pending} onClick={() => void runAction("partner_assist")}>어시스트 · 레벨 +1</button><button type="button" style={st.smallButton} disabled={loading || !canActMain || board.partner_rested || board.partner_assist_used || board.next_hint_pending} onClick={() => invokeInvestigate(null, true)}>파트너 추리 · 증거 1장</button><button type="button" style={st.smallButton} disabled={loading || !canActMain || board.partner_rested || board.partner_assist_used || board.next_hint_pending} onClick={() => void runAction("rest_partner_manual")}>슬립</button></div>}
                   </div>
                 </div>;
               })}
@@ -990,9 +1002,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
         <section onDoubleClick={(event) => minimizeOnDoubleClick(event, "remove")} role="dialog" aria-modal="true" aria-label="리무브 에이리어 목록" style={{ width: "min(100%, 920px)", maxHeight: "92dvh", overflow: "hidden", display: "flex", flexDirection: "column", border: "1px solid rgba(148,163,184,.24)", borderRadius: 12, background: "#111a2a", color: C.text, boxShadow: "0 24px 70px rgba(0,0,0,.7)" }}>
           <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: 12, borderBottom: "1px solid rgba(255,255,255,.09)" }}><div><h2 style={{ margin: 0, fontSize: 17 }}>리무브 에이리어</h2><p style={{ ...st.muted, marginTop: 4 }}>내 리무브 {myRemoveCards.length}장 · 상대 리무브 {opponentRemoveCards.length}장</p></div><button type="button" style={st.button} onClick={() => setShowRemoveArea(false)}>닫기 ✕</button></header>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 10, padding: 12, overflowY: "auto" }}>{[{ label: "내 리무브", cards: myRemoveCards }, { label: "상대 리무브", cards: opponentRemoveCards }].map((pile) => <div key={pile.label} style={{ minWidth: 0, padding: 8, border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, background: "#080d16" }}><h3 style={{ margin: "0 0 8px", fontSize: 11, color: C.blue }}>{pile.label} · {pile.cards.length}장</h3><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(86px,1fr))", gap: 6 }}>{pile.cards.map((card) => {
-                const hiramekiAchieved = Boolean(card.hirameki_achieved && infoFor(card)?.hiramekiEffect);
-                return <article key={card.instance_id} style={{ border: hiramekiAchieved ? "2px solid #ec4899" : "1px solid rgba(255,255,255,.1)", boxShadow: hiramekiAchieved ? "0 0 0 1px rgba(236,72,153,.35), 0 0 14px rgba(236,72,153,.22)" : "none", borderRadius: 6, padding: 5, background: "#101827", color: C.text, minWidth: 0 }}>
-                  {hiramekiAchieved && <div style={{ marginBottom: 5, padding: "3px 5px", borderRadius: 4, background: "#9d174d", border: "1px solid #f472b6", color: "#fff", fontSize: 8, fontWeight: 900, textAlign: "center", letterSpacing: ".02em" }}>❗ 히라메키 달성</div>}
+                return <article key={card.instance_id} style={{ border: "1px solid rgba(255,255,255,.1)", boxShadow: "none", borderRadius: 6, padding: 5, background: "#101827", color: C.text, minWidth: 0 }}>
                   <button type="button" onClick={() => openDetails(card)} style={{ width: "100%", border: 0, padding: 0, background: "transparent", color: C.text }}>
                     {infoFor(card)?.imageUrl ? <img src={infoFor(card).imageUrl} alt={nameOf(card)} style={{ width: "100%", aspectRatio: "3/4", objectFit: "contain" }} /> : <div style={st.faceDown} />}
                     <div style={{ fontSize: 9, lineHeight: 1.3, overflowWrap: "anywhere", marginTop: 4 }}>{nameOf(card)}</div>
@@ -1125,7 +1135,19 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
       </div>}
 
       {revealedEvidenceCard && minimizedModal !== "evidence" && <div style={{ position: "fixed", inset: 0, zIndex: 100030, padding: 12, display: "flex", justifyContent: "center", alignItems: "center", background: "rgba(0,0,0,.86)", backdropFilter: "blur(5px)" }}>
-        <section onDoubleClick={(event) => minimizeOnDoubleClick(event, "evidence")} role="dialog" aria-modal="true" aria-label="공개된 증거 카드" style={{ width: "min(100%, 460px)", maxHeight: "90dvh", overflowY: "auto", padding: 15, border: "1px solid rgba(252,211,77,.55)", borderRadius: 12, background: "#111a2a", color: C.text, textAlign: "center" }}><h2 style={{ margin: "0 0 6px", fontSize: 17 }}>증거 공격 · 카드 공개</h2><p style={{ ...st.muted, marginBottom: 10 }}>공격 대상이 된 증거 카드가 양쪽 플레이어에게 공개되었습니다. 확인하면 리무브 에이리어으로 이동합니다.</p><button type="button" onClick={() => openDetails(revealedEvidenceCard)} style={{ width: "min(100%, 230px)", border: 0, padding: 0, background: "transparent" }}>{infoFor(revealedEvidenceCard)?.imageUrl ? <img src={infoFor(revealedEvidenceCard).imageUrl} alt={nameOf(revealedEvidenceCard)} style={{ width: "100%", maxHeight: "48vh", objectFit: "contain" }} /> : <div style={st.faceDown} />}<strong style={{ display: "block", marginTop: 6, fontSize: 12 }}>{nameOf(revealedEvidenceCard)}</strong></button>{pending.target_user_id === userId ? <button type="button" style={{ ...st.button, width: "100%", marginTop: 12, background: "#7f1d1d" }} disabled={loading} onClick={() => void runAction("resolve_evidence_attack")}>공개 확인 · 리무브로 이동</button> : <p style={{ ...st.muted, marginTop: 10 }}>수비자가 확인한 후 리무브 에이리어으로 이동합니다.</p>}</section>
+        <section onDoubleClick={(event) => minimizeOnDoubleClick(event, "evidence")} role="dialog" aria-modal="true" aria-label="공개된 증거 카드" style={{ width: "min(100%, 460px)", maxHeight: "90dvh", overflowY: "auto", padding: 15, border: "1px solid rgba(252,211,77,.55)", borderRadius: 12, background: "#111a2a", color: C.text, textAlign: "center" }}>
+          <h2 style={{ margin: "0 0 6px", fontSize: 17 }}>{isManualEvidenceRemovePending ? "증거 리무브 · 카드 공개" : "증거 공격 · 카드 공개"}</h2>
+          <p style={{ ...st.muted, marginBottom: 10 }}>{isManualEvidenceRemovePending ? "리무브로 보내는 증거 카드가 양쪽 플레이어에게 공개되었습니다. 두 사람 모두 확인하면 리무브 에이리어로 이동합니다." : "공격 대상이 된 증거 카드가 양쪽 플레이어에게 공개되었습니다. 수비자가 확인하면 리무브 에이리어로 이동합니다."}</p>
+          {Boolean(revealedEvidenceCard.hirameki_achieved && infoFor(revealedEvidenceCard)?.hiramekiEffect) && <div style={{ marginBottom: 10, padding: "7px 9px", borderRadius: 6, background: "#9d174d", border: "1px solid #f472b6", color: "#fff", fontSize: 11, fontWeight: 900 }}>❗ 히라메키 달성</div>}
+          <button type="button" onClick={() => openDetails(revealedEvidenceCard)} style={{ width: "min(100%, 230px)", border: 0, padding: 0, background: "transparent" }}>{infoFor(revealedEvidenceCard)?.imageUrl ? <img src={infoFor(revealedEvidenceCard).imageUrl} alt={nameOf(revealedEvidenceCard)} style={{ width: "100%", maxHeight: "48vh", objectFit: "contain" }} /> : <div style={st.faceDown} />}<strong style={{ display: "block", marginTop: 6, fontSize: 12 }}>{nameOf(revealedEvidenceCard)}</strong></button>
+          {isManualEvidenceRemovePending
+            ? (myEvidenceRemoveAcknowledged
+              ? <button type="button" style={{ ...st.button, width: "100%", marginTop: 12, background: "#374151" }} disabled>확인 완료 · 상대 확인 대기 ({evidenceRemoveAcknowledgedIds.length}/2)</button>
+              : <button type="button" style={{ ...st.button, width: "100%", marginTop: 12, background: "#7f1d1d" }} disabled={loading} onClick={() => void runAction("acknowledge_evidence_remove")}>카드 확인 완료 ({evidenceRemoveAcknowledgedIds.length}/2)</button>)
+            : (pending.target_user_id === userId
+              ? <button type="button" style={{ ...st.button, width: "100%", marginTop: 12, background: "#7f1d1d" }} disabled={loading} onClick={() => void runAction("resolve_evidence_attack")}>공개 확인 · 리무브로 이동</button>
+              : <p style={{ ...st.muted, marginTop: 10 }}>수비자가 확인한 후 리무브 에이리어로 이동합니다.</p>)}
+        </section>
       </div>}
 
       {detailCard && minimizedModal !== "detail" && <div role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setDetailCard(null); }} style={{ position: "fixed", inset: 0, zIndex: 100400, padding: 12, display: "flex", justifyContent: "center", alignItems: "center", background: "rgba(0,0,0,.83)", backdropFilter: "blur(5px)" }}>
