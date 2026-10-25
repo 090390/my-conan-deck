@@ -69,7 +69,7 @@ DECLARE
                  other_card.value ->> 'package',
                  ''
                )) like '%CT-P03%'
-             )$kid$;;
+             )$kid$;
 
   v_new_extra_event text := $extra$if p_action = 'extra_play_event' then
     v_id := nullif(p_payload ->> 'instance_id', '');
