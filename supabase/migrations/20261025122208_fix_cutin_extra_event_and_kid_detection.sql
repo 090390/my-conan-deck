@@ -56,21 +56,20 @@ DECLARE
                  other_card.value #>> '{sourceData,name}',
                  other_card.value #>> '{sourceData,originalName}'
                )), '[[:space:]]', '', 'g') in ('괴도키드','怪盗キッド')
-               and lower(coalesce(other_card.value ->> 'card_type', other_card.value ->> 'type', 'character'))
-                 in ('character','캐릭터','キャラクター')
                and upper(coalesce(other_card.value ->> 'rarity', other_card.value ->> 'rarity_code', '')) = 'SR'
                and coalesce(nullif(other_card.value ->> 'cost','')::numeric, -1) = 8
                and coalesce(nullif(other_card.value ->> 'ap','')::numeric, -1) = 7000
                and coalesce(nullif(other_card.value ->> 'lp','')::numeric, -1) = 2
                and upper(coalesce(other_card.value ->> 'color', other_card.value ->> 'originalColor', other_card.value ->> 'colorJp', '')) in ('백','白','白色','WHITE')
-               and upper(concat_ws(' ',
+               and upper(coalesce(
                  other_card.value ->> 'set',
                  other_card.value ->> 'originalSet',
                  other_card.value ->> 'original_set',
                  other_card.value ->> 'product',
-                 other_card.value ->> 'package'
+                 other_card.value ->> 'package',
+                 ''
                )) like '%CT-P03%'
-             )$kid$;
+             )$kid$;;
 
   v_new_extra_event text := $extra$if p_action = 'extra_play_event' then
     v_id := nullif(p_payload ->> 'instance_id', '');
