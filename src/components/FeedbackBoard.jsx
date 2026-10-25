@@ -160,7 +160,7 @@ export default function FeedbackBoard() {
   };
 
   return <>
-    <button type="button" onClick={() => { setOpen(true); setError(""); }} style={inlineButton("#26384f")} aria-haspopup="dialog">수정 제안</button>
+    <button type="button" onClick={() => { setOpen(true); setError(""); }} className="rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:border-rose-400/50 hover:text-white" style={{ border: "1px solid rgba(255,255,255,.1)", borderRadius: 8, background: "transparent", color: "#cbd5e1", padding: "8px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer" }} aria-haspopup="dialog">수정 제안</button>
     {open && <div role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) { setOpen(false); closeSelectedPost(); } }} style={modalBackdrop}>
       <section role="dialog" aria-modal="true" aria-label="수정 제안 게시판" style={modalPanel}>
         <header style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", padding: "13px 15px", borderBottom: "1px solid rgba(255,255,255,.1)" }}>
