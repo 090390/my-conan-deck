@@ -2519,13 +2519,13 @@ export default function App() {
       <header className="app-header mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4" style={gameFieldOnly ? { position: "sticky", top: 0, zIndex: 1000, background: "#080d17", paddingTop: 6 } : undefined}>
         <h1 className="text-xl font-black tracking-tight md:text-2xl">명탐정 코난 TCG 도감</h1>
         <div className="flex flex-wrap items-center gap-2">
-          <a className="rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:border-rose-400/50 hover:text-white" href="https://www.takaratomy.co.jp/products/conan-cardgame/cardlist/" target="_blank" rel="noreferrer">일본 공식 카드 목록 ↗</a>
+          <FeedbackBoard />
+          <a className="rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:border-rose-400/50 hover:text-white" href="https://www.takaratomy.co.jp/products/conan-cardgame/cardlist/" target="_blank" rel="noreferrer">일본 공식 사이트 ↗</a>
           <nav aria-label="메인 메뉴" className="app-nav flex rounded-xl border border-white/10 bg-[#101827] p-1">
             <button onClick={() => setActiveView('cards')} className={`rounded-lg px-3 py-2 text-xs font-bold transition sm:px-4 ${activeView === 'cards' ? 'bg-rose-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}>카드 목록</button>
             <button onClick={() => setActiveView('deck')} className={`rounded-lg px-3 py-2 text-xs font-bold transition sm:px-4 ${activeView === 'deck' ? 'bg-rose-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}>내 덱 구성</button>
             <button onClick={() => setActiveView('match')} className={`rounded-lg px-3 py-2 text-xs font-bold transition sm:px-4 ${activeView === 'match'  ? 'bg-rose-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}>모의전</button>
           </nav>
-          <FeedbackBoard />
         </div>
       </header>
 
