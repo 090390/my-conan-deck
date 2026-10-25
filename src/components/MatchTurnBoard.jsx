@@ -96,6 +96,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [selectedNextHint, setSelectedNextHint] = useState("");
+  const [localBaseCardPlayLocked, setLocalBaseCardPlayLocked] = useState(false);
   const [selectedAttacker, setSelectedAttacker] = useState("");
   const [allowActiveTargetsByCard, setAllowActiveTargetsByCard] = useState({});
   const [allowFreshlyPlayedByCard, setAllowFreshlyPlayedByCard] = useState({});
@@ -121,6 +122,10 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   const [showActionLog, setShowActionLog] = useState(false);
   const [loadingActionLog, setLoadingActionLog] = useState(false);
   const [actionLogError, setActionLogError] = useState("");
+
+  useEffect(() => {
+    setLocalBaseCardPlayLocked(false);
+  }, [roomId, game?.current_turn_user_id, game?.turn_number]);
 
   const myPeekSignature = useMemo(() => {
     const peek = game?.my_deck_peek;
@@ -326,6 +331,8 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
         }
       }
       setGame(updatedGame);
+      if (action === "begin_turn") setLocalBaseCardPlayLocked(false);
+      if (action === "play_character" || action === "play_event") setLocalBaseCardPlayLocked(true);
       setNotice(action === "refresh_deck"
         ? "리프레시를 완료했습니다. 리무브 에이리어의 카드를 셔플해 덱으로 되돌렸고, 상대에게 증거 1장을 추가했습니다."
         : updatedGame?.last_action_label || data?.last_action_label || "행동을 반영했습니다.");
@@ -375,14 +382,22 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   const canPartnerDeduce = canActMain && !myBoard?.partner_rested && !myBoard?.partner_assist_used && Boolean(myBoard?.partner_key);
   const canPartnerAssist = canActMain && !myBoard?.partner_rested && !myBoard?.partner_assist_used && !myBoard?.next_hint_pending;
 
-  // When the defender selects a guard character, the server changes the pending action
-  // from guard selection to character contact. Always unminimize that transition so
-  // both players see the cut-in choice window for the guarded character.
+  // A guard selection starts (or updates) character_contact. The next responder can change
+  // without changing the pending type, so include the guarded target and cut-in flags in the
+  // dependency list; each responder must see the choice window instead of inheriting a minimized one.
   useEffect(() => {
     if (pending?.type === "character_contact") {
       setMinimizedModal((current) => current === "contact" ? "" : current);
     }
-  }, [pending?.type]);
+  }, [
+    pending?.type,
+    pending?.target_instance_id,
+    pending?.next_responder_user_id,
+    pending?.attacker_cut_in_used,
+    pending?.target_cut_in_used,
+    pending?.attacker_cut_in_passed,
+    pending?.target_cut_in_passed,
+  ]);
 
   useEffect(() => {
     if (!isMyTurn || game?.turn_step !== "main" || game?.game_over) {
@@ -957,9 +972,10 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(104px,1fr))", gap: 7, marginTop: 9 }}>
           {myHand.map((card) => {
             const info = infoFor(card);
-            const normalPlay = canActMain && card.card_type === "character" && !myBoard?.base_card_played_this_turn && !myBoard?.character_played_this_turn && n(card.cost) <= costLimit;
+            const cardPlayLocked = Boolean(localBaseCardPlayLocked || myBoard?.base_card_played_this_turn || myBoard?.character_played_this_turn);
+            const normalPlay = canActMain && card.card_type === "character" && !cardPlayLocked && n(card.cost) <= costLimit;
             const eventPlayCostLimit = costLimit + (myBoard?.next_hint_pending ? 1 : 0);
-            const normalEventPlay = (canActMain || canPlayEventDuringNextHint) && card.card_type === "event" && (!myBoard?.base_card_played_this_turn || Boolean(myBoard?.next_hint_pending)) && n(card.cost) <= eventPlayCostLimit;
+            const normalEventPlay = (canActMain || canPlayEventDuringNextHint) && card.card_type === "event" && (!cardPlayLocked || Boolean(myBoard?.next_hint_pending)) && n(card.cost) <= eventPlayCostLimit;
             const nextSelected = selectedNextHint === card.instance_id;
             return <article key={card.instance_id} style={{ minWidth: 0, padding: 6, border: `1px solid ${nextSelected ? "#fb7185" : "rgba(148,163,184,.15)"}`, borderRadius: 7, background: "#080d16" }}>
               <button type="button" onClick={() => openDetails(card)} style={{ display: "block", width: "100%", border: 0, background: "transparent", color: C.text, padding: 0 }}><CardArt instance={card} /><div style={{ fontSize: 10, fontWeight: 800, lineHeight: 1.35, marginTop: 5, textAlign: "left", overflowWrap: "anywhere" }}>{info?.name || card.key}</div></button>
@@ -977,7 +993,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
                   void runAction("next_hint", { instance_id: card.instance_id });
                 }}>이 카드로 넥스트 힌트 등장</button>}
               </div>}
-              {(canActMain || canPlayEventDuringNextHint) && card.card_type === "event" && <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 6, background: "#075985", opacity: normalEventPlay ? 1 : .55, filter: normalEventPlay ? "none" : "grayscale(1)" }} disabled={loading || !normalEventPlay} onClick={() => {
+              {(canActMain || canPlayEventDuringNextHint) && card.card_type === "event" && <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 6, background: normalEventPlay ? "#075985" : "#263244", borderColor: normalEventPlay ? "rgba(56,189,248,.45)" : "rgba(148,163,184,.18)", color: normalEventPlay ? "#e0f2fe" : "#94a3b8", opacity: normalEventPlay ? 1 : .55, filter: normalEventPlay ? "none" : "grayscale(1)" }} disabled={loading || !normalEventPlay} onClick={() => {
                 if (n(card.cost) > eventPlayCostLimit) { showBlockedReason(`필요 레벨을 충족하지 않아 이벤트를 사용할 수 없습니다. 현재 레벨 상한은 ${eventPlayCostLimit}입니다.`); return; }
                 if (myBoard?.base_card_played_this_turn && !myBoard?.next_hint_pending) { showBlockedReason("이번 턴의 기본 카드 사용을 이미 완료했습니다. 추가 카드를 내려면 넥스트 힌트를 사용해 주세요."); return; }
                 void runAction("play_event", { instance_id: card.instance_id });
@@ -1138,7 +1154,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
         <section onDoubleClick={(event) => minimizeOnDoubleClick(event, "evidence")} role="dialog" aria-modal="true" aria-label="공개된 증거 카드" style={{ width: "min(100%, 460px)", maxHeight: "90dvh", overflowY: "auto", padding: 15, border: "1px solid rgba(252,211,77,.55)", borderRadius: 12, background: "#111a2a", color: C.text, textAlign: "center" }}>
           <h2 style={{ margin: "0 0 6px", fontSize: 17 }}>{isManualEvidenceRemovePending ? "증거 리무브 · 카드 공개" : "증거 공격 · 카드 공개"}</h2>
           <p style={{ ...st.muted, marginBottom: 10 }}>{isManualEvidenceRemovePending ? "리무브로 보내는 증거 카드가 양쪽 플레이어에게 공개되었습니다. 두 사람 모두 확인하면 리무브 에이리어로 이동합니다." : "공격 대상이 된 증거 카드가 양쪽 플레이어에게 공개되었습니다. 수비자가 확인하면 리무브 에이리어로 이동합니다."}</p>
-          {Boolean(revealedEvidenceCard.hirameki_achieved && infoFor(revealedEvidenceCard)?.hiramekiEffect) && <div style={{ marginBottom: 10, padding: "7px 9px", borderRadius: 6, background: "#9d174d", border: "1px solid #f472b6", color: "#fff", fontSize: 11, fontWeight: 900 }}>❗ 히라메키 달성</div>}
+          {Boolean(revealedEvidenceCard.hirameki_achieved && infoFor(revealedEvidenceCard)?.hiramekiEffect) && <div style={{ width: "min(100%, 230px)", boxSizing: "border-box", margin: "0 auto 10px", padding: "6px 8px", borderRadius: 6, background: "#9d174d", border: "1px solid #f472b6", color: "#fff", fontSize: 10, fontWeight: 850 }}>❗ 히라메키 달성</div>}
           <button type="button" onClick={() => openDetails(revealedEvidenceCard)} style={{ width: "min(100%, 230px)", border: 0, padding: 0, background: "transparent" }}>{infoFor(revealedEvidenceCard)?.imageUrl ? <img src={infoFor(revealedEvidenceCard).imageUrl} alt={nameOf(revealedEvidenceCard)} style={{ width: "100%", maxHeight: "48vh", objectFit: "contain" }} /> : <div style={st.faceDown} />}<strong style={{ display: "block", marginTop: 6, fontSize: 12 }}>{nameOf(revealedEvidenceCard)}</strong></button>
           {isManualEvidenceRemovePending
             ? (myEvidenceRemoveAcknowledged
