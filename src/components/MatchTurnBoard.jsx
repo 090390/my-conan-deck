@@ -809,12 +809,12 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
             <h3 style={{ ...st.zoneTitle, textAlign: "center", marginBottom: 8 }}>파트너 에이리어</h3>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 8 }}>
               {[{ board: opponentBoard, mine: false }, { board: myBoard, mine: true }].map(({ board, mine }) => {
-                if (!board || !board.partner_key) return null;
+                if (!board || !board.partner_key || board.partner_assist_used) return null;
                 const partner = cardsByKey.get(String(board.partner_key));
                 return <div key={board.user_id} style={{ display: "grid", gridTemplateColumns: "minmax(55px,90px) minmax(0,1fr)", gap: 8, alignItems: "center", padding: 6, border: "1px solid rgba(255,255,255,.09)", borderRadius: 6, background: "#080d16" }}>
                   {partner?.imageUrl ? <button type="button" onClick={() => openDetails({ key: board.partner_key, instance_id: `partner-${board.user_id}` })} style={{ width: "100%", height: 122, overflow: "hidden", display: "grid", placeItems: "center", border: 0, background: "transparent", padding: 0 }}><img src={partner.imageUrl} alt={partner.name} style={board.partner_rested ? { width: 68, height: 90, objectFit: "contain", transform: "rotate(90deg)", transformOrigin: "center" } : { width: "100%", height: 122, objectFit: "contain" }} /></button> : <div style={st.faceDown} />}
                   <div style={{ minWidth: 0 }}><div style={{ color: C.muted, fontSize: 8, marginBottom: 3 }}>{board.display_name || (mine ? "내 파트너" : "상대 파트너")}</div><div style={{ fontSize: 10, fontWeight: 850, overflowWrap: "anywhere" }}>{partner?.name || board.partner_key}</div><div style={{ color: board.partner_rested ? C.red : C.green, fontSize: 9, marginTop: 4 }}>{board.partner_rested ? "슬립" : "액티브"}</div>
-                    {mine && Boolean(board.partner_key) && <div style={{ display: "grid", gap: 4, marginTop: 6 }}><button type="button" style={st.smallButton} disabled={loading || !canActMain || board.partner_rested || board.partner_assist_used || board.next_hint_pending} onClick={() => void runAction("partner_assist")}>어시스트 · 레벨 +1</button><button type="button" style={st.smallButton} disabled={loading || !canActMain || board.partner_rested || board.partner_assist_used || board.next_hint_pending} onClick={() => invokeInvestigate(null, true)}>파트너 추리 · 증거 1장</button><button type="button" style={st.smallButton} disabled={loading || !canActMain || board.partner_rested || board.partner_assist_used || board.next_hint_pending} onClick={() => void runAction("rest_partner_manual")}>슬립</button></div>}
+                    {mine && !board.partner_rested && <div style={{ display: "grid", gap: 4, marginTop: 6 }}><button type="button" style={st.smallButton} disabled={loading || !canActMain || board.partner_assist_used || board.next_hint_pending} onClick={() => void runAction("partner_assist")}>어시스트 · 레벨 +1</button><button type="button" style={st.smallButton} disabled={loading || !canActMain || board.partner_assist_used || board.next_hint_pending} onClick={() => invokeInvestigate(null, true)}>파트너 추리 · 증거 1장</button><button type="button" style={st.smallButton} disabled={loading || !canActMain || board.partner_assist_used || board.next_hint_pending} onClick={() => void runAction("rest_partner_manual")}>슬립</button></div>}
                   </div>
                 </div>;
               })}
@@ -959,12 +959,13 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
             const info = infoFor(card);
             const normalPlay = canActMain && card.card_type === "character" && !myBoard?.base_card_played_this_turn && !myBoard?.character_played_this_turn && n(card.cost) <= costLimit;
             const eventPlayCostLimit = costLimit + (myBoard?.next_hint_pending ? 1 : 0);
+            const normalEventPlay = (canActMain || canPlayEventDuringNextHint) && card.card_type === "event" && (!myBoard?.base_card_played_this_turn || Boolean(myBoard?.next_hint_pending)) && n(card.cost) <= eventPlayCostLimit;
             const nextSelected = selectedNextHint === card.instance_id;
             return <article key={card.instance_id} style={{ minWidth: 0, padding: 6, border: `1px solid ${nextSelected ? "#fb7185" : "rgba(148,163,184,.15)"}`, borderRadius: 7, background: "#080d16" }}>
               <button type="button" onClick={() => openDetails(card)} style={{ display: "block", width: "100%", border: 0, background: "transparent", color: C.text, padding: 0 }}><CardArt instance={card} /><div style={{ fontSize: 10, fontWeight: 800, lineHeight: 1.35, marginTop: 5, textAlign: "left", overflowWrap: "anywhere" }}>{info?.name || card.key}</div></button>
               <div style={{ fontSize: 9, color: C.muted, marginTop: 3 }}>레벨 {card.cost ?? "-"} · AP {card.ap ?? "-"}</div>
               {(canActMain || canSelectNextHintCard) && card.card_type === "character" && <div style={{ display: "grid", gap: 4, marginTop: 6 }}>
-                {canActMain && !myBoard?.next_hint_pending && <button type="button" style={{ ...st.smallButton, opacity: !normalPlay || myFieldCharacterCount >= 5 ? .72 : 1 }} disabled={loading} onClick={() => {
+                {canActMain && !myBoard?.next_hint_pending && <button type="button" style={{ ...st.smallButton, opacity: !normalPlay || myFieldCharacterCount >= 5 ? .55 : 1, filter: !normalPlay || myFieldCharacterCount >= 5 ? "grayscale(1)" : "none" }} disabled={loading || !normalPlay || myFieldCharacterCount >= 5} onClick={() => {
                   if (n(card.cost) > costLimit) { showBlockedReason(`필요 레벨을 충족하지 않아 사용할 수 없습니다. 현재 레벨 상한은 ${costLimit}입니다.`); return; }
                   if (myBoard?.base_card_played_this_turn || myBoard?.character_played_this_turn) { showBlockedReason("이번 턴의 기본 카드 사용을 이미 완료했습니다. 추가 카드를 내려면 넥스트 힌트를 사용해 주세요."); return; }
                   if (myFieldCharacterCount >= 5) { showBlockedReason("현장에 캐릭터 카드가 이미 5장 있습니다. 먼저 현장 카드를 이동해 주세요."); return; }
@@ -976,12 +977,13 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
                   void runAction("next_hint", { instance_id: card.instance_id });
                 }}>이 카드로 넥스트 힌트 등장</button>}
               </div>}
-              {(canActMain || canPlayEventDuringNextHint) && card.card_type === "event" && <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 6, background: "#075985", opacity: n(card.cost) > eventPlayCostLimit || (myBoard?.base_card_played_this_turn && !myBoard?.next_hint_pending) ? .72 : 1 }} disabled={loading} onClick={() => {
+              {(canActMain || canPlayEventDuringNextHint) && card.card_type === "event" && <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 6, background: "#075985", opacity: normalEventPlay ? 1 : .55, filter: normalEventPlay ? "none" : "grayscale(1)" }} disabled={loading || !normalEventPlay} onClick={() => {
                 if (n(card.cost) > eventPlayCostLimit) { showBlockedReason(`필요 레벨을 충족하지 않아 이벤트를 사용할 수 없습니다. 현재 레벨 상한은 ${eventPlayCostLimit}입니다.`); return; }
                 if (myBoard?.base_card_played_this_turn && !myBoard?.next_hint_pending) { showBlockedReason("이번 턴의 기본 카드 사용을 이미 완료했습니다. 추가 카드를 내려면 넥스트 힌트를 사용해 주세요."); return; }
                 void runAction("play_event", { instance_id: card.instance_id });
               }}>현장에 이벤트 사용</button>}
               {canManualEffect && card.card_type === "character" && <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 5, background: "#3b2f5c" }} disabled={loading} onClick={() => { if (myFieldCharacterCount >= 5) { showBlockedReason("현장에 캐릭터 카드가 이미 5장 있습니다. 먼저 현장 카드를 이동해 주세요."); return; } void runAction("extra_play_character", { instance_id: card.instance_id, effect_override: true }); }}>효과로 추가 등장<br />(제한 무시)</button>}
+              {canManualEffect && card.card_type === "event" && <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 5, background: "#3b2f5c" }} disabled={loading} onClick={() => void runAction("extra_play_event", { instance_id: card.instance_id, effect_override: true })}>효과로 추가 사용<br />(제한 무시)</button>}
               {canManualEffect && <div style={{ display: "grid", gap: 4, marginTop: 5 }}><button type="button" style={st.smallButton} disabled={loading} onClick={() => { if (window.confirm(`${info?.name || card.key}를 리무브 에이리어로 옮길까요?`)) void runAction("move_hand_card", { instance_id: card.instance_id, destination: "remove" }); }}>리무브</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => openHandZoneChoice(card, "deck")}>덱으로</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => openHandZoneChoice(card, "file")}>파일로</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => setHandEvidenceChoice(card)}>증거로</button><button type="button" style={st.smallButton} disabled={loading} onClick={() => void runAction("move_card_to_mr_partner", { source: "hand", instance_id: card.instance_id })} aria-label={HAND_TO_PARTNER_LABEL}>{HAND_TO_PARTNER_LABEL}</button></div>}
             </article>;
           })}
@@ -1119,11 +1121,9 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
               const removedInfo = infoFor(removedCard);
               const names = [removedInfo?.name, removedInfo?.originalName, removedCard?.name, removedCard?.nameKo, removedCard?.name_ko, removedCard?.originalName]
                 .map((value) => String(value ?? "").normalize("NFKC").replace(/\\s+/gu, "").toLocaleLowerCase());
-              const hasReadableName = names.some(Boolean);
-              if (hasReadableName) return names.some((name) => name === "범인" || name === "犯人");
-              return cardHasRuleId({ ...removedInfo, ...removedCard }, "0627") || cardHasRuleId({ ...removedInfo, ...removedCard }, "1039");
+              return names.some((name) => name === "범인" || name === "犯人");
             }).length : 0;
-            const bonus = isCulpritScalingCutIn ? culpritCardCount * 2000 : n(card.cut_in_bonus);
+            const bonus = isCulpritScalingCutIn ? (culpritCardCount + 1) * 2000 : n(card.cut_in_bonus);
             return <button key={card.instance_id} type="button" style={{ ...st.button, background: "#164e63", textAlign: "left" }} disabled={loading} onClick={() => void runAction("contact_use_cutin", { instance_id: card.instance_id })}>
               <strong style={{ display: "block", marginBottom: 4 }}>{nameOf(card)} · {bonus > 0 ? `AP +${bonus}` : "AP 증가 없음"}</strong>
               <span style={{ display: "block", whiteSpace: "pre-wrap", overflowWrap: "anywhere", fontSize: 10, lineHeight: 1.5 }}>{effectText || "컷인 효과 문구를 확인할 수 없습니다."}</span>
