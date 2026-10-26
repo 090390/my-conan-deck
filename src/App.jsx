@@ -1624,7 +1624,7 @@ export default function App() {
       setLoading(true);
       setLoadError('');
       try {
-        const [cardResponse, translations, loadedKeywordTagData, loadedSearchAliasData, p11CardResponse, translationOverrides] = await Promise.all([
+        const [cardResponse, translations, loadedKeywordTagData, loadedSearchAliasData, p11CardResponse] = await Promise.all([
           fetch('/cards.json').then((response) => {
             if (!response.ok) throw new Error(`cards.json 응답 오류 (${response.status})`);
             return response.json();
@@ -1641,9 +1641,6 @@ export default function App() {
           fetch('/cards-ct-p11.json', { cache: 'no-cache' })
             .then((response) => response.ok ? response.json() : { cards: [] })
             .catch(() => ({ cards: [] })),
-          fetch('/card-translations.ko.overrides.json', { cache: 'no-cache' })
-            .then((response) => response.ok ? response.json() : {})
-            .catch(() => ({})),
         ]);
         const baseCards = getCardArray(cardResponse);
         const existingCardKeys = new Set(baseCards.map((card) => String(card?.id ?? card?.cardNumber ?? card?.card_num ?? '').trim()).filter(Boolean));
@@ -1653,12 +1650,7 @@ export default function App() {
         });
         const rawCards = [...baseCards, ...additionalP11Cards];
         if (!rawCards.length) throw new Error('cards.json에서 카드 배열을 찾지 못했어요. JSON의 최상위 구조를 확인해 주세요.');
-        const mergedTranslations = { ...translations };
-        for (const [cardKey, patch] of Object.entries(translationOverrides || {})) {
-          if (!patch || typeof patch !== 'object' || Array.isArray(patch)) continue;
-          mergedTranslations[cardKey] = { ...(translations?.[cardKey] || {}), ...patch };
-        }
-        const normalized = rawCards.map((card) => normalizeCard(card, mergedTranslations, loadedKeywordTagData)).filter((card) => card.key && card.key !== 'undefined');
+        const normalized = rawCards.map((card) => normalizeCard(card, translations, loadedKeywordTagData)).filter((card) => card.key && card.key !== 'undefined');
         if (!cancelled) {
           setCards(normalized);
           setSearchAliases(normalizeSearchAliasData(loadedSearchAliasData));
