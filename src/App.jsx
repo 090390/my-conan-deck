@@ -463,7 +463,12 @@ function normalizeCard(card, translations, keywordTagData = {}) {
     return text;
   };
   const rawTranslated = translations?.[id] || translations?.[databaseId] || {};
-  const translated = Object.fromEntries(Object.entries(rawTranslated).map(([key, value]) => [
+  const existingKoreanNameForOverride = String(
+    rawTranslated.nameKo || firstValue([card], ['nameKo', 'translatedName'])
+    || firstValue(objects, ['nameJp', 'title', 'name', 'cardName', 'card_name']) || ''
+  ).trim();
+  const existingNameOverride = translations?.__nameOverridesByExistingKo?.[existingKoreanNameForOverride] || {};
+  const translated = Object.fromEntries(Object.entries({ ...rawTranslated, ...existingNameOverride }).map(([key, value]) => [
     key,
     typeof value === 'string' ? fixKoreanCardText(value) : value,
   ]));
@@ -1680,6 +1685,8 @@ export default function App() {
             ...(override && typeof override === 'object' ? override : {}),
           };
         });
+        // 이미 번역된 카드 이름으로 지정한 오버라이드도 지원합니다.
+        mergedTranslations.__nameOverridesByExistingKo = loadedTranslationOverrides?.byExistingNameKo || {};
         const baseCards = getCardArray(cardResponse);
         const existingCardKeys = new Set(baseCards.map((card) => String(card?.id ?? card?.cardNumber ?? card?.card_num ?? '').trim()).filter(Boolean));
         const additionalP11Cards = getCardArray(p11CardResponse).filter((card) => {
