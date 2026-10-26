@@ -418,6 +418,22 @@ function localizeTraits(value) {
   return parseTraits(value).map((trait) => TRAIT_TRANSLATIONS[trait] || trait);
 }
 
+function normalizeCardNameForOverride(value) {
+  return String(value ?? '')
+    .normalize('NFKC')
+    .replace(/[「」『』"“”]/gu, '')
+    .replace(/[\\s　]+/gu, '')
+    .trim();
+}
+
+function getNameBasedTranslationOverride(overrides, name) {
+  if (!overrides || typeof overrides !== 'object' || Array.isArray(overrides)) return {};
+  const target = normalizeCardNameForOverride(name);
+  if (!target) return {};
+  const match = Object.entries(overrides).find(([candidate]) => normalizeCardNameForOverride(candidate) === target);
+  return match?.[1] && typeof match[1] === 'object' && !Array.isArray(match[1]) ? match[1] : {};
+}
+
 function normalizeCard(card, translations, keywordTagData = {}) {
   const source = card?.sourceData && typeof card.sourceData === 'object'
     ? card.sourceData
@@ -463,12 +479,23 @@ function normalizeCard(card, translations, keywordTagData = {}) {
     return text;
   };
   const rawTranslated = translations?.[id] || translations?.[databaseId] || {};
+  const originalJapaneseNameForOverride = String(firstValue(objects, ['nameJp', 'title', 'name', 'cardName', 'card_name']) || '').trim();
   const existingKoreanNameForOverride = String(
-    rawTranslated.nameKo || firstValue([card], ['nameKo', 'translatedName'])
-    || firstValue(objects, ['nameJp', 'title', 'name', 'cardName', 'card_name']) || ''
+    rawTranslated.nameKo || firstValue([card], ['nameKo', 'translatedName']) || ''
   ).trim();
-  const existingNameOverride = translations?.__nameOverridesByExistingKo?.[existingKoreanNameForOverride] || {};
-  const translated = Object.fromEntries(Object.entries({ ...rawTranslated, ...existingNameOverride }).map(([key, value]) => [
+  const originalNameOverride = getNameBasedTranslationOverride(
+    translations?.__nameOverridesByOriginalName,
+    originalJapaneseNameForOverride
+  );
+  const existingNameOverride = getNameBasedTranslationOverride(
+    translations?.__nameOverridesByExistingKo,
+    existingKoreanNameForOverride
+  );
+  const translated = Object.fromEntries(Object.entries({
+    ...rawTranslated,
+    ...originalNameOverride,
+    ...existingNameOverride,
+  }).map(([key, value]) => [
     key,
     typeof value === 'string' ? fixKoreanCardText(value) : value,
   ]));
@@ -1685,7 +1712,8 @@ export default function App() {
             ...(override && typeof override === 'object' ? override : {}),
           };
         });
-        // 이미 번역된 카드 이름으로 지정한 오버라이드도 지원합니다.
+        // 번호 외에도 일본어 원문/기존 한국어 이름으로 번역 보정 대상을 찾습니다.
+        mergedTranslations.__nameOverridesByOriginalName = loadedTranslationOverrides?.byOriginalName || {};
         mergedTranslations.__nameOverridesByExistingKo = loadedTranslationOverrides?.byExistingNameKo || {};
         const baseCards = getCardArray(cardResponse);
         const existingCardKeys = new Set(baseCards.map((card) => String(card?.id ?? card?.cardNumber ?? card?.card_num ?? '').trim()).filter(Boolean));
