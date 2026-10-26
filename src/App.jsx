@@ -283,6 +283,7 @@ function abilityConditionClass(label) {
   const value = String(label || '').replace(/[\s　]+/gu, '').toLocaleLowerCase();
   if (/^file[0-9０-９]+$/iu.test(value)) return 'ability-condition-file';
   if (/턴1|ターン1|ターン１/u.test(value)) return 'ability-condition-turn1';
+  if (/질풍|疾風/u.test(value)) return 'ability-condition-gale';
   if (/선언|宣言|등장시|登場時|현장리무브시|現場リムーブ時/u.test(value)) return 'ability-condition-blue';
   if (/슬립|スリップ/u.test(value)) return 'ability-condition-slip';
   if (/자신의?턴중|自分の?ターン中/u.test(value)) return 'ability-condition-own-turn';
@@ -336,12 +337,22 @@ function renderConditionLabel(label, keyPrefix) {
 
   // 사건 색상 조건(예: 【사건 청&녹】)에서도 색상만 원형으로 강조합니다.
   const eventMatch = String(label).match(/(사건|事件)([\s　]*)([청적황녹흑백](?:[\s　]*[&＋+/,·][\s　]*[청적황녹흑백])*)/u);
-  if (!eventMatch) return label;
-  const colorStart = eventMatch.index + eventMatch[1].length + eventMatch[2].length;
-  const colorRun = eventMatch[3];
-  return <>{String(label).slice(0, colorStart)}{colorRun.split(/([청적황녹흑백])/u).map((part, index) => COLOR_ORDER.includes(part)
-    ? renderAbilityColorCircle(part, `${keyPrefix}-event-color-${index}`)
-    : part)}{String(label).slice(colorStart + colorRun.length)}</>;
+  if (eventMatch) {
+    const colorStart = eventMatch.index + eventMatch[1].length + eventMatch[2].length;
+    const colorRun = eventMatch[3];
+    return <>{String(label).slice(0, colorStart)}{colorRun.split(/([청적황녹흑백])/u).map((part, index) => COLOR_ORDER.includes(part)
+      ? renderAbilityColorCircle(part, `${keyPrefix}-event-color-${index}`)
+      : part)}{String(label).slice(colorStart + colorRun.length)}</>;
+  }
+
+  // 【사건 탐정VS괴도】처럼 사건 제한의 대상이 명칭이면 구분 기호를 넣어 읽기 쉽게 표시합니다.
+  const explicitEventRestriction = String(label).match(/^(사건|事件)\s*[:：]\s*(.+)$/u);
+  if (explicitEventRestriction) return `${explicitEventRestriction[1]}: ${explicitEventRestriction[2].trim()}`;
+  const eventRestriction = String(label).match(/^(사건|事件)[\s　]+(.+)$/u);
+  if (eventRestriction && !/^\d+(?:장|개|회|번|매|枚|個|回)/u.test(eventRestriction[2].trim())) {
+    return `${eventRestriction[1]}: ${eventRestriction[2].trim()}`;
+  }
+  return label;
 }
 
 function renderAbilityText(value) {
@@ -2356,6 +2367,7 @@ export default function App() {
         .ability-condition-badge { display: inline-flex; align-items: center; vertical-align: baseline; margin: 0 2px 1px; padding: 1px 5px; border: 1px solid #64748b; border-radius: 4px; background: rgba(148,163,184,.10); color: #f1f5f9; font-size: .88em; font-weight: 800; line-height: 1.45; white-space: nowrap; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
         .ability-condition-turn1 { background: rgba(15,118,110,.18); border-color: #0f766e; color: #ccfbf1; }
         .ability-condition-blue { background: rgba(29,78,216,.18); border-color: #1d4ed8; color: #dbeafe; }
+        .ability-condition-gale { background: rgba(14,165,233,.18); border-color: #0284c7; color: #e0f2fe; }
         .ability-condition-slip { background: rgba(109,40,217,.18); border-color: #6d28d9; color: #ede9fe; }
         .ability-condition-own-turn { background: rgba(190,18,60,.18); border-color: #be123c; color: #ffe4e6; }
         .ability-condition-opponent-turn { background: rgba(194,65,12,.18); border-color: #c2410c; color: #ffedd5; }
