@@ -288,7 +288,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
           const oldFieldIds = new Set((oldBoard?.field_cards || []).map((card) => String(card.instance_id)));
           const newFieldIds = new Set((newBoard?.field_cards || []).map((card) => String(card.instance_id)));
           for (const card of oldBoard.field_cards || []) {
-            const rarity = String(card.rarity || cardsByKey.get(String(card.key))?.rarity || "").trim().toUpperCase();
+            const rarity = String(card.rarity || card.rarity_code || card.rarityCode || card.sourceData?.rarity || card.raw?.rarity || cardsByKey.get(String(card.key))?.rarity || "").trim().toUpperCase();
             if (action !== "contact_use_disguise" && rarity === "MR" && card.instance_id && !newFieldIds.has(String(card.instance_id))) {
               // The server helper requires rarity on the card object; pass the resolved, normalized rarity.
               departedMrs.push({ owner_user_id: oldBoard.user_id, card: { ...card, rarity } });
@@ -537,7 +537,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
     if (count !== null) void runAction("investigate", { instance_id: instance.instance_id, evidence_count: count, allow_newly_played: Boolean(allowFreshlyPlayedByCard[instance.instance_id]) });
   }
   function moveField(card, ownerId, destination) {
-    const cardRarity = String(card?.rarity || cardsByKey.get(String(card?.key))?.rarity || "").trim().toUpperCase();
+    const cardRarity = String(card?.rarity || card?.rarity_code || card?.rarityCode || card?.sourceData?.rarity || card?.raw?.rarity || cardsByKey.get(String(card?.key))?.rarity || "").trim().toUpperCase();
     if (destination === "remove" && cardRarity === "MR") {
       if (!window.confirm(`${nameOf(card)}는 MR 카드이므로 리무브로 보내지 않고 MR 파트너 에이리어로 이동합니다. 계속할까요?`)) return;
       void runAction("move_field_mr_to_partner", { instance_id: card.instance_id, owner_user_id: ownerId, rarity: cardRarity });
@@ -545,7 +545,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
     }
     const labels = { hand: "소유자의 손패", deck: "소유자의 덱 아래", remove: "리무브 에이리어" };
     if (!window.confirm(`${nameOf(card)} 카드를 ${labels[destination]}로 이동할까요? 효과 처리를 위한 수동 이동입니다.`)) return;
-    void runAction("move_field_card", { instance_id: card.instance_id, owner_user_id: ownerId, destination });
+    void runAction("move_field_card", { instance_id: card.instance_id, owner_user_id: ownerId, destination, rarity: cardRarity });
   }
 
   function moveMrPartnerCard(card, ownerId, destination) {
