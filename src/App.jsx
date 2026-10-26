@@ -1517,8 +1517,23 @@ function getCardSearchAliasKey(card) {
 }
 
 function getCardSearchAliases(aliasMap, card) {
-  const key = getCardSearchAliasKey(card);
-  return key && Array.isArray(aliasMap?.[key]) ? aliasMap[key] : [];
+  const source = card?.sourceData && typeof card.sourceData === 'object' ? card.sourceData : {};
+  const identifiers = [
+    getCardSearchAliasKey(card),
+    card?.key, card?.databaseId, card?.cardId, card?.cardNum, card?.cardNumber, card?.id,
+    source?.id, source?.databaseId, source?.database_id, source?.cardId, source?.card_id,
+    source?.cardNum, source?.card_num, source?.cardNumber, source?.card_number,
+  ].map((value) => String(value ?? '').trim()).filter(Boolean);
+  const unique = new Map();
+  for (const identifier of identifiers) {
+    const aliases = aliasMap?.[identifier];
+    if (!Array.isArray(aliases)) continue;
+    for (const alias of aliases) {
+      const value = String(alias ?? '').trim();
+      if (value && !unique.has(value.toLocaleLowerCase())) unique.set(value.toLocaleLowerCase(), value);
+    }
+  }
+  return [...unique.values()];
 }
 
 function parseSearchAliasDraft(value) {
