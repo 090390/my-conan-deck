@@ -30,7 +30,10 @@ function getImageUrl(card, source) {
   const localRecordId = [source?.id, source?.databaseId, source?.database_id, card?.sourceRecordId, card?.source_record_id]
     .map((value) => String(value ?? '').trim())
     .find((value) => /^\d+$/.test(value));
-  if (localRecordId) return `/card-images/${Number(localRecordId)}.jpg`;
+  // CT-P11 신규 레코드는 원본 이미지가 로컬 캐시 폴더에 없을 수 있으므로 공식 이미지 URL을 사용합니다.
+  const isCTP11 = [card?.set, card?.setKo, source?.package, source?.set]
+    .some((value) => /CT-P11/u.test(String(value ?? '')));
+  if (localRecordId && !isCTP11) return `/card-images/${Number(localRecordId)}.jpg`;
 
   // 로컬 사본을 식별할 수 없는 구형/외부 데이터만 기존 URL 규칙으로 처리합니다.
   const direct = firstValue([card, source], ['imageUrl', 'image_url', 'image', 'imageURL']);
