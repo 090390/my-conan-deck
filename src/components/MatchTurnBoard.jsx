@@ -772,12 +772,12 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
         <section role="dialog" aria-modal="true" aria-label="증거 공격 가드 선택" style={{ width: "min(100%, 620px)", maxHeight: "90dvh", overflowY: "auto", ...st.panel, borderColor: "rgba(252,211,77,.55)", boxShadow: "0 24px 70px rgba(0,0,0,.72)" }}>
           <h2 style={{ ...st.zoneTitle, color: C.gold, fontSize: 16 }}>증거 공격 · 가드 선택</h2>
           {pendingIsForMe ? <>
-            <p style={{ ...st.muted, marginBottom: 12, fontSize: 11 }}>상대가 내 증거 에이리어를 공격했습니다. 액티브 캐릭터로 가드하거나 가드하지 않을 수 있습니다.</p>
+            <p style={{ ...st.muted, marginBottom: 12, fontSize: 11 }}>상대가 내 증거 에이리어를 공격했습니다. 액티브 캐릭터로 가드할 수 있습니다. 가드하면 공격자와 가드 캐릭터의 컷인 사용 여부를 정한 뒤 AP를 비교하며, 가드하지 않으면 증거 공개로 진행합니다.</p>
             <div style={{ display: "grid", gap: 7 }}>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(112px,1fr))", gap: 8 }}>{(myBoard?.field_cards || []).filter((card) => !card.rested && card.card_type !== "event" && (card.status || "active") === "active").map((card) => <button key={card.instance_id} type="button" style={{ ...st.smallButton, textAlign: "left", padding: 7 }} disabled={loading} onClick={() => void runAction("guard_with_character", { instance_id: card.instance_id })}>{infoFor(card)?.imageUrl ? <img src={infoFor(card).imageUrl} alt={nameOf(card)} style={{ display: "block", width: "100%", aspectRatio: "3/4", objectFit: "contain" }} /> : <div style={st.faceDown} />}<strong style={{ display: "block", marginTop: 4, fontSize: 10 }}>{nameOf(card)}</strong><span style={{ display: "block", fontSize: 9, color: C.muted, marginTop: 3 }}>AP {n(card.ap)+n(card.ap_bonus)} · 가드 선택</span></button>)}</div>
               <button type="button" style={{ ...st.button, background: "#7f1d1d" }} disabled={loading} onClick={() => void runAction("decline_guard")}>가드하지 않기</button>
             </div>
-          </> : <p style={{ ...st.muted, fontSize: 11 }}>상대가 가드 여부를 선택하고 있습니다. 선택이 완료되면 다음 창에서 공격 대상 증거가 공개됩니다.</p>}
+          </> : <p style={{ ...st.muted, fontSize: 11 }}>상대가 가드 여부를 선택하고 있습니다. 가드하면 컷인 선택 후 공격자와 가드 캐릭터의 AP를 비교합니다. 가드하지 않으면 다음 창에서 공격 대상 증거가 공개됩니다.</p>}
         </section>
       </div>}
 
