@@ -1635,7 +1635,7 @@ export default function App() {
       setLoading(true);
       setLoadError('');
       try {
-        const [cardResponse, translations, loadedKeywordTagData, loadedSearchAliasData, p11CardResponse] = await Promise.all([
+        const [cardResponse, translations, loadedTranslationOverrides, loadedKeywordTagData, loadedSearchAliasData, p11CardResponse] = await Promise.all([
           fetch('/cards.json').then((response) => {
             if (!response.ok) throw new Error(`cards.json 응답 오류 (${response.status})`);
             return response.json();
@@ -1643,6 +1643,9 @@ export default function App() {
           fetch('/card-translations.ko.json')
             .then((response) => response.ok ? response.json() : {})
             .catch(() => ({})),
+          fetch('/card-translation-overrides.ko.json', { cache: 'no-store' })
+            .then((response) => response.ok ? response.json() : { version: 1, cards: {} })
+            .catch(() => ({ version: 1, cards: {} })),
           fetch('/card-keyword-tags.json', { cache: 'no-store' })
             .then((response) => response.ok ? response.json() : { version: 1, cards: {} })
             .catch(() => ({ version: 1, cards: {} })),
@@ -1653,6 +1656,15 @@ export default function App() {
             .then((response) => response.ok ? response.json() : { cards: [] })
             .catch(() => ({ cards: [] })),
         ]);
+        // 기본 번역 JSON은 대형 파일이므로 개별 수정은 별도의 작은 오버라이드 파일에서 병합합니다.
+        // 오버라이드의 nameKo 등 지정된 항목만 기본 번역보다 우선 적용됩니다.
+        const mergedTranslations = { ...translations };
+        Object.entries(loadedTranslationOverrides?.cards || {}).forEach(([identifier, override]) => {
+          mergedTranslations[identifier] = {
+            ...(translations?.[identifier] || {}),
+            ...(override && typeof override === 'object' ? override : {}),
+          };
+        });
         const baseCards = getCardArray(cardResponse);
         const existingCardKeys = new Set(baseCards.map((card) => String(card?.id ?? card?.cardNumber ?? card?.card_num ?? '').trim()).filter(Boolean));
         const additionalP11Cards = getCardArray(p11CardResponse).filter((card) => {
@@ -1661,7 +1673,7 @@ export default function App() {
         });
         const rawCards = [...baseCards, ...additionalP11Cards];
         if (!rawCards.length) throw new Error('cards.json에서 카드 배열을 찾지 못했어요. JSON의 최상위 구조를 확인해 주세요.');
-        const normalized = rawCards.map((card) => normalizeCard(card, translations, loadedKeywordTagData)).filter((card) => card.key && card.key !== 'undefined');
+        const normalized = rawCards.map((card) => normalizeCard(card, mergedTranslations, loadedKeywordTagData)).filter((card) => card.key && card.key !== 'undefined');
         if (!cancelled) {
           setCards(normalized);
           setSearchAliases(normalizeSearchAliasData(loadedSearchAliasData));
