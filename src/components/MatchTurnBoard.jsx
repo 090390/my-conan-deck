@@ -360,12 +360,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   const voteToCancelMatch = useCallback(async () => {
     if (!roomId || loading || game?.game_over) return;
     const votes = Array.isArray(game?.cancel_requested_by) ? game.cancel_requested_by : [];
-    if (votes.includes(userId)) return;
-    const hasOtherVote = votes.some((id) => id !== userId);
-    const question = hasOtherVote
-      ? "상대가 모의전 중도 종료에 동의했습니다. 나도 동의하면 게임이 종료되고 두 사람 모두 모의전 로비로 돌아갑니다. 동의하시겠습니까?"
-      : "모의전을 중도 종료하자는 제안을 보냅니다. 상대도 동의해야 게임이 종료되며, 동의 전까지는 게임을 계속할 수 있습니다. 제안하시겠습니까?";
-    if (!window.confirm(question)) return;
+    if (votes.length > 0) return;
     setLoading(true);
     setError("");
     setNotice("");
@@ -373,11 +368,32 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
       const { data, error: rpcError } = await supabase.rpc("vote_private_match_cancel_v1", { p_room_id: roomId });
       if (rpcError) throw rpcError;
       if (data && typeof data === "object") setGame(data);
-      setNotice(data?.cancelled
-        ? "두 사람의 동의로 모의전이 종료되었습니다. 로비로 돌아갑니다."
-        : "중도 종료 동의를 보냈습니다. 상대 플레이어의 동의를 기다립니다.");
     } catch (err) {
-      const message = err?.message || "중도 종료 동의를 처리하지 못했습니다.";
+      const message = err?.message || "중도 종료 제안을 보내지 못했습니다.";
+      setError(message);
+      showBlockedReason(message);
+    } finally {
+      setLoading(false);
+    }
+  }, [roomId, loading, game?.game_over, game?.cancel_requested_by]);
+
+  const respondToCancelMatch = useCallback(async (accept) => {
+    if (!roomId || loading || game?.game_over) return;
+    const votes = Array.isArray(game?.cancel_requested_by) ? game.cancel_requested_by : [];
+    if (votes.length !== 1 || votes[0] === userId) return;
+    setLoading(true);
+    setError("");
+    setNotice("");
+    try {
+      const { data, error: rpcError } = await supabase.rpc("respond_private_match_cancel_v1", {
+        p_room_id: roomId,
+        p_accept: Boolean(accept),
+      });
+      if (rpcError) throw rpcError;
+      if (data && typeof data === "object") setGame(data);
+      if (!accept) setNotice("중도 종료 제안이 거절되었습니다. 게임을 계속 진행할 수 있습니다.");
+    } catch (err) {
+      const message = err?.message || "중도 종료 응답을 처리하지 못했습니다.";
       setError(message);
       showBlockedReason(message);
     } finally {
@@ -763,12 +779,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
 
   return (
     <main style={st.root}>
-      <div style={{ position: "fixed", top: "10px", right: "12px", zIndex: 99990, display: "flex", alignItems: "center", gap: 6, maxWidth: "min(92vw, 270px)" }}>
-        {Array.isArray(game?.cancel_requested_by) && game.cancel_requested_by.length > 0 && <span style={{ padding: "5px 7px", borderRadius: 7, background: "rgba(127,41,53,.88)", color: "#fecaca", fontSize: 9, fontWeight: 800, whiteSpace: "nowrap" }}>종료 동의 {game.cancel_requested_by.length}/2</span>}
-        <button type="button" disabled={loading || game?.game_over || (Array.isArray(game?.cancel_requested_by) && game.cancel_requested_by.includes(userId))} onClick={() => void voteToCancelMatch()} style={{ padding: "7px 9px", border: "1px solid rgba(248,113,113,.5)", borderRadius: 8, background: "#7f2935", color: "#fff", fontSize: 10, fontWeight: 850, opacity: loading || game?.game_over || (Array.isArray(game?.cancel_requested_by) && game.cancel_requested_by.includes(userId)) ? .65 : 1, cursor: "pointer", boxShadow: "0 4px 14px rgba(0,0,0,.35)" }}>
-          {Array.isArray(game?.cancel_requested_by) && game.cancel_requested_by.includes(userId) ? "중도 종료 동의 완료" : Array.isArray(game?.cancel_requested_by) && game.cancel_requested_by.some((id) => id !== userId) ? "중도 종료에 동의" : "게임 중도 종료 제안"}
-        </button>
-      </div>
+
       <style>{`
         .mock-sticky-status { position: sticky; top: calc(-1 * clamp(10px, 2vw, 22px)); z-index: 1000; margin-top: calc(-1 * clamp(10px, 2vw, 22px)); margin-left: calc(-1 * clamp(10px, 2vw, 22px)); margin-right: calc(-1 * clamp(10px, 2vw, 22px)); padding: calc(clamp(10px, 2vw, 22px) + 4px) clamp(10px, 2vw, 22px) 0; background: #080d17; backdrop-filter: blur(12px); border-bottom: 1px solid rgba(148,163,184,.18); box-shadow: 0 8px 20px rgba(0,0,0,.16); }
         .mock-sticky-status::before { content: ""; position: absolute; top: calc(-1 * clamp(10px, 2vw, 22px)); left: 0; right: 0; height: calc(clamp(10px, 2vw, 22px) + 4px); background: #080d17; pointer-events: none; z-index: 0; }
@@ -805,9 +816,20 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
           {inviteCode && <button type="button" style={{ ...st.button, background: "#164e63", borderColor: "rgba(103,232,249,.3)" }} onClick={() => void copyRoomInviteCode()}>초대 코드 {inviteCode} · 복사</button>}
           <button type="button" style={st.button} disabled={loading} onClick={() => void refresh()}>상태 새로고침</button>
+          <button type="button" style={{ ...st.button, background: "#7f2935", borderColor: "rgba(248,113,113,.5)", opacity: loading || game?.game_over || (Array.isArray(game?.cancel_requested_by) && game.cancel_requested_by.length > 0) ? .65 : 1 }} disabled={loading || game?.game_over || (Array.isArray(game?.cancel_requested_by) && game.cancel_requested_by.length > 0)} onClick={() => void voteToCancelMatch()}>중도 종료</button>
           {onLeaveField && <button type="button" style={{ ...st.button, background: "#273244" }} onClick={onLeaveField}>전체 화면 해제</button>}
         </div>
       </header>
+
+      {Array.isArray(game?.cancel_requested_by) && game.cancel_requested_by.length > 0 && !game?.game_over && <div role="presentation" style={{ position: "fixed", inset: 0, zIndex: 100700, display: "flex", justifyContent: "center", alignItems: "center", padding: 16, background: "rgba(2,6,15,.86)", backdropFilter: "blur(7px)" }}>
+        <section role="dialog" aria-modal="true" aria-labelledby="match-cancel-title" style={{ width: "min(100%, 430px)", padding: 20, borderRadius: 14, border: "1px solid rgba(248,113,113,.5)", background: "#111a2a", color: C.text, boxShadow: "0 28px 90px rgba(0,0,0,.75)" }}>
+          <div style={{ color: "#fca5a5", fontSize: 9, fontWeight: 900, letterSpacing: ".16em" }}>MATCH PAUSED</div>
+          <h2 id="match-cancel-title" style={{ margin: "5px 0 9px", fontSize: 19, fontWeight: 900 }}>모의전 중도 종료</h2>
+          {game.cancel_requested_by[0] === userId
+            ? <><p style={{ ...st.muted, fontSize: 12, lineHeight: 1.7 }}>중도 종료를 제안했습니다. 상대가 응답할 때까지 양쪽의 게임 진행이 일시 중지됩니다.</p><div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 14, padding: 10, borderRadius: 8, background: "rgba(248,113,113,.08)", color: "#fecaca", fontSize: 11 }}><span style={{ width: 7, height: 7, borderRadius: 99, background: "#f87171" }} />상대 플레이어의 [동의] 또는 [거절] 응답을 기다리는 중입니다.</div></>
+            : <><p style={{ ...st.muted, fontSize: 12, lineHeight: 1.7 }}>상대가 모의전을 중도 종료하자고 제안했습니다. 동의하면 두 사람 모두 모의전 로비로 돌아갑니다. 거절하면 현재 게임을 계속합니다.</p><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 16 }}><button type="button" disabled={loading} onClick={() => void respondToCancelMatch(true)} style={{ ...st.button, background: "#166534", borderColor: "rgba(134,239,172,.35)", padding: "11px 12px" }}>동의</button><button type="button" disabled={loading} onClick={() => void respondToCancelMatch(false)} style={{ ...st.button, background: "#374151", padding: "11px 12px" }}>거절</button></div></>}
+        </section>
+      </div>}
 
       {(error || notice) && <div role={error ? "alert" : "status"} style={{ marginBottom: 10, padding: 9, borderRadius: 6, border: `1px solid ${error ? "rgba(253,164,175,.3)" : "rgba(134,239,172,.24)"}`, color: error ? C.red : C.green, background: error ? "rgba(190,24,93,.07)" : "rgba(22,101,52,.07)", fontSize: 11 }}>{error || notice}</div>}
       {game.last_action_label && <div style={{ display: "grid", gap: 4, marginBottom: 10 }}>
