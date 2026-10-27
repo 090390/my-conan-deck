@@ -1151,7 +1151,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
                     return;
                   }
                   setSelectedPeekInstanceId((current) => current === card.instance_id ? "" : card.instance_id);
-                }}>{shared ? "공개 지정 취소" : selected ? "공개할 카드로 선택됨" : "공개할 카드로 선택"}</button><button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 4, color: C.green, borderColor: "rgba(134,239,172,.25)" }} disabled={loading || shared} title={shared ? "먼저 위의 공개 지정 취소를 눌러 주세요." : "선택한 카드를 내 손패로 가져옵니다."} onClick={() => void runAction("take_deck_peek_card", { instance_id: card.instance_id })}>이 카드를 손패로 가져오기</button></>}
+                }}>{shared ? "공개 지정 취소" : selected ? "공개할 카드로 선택됨" : "공개할 카드로 선택"}</button><button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 4, color: C.green, borderColor: "rgba(134,239,172,.25)" }} disabled={loading || shared} title={shared ? "먼저 위의 공개 지정 취소를 눌러 주세요." : "선택한 카드를 내 손패로 가져옵니다."} onClick={() => void runAction("take_deck_peek_card", { instance_id: card.instance_id })}>이 카드를 손패로 가져오기</button><button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 4, background: "rgba(127,29,29,.32)", color: C.red, borderColor: "rgba(248,113,113,.4)" }} disabled={loading || shared} title={shared ? "먼저 위의 공개 지정 취소를 눌러 주세요." : "선택한 카드를 즉시 리무브 에이리어로 이동합니다."} onClick={() => void runAction("remove_deck_peek_card", { instance_id: card.instance_id })}>이 카드를 리무브하기</button></>}
               </article>;
             })}
           </div>
