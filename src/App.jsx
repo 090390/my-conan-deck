@@ -330,6 +330,11 @@ function findPartnerColorMarker(label) {
 }
 
 function renderConditionLabel(label, keyPrefix) {
+  const partnerChoice = String(label).match(/^(.*?(?:파트너|パートナー|partner)[\s　]*)(청|적|황|녹|흑|백)[\s　]*(or|또는|\/)[\s　]*(청|적|황|녹|흑|백)$/iu);
+  if (partnerChoice) {
+    return <>{partnerChoice[1]}{renderAbilityColorCircle(partnerChoice[2], `${keyPrefix}-partner-color-a`)}{partnerChoice[3]}{renderAbilityColorCircle(partnerChoice[4], `${keyPrefix}-partner-color-b`)}</>;
+  }
+
   const marker = findPartnerColorMarker(label);
   if (marker) {
     return <>{label.slice(0, marker.start)}{renderAbilityColorCircle(marker.rawColor, `${keyPrefix}-color`)}{label.slice(marker.end)}</>;

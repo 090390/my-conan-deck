@@ -213,6 +213,15 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   }, [roomId, userId]);
 
   useEffect(() => {
+    const isMutualCancellation = Boolean(
+      game?.game_over &&
+      !game?.winner_user_id &&
+      String(game?.last_action_label || "").startsWith("모의전 취소 완료:")
+    );
+    if (isMutualCancellation) onReturnToLobby?.();
+  }, [game?.game_over, game?.winner_user_id, game?.last_action_label, onReturnToLobby]);
+
+  useEffect(() => {
     if (!roomId) return undefined;
     let active = true;
     const load = async () => {
@@ -289,14 +298,14 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
           const newFieldIds = new Set((newBoard?.field_cards || []).map((card) => String(card.instance_id)));
           for (const card of oldBoard.field_cards || []) {
             const rarity = String(card.rarity || card.rarity_code || card.rarityCode || card.sourceData?.rarity || card.raw?.rarity || cardsByKey.get(String(card.key))?.rarity || "").trim().toUpperCase();
-            if (action !== "contact_use_disguise" && rarity === "MR" && card.instance_id && !newFieldIds.has(String(card.instance_id))) {
+            if (action !== "contact_use_disguise" && ["MR", "MRP"].includes(rarity) && card.instance_id && !newFieldIds.has(String(card.instance_id))) {
               // The server helper requires rarity on the card object; pass the resolved, normalized rarity.
               departedMrs.push({ owner_user_id: oldBoard.user_id, card: { ...card, rarity } });
             }
           }
           for (const card of newBoard?.field_cards || []) {
             const rarity = String(card.rarity || cardsByKey.get(String(card.key))?.rarity || "").toUpperCase();
-            if (rarity === "MR" && card.instance_id && !oldFieldIds.has(String(card.instance_id))) {
+            if (["MR", "MRP"].includes(rarity) && card.instance_id && !oldFieldIds.has(String(card.instance_id))) {
               enteredMrs.push({ owner_user_id: oldBoard.user_id, card });
             }
           }
@@ -347,6 +356,36 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
       return false;
     } finally { setLoading(false); }
   }, [roomId, userId, loading, game, cardsByKey]);
+
+  const voteToCancelMatch = useCallback(async () => {
+    if (!roomId || loading || game?.game_over) return;
+    const votes = Array.isArray(game?.cancel_requested_by) ? game.cancel_requested_by : [];
+    if (votes.includes(userId)) return;
+    const hasOtherVote = votes.some((id) => id !== userId);
+    const question = hasOtherVote
+      ? "상대가 모의전 중도 종료에 동의했습니다. 나도 동의하면 게임이 종료되고 두 사람 모두 모의전 로비로 돌아갑니다. 동의하시겠습니까?"
+      : "모의전을 중도 종료하자는 제안을 보냅니다. 상대도 동의해야 게임이 종료되며, 동의 전까지는 게임을 계속할 수 있습니다. 제안하시겠습니까?";
+    if (!window.confirm(question)) return;
+    setLoading(true);
+    setError("");
+    setNotice("");
+    try {
+      const { data, error: rpcError } = await supabase.rpc("vote_private_match_cancel_v1", { p_room_id: roomId });
+      if (rpcError) throw rpcError;
+      if (data && typeof data === "object") setGame(data);
+      setNotice(data?.cancelled
+        ? "두 사람의 동의로 모의전이 종료되었습니다. 로비로 돌아갑니다."
+        : "중도 종료 동의를 보냈습니다. 상대 플레이어의 동의를 기다립니다.");
+    } catch (err) {
+      const message = err?.message || "중도 종료 동의를 처리하지 못했습니다.";
+      setError(message);
+      showBlockedReason(message);
+    } finally {
+      setLoading(false);
+    }
+  }, [roomId, userId, loading, game?.game_over, game?.cancel_requested_by]);
+
+
 
   const boards = Array.isArray(game?.boards) ? game.boards : [];
   const myBoard = boards.find((board) => board.user_id === userId);
@@ -538,8 +577,8 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   }
   function moveField(card, ownerId, destination) {
     const cardRarity = String(card?.rarity || card?.rarity_code || card?.rarityCode || card?.sourceData?.rarity || card?.raw?.rarity || cardsByKey.get(String(card?.key))?.rarity || "").trim().toUpperCase();
-    if (destination === "remove" && cardRarity === "MR") {
-      if (!window.confirm(`${nameOf(card)}는 MR 카드이므로 리무브로 보내지 않고 MR 파트너 에이리어로 이동합니다. 계속할까요?`)) return;
+    if (destination === "remove" && ["MR", "MRP"].includes(cardRarity)) {
+      if (!window.confirm(`${nameOf(card)}는 MR/MRP 카드이므로 리무브로 보내지 않고 MR 파트너 에이리어로 이동합니다. 계속할까요?`)) return;
       void runAction("move_field_mr_to_partner", { instance_id: card.instance_id, owner_user_id: ownerId, rarity: cardRarity });
       return;
     }
@@ -604,7 +643,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
           <div style={{ position: "relative", overflow: "hidden", aspectRatio: "3 / 4", display: "grid", placeItems: "center", background: "#0c1422", borderRadius: 5 }}>
             <CardArt instance={instance} rested={rested} status={cardStatus} />
             <span style={{ position: "absolute", left: 3, top: 3, padding: "2px 3px", borderRadius: 4, background: cardStatus === "stunned" ? "rgba(126,34,206,.95)" : cardStatus === "rested" || rested ? "rgba(190,24,93,.94)" : "rgba(22,101,52,.9)", color: "white", fontSize: 7, fontWeight: 900 }}>{cardStatus === "stunned" ? "스턴" : cardStatus === "rested" || rested ? "슬립" : "액티브"}</span>
-            {String(instance.rarity || "").toUpperCase() === "MR" && <span style={{ position: "absolute", right: 3, bottom: 3, padding: "2px 3px", borderRadius: 4, background: "#a16207", color: "white", fontSize: 7, fontWeight: 900 }}>MR</span>}
+            {["MR", "MRP"].includes(String(instance.rarity || "").toUpperCase()) && <span style={{ position: "absolute", right: 3, bottom: 3, padding: "2px 3px", borderRadius: 4, background: "#a16207", color: "white", fontSize: 7, fontWeight: 900 }}>MR</span>}
             {isEvent && <span style={{ position: "absolute", right: 3, top: 3, padding: "2px 3px", borderRadius: 4, background: "rgba(3,105,161,.92)", color: "white", fontSize: 7, fontWeight: 900 }}>이벤트</span>}
           </div>
         </button>
@@ -647,7 +686,11 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   if (!game) return <main style={st.root}><div style={st.panel}>게임 필드를 불러오는 중…{error && <p style={{ color: C.red }}>{error}</p>}</div></main>;
 
   const solutionFileThreshold = game.first_player_user_id === userId ? 7 : 6;
-  const winEvidenceThreshold = solutionFileThreshold;
+  const currentEventKey = String(myBoard?.event_key || myEventCard?.key || "").trim().toLocaleUpperCase();
+  const hasConanVsKidCase = cardHasRuleId(myEventCard || { key: myBoard?.event_key }, "1261")
+    || currentEventKey === "B11098" || currentEventKey === "B11098P"
+    || /(?:^|[^0-9])11098(?:[^0-9]|$)/u.test(currentEventKey);
+  const winEvidenceThreshold = solutionFileThreshold + (hasConanVsKidCase ? 1 : 0);
   const roleText = game.first_player_user_id === userId ? "선공" : "후공";
   const currentTurnRole = game.current_turn_user_id === userId ? "내 턴" : "상대 턴";
   const canManualEffect = !game.game_over && !pending && !myBoard?.next_hint_pending && (!game.deck_peek_locked || Boolean(game.my_deck_peek));
@@ -720,6 +763,12 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
 
   return (
     <main style={st.root}>
+      <div style={{ position: "fixed", top: "10px", right: "12px", zIndex: 99990, display: "flex", alignItems: "center", gap: 6, maxWidth: "min(92vw, 270px)" }}>
+        {Array.isArray(game?.cancel_requested_by) && game.cancel_requested_by.length > 0 && <span style={{ padding: "5px 7px", borderRadius: 7, background: "rgba(127,41,53,.88)", color: "#fecaca", fontSize: 9, fontWeight: 800, whiteSpace: "nowrap" }}>종료 동의 {game.cancel_requested_by.length}/2</span>}
+        <button type="button" disabled={loading || game?.game_over || (Array.isArray(game?.cancel_requested_by) && game.cancel_requested_by.includes(userId))} onClick={() => void voteToCancelMatch()} style={{ padding: "7px 9px", border: "1px solid rgba(248,113,113,.5)", borderRadius: 8, background: "#7f2935", color: "#fff", fontSize: 10, fontWeight: 850, opacity: loading || game?.game_over || (Array.isArray(game?.cancel_requested_by) && game.cancel_requested_by.includes(userId)) ? .65 : 1, cursor: "pointer", boxShadow: "0 4px 14px rgba(0,0,0,.35)" }}>
+          {Array.isArray(game?.cancel_requested_by) && game.cancel_requested_by.includes(userId) ? "중도 종료 동의 완료" : Array.isArray(game?.cancel_requested_by) && game.cancel_requested_by.some((id) => id !== userId) ? "중도 종료에 동의" : "게임 중도 종료 제안"}
+        </button>
+      </div>
       <style>{`
         .mock-sticky-status { position: sticky; top: calc(-1 * clamp(10px, 2vw, 22px)); z-index: 1000; margin-top: calc(-1 * clamp(10px, 2vw, 22px)); margin-left: calc(-1 * clamp(10px, 2vw, 22px)); margin-right: calc(-1 * clamp(10px, 2vw, 22px)); padding: calc(clamp(10px, 2vw, 22px) + 4px) clamp(10px, 2vw, 22px) 0; background: #080d17; backdrop-filter: blur(12px); border-bottom: 1px solid rgba(148,163,184,.18); box-shadow: 0 8px 20px rgba(0,0,0,.16); }
         .mock-sticky-status::before { content: ""; position: absolute; top: calc(-1 * clamp(10px, 2vw, 22px)); left: 0; right: 0; height: calc(clamp(10px, 2vw, 22px) + 4px); background: #080d17; pointer-events: none; z-index: 0; }
@@ -843,8 +892,8 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
                 if (!board) return null;
                 const rawPartnerCard = board.partner_mr_card || null;
                 const rawRarity = String(rawPartnerCard?.rarity || infoFor(rawPartnerCard)?.rarity || "").toUpperCase();
-                const mr = rawPartnerCard && rawRarity === "MR" ? rawPartnerCard : null;
-                const legacyNonMr = rawPartnerCard && rawRarity !== "MR" ? [rawPartnerCard] : [];
+                const mr = rawPartnerCard && ["MR", "MRP"].includes(rawRarity) ? rawPartnerCard : null;
+                const legacyNonMr = rawPartnerCard && !["MR", "MRP"].includes(rawRarity) ? [rawPartnerCard] : [];
                 const nonMrCards = [...(Array.isArray(board.partner_non_mr_cards) ? board.partner_non_mr_cards : []), ...legacyNonMr];
                 return <div key={board.user_id} style={{ minWidth: 0, display: "grid", gap: 7, alignContent: "start" }}>
                   <div style={{ padding: 6, border: "1px solid rgba(255,255,255,.08)", borderRadius: 6, background: "#080d16" }}>
@@ -1129,7 +1178,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 9 }}>
             {[{ title: "공격자", board: contactAttackerBoard, card: contactAttackerCard, ap: n(pending.attacker_ap) + n(pending.attacker_bonus) }, { title: "수비자", board: contactTargetBoard, card: contactTargetCard, ap: n(pending.target_ap) + n(pending.target_bonus) }].map((entry) => <div key={entry.title} style={{ padding: 8, border: "1px solid rgba(255,255,255,.1)", borderRadius: 8, background: "#080d16", minWidth: 0 }}><div style={{ fontSize: 9, color: C.muted }}>{entry.title} · {entry.board?.display_name || "플레이어"}</div>{entry.card && <button type="button" onClick={() => openDetails(entry.card)} style={{ display: "block", width: "100%", padding: 0, marginTop: 6, border: 0, background: "transparent", color: C.text }}>{infoFor(entry.card)?.imageUrl ? <img src={infoFor(entry.card).imageUrl} alt={nameOf(entry.card)} style={{ width: "100%", maxHeight: 175, aspectRatio: "3/4", objectFit: "contain" }} /> : <div style={st.faceDown} />}<span style={{ display: "block", fontSize: 10, marginTop: 5, overflowWrap: "anywhere" }}>{nameOf(entry.card)}</span></button>}<strong style={{ display: "block", marginTop: 8, fontSize: 16 }}>AP {entry.ap}</strong></div>)}
           </div>
-          {pending.next_responder_user_id === userId ? <><p style={{ fontSize: 11, color: C.gold, margin: "12px 0 7px" }}>{userId === pending.target_user_id ? "현재 순서: 수비자 · 컷인 사용 여부를 선택해 주세요." : "현재 순서: 공격자 · 컷인 사용 여부를 선택해 주세요."}</p><div style={{ display: "grid", gap: 6 }}>{myHand.filter((card) => n(card.cut_in_bonus) > 0 || Boolean(String(infoFor(card)?.cutInEffect || card.cut_in_effect || "").trim())).map((card) => {
+          {pending.next_responder_user_id === userId ? <><p style={{ fontSize: 11, color: C.gold, margin: "12px 0 7px" }}>{userId === pending.target_user_id ? "현재 순서: 수비자 · 컷인 사용 여부를 선택해 주세요." : "현재 순서: 공격자 · 컷인 사용 여부를 선택해 주세요."}</p><div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6, marginBottom: 8, padding: 8, border: "1px solid rgba(96,165,250,.28)", borderRadius: 8, background: "rgba(30,58,95,.22)" }}><span style={{ fontSize: 10, color: "#bfdbfe", fontWeight: 800, marginRight: 3 }}>컨택 AP 수동 조정 · 컷인과 별도</span><button type="button" style={{ ...st.smallButton, background: "#1d4ed8" }} disabled={loading} onClick={() => { const raw = window.prompt("본인 컨택 카드에 더할 AP를 입력하세요. (예: 1000)", "1000"); if (raw === null) return; const amount = Math.abs(Number(String(raw).replace(/[,，\s]/gu, ""))); if (!Number.isSafeInteger(amount) || amount < 1 || amount > 100000) { setError("AP 변화량은 1~100000 사이의 정수로 입력해 주세요."); return; } void runAction("contact_adjust_ap", { amount }); }}>AP +N</button><button type="button" style={{ ...st.smallButton, background: "#374151" }} disabled={loading} onClick={() => { const raw = window.prompt("본인 컨택 카드에서 뺄 AP를 입력하세요. (예: 1000)", "1000"); if (raw === null) return; const amount = Math.abs(Number(String(raw).replace(/[,，\s]/gu, ""))); if (!Number.isSafeInteger(amount) || amount < 1 || amount > 100000) { setError("AP 변화량은 1~100000 사이의 정수로 입력해 주세요."); return; } void runAction("contact_adjust_ap", { amount: -amount }); }}>AP −N</button></div><div style={{ display: "grid", gap: 6 }}>{myHand.filter((card) => n(card.cut_in_bonus) > 0 || Boolean(String(infoFor(card)?.cutInEffect || card.cut_in_effect || "").trim())).map((card) => {
             const effectText = String(infoFor(card)?.cutInEffect || card.cut_in_effect || "").trim();
             const cardInfo = infoFor(card);
             const isCulpritScalingCutIn = cardHasRuleId({ ...cardInfo, ...card }, "0627");

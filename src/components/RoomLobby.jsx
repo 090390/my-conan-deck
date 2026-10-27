@@ -26,7 +26,11 @@ function getEventRuleCode(card, fallbackKey = "") {
   const source = card?.sourceData && typeof card.sourceData === "object" ? card.sourceData : card?.raw && typeof card.raw === "object" ? card.raw : {};
   const values = [card?.key, card?.databaseId, card?.cardId, card?.cardNum, fallbackKey,
     source?.id, source?.databaseId, source?.database_id, source?.cardId, source?.card_id, source?.cardNum, source?.card_num];
-  return values.some((value) => normalizeCardIdentifier(value) === "1046") ? "culprits_1046" : "";
+  const normalized = values.map((value) => String(value ?? "").trim().toLocaleUpperCase());
+  if (values.some((value) => normalizeCardIdentifier(value) === "1046")) return "culprits_1046";
+  if (values.some((value) => normalizeCardIdentifier(value) === "1261")
+      || normalized.some((value) => value === "B11098" || value === "B11098P")) return "conan_vs_kid_1261";
+  return "";
 }
 
 function getCardTraits(card) {
