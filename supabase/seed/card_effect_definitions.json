@@ -44,7 +44,8 @@
             "value": "red"
           },
           "prompt": "공개하여 패에 넣을 적 카드를 최대 1장 선택하세요.",
-          "saveAs": "selected_red"
+          "saveAs": "selected_red",
+          "displayVariable": "seen"
         },
         {
           "op": "reveal_cards",
@@ -354,6 +355,14 @@
           "saveAs": "seen"
         },
         {
+          "op": "reveal_cards",
+          "from": "seen",
+          "to": [
+            "all"
+          ],
+          "awaitAcknowledgement": true
+        },
+        {
           "op": "select_cards",
           "from": "seen",
           "min": 0,
@@ -375,19 +384,6 @@
           },
           "prompt": "공개해 패에 넣을 질풍/돌격 보유 캐릭터를 최대 1장 선택하세요.",
           "saveAs": "chosen"
-        },
-        {
-          "op": "reveal_cards",
-          "from": "chosen",
-          "to": [
-            "all"
-          ],
-          "awaitAcknowledgement": false,
-          "when": {
-            "fact": "vars.chosen.count",
-            "operator": "greater_than",
-            "value": 0
-          }
         },
         {
           "op": "move_cards",
