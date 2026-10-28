@@ -7,7 +7,6 @@ const corsHeaders = {
   "Content-Type": "application/json; charset=utf-8",
 };
 const AI_EMAIL = "conan-tcg-ai-bot@my-conan-deck.invalid";
-const AI_ACTION_DELAY_MS = 2500;
 
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: corsHeaders });
@@ -111,10 +110,15 @@ function chooseResponse(state: any, aiId: string) {
   }
   if (pending.type === "character_contact_guard" && pending.target_user_id === aiId) {
     const attackerPower = Number(pending.attacker_ap || 0) + Number(pending.attacker_bonus || 0);
+    const threatened = field.find((card: any) => card.instance_id === pending.target_instance_id);
     const guard = field.filter((card: any) => isCharacter(card) && isActive(card)
       && card.instance_id !== pending.target_instance_id)
       .sort((a: any, b: any) => cardAp(b) - cardAp(a))[0];
-    return guard && cardAp(guard) >= attackerPower
+    // Do not spend a valuable active character to save a substantially weaker body.
+    // Protect only when the threatened card's estimated value is reasonably close to the guard's.
+    const worthProtecting = Boolean(threatened && guard
+      && cardStrength(threatened) >= cardStrength(guard) * 0.8);
+    return guard && worthProtecting && cardAp(guard) >= attackerPower
       ? { action: "guard_contact_with_character", payload: { instance_id: guard.instance_id } }
       : { action: "decline_contact_guard" };
   }
@@ -231,16 +235,28 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
   const restedTarget = enemyField.filter((card: any) => isCharacter(card) && !isActive(card))
     .sort((a: any, b: any) => cardAp(a) - cardAp(b))[0];
   if (activeAttackers.length && restedTarget) {
-    return {
-      action: "declare_contact",
-      payload: {
-        attacker_instance_id: activeAttackers[0].instance_id,
-        target_user_id: opponent.user_id,
-        target_instance_id: restedTarget.instance_id,
-        allow_active_target: false,
-        allow_newly_played: false,
-      },
-    };
+    // Do not throw a lower-AP attacker into a losing contact unless a hand cut-in can
+    // raise it above the target's AP during that contact.
+    const attacker = activeAttackers.find((candidate: any) => {
+      const attackerAp = cardAp(candidate);
+      const targetAp = cardAp(restedTarget);
+      return attackerAp > targetAp || hand.some((card: any) => {
+        const bonus = Number(card?.cut_in_bonus || 0);
+        return bonus > 0 && attackerAp + bonus > targetAp;
+      });
+    });
+    if (attacker) {
+      return {
+        action: "declare_contact",
+        payload: {
+          attacker_instance_id: attacker.instance_id,
+          target_user_id: opponent.user_id,
+          target_instance_id: restedTarget.instance_id,
+          allow_active_target: false,
+          allow_newly_played: false,
+        },
+      };
+    }
   }
   if (activeAttackers.length && Number(opponent.evidence_count || 0) > 0) {
     return {
@@ -303,7 +319,6 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
       if (state.my_mulligan_done !== true) {
         const hand = Array.isArray(state.my_hand) ? state.my_hand : [];
         const returnIds = chooseMulligan(hand);
-        const returnedNames = hand.filter((card: any) => returnIds.includes(card.instance_id)).map(cardName);
         const { error } = await service.rpc("submit_private_ai_mulligan_v1", {
           p_room_id: roomId, p_return_instance_ids: returnIds,
         });
@@ -311,9 +326,9 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
         return {
           is_ai: true,
           actions: ["submit_private_ai_mulligan"],
-          message: returnedNames.length
-            ? `AI 탐정: 시작 손패를 검토해 ${returnedNames.join(", ")}을 덱에 돌려보내 멀리건했습니다.`
-            : "AI 탐정: 시작 손패를 검토한 결과, 멀리건하지 않고 그대로 시작했습니다.",
+          message: returnIds.length
+            ? `AI 탐정: 카드 ${returnIds.length}장을 덱으로 돌려보내 멀리건을 진행했습니다.`
+            : "AI 탐정: 멀리건을 진행하지 않았습니다.",
         };
       }
       return { is_ai: true, actions: [] };
@@ -325,11 +340,15 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
     if (greeting && greeting.is_complete !== true) return { is_ai: true, actions: [] };
 
     const pending = state.pending_action || null;
+    const acknowledgedIds = Array.isArray(pending?.acknowledged_user_ids) ? pending.acknowledged_user_ids : [];
+    const needsAiAcknowledgement = Boolean(pending
+      && ["culprits_crime_reveal", "deck_remove_reveal", "file_remove_reveal", "hand_reveal", "evidence_remove_reveal"].includes(pending.type)
+      && !acknowledgedIds.includes(battle.ai_user_id));
     const aiMustRespond = Boolean(pending && (
       pending.target_user_id === battle.ai_user_id
       || pending.next_responder_user_id === battle.ai_user_id
-      || (pending.type === "culprits_crime_reveal" && pending.initiator_user_id === battle.ai_user_id)
       || pending.chooser_user_id === battle.ai_user_id
+      || needsAiAcknowledgement
     ));
     if (state.current_turn_user_id !== battle.ai_user_id && !aiMustRespond) return { is_ai: true, actions: [] };
 
