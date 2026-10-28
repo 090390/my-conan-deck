@@ -84,7 +84,7 @@ function checkStep(step, location, vars, def) {
     modify_stat: ["target", "stat", "amount", "duration", "stacking"],
     offer_reaction: ["reactionId", "actor", "choices", "saveAs"],
     pay_cost: ["cost"],
-    modify_lp: ["target", "amount", "duration"],
+    set_mislead_value: ["target", "value", "duration"],
     draw_cards: ["destination", "count"],
     gain_evidence: ["count"],
     ready_cards_that_used_keyword: ["keyword", "turn", "includePartnerArea"],
@@ -117,12 +117,12 @@ function checkStep(step, location, vars, def) {
   if (step.op === "reveal_until_match") checkFilter(step.match, `${location}.match`);
   if (step.op === "refill_deck_from_remove_area") need(step.shuffle === true, `${location}: refill은 반드시 섞어야 합니다.`);
   if (step.op === "offer_reaction") need(Array.isArray(step.choices) && step.choices.length >= 2, `${location}: 반응 choices가 필요합니다.`);
-  if (step.op === "grant_keyword") need(["turn_end", "while_attached", "permanent"].includes(step.duration), `${location}: 지원하지 않는 keyword duration입니다.`);
+  if (step.op === "grant_keyword") need(step.duration === "turn_end", `${location}: 현재 grant_keyword는 turn_end 지속만 지원합니다.`);
   if (step.op === "modify_stat") {
     need(step.duration === "turn_end", `${location}: 현재 modify_stat은 turn_end만 지원합니다.`);
     need(Number.isInteger(step.amount) && step.amount !== 0, `${location}: amount는 0이 아닌 정수여야 합니다.`);
   }
-  if (step.op === "modify_lp") need(Number.isInteger(step.amount) && step.amount !== 0, `${location}: LP amount는 0이 아닌 정수여야 합니다.`);
+  if (step.op === "set_mislead_value") need(Number.isInteger(step.value) && step.value >= 0 && step.value <= 3 && step.duration === "while_in_field", `${location}: 미스리드는 0~3의 정수이며 while_in_field 지속이어야 합니다.`);
   if (step.op === "draw_cards" || step.op === "gain_evidence") {
     need(Number.isInteger(step.count) && step.count > 0 && step.count <= 10, `${location}: count는 1~10 정수여야 합니다.`);
   }
