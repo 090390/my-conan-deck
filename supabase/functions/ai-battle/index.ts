@@ -151,7 +151,14 @@ function chooseResponse(state: any, aiId: string) {
   }
   if (pending.type === "deck_remove_reveal") return { action: "acknowledge_deck_remove" };
   if (pending.type === "file_remove_reveal") return { action: "acknowledge_file_remove" };
-  if (pending.type === "evidence_attack_reveal" && pending.target_user_id === aiId) {
+  if (pending.type === "evidence_attack_reveal" && (
+    pending.target_user_id === aiId
+    || pending.defender_user_id === aiId
+    || pending.evidence_owner_user_id === aiId
+    || pending.revealed_evidence_card?.owner_user_id === aiId
+    || pending.revealed_evidence_card?.set_owner_user_id === aiId
+  )) {
+    // AI가 수비자인 공개 확인 단계는 반드시 자동 승인해 후속 처리가 멈추지 않게 합니다.
     return { action: "resolve_evidence_attack" };
   }
   if (pending.type === "hand_reveal") return { action: "acknowledge_hand_reveal" };
@@ -203,9 +210,11 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
   const canAssist = !me.partner_rested && !me.partner_assist_used && Boolean(me.partner_key);
   const unlocksCharacterWithAssist = hand.some((card: any) => isCharacter(card)
     && cardCost(card) > level && cardCost(card) <= level + 1 && characterCount < 5);
-  // 기본 등장 전에는 어시스트로 먼저 레벨 상한을 올려 고레벨 카드를 우선 고려합니다.
-  // 기본 카드가 이미 나온 뒤에는 넥스트 힌트를 이어갈 계획일 때만 어시스트합니다.
-  if (canAssist && unlocksCharacterWithAssist && (!basePlayed || canPlanNextHint)) {
+  // 기본 카드 등장 전에는 필요한 경우 먼저 어시스트합니다.
+  // 기본 카드 등장 후에는 넥스트 힌트를 실제로 이어갈 수 있는 카드가 있을 때만 준비 행동으로 어시스트합니다.
+  const canActuallyContinueWithNextHint = canPlanNextHint && hand.some((card: any) => isCharacter(card)
+    && cardCost(card) <= level + 1 && characterCount < 5);
+  if (canAssist && unlocksCharacterWithAssist && (!basePlayed || canActuallyContinueWithNextHint)) {
     return { action: "partner_assist" };
   }
 
