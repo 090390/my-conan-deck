@@ -32,15 +32,21 @@ function getTraits(card) {
     return String(value).split(/[、,，;；|｜]/u).map((item) => item.trim()).filter(Boolean);
   }))];
 }
+function cardTypeText(card) {
+  return [
+    card?.type, card?.typeKo, card?.originalType, card?.roleText,
+    card?.sourceData?.type, card?.sourceData?.typeKo,
+  ].map((value) => String(value ?? "")).join(" ");
+}
 function isPartner(card) {
-  return /パートナー|파트너/iu.test([card?.type, card?.originalType, card?.roleText].join(" "))
+  return /パートナー|파트너/iu.test(cardTypeText(card))
     || /^P\d+/iu.test(String(card?.cardId || ""));
 }
 function isEvent(card) {
-  return /事件|사건|이벤트|イベント|event/iu.test([card?.type, card?.originalType, card?.roleText].join(" "));
+  return /事件|사건|이벤트|イベント|event/iu.test(cardTypeText(card));
 }
 function isCharacter(card) {
-  return /キャラ|character|캐릭터/iu.test([card?.type, card?.originalType, card?.roleText].join(" "))
+  return /キャラ|character|캐릭터/iu.test(cardTypeText(card))
     && !isPartner(card) && !isEvent(card);
 }
 function cardPayload(card, key, count) {
