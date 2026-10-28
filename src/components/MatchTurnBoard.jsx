@@ -113,6 +113,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   const [selectedHandRevealIds, setSelectedHandRevealIds] = useState([]);
   const [cardEffectActivations, setCardEffectActivations] = useState([]);
   const [cardEffectOptions, setCardEffectOptions] = useState([]);
+  const [cardEffectVisibleCards, setCardEffectVisibleCards] = useState([]);
   const [cardEffectSelectedIds, setCardEffectSelectedIds] = useState([]);
   const [setCardModal, setSetCardModal] = useState(null);
   const [handZoneChoice, setHandZoneChoice] = useState(null);
@@ -574,6 +575,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
         if (!cancelled) {
           setCardEffectActivations([]);
           setCardEffectOptions([]);
+          setCardEffectVisibleCards([]);
         }
         return;
       }
@@ -581,14 +583,17 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
         const { data, error } = await supabase.rpc("get_private_card_effect_activations_v1", { p_room_id: roomId });
         if (!cancelled) setCardEffectActivations(!error && Array.isArray(data?.activations) ? data.activations : []);
         if (!cancelled) setCardEffectOptions([]);
+        if (!cancelled) setCardEffectVisibleCards([]);
         return;
       }
       setCardEffectActivations([]);
       if (["card_effect_selection", "card_effect_order"].includes(pendingType) && chooserId === userId) {
         const { data, error } = await supabase.rpc("get_private_card_effect_options_v1", { p_room_id: roomId });
         if (!cancelled) setCardEffectOptions(!error && Array.isArray(data?.options) ? data.options : []);
+        if (!cancelled) setCardEffectVisibleCards(!error && Array.isArray(data?.display_options) ? data.display_options : []);
       } else if (!cancelled) {
         setCardEffectOptions([]);
+        setCardEffectVisibleCards([]);
       }
     };
     void loadEffectState();
@@ -1404,6 +1409,19 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
           </header>
           <div style={{ padding: 12, overflowY: "auto", minHeight: 0 }}>
             {pending.type === "card_effect_selection" && pending.chooser_user_id === userId && <>
+              {cardEffectVisibleCards.length > 0 && <div style={{ marginBottom: 12 }}>
+                <h3 style={{ margin: "0 0 7px", fontSize: 11, color: C.gold }}>확인한 카드 {cardEffectVisibleCards.length}장</h3>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(88px,1fr))", gap: 7 }}>
+                  {cardEffectVisibleCards.map((option, index) => {
+                    const card = option.card || option;
+                    return <button key={option.instance_id || card.instance_id || index} type="button" onClick={() => openDetails(card)} style={{ minWidth: 0, padding: 5, border: "1px solid rgba(252,211,77,.2)", borderRadius: 7, background: "#080d16", color: C.text, textAlign: "left" }}>
+                      <CardArt instance={card} />
+                      <span style={{ display: "block", marginTop: 4, fontSize: 9, overflowWrap: "anywhere" }}>{nameOf(card)}</span>
+                    </button>;
+                  })}
+                </div>
+              </div>}
+              <h3 style={{ margin: "0 0 7px", fontSize: 11, color: C.blue }}>선택할 수 있는 카드</h3>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(108px,1fr))", gap: 8 }}>
                 {cardEffectOptions.map((option) => {
                   const card = option.card || option;
