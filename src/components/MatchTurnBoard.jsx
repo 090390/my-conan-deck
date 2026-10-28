@@ -268,7 +268,21 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
                 p_instance_id: payload.instance_id,
                 p_card_rarity: payload.rarity,
               })
-            : action === "adjust_character_ap"
+            : action === "move_stacked_card_to_hand"
+              ? await supabase.rpc("move_private_stacked_card_to_hand_v1", {
+                  p_room_id: roomId,
+                  p_host_owner_user_id: payload.host_owner_user_id,
+                  p_host_instance_id: payload.host_instance_id,
+                  p_stacked_instance_id: payload.stacked_instance_id,
+                })
+              : action === "move_stacked_card_to_remove"
+                ? await supabase.rpc("move_private_stacked_card_to_remove_v1", {
+                    p_room_id: roomId,
+                    p_host_owner_user_id: payload.host_owner_user_id,
+                    p_host_instance_id: payload.host_instance_id,
+                    p_stacked_instance_id: payload.stacked_instance_id,
+                  })
+                : action === "adjust_character_ap"
               ? await supabase.rpc("adjust_private_character_ap_v1", {
                   p_room_id: roomId,
                   p_owner_user_id: payload.owner_user_id,
