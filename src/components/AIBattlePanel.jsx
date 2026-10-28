@@ -252,7 +252,7 @@ export default function AIBattlePanel({ deck, partnerId, eventId, cards = [], en
       if (invokeError) throw invokeError;
       if (!data?.room_id || !data?.invite_code) throw new Error(data?.error || "AI 대전 생성 결과를 확인할 수 없습니다.");
       setNotice(`공개 덱 저장소에서 ‘${aiDeck.deck_name}’ 덱을 무작위로 선택했습니다.`);
-      await onStarted?.({ roomId: data.room_id, inviteCode: data.invite_code, userId: session?.user?.id, aiDeckName: aiDeck.deck_name, aiDeckComposer: aiDeck.composer_name });
+      await onStarted?.({ roomId: data.room_id, inviteCode: data.invite_code, userId: session?.user?.id, aiDeckName: aiDeck.deck_name, aiDeckComposer: aiDeck.composer_name, initialAiMessage: data.initial_ai?.message || "" });
     } catch (err) {
       setError(err?.message || "AI 대전을 시작하지 못했습니다.");
     } finally {
