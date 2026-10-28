@@ -10,7 +10,7 @@ import {
   validateDraftBatch,
 } from "./card-effect-draft-utils.mjs";
 
-const DEFAULT_INPUT = "supabase/seed/card_effect_review_batches/20261029-matsuda-bakuchung-deck-review.json";
+const DEFAULT_INPUT = "supabase/seed/card_effect_review_batches/card-effect-review-20261029-attempt-01.json";
 const DEFAULT_BATCH_SIZE = 5;
 const NATIVE_STATUSES = new Set([
   "native_existing_rule",
@@ -272,7 +272,6 @@ for (let offset = 0; offset < remaining.length; offset += options.batchSize) {
     dslContext,
     cards: chunk.map((card) => ({
       sourceKey: card.sourceKey,
-      deckName: card.deckName,
       databaseId: card.databaseId,
       internalCardId: card.internalCardId,
       nameKo: card.nameKo,
