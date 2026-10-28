@@ -43,7 +43,7 @@ function isCharacter(card) {
   return /キャラ|character|캐릭터/iu.test([card?.type, card?.originalType, card?.roleText].join(" "))
     && !isPartner(card) && !isEvent(card);
 }
-function cardPayload(card, key, count, eventColorKey = "") {
+function cardPayload(card, key, count) {
   const identityValue = identity(card) || String(key);
   const cutInText = String(card?.cutInEffect || "").trim();
   const cutInMatch = cutInText.normalize("NFKC").match(/AP\s*\+\s*(\d{1,5})/iu);
@@ -57,9 +57,6 @@ function cardPayload(card, key, count, eventColorKey = "") {
   return {
     key: String(key), count, limit_key: identityValue,
     name: String(card?.name || card?.originalName || card?.cardId || key),
-    color: String(cardColorRaw(card) || ""),
-    color_key: colorKey(card),
-    event_color_key: String(eventColorKey || ""),
     card_type: isEvent(card) ? "event" : isCharacter(card) ? "character" : "other",
     copy_limit_exemption_id: exemptionId(card, key),
     card_id: String(card?.cardId || card?.sourceData?.card_id || ""),
@@ -79,51 +76,14 @@ function cardPayload(card, key, count, eventColorKey = "") {
     disguise_effect: String(card?.disguiseEffect || card?.hensoEffect || ""),
   };
 }
-function buildHumanDeck(deck, cards, eventColorKey = "") {
+function buildHumanDeck(deck, cards) {
   const byKey = new Map(cards.map((card) => [String(card.key), card]));
   return Object.entries(deck || {}).map(([key, rawCount]) => {
     const count = Math.floor(Number(rawCount) || 0);
     const card = byKey.get(String(key));
     if (!card || count <= 0) return null;
-    return cardPayload(card, key, count, eventColorKey);
+    return cardPayload(card, key, count);
   }).filter(Boolean);
-}
-const COLOR_ORDER = ["청", "적", "황", "녹", "흑", "백"];
-const COLOR_DEFINITIONS = [
-  { tag: "청", aliases: ["청", "파랑", "파란색", "파랑색", "푸른색", "青色", "青", "ブルー", "blue"] },
-  { tag: "적", aliases: ["적", "빨강", "빨간색", "빨강색", "赤色", "赤", "レッド", "red"] },
-  { tag: "황", aliases: ["황", "노랑", "노란색", "노랑색", "黄色", "黄", "イエロー", "yellow"] },
-  { tag: "녹", aliases: ["녹", "녹색", "초록", "초록색", "緑色", "緑", "グリーン", "green"] },
-  { tag: "흑", aliases: ["흑", "검정", "검정색", "검은색", "黒色", "黒", "黑", "ブラック", "black"] },
-  { tag: "백", aliases: ["백", "흰색", "하양", "하얀색", "白色", "白", "ホワイト", "white"] },
-];
-const COLOR_ALIASES = COLOR_DEFINITIONS
-  .flatMap(({ tag, aliases }) => aliases.map((alias) => ({ tag, alias: alias.toLocaleLowerCase() })))
-  .sort((a, b) => b.alias.length - a.alias.length);
-function cardColorRaw(card) {
-  return card?.color ?? card?.sourceData?.color ?? card?.sourceData?.colour ?? card?.raw?.color ?? "";
-}
-function colorKey(valueOrCard) {
-  const raw = typeof valueOrCard === "object" && valueOrCard !== null
-    ? cardColorRaw(valueOrCard) : valueOrCard;
-  let remaining = String(raw ?? "").trim().toLocaleLowerCase()
-    .replace(/[【】［］\[\]()（）]/gu, "")
-    .replace(/[\s,，、/&＋+・·|｜]/gu, "");
-  if (!remaining) return "";
-  const tags = [];
-  while (remaining) {
-    const match = COLOR_ALIASES.find((entry) => remaining.startsWith(entry.alias));
-    if (!match) return "";
-    tags.push(match.tag);
-    remaining = remaining.slice(match.alias.length);
-  }
-  const unique = new Set(tags);
-  return COLOR_ORDER.filter((tag) => unique.has(tag)).join("");
-}
-function cardAllowedByEvent(card, eventColorKey) {
-  const cardKey = colorKey(card);
-  const allowed = new Set(String(eventColorKey || "").split(""));
-  return Boolean(cardKey && allowed.size && [...cardKey].every((tag) => allowed.has(tag)));
 }
 function resolvePublicDeckCard(cards, entry) {
   if (entry == null || entry === "") return null;
@@ -148,30 +108,26 @@ function preparePublicDeck(cards, item) {
   const source = item?.deck_json;
   const entries = Array.isArray(source?.mainDeck) ? source.mainDeck
     : Array.isArray(source?.main_deck) ? source.main_deck : null;
-  if (!entries) return null;
-  const total = entries.reduce((sum, entry) => sum + Math.max(0, Math.floor(Number(entry?.count) || 0)), 0);
-  if (total !== 40) return null;
+  if (!entries) throw new Error(`공개 덱 ‘${item?.deck_name || "이름 없는 덱"}’에서 메인 덱 목록을 읽지 못했습니다.`);
+
   const event = resolvePublicDeckCard(cards, source.event ?? source.eventId ?? source.event_id);
   const partner = resolvePublicDeckCard(cards, source.partner ?? source.partnerId ?? source.partner_id);
-  if (!event || !isEvent(event) || !partner || !isPartner(partner)) return null;
-  const eventColorKey = colorKey(event);
-  if (!eventColorKey) return null;
-  const mainDeck = [];
-  const copyCounts = new Map();
-  for (const entry of entries) {
-    const count = Math.max(0, Math.floor(Number(entry?.count) || 0));
-    if (!count) continue;
-    const card = resolvePublicDeckCard(cards, entry);
-    if (!card || !cardAllowedByEvent(card, eventColorKey)) return null;
-    const sameCardId = identity(card) || String(card.key);
-    if (!exemptionId(card, card.key)) {
-      const nextCount = (copyCounts.get(sameCardId) || 0) + count;
-      if (nextCount > 3) return null;
-      copyCounts.set(sameCardId, nextCount);
-    }
-    mainDeck.push(cardPayload(card, card.key, count, eventColorKey));
+  if (!event || !partner) {
+    throw new Error(`공개 덱 ‘${item?.deck_name || "이름 없는 덱"}’의 파트너 또는 사건 카드를 현재 카드 데이터에서 찾지 못했습니다.`);
   }
-  if (mainDeck.reduce((sum, card) => sum + card.count, 0) !== 40) return null;
+
+  // 공개 저장소에 등록된 덱의 특이한 구성과 예외는 그대로 존중합니다.
+  // 색상/동일 카드 장수/덱 구성 규칙에 대한 별도 사전 심사는 하지 않습니다.
+  const mainDeck = entries.map((entry) => {
+    const count = Math.floor(Number(entry?.count) || 0);
+    if (count <= 0) return null;
+    const card = resolvePublicDeckCard(cards, entry);
+    if (!card) {
+      throw new Error(`공개 덱 ‘${item?.deck_name || "이름 없는 덱"}’의 카드 ‘${entry?.name || entry?.key || "알 수 없는 카드"}’를 현재 카드 데이터에서 찾지 못했습니다.`);
+    }
+    return cardPayload(card, card.key, count);
+  }).filter(Boolean);
+
   return {
     main_deck: mainDeck,
     partner_key: String(partner.key),
@@ -187,16 +143,13 @@ async function pickRandomPublicDeck(cards) {
     .order("created_at", { ascending: false })
     .limit(200);
   if (error) throw new Error(`공개 덱 저장소를 불러오지 못했습니다: ${error.message}`);
-  const candidates = (Array.isArray(data) ? data : [])
-    .map((item) => ({ item, deck: preparePublicDeck(cards, item) }))
-    .filter((entry) => entry.deck);
-  if (!candidates.length) {
-    throw new Error("공개 덱 저장소에서 사건 카드 색상과 맞는 40장 덱을 찾지 못했습니다. 합법적인 색상 구성의 덱을 먼저 업로드해 주세요.");
+  if (!Array.isArray(data) || data.length === 0) {
+    throw new Error("공개 덱 저장소에 등록된 덱이 없습니다. 먼저 덱을 공개 업로드해 주세요.");
   }
-  const picked = candidates[Math.floor(Math.random() * candidates.length)];
-  return picked.deck;
+  // Choose first; do not pre-filter by competitive legality or special-case deck construction.
+  const picked = data[Math.floor(Math.random() * data.length)];
+  return preparePublicDeck(cards, picked);
 }
-
 
 const panelStyle = {
   boxSizing: "border-box", width: "100%", maxWidth: 820, margin: "0 auto 24px",
@@ -228,16 +181,7 @@ export default function AIBattlePanel({ deck, partnerId, eventId, cards = [], en
       const session = await ensureSignedIn();
       const event = cards.find((card) => String(card.key) === String(eventId));
       if (!event || !isEvent(event)) throw new Error("선택한 사건 카드를 확인할 수 없습니다.");
-      const eventColorKey = colorKey(event);
-      if (!eventColorKey) throw new Error("선택한 사건 카드의 색상을 판독할 수 없습니다. 카드 데이터의 색상 표기를 확인해 주세요.");
-      const humanDeck = buildHumanDeck(deck, cards, eventColorKey);
-      const offColorCard = Object.entries(deck || {}).map(([key, rawCount]) => {
-        const count = Math.max(0, Math.floor(Number(rawCount) || 0));
-        return count > 0 ? cards.find((card) => String(card.key) === String(key)) : null;
-      }).find((card) => card && !cardAllowedByEvent(card, eventColorKey));
-      if (offColorCard) {
-        throw new Error(`내 덱의 ‘${offColorCard.name || offColorCard.cardId || "카드"}’는 선택한 사건 카드의 색상(${eventColorKey})과 맞지 않습니다. 사건 카드 색상에 해당하는 카드만 포함해 주세요.`);
-      }
+      const humanDeck = buildHumanDeck(deck, cards);
       const aiDeck = await pickRandomPublicDeck(cards);
       const { data, error: invokeError } = await supabase.functions.invoke("ai-battle", {
         body: {
@@ -267,7 +211,7 @@ export default function AIBattlePanel({ deck, partnerId, eventId, cards = [], en
           <p style={{ margin: "0 0 5px", color: "#7dd3fc", fontSize: 10, fontWeight: 900, letterSpacing: ".18em" }}>AI BATTLE · EXPERIMENTAL</p>
           <h2 style={{ margin: 0, fontSize: 22, fontWeight: 850 }}>AI 대전</h2>
           <p style={{ color: "#9aa8bd", marginTop: 7, fontSize: 13, lineHeight: 1.7 }}>
-            내 덱으로 AI 탐정과 별도 대전을 시작합니다. AI는 공개 덱 저장소에 등록된 덱 중 사건 카드 색상과 구성이 맞는 덱 하나를 무작위로 사용합니다.
+            내 덱으로 AI 탐정과 별도 대전을 시작합니다. AI는 공개 덱 저장소에 등록된 덱 하나를 무작위로 사용합니다.
           </p>
         </div>
       </div>
@@ -278,7 +222,7 @@ export default function AIBattlePanel({ deck, partnerId, eventId, cards = [], en
         <button type="button" style={{ ...buttonStyle, opacity: loading ? .6 : 1, cursor: loading ? "wait" : "pointer" }} disabled={loading} onClick={() => void startAIBattle()}>
           {loading ? "AI 대전 준비 중…" : "AI 대전 시작"}
         </button>
-        <span style={{ color: "#74839a", fontSize: 11 }}>AI는 공개 덱 저장소의 합법적인 덱을 무작위로 선택합니다.</span>
+        <span style={{ color: "#74839a", fontSize: 11 }}>AI는 공개 덱 저장소의 덱을 무작위로 선택합니다.</span>
       </div>
       {notice && <p role="status" style={{ color: "#86efac", marginTop: 13, fontSize: 12 }}>{notice}</p>}
       {error && <p role="alert" style={{ color: "#fda4af", marginTop: 13, fontSize: 12, overflowWrap: "anywhere" }}>{error}</p>}

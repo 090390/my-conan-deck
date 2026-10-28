@@ -40,11 +40,6 @@ function chooseMulligan(hand: any[]) {
   }
   return hand.filter((card) => cardCost(card) >= 5).map((card) => card.instance_id);
 }
-function cardAllowedByEvent(card: any) {
-  const colors = String(card?.color_key || "").split("").filter(Boolean);
-  const eventColors = new Set(String(card?.event_color_key || "").split("").filter(Boolean));
-  return colors.length > 0 && eventColors.size > 0 && colors.every((color) => eventColors.has(color));
-}
 function cardName(card: any) {
   return String(card?.name || card?.card_name || card?.card_id || card?.card_num || "캐릭터 카드");
 }
@@ -192,7 +187,7 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
   if (state.turn_step !== "main") return null;
 
   if (me.next_hint_pending) {
-    const nextCard = hand.filter((card: any) => isCharacter(card) && cardAllowedByEvent(card)
+    const nextCard = hand.filter((card: any) => isCharacter(card)
       && cardCost(card) <= level + 1 && characterCount < 5)
       .sort((a: any, b: any) => cardStrength(b) - cardStrength(a))[0];
     return nextCard
@@ -201,14 +196,14 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
   }
 
   if (!basePlayed) {
-    const play = hand.filter((card: any) => isCharacter(card) && cardAllowedByEvent(card)
+    const play = hand.filter((card: any) => isCharacter(card)
       && cardCost(card) <= level && characterCount < 5)
       .sort((a: any, b: any) => cardStrength(b) - cardStrength(a))[0];
     if (play) return { action: "play_character", payload: { instance_id: play.instance_id } };
   }
 
   if (!me.partner_rested && !me.partner_assist_used && me.partner_key) {
-    const unlocksCard = hand.some((card: any) => isCharacter(card) && cardAllowedByEvent(card)
+    const unlocksCard = hand.some((card: any) => isCharacter(card)
       && cardCost(card) > level && cardCost(card) <= level + 1 && characterCount < 5);
     if (unlocksCard) return { action: "partner_assist" };
   }
@@ -222,7 +217,7 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
   const isSolution = String(me.case_phase || "incident").toLocaleLowerCase() === "solution";
   if (me.base_action_done && !me.next_hint_used && !nextHintAlreadyUsedThisTurn
       && isSolution && Number(me.file_count || 0) >= 4 && characterCount < 5) {
-    const canContinue = hand.some((card: any) => isCharacter(card) && cardAllowedByEvent(card)
+    const canContinue = hand.some((card: any) => isCharacter(card)
       && cardCost(card) <= level && characterCount < 5);
     if (canContinue) return { action: "next_hint_take_file" };
   }
