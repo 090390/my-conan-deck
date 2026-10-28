@@ -379,12 +379,19 @@ Deno.serve(async (req: Request) => {
       return json({ room_id: room.out_room_id, invite_code: room.out_invite_code, initial_ai: initial });
     }
 
-    if (body.action === "step") {
+    if (body.action === "step" || body.action === "cancel") {
       const roomId = String(body.room_id || "");
       if (!roomId) return json({ error: "대전 방 ID가 없습니다." }, 400);
       const { data: isAi, error: isAiError } = await userClient.rpc("is_private_ai_battle_v1", { p_room_id: roomId });
       if (isAiError) throw isAiError;
       if (isAi !== true) return json({ is_ai: false });
+      if (body.action === "cancel") {
+        // The client records its cancellation request first; an AI response is then immediate,
+        // without waiting for the AI worker's next normal turn tick.
+        const { error: cancelError } = await service.rpc("respond_private_ai_cancel_v1", { p_room_id: roomId });
+        if (cancelError) throw cancelError;
+        return json({ is_ai: true, cancelled: true, message: "AI 대전을 즉시 종료했습니다." });
+      }
       return json(await driveAiTurns(service, roomId, user.id));
     }
 
