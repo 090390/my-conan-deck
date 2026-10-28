@@ -9,6 +9,7 @@ on:
       - "supabase/seed/card_effect_definitions.json"
       - "scripts/card-effect-draft-utils.mjs"
       - "scripts/validate-card-effect-drafts.mjs"
+      - "scripts/generate-card-effect-drafts.mjs"
       - "scripts/validate-card-effects.mjs"
       - "package.json"
       - ".github/workflows/card-effect-draft-validation.yml"
@@ -20,6 +21,7 @@ on:
       - "supabase/seed/card_effect_definitions.json"
       - "scripts/card-effect-draft-utils.mjs"
       - "scripts/validate-card-effect-drafts.mjs"
+      - "scripts/generate-card-effect-drafts.mjs"
       - "scripts/validate-card-effects.mjs"
       - "package.json"
       - ".github/workflows/card-effect-draft-validation.yml"
@@ -44,5 +46,7 @@ jobs:
         run: npm run validate:card-effects
       - name: Validate the selected review batch
         run: npm run validate:card-effect-drafts
+      - name: Check AI generator syntax
+        run: node --check scripts/generate-card-effect-drafts.mjs
       - name: Build production bundle
         run: npm run build
