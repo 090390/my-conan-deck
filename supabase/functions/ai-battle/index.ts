@@ -252,7 +252,8 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
       const aiMustRespond = Boolean(pending && (
         pending.target_user_id === battle.ai_user_id
         || pending.next_responder_user_id === battle.ai_user_id
-        || pending.initiator_user_id === battle.ai_user_id
+        || (pending.type === "culprits_crime_reveal" && pending.initiator_user_id === battle.ai_user_id)
+        || (pending.type === "evidence_attack_reveal" && pending.attacker_user_id === battle.ai_user_id)
       ));
       if (state.current_turn_user_id !== battle.ai_user_id && !aiMustRespond) break;
 
