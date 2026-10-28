@@ -122,6 +122,8 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   const [showActionLog, setShowActionLog] = useState(false);
   const [loadingActionLog, setLoadingActionLog] = useState(false);
   const [actionLogError, setActionLogError] = useState("");
+  const [aiStatusMessage, setAiStatusMessage] = useState("");
+  const [aiIsWaiting, setAiIsWaiting] = useState(false);
   const aiStepBusyRef = useRef(false);
   const aiStepSignatureRef = useRef("");
 
@@ -264,17 +266,33 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
     let active = true;
     (async () => {
       try {
+        // 각 행동의 메시지가 화면에 머물 수 있도록 다음 판단 전 2.5초 쉬어 갑니다.
+        setAiIsWaiting(true);
+        await new Promise((resolve) => window.setTimeout(resolve, 2500));
+        if (!active) return;
         const { data, error: aiError } = await supabase.functions.invoke("ai-battle", {
           body: { action: "step", room_id: roomId },
         });
         if (aiError) throw aiError;
-        if (active && data?.is_ai && Array.isArray(data.actions) && data.actions.length > 0) {
+        if (!active) return;
+        if (typeof data?.message === "string" && data.message.trim()) {
+          setAiStatusMessage(data.message.trim());
+        }
+        if (data?.blocked_action) {
+          setError(data.message || "AI의 행동이 규칙 검사에서 거부되었습니다. 진행 상태를 확인해 주세요.");
+        } else if (Array.isArray(data?.actions) && data.actions.length > 0) {
+          setError("");
           await refresh();
         }
       } catch (err) {
-        if (active) setError(err?.message || "AI의 다음 행동을 처리하지 못했습니다.");
+        if (active) {
+          const message = err?.message || "AI의 다음 행동을 처리하지 못했습니다.";
+          setAiStatusMessage(`AI 탐정: ${message}`);
+          setError(message);
+        }
       } finally {
         aiStepBusyRef.current = false;
+        if (active) setAiIsWaiting(false);
       }
     })();
     return () => { active = false; };
@@ -433,17 +451,32 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
     setError("");
     setNotice("");
     try {
+      if (isAIBattle) {
+        // AI는 응답을 기다릴 필요가 없으므로, 요청 등록 직후 서버에서 즉시 종료 처리합니다.
+        const { error: voteError } = await supabase.rpc("vote_private_match_cancel_v1", { p_room_id: roomId });
+        if (voteError) throw voteError;
+        const { data: cancelData, error: cancelError } = await supabase.functions.invoke("ai-battle", {
+          body: { action: "cancel", room_id: roomId },
+        });
+        if (cancelError) throw cancelError;
+        if (cancelData?.error) throw new Error(cancelData.error);
+        const { data: updatedGame, error: stateError } = await supabase.rpc("get_private_turn_state_v2", { p_room_id: roomId });
+        if (stateError) throw stateError;
+        if (updatedGame && typeof updatedGame === "object") setGame(updatedGame);
+        setNotice("AI 대전을 중도 종료했습니다. 게임이 즉시 종료되었습니다.");
+        return;
+      }
       const { data, error: rpcError } = await supabase.rpc("vote_private_match_cancel_v1", { p_room_id: roomId });
       if (rpcError) throw rpcError;
       if (data && typeof data === "object") setGame(data);
     } catch (err) {
-      const message = err?.message || "중도 종료 제안을 보내지 못했습니다.";
+      const message = err?.message || "중도 종료를 처리하지 못했습니다.";
       setError(message);
       showBlockedReason(message);
     } finally {
       setLoading(false);
     }
-  }, [roomId, loading, game?.game_over, game?.cancel_requested_by]);
+  }, [roomId, loading, game?.game_over, game?.cancel_requested_by, isAIBattle]);
 
   const respondToCancelMatch = useCallback(async (accept) => {
     if (!roomId || loading || game?.game_over) return;
@@ -899,6 +932,13 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
         </section>
       </div>}
 
+      {isAIBattle && aiStatusMessage && <section aria-live="polite" aria-atomic="true" style={{ marginBottom: 10, padding: "11px 12px", border: "1px solid rgba(56,189,248,.3)", borderRadius: 8, background: "linear-gradient(120deg,rgba(8,47,73,.55),rgba(15,23,42,.75))", color: "#e0f2fe" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 4 }}>
+          <strong style={{ fontSize: 11, color: "#7dd3fc", letterSpacing: ".04em" }}>AI 탐정 · 행동 선언</strong>
+          {aiIsWaiting && <span style={{ fontSize: 9, color: "#94a3b8" }}>다음 판단을 준비하고 있습니다…</span>}
+        </div>
+        <p style={{ margin: 0, fontSize: 12, lineHeight: 1.7 }}>{aiStatusMessage}</p>
+      </section>}
       {(error || notice) && <div role={error ? "alert" : "status"} style={{ marginBottom: 10, padding: 9, borderRadius: 6, border: `1px solid ${error ? "rgba(253,164,175,.3)" : "rgba(134,239,172,.24)"}`, color: error ? C.red : C.green, background: error ? "rgba(190,24,93,.07)" : "rgba(22,101,52,.07)", fontSize: 11 }}>{error || notice}</div>}
       {game.last_action_label && <div style={{ display: "grid", gap: 4, marginBottom: 10 }}>
         <button type="button" onClick={() => void openActionLog()} style={{ ...st.muted, textAlign: "left", padding: "7px 9px", border: "1px solid rgba(148,163,184,.24)", borderRadius: 5, background: "rgba(71,85,105,.22)", color: C.text, cursor: "pointer" }} title="눌러서 전체 게임 행동 로그를 최신순으로 확인">
