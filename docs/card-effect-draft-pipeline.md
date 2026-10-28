@@ -34,9 +34,15 @@ npm run build
 
 ## AI 생성기를 실제 자동 실행하려면
 
-현재 저장소에는 **초안 검증기**가 있고, 이 검증기는 모델을 호출하지 않습니다. AI 생성까지 자동화하려면 별도의 실행 환경이 더 필요합니다.
+저장소에는 **AI 초안 생성기와 검증기**가 있습니다. 생성기는 OpenAI Responses API를 호출하므로 로컬 실행 환경에 `OPENAI_API_KEY`와 `OPENAI_MODEL`을 설정해야 합니다. API 키는 프런트엔드, Git에 추적되는 파일, 커밋된 .env 파일에 저장하지 마세요.
 
-- 카드 텍스트를 입력으로 받아 JSON 초안을 만드는 모델 호출 단계.
+- 카드 텍스트를 입력으로 받아 JSON 초안을 만드는 모델 호출 단계. `scripts/generate-card-effect-drafts.mjs`가 5장씩 묶어 요청하고, 배치마다 `.partial.json` 체크포인트를 저장합니다. 연결이 끊겼다면 동일한 원본/모델/출력 경로로 `--resume`을 사용합니다.
+- 실행 예:
+  ```bash
+  OPENAI_API_KEY=... OPENAI_MODEL=... npm run generate:card-effect-drafts -- --input supabase/seed/card_effect_review_batches/20261029-matsuda-bakuchung-deck-review.json --output supabase/seed/card_effect_review_batches/20261029-matsuda-bakuchung-deck-review-ai.json
+  npm run validate:card-effect-drafts -- --input supabase/seed/card_effect_review_batches/20261029-matsuda-bakuchung-deck-review-ai.json
+  ```
+  Windows PowerShell에서는 `$env:OPENAI_API_KEY`와 `$env:OPENAI_MODEL` 환경 변수를 먼저 설정하세요. 생성기는 결과를 별도 파일로 저장하며, 입력/활성 카탈로그를 덮어쓰지 않습니다.
 - 모델 API 키를 프런트엔드나 저장소에 쓰지 않고 GitHub Actions Secret 또는 서버 측 Edge Function Secret으로 보관하는 구성.
 - 입력 카드 ID, 모델/프롬프트 버전, 원문 해시, 출력, 검증 결과를 함께 보관해 동일한 입력의 결과를 재현할 수 있는 기록.
 - 자동 생성 결과를 곧장 운영 카탈로그에 쓰지 않고, 검토 배치에만 추가하는 권한 분리.
