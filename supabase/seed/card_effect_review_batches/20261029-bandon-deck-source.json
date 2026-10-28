@@ -1,0 +1,123 @@
+{
+  "sourceDeckId": "e3819c6f-c9e6-4d3d-9a21-b69ed334adea",
+  "deckName": "범인덱",
+  "sampledAt": "2026-10-29",
+  "selectionMethod": "공개 덱 저장소(public_deck_library)에서 무작위로 뽑힌 덱 1개",
+  "deck_json": {
+    "format": "conan-tcg-deck",
+    "version": 1,
+    "mainDeck": [
+      {
+        "key": "PR158",
+        "name": "범인",
+        "count": 8,
+        "cardId": "0627",
+        "cardNum": "PR158",
+        "databaseId": "PR158"
+      },
+      {
+        "key": "B09100",
+        "name": "범인",
+        "count": 9,
+        "cardId": "1039",
+        "cardNum": "B09100",
+        "databaseId": "B09100"
+      },
+      {
+        "key": "B09105",
+        "name": "킷",
+        "count": 3,
+        "cardId": "1044",
+        "cardNum": "B09105",
+        "databaseId": "B09105"
+      },
+      {
+        "key": "B03126",
+        "name": "범인",
+        "count": 3,
+        "cardId": "0375",
+        "cardNum": "B03126",
+        "databaseId": "B03126"
+      },
+      {
+        "key": "PR243",
+        "name": "범인",
+        "count": 3,
+        "cardId": "0935",
+        "cardNum": "PR243",
+        "databaseId": "PR243"
+      },
+      {
+        "key": "B02088P",
+        "name": "범인",
+        "count": 3,
+        "cardId": "0249",
+        "cardNum": "B02088P",
+        "databaseId": "B02088P"
+      },
+      {
+        "key": "B07102",
+        "name": "범인",
+        "count": 1,
+        "cardId": "0829",
+        "cardNum": "B07102",
+        "databaseId": "B07102"
+      },
+      {
+        "key": "B09101",
+        "name": "범인",
+        "count": 3,
+        "cardId": "1040",
+        "cardNum": "B09101",
+        "databaseId": "B09101"
+      },
+      {
+        "key": "B06104P",
+        "name": "깡",
+        "count": 3,
+        "cardId": "0721",
+        "cardNum": "B06104P",
+        "databaseId": "B06104P"
+      },
+      {
+        "key": "D07013",
+        "name": "워커",
+        "count": 2,
+        "cardId": "0393",
+        "cardNum": "D07013",
+        "databaseId": "D07013"
+      },
+      {
+        "key": "D07007",
+        "name": "버번",
+        "count": 1,
+        "cardId": "0390",
+        "cardNum": "D07007",
+        "databaseId": "D07007"
+      },
+      {
+        "key": "B05108",
+        "name": "버번",
+        "count": 1,
+        "cardId": "0604",
+        "cardNum": "B05108",
+        "databaseId": "B05108"
+      }
+    ],
+    "partner": {
+      "key": "B03107",
+      "name": "진",
+      "cardId": "P028",
+      "cardNum": "B03107",
+      "databaseId": "B03107"
+    },
+    "event": {
+      "key": "B09107P",
+      "name": "범인들의 범행",
+      "cardId": "1046",
+      "cardNum": "B09107P",
+      "databaseId": "B09107P"
+    },
+    "mainDeckCount": 40
+  }
+}
