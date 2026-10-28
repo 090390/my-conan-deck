@@ -7,7 +7,7 @@ DECLARE
  v_run public.private_card_effect_runs_v1%rowtype;
  v_def jsonb; v_step jsonb; v_op text; v_from text; v_to text; v_save text; v_path text[];
  v_vars jsonb; v_data jsonb; v_options jsonb; v_selected jsonb; v_remaining jsonb; v_ordered jsonb;
- v_item jsonb; v_card jsonb; v_current jsonb; v_patch jsonb; v_pending jsonb; v_waiting jsonb;
+ v_item jsonb; v_card jsonb; v_wrapper jsonb; v_current jsonb; v_patch jsonb; v_pending jsonb; v_waiting jsonb;
  v_game public.room_player_game_states%rowtype; v_board public.room_player_turn_boards%rowtype;
  v_match public.room_match_states%rowtype; v_owner uuid; v_source_user uuid; v_target_owner uuid;
  v_i integer; v_j integer; v_n integer; v_examined integer; v_matched boolean; v_found boolean;
