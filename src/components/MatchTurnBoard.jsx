@@ -254,6 +254,14 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   useEffect(() => {
     if (!isAIBattle || !roomId || !game || game.game_over || aiStepBusyRef.current) return;
     const pendingAction = game.pending_action || null;
+    const aiUserId = (Array.isArray(game.boards) ? game.boards : []).find((board) => board.user_id !== userId)?.user_id;
+    const aiHasPendingResponse = Boolean(pendingAction && (
+      pendingAction.target_user_id === aiUserId
+      || pendingAction.next_responder_user_id === aiUserId
+      || (pendingAction.type === "culprits_crime_reveal" && pendingAction.initiator_user_id === aiUserId)
+      || (pendingAction.type === "evidence_attack_reveal" && pendingAction.attacker_user_id === aiUserId)
+    ));
+    if (!aiUserId || (game.current_turn_user_id !== aiUserId && !aiHasPendingResponse)) return;
     const signature = [
       game.state_version, game.current_turn_user_id, game.turn_number, game.turn_step,
       pendingAction?.type, pendingAction?.target_user_id, pendingAction?.next_responder_user_id,
@@ -306,8 +314,11 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
     })();
     return () => { active = false; };
   }, [
-    isAIBattle, roomId, game?.state_version, game?.current_turn_user_id, game?.turn_number,
-    game?.turn_step, game?.pending_action, game?.game_over, refresh,
+    isAIBattle, roomId, userId, game?.boards, game?.state_version, game?.current_turn_user_id, game?.turn_number,
+    game?.turn_step, game?.pending_action?.type, game?.pending_action?.target_user_id,
+    game?.pending_action?.next_responder_user_id, game?.pending_action?.attacker_cut_in_used,
+    game?.pending_action?.target_cut_in_used, game?.pending_action?.acknowledged_user_ids?.length,
+    game?.game_over, refresh,
   ]);
 
   const runAction = useCallback(async (action, payload = {}) => {
