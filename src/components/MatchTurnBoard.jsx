@@ -125,7 +125,12 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   const [aiStatusMessage, setAiStatusMessage] = useState("");
   const [aiIsWaiting, setAiIsWaiting] = useState(false);
   const aiStepBusyRef = useRef(false);
-  const aiStepSignatureRef = useRef("");
+  const aiMountedRef = useRef(false);
+
+  useEffect(() => {
+    aiMountedRef.current = true;
+    return () => { aiMountedRef.current = false; };
+  }, []);
 
   useEffect(() => {
     setLocalBaseCardPlayLocked(false);
@@ -214,6 +219,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
     setSelectedNextHint((current) => current === "__FILE_TOP__"
       ? (n(mine?.file_count) > 0 ? current : "")
       : (hand.some((card) => card.instance_id === current) ? current : ""));
+    return data && typeof data === "object" ? data : null;
   }, [roomId, userId]);
 
   useEffect(() => {
@@ -253,72 +259,86 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
 
   useEffect(() => {
     if (!isAIBattle || !roomId || !game || game.game_over || aiStepBusyRef.current) return;
-    const pendingAction = game.pending_action || null;
-    const aiUserId = (Array.isArray(game.boards) ? game.boards : []).find((board) => board.user_id !== userId)?.user_id;
-    const aiHasPendingResponse = Boolean(pendingAction && (
-      pendingAction.target_user_id === aiUserId
-      || pendingAction.next_responder_user_id === aiUserId
-      || (pendingAction.type === "culprits_crime_reveal" && pendingAction.initiator_user_id === aiUserId)
-      || (pendingAction.type === "evidence_attack_reveal" && pendingAction.attacker_user_id === aiUserId)
-    ));
-    if (!aiUserId || (game.current_turn_user_id !== aiUserId && !aiHasPendingResponse)) return;
-    const signature = [
-      game.state_version, game.current_turn_user_id, game.turn_number, game.turn_step,
-      pendingAction?.type, pendingAction?.target_user_id, pendingAction?.next_responder_user_id,
-      pendingAction?.attacker_cut_in_used, pendingAction?.target_cut_in_used,
-      pendingAction?.acknowledged_user_ids?.length,
-    ].join("|");
-    if (aiStepSignatureRef.current === signature) return;
-    aiStepSignatureRef.current = signature;
+
+    const needsAiAction = (state) => {
+      if (!state || state.game_over) return false;
+      const boards = Array.isArray(state.boards) ? state.boards : [];
+      const aiBoard = boards.find((board) => board.user_id !== userId);
+      if (!aiBoard) return false;
+      const pendingAction = state.pending_action || null;
+      const aiMustRespond = Boolean(pendingAction && (
+        pendingAction.target_user_id === aiBoard.user_id
+        || pendingAction.next_responder_user_id === aiBoard.user_id
+        || (pendingAction.type === "culprits_crime_reveal" && pendingAction.initiator_user_id === aiBoard.user_id)
+        || (pendingAction.type === "evidence_attack_reveal" && pendingAction.attacker_user_id === aiBoard.user_id)
+      ));
+      return state.current_turn_user_id === aiBoard.user_id || aiMustRespond;
+    };
+    if (!needsAiAction(game)) return;
+
     aiStepBusyRef.current = true;
-    let active = true;
     (async () => {
-      let refreshAfterAction = false;
+      let state = game;
+      let consecutiveBusyResponses = 0;
       try {
-        // Keep each announcement visible for about 2.5 seconds before the next decision.
-        setAiIsWaiting(true);
-        await new Promise((resolve) => window.setTimeout(resolve, 2500));
-        if (!active) return;
-        const { data, error: aiError } = await supabase.functions.invoke("ai-battle", {
-          body: { action: "step", room_id: roomId },
-        });
-        if (aiError) throw aiError;
-        if (!active) return;
-        if (typeof data?.message === "string" && data.message.trim()) {
-          setAiStatusMessage(data.message.trim());
-        }
-        if (data?.blocked_action) {
-          setError(data.message || "AI의 행동이 규칙 검사에서 거부되었습니다. 진행 상태를 확인해 주세요.");
-        } else if (Array.isArray(data?.actions) && data.actions.length > 0) {
+        // Keep ownership of the AI sequence while realtime updates refresh game state.
+        // Each iteration executes at most one server action, then fetches authoritative state.
+        for (let stepIndex = 0; stepIndex < 40 && aiMountedRef.current; stepIndex += 1) {
+          if (!needsAiAction(state)) break;
+
+          setAiIsWaiting(true);
+          await new Promise((resolve) => window.setTimeout(resolve, 2500));
+          if (!aiMountedRef.current) break;
+
+          const { data, error: aiError } = await supabase.functions.invoke("ai-battle", {
+            body: { action: "step", room_id: roomId },
+          });
+          if (aiError) throw aiError;
+          if (!aiMountedRef.current) break;
+
+          if (data?.busy) {
+            consecutiveBusyResponses += 1;
+            if (consecutiveBusyResponses >= 10) {
+              setAiStatusMessage("AI 탐정: 다른 처리와 겹쳐 대기 중입니다. 잠시 후 상태 새로고침을 눌러 주세요.");
+              break;
+            }
+            await new Promise((resolve) => window.setTimeout(resolve, 500));
+            state = await refresh();
+            continue;
+          }
+          consecutiveBusyResponses = 0;
+
+          if (typeof data?.message === "string" && data.message.trim()) {
+            setAiStatusMessage(data.message.trim());
+          }
+          if (data?.blocked_action) {
+            setError(data.message || "AI의 행동이 규칙 검사에서 거부되었습니다. 진행 상태를 확인해 주세요.");
+            break;
+          }
+          if (!Array.isArray(data?.actions) || data.actions.length === 0) {
+            // No action means the current state is awaiting the human or a manual choice.
+            state = await refresh();
+            break;
+          }
+
           setError("");
-          refreshAfterAction = true;
+          state = await refresh();
+          // The next loop iteration waits 2.5 seconds before making the next decision.
         }
       } catch (err) {
-        if (active) {
+        if (aiMountedRef.current) {
           const message = err?.message || "AI의 다음 행동을 처리하지 못했습니다.";
           setAiStatusMessage(`AI 탐정: ${message}`);
           setError(message);
         }
       } finally {
-        // Release the lock before refreshing: the new game-state effect can then schedule the next step.
         aiStepBusyRef.current = false;
-        if (active) setAiIsWaiting(false);
-      }
-      if (active && refreshAfterAction) {
-        try {
-          await refresh();
-        } catch (err) {
-          if (active) setError(err?.message || "AI 행동 후 게임 상태를 새로고침하지 못했습니다.");
-        }
+        if (aiMountedRef.current) setAiIsWaiting(false);
       }
     })();
-    return () => { active = false; };
   }, [
-    isAIBattle, roomId, userId, game?.boards, game?.state_version, game?.current_turn_user_id, game?.turn_number,
-    game?.turn_step, game?.pending_action?.type, game?.pending_action?.target_user_id,
-    game?.pending_action?.next_responder_user_id, game?.pending_action?.attacker_cut_in_used,
-    game?.pending_action?.target_cut_in_used, game?.pending_action?.acknowledged_user_ids?.length,
-    game?.game_over, refresh,
+    isAIBattle, roomId, userId, game?.boards, game?.state_version, game?.current_turn_user_id,
+    game?.turn_number, game?.turn_step, game?.pending_action, game?.game_over, refresh,
   ]);
 
   const runAction = useCallback(async (action, payload = {}) => {
