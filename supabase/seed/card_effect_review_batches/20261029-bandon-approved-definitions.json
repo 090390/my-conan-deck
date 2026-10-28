@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "language": "conan-card-effect-dsl",
+  "definitions": [
+    {
+      "effectId": "card-1039-activated-remove-ap8000",
+      "cardIds": [
+        "1039"
+      ],
+      "cardNameKo": "범인",
+      "cardNameJa": "犯人",
+      "trigger": {
+        "event": "character.activated_ability",
+        "timing": "immediate"
+      },
+      "oncePerTurn": true,
+      "conditions": [
+        {
+          "fact": "turn.is_source_controller_turn",
+          "operator": "equals",
+          "value": true
+        },
+        {
+          "fact": "source.is_active",
+          "operator": "equals",
+          "value": true
+        }
+      ],
+      "steps": [
+        {
+          "op": "pay_cost",
+          "cost": "sleep_source_character"
+        },
+        {
+          "op": "select_cards",
+          "from": "opponent_field",
+          "min": 0,
+          "max": 1,
+          "optional": true,
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "operator": "equals",
+                "value": "character"
+              },
+              {
+                "field": "ap_current",
+                "operator": "less_than_or_equal",
+                "value": 8000
+              }
+            ]
+          },
+          "prompt": "리무브할 상대 캐릭터(AP 8000 이하)를 최대 1장 선택하세요.",
+          "saveAs": "target"
+        },
+        {
+          "op": "move_cards",
+          "from": "target",
+          "to": "remove_area",
+          "targetOwner": "opponent",
+          "when": {
+            "fact": "vars.target.count",
+            "operator": "greater_than",
+            "value": 0
+          }
+        }
+      ],
+      "activationLabelKo": "AP 8000 이하 캐릭터 리무브",
+      "reviewNotes": {
+        "sourceText": "【宣言】【ターン1】【スリープ】：AP8000以下のキャラを1枚まで選び、リムーブする。",
+        "excludedNonGameplayText": "「犯人［ID：1039］はデッキに何枚でも入れることができる」はデッキ構築ルールなので、対戦中のDSL効果としては定義しない。",
+        "rationale": "기존 character.activated_ability + pay_cost + select_cards + move_cards 명령만으로 효과 순서를 표현할 수 있고, oncePerTurn은 현재 런타임에서 원본 카드 인스턴스별로 처리된다."
+      }
+    }
+  ]
+}
