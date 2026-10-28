@@ -274,6 +274,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
         || pendingAction.next_responder_user_id === aiBoard.user_id
         || (pendingAction.type === "culprits_crime_reveal" && pendingAction.initiator_user_id === aiBoard.user_id)
         || (pendingAction.type === "evidence_attack_reveal" && pendingAction.attacker_user_id === aiBoard.user_id)
+        || pendingAction.chooser_user_id === aiBoard.user_id
       ));
       return state.current_turn_user_id === aiBoard.user_id || aiMustRespond;
     };
