@@ -538,12 +538,7 @@
           "order": "preserve"
         },
         {
-          "op": "shuffle_deck",
-          "when": {
-            "fact": "vars.search_result.matched_count",
-            "operator": "greater_than",
-            "value": 0
-          }
+          "op": "shuffle_deck"
         }
       ]
     },
