@@ -238,67 +238,25 @@
       ]
     },
     {
-      "effectId": "card-0223-mislead-reaction",
+      "effectId": "card-0223-mislead-passive",
       "cardIds": [
         "0223"
       ],
-      "cardNameKo": "조디 스털링",
-      "cardNameJa": "ジョディ・スターリング",
       "trigger": {
-        "event": "opponent.deduction.declared",
-        "timing": "during_response_window"
+        "event": "character.entered_field",
+        "timing": "after"
       },
-      "conditions": [
-        {
-          "fact": "source.is_active",
-          "operator": "equals",
-          "value": true
-        },
-        {
-          "fact": "source.status",
-          "operator": "equals",
-          "value": "active"
-        },
-        {
-          "fact": "source.rested",
-          "operator": "equals",
-          "value": false
-        }
-      ],
+      "conditions": [],
       "steps": [
         {
-          "op": "offer_reaction",
-          "reactionId": "mislead-1",
-          "actor": "source_controller",
-          "choices": [
-            "activate",
-            "pass"
-          ],
-          "allowDuringOpponentTurn": true,
-          "prompt": "미스리드 1을 사용해 이 카드를 슬립시키고, 상대의 추리에 LP -1을 부여할까요?",
-          "saveAs": "mislead_choice"
-        },
-        {
-          "op": "pay_cost",
-          "cost": "sleep_source_character",
-          "when": {
-            "fact": "vars.mislead_choice",
-            "operator": "equals",
-            "value": "activate"
-          }
-        },
-        {
-          "op": "modify_lp",
-          "target": "deduction_player",
-          "amount": -1,
-          "duration": "immediate",
-          "when": {
-            "fact": "vars.mislead_choice",
-            "operator": "equals",
-            "value": "activate"
-          }
+          "op": "set_mislead_value",
+          "target": "source_character",
+          "value": 1,
+          "duration": "while_in_field"
         }
-      ]
+      ],
+      "cardNameKo": "조디 스털링",
+      "cardNameJa": "ジョディ・スターリング"
     },
     {
       "effectId": "card-1013-activated-remove-low-ap",
