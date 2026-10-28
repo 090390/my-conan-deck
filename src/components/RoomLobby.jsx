@@ -339,6 +339,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
     localStorage.removeItem(COMPLETED_GREETING_ROOM_KEY);
     setIsAIBattle(true);
     setUserId(aiHumanUserId || userId);
+    setReadyDeckSignature(deckSignature);
     setInviteCodeInput(String(inviteCode || "").toUpperCase());
     setRoom({ id: roomId, inviteCode });
     setPlayers([]);
