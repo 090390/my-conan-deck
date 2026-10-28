@@ -55,7 +55,7 @@
 | `modify_stat` | 대상 카드의 수치를 바꿉니다. `stat`, `amount`, `duration`, `stacking`을 사용합니다. 기존 기본 AP를 덮어쓰지 말고 임시 보정으로 저장합니다. |
 | `offer_reaction` | 반응 선택 창을 만들고 플레이어 선택까지 실행을 일시 정지합니다. 선택 결과는 `saveAs`에 저장합니다. |
 | `pay_cost` | 선택된 반응의 비용을 결제합니다. 현재 명령 `sleep_source_character`는 발동한 캐릭터를 슬립 상태로 만듭니다. |
-| `modify_lp` | LP를 `amount`만큼 변경합니다. 지속 효과가 아닌 즉시 변화에는 `duration: immediate`를 사용합니다. |
+| `set_mislead_value` | 카드가 현장에 있는 동안 기존 추리 응답 규칙에서 사용할 `mislead_value`를 설정합니다. `value`는 0~3, `duration`은 `while_in_field`입니다. Conan TCG의 LP는 생명력이 아니라 추리로 얻는 증거 장수이므로, 미스리드는 기존 증거 획득량 감소 처리에 연결합니다. |
 
 ### 실행기 계약
 
