@@ -618,11 +618,11 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
         </div>
       ) : (
         <>
-          <div style={{ marginTop: 20, padding: 16, border: "1px solid rgba(255,255,255,.08)", borderRadius: 12, background: "#0b1220" }}>
+          {!isAIBattle && <div style={{ marginTop: 20, padding: 16, border: "1px solid rgba(255,255,255,.08)", borderRadius: 12, background: "#0b1220" }}>
             <div style={{ color: "#8998ae", fontSize: 12 }}>친구에게 전달할 초대 코드</div>
             <div style={{ fontSize: 28, fontWeight: 850, letterSpacing: 3, margin: "5px 0 12px", overflowWrap: "anywhere" }}>{room.inviteCode}</div>
             <button type="button" style={buttonStyle} onClick={copyInviteCode}>초대 코드 복사</button>
-          </div>
+          </div>}
 
           <div style={{ marginTop: 16, padding: 14, border: "1px solid rgba(255,255,255,.08)", borderRadius: 10, background: "#0b1220" }}>
             <h3 style={{ margin: "0 0 6px", fontSize: 13 }}>이번 방에서 표시할 이름</h3>
