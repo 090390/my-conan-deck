@@ -270,11 +270,15 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
       const aiBoard = boards.find((board) => board.user_id !== userId);
       if (!aiBoard) return false;
       const pendingAction = state.pending_action || null;
+      const acknowledgedIds = Array.isArray(pendingAction?.acknowledged_user_ids) ? pendingAction.acknowledged_user_ids : [];
+      const needsAiAcknowledgement = Boolean(pendingAction
+        && ["culprits_crime_reveal", "deck_remove_reveal", "file_remove_reveal", "hand_reveal", "evidence_remove_reveal"].includes(pendingAction.type)
+        && !acknowledgedIds.includes(aiBoard.user_id));
       const aiMustRespond = Boolean(pendingAction && (
         pendingAction.target_user_id === aiBoard.user_id
         || pendingAction.next_responder_user_id === aiBoard.user_id
-        || (pendingAction.type === "culprits_crime_reveal" && pendingAction.initiator_user_id === aiBoard.user_id)
         || pendingAction.chooser_user_id === aiBoard.user_id
+        || needsAiAcknowledgement
       ));
       return state.current_turn_user_id === aiBoard.user_id || aiMustRespond;
     };
@@ -290,8 +294,11 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
         for (let stepIndex = 0; stepIndex < 40 && aiMountedRef.current; stepIndex += 1) {
           if (!needsAiAction(state)) break;
 
-          setAiIsWaiting(true);
-          await new Promise((resolve) => window.setTimeout(resolve, 2500));
+          const isTurnStart = String(state?.turn_step || "") === "begin";
+          setAiIsWaiting(!isTurnStart);
+          if (!isTurnStart) {
+            await new Promise((resolve) => window.setTimeout(resolve, 2500));
+          }
           if (!aiMountedRef.current) break;
 
           const { data, error: aiError } = await supabase.functions.invoke("ai-battle", {
@@ -1087,7 +1094,12 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
             <h3 style={{ ...st.zoneTitle, textAlign: "center", marginBottom: 8 }}>파트너 에이리어</h3>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 8 }}>
               {[{ board: opponentBoard, mine: false }, { board: myBoard, mine: true }].map(({ board, mine }) => {
-                if (!board || !board.partner_key || board.partner_assist_used) return null;
+                if (!board) return null;
+                if (!board.partner_key || board.partner_assist_used) {
+                  return <div key={board.user_id} style={{ minWidth: 0, minHeight: 130, display: "grid", placeItems: "center", padding: 6, border: "1px solid rgba(255,255,255,.05)", borderRadius: 6, background: "rgba(8,13,22,.35)", color: C.muted, fontSize: 9, textAlign: "center" }}>
+                    {board.partner_assist_used ? "어시스트 완료" : "파트너 없음"}
+                  </div>;
+                }
                 const partner = cardsByKey.get(String(board.partner_key));
                 return <div key={board.user_id} style={{ display: "grid", gridTemplateColumns: "minmax(55px,90px) minmax(0,1fr)", gap: 8, alignItems: "center", padding: 6, border: "1px solid rgba(255,255,255,.09)", borderRadius: 6, background: "#080d16" }}>
                   {partner?.imageUrl ? <button type="button" onClick={() => openDetails({ key: board.partner_key, instance_id: `partner-${board.user_id}` })} style={{ width: "100%", height: 122, overflow: "hidden", display: "grid", placeItems: "center", border: 0, background: "transparent", padding: 0 }}><img src={partner.imageUrl} alt={partner.name} style={board.partner_rested ? { width: 68, height: 90, objectFit: "contain", transform: "rotate(90deg)", transformOrigin: "center" } : { width: "100%", height: 122, objectFit: "contain" }} /></button> : <div style={st.faceDown} />}
