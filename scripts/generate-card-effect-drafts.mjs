@@ -26,7 +26,7 @@ const ALLOWED_STATUSES = new Set([
 ]);
 
 function parseArgs(argv) {
-  const options = { input: DEFAULT_INPUT, output: "", model: process.env.OPENAI_MODEL || "", batchSize: DEFAULT_BATCH_SIZE, resume: false, overwrite: false };
+  const options = { input: DEFAULT_INPUT, output: "", model: "", batchSize: DEFAULT_BATCH_SIZE, resume: false, overwrite: false };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === "--input" || arg === "--output" || arg === "--model" || arg === "--batch-size") {
@@ -67,6 +67,24 @@ async function exists(filePath) {
     return true;
   } catch {
     return false;
+  }
+}
+
+async function loadLocalApiEnv(filePath = path.resolve(".env.api.local")) {
+  if (!(await exists(filePath))) return;
+  const lines = await readFile(filePath, "utf8");
+  for (const rawLine of lines.split(/\\r?\\n/u)) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith("#")) continue;
+    const match = line.match(/^(?:export\\s+)?([A-Z][A-Z0-9_]*)\\s*=\\s*(.*)$/u);
+    if (!match) continue;
+    const [, key] = match;
+    let value = match[2].trim();
+    if (value.length >= 2 && ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'")))) {
+      value = value.slice(1, -1);
+    }
+    // Real shell environment variables take precedence over the local config file.
+    if (!process.env[key]) process.env[key] = value;
   }
 }
 
@@ -212,6 +230,8 @@ function buildOutput(inputBatch, processedCards, inputHash, model, status) {
 }
 
 const options = parseArgs(process.argv.slice(2));
+await loadLocalApiEnv();
+if (!options.model) options.model = String(process.env.OPENAI_MODEL || "").trim();
 const apiKey = String(process.env.OPENAI_API_KEY || "").trim();
 if (!apiKey) throw new Error("OPENAI_API_KEY 환경 변수가 없습니다. 키를 저장소 파일이나 소스 코드에 넣지 마세요.");
 if (!options.model) throw new Error("OPENAI_MODEL 환경 변수 또는 --model 옵션으로 모델 이름을 지정해 주세요.");
