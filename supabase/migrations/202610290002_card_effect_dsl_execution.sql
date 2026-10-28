@@ -244,6 +244,14 @@ BEGIN
        PERFORM public.private_card_effect_patch_card_v1(p_room_id,v_source_user,v_run.source_instance_id,v_patch);
      END LOOP;
 
+   ELSIF v_op='set_mislead_value' THEN
+     v_current:=public.private_card_effect_get_card_v1(p_room_id,v_source_user,v_run.source_instance_id);
+     IF v_current IS NULL THEN RAISE EXCEPTION '미스리드 수치를 설정할 현장 카드를 찾지 못했습니다.'; END IF;
+     v_amount:=coalesce(nullif(v_step->>'value','')::integer,0);
+     IF v_amount<0 OR v_amount>3 THEN RAISE EXCEPTION '미스리드 수치는 0~3 범위여야 합니다.'; END IF;
+     PERFORM public.private_card_effect_patch_card_v1(p_room_id,v_source_user,v_run.source_instance_id,
+       jsonb_build_object('mislead_value',v_amount));
+
    ELSIF v_op='grant_keyword' THEN
      v_target_owner:=v_source_user; v_card:=public.private_card_effect_get_card_v1(p_room_id,v_source_user,v_run.source_instance_id);
      IF v_card IS NULL THEN RAISE EXCEPTION '키워드를 부여할 카드가 현장에 없습니다.'; END IF;
