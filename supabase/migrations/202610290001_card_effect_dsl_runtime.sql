@@ -236,7 +236,7 @@ BEGIN
  END IF;
  IF p_fact='source.is_active' THEN RETURN to_jsonb(public.private_card_effect_is_active_v1(p_source_card)); END IF;
  IF p_fact='source.under_cards.count' THEN
-   RETURN to_jsonb(jsonb_array_length(coalesce(p_source_card->'under_cards',p_source_card->'stacked_cards','[]'::jsonb)));
+   RETURN to_jsonb(jsonb_array_length(coalesce(p_source_card->'stacked_cards',p_source_card->'under_cards','[]'::jsonb)));
  END IF;
  IF p_fact='player.field.has_card_name' THEN RETURN 'null'::jsonb; END IF;
  IF p_fact='player.remove_area.count_matching_trait' THEN RETURN 'null'::jsonb; END IF;
