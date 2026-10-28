@@ -1601,8 +1601,16 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
         aria-label="AI 대전을 강제 종료하고 로비로 돌아가기"
         title="어떤 모달이 열려 있어도 AI 대전을 종료하고 로비로 돌아갑니다."
         onClick={() => {
+          // 화면은 즉시 로비로 돌리고, 서버에는 AI 대전 종료를 별도로 요청합니다.
+          // 모달이나 보류 중인 응답이 있어도 로비 복귀가 네트워크 응답을 기다리지 않게 합니다.
           aiMountedRef.current = false;
+          const forceEndRequest = supabase.rpc("force_end_private_ai_battle_v1", { p_room_id: roomId });
           onReturnToLobby();
+          void forceEndRequest.then(({ error: forceEndError }) => {
+            if (forceEndError) console.error("AI 대전 강제 종료 서버 반영 실패", forceEndError);
+          }).catch((forceEndError) => {
+            console.error("AI 대전 강제 종료 서버 요청 실패", forceEndError);
+          });
         }}
         style={{
           position: "fixed",
