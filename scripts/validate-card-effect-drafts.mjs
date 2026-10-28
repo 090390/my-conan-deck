@@ -4,7 +4,7 @@ import { loadActiveCatalog, validateDraftBatch } from "./card-effect-draft-utils
 
 const args = process.argv.slice(2);
 const inputIndex = args.findIndex((x) => x === "--input");
-const inputPath = inputIndex >= 0 ? args[inputIndex + 1] : "supabase/seed/card_effect_review_batches/20261029-matsuda-bakuchung-deck-review.json";
+const inputPath = inputIndex >= 0 ? args[inputIndex + 1] : "supabase/seed/card_effect_review_batches/card-effect-review-20261029-attempt-01.json";
 if (!inputPath || inputPath.startsWith("--")) {
   console.error("사용법: node scripts/validate-card-effect-drafts.mjs --input <draft-json>");
   process.exit(2);
