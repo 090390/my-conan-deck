@@ -1,0 +1,158 @@
+{
+  "schemaVersion": 1,
+  "datasetId": "public-deck-570f0ac3-05ec-457d-b921-1d0d08a3730d",
+  "selectedAt": "2026-10-29",
+  "selectionMethod": "Supabase public_deck_library random sample",
+  "source": {
+    "table": "public.public_deck_library",
+    "rowId": "570f0ac3-05ec-457d-b921-1d0d08a3730d",
+    "deckName": "💛마츠다 경시청",
+    "composerName": "JJ",
+    "createdAt": "2026-10-19T16:41:06.963162Z"
+  },
+  "deck": {
+    "format": "conan-tcg-deck",
+    "version": 1,
+    "mainDeckCount": 40,
+    "partner": {
+      "key": "PR261",
+      "name": "하기와라 치하야＆요코미조 쥬고＆하기와라 켄지＆마츠다 진페이",
+      "cardId": "P081",
+      "cardNum": "PR261",
+      "databaseId": "PR261"
+    },
+    "event": {
+      "key": "B10083P",
+      "name": "돌아오지 않는 형사",
+      "cardId": "1139",
+      "cardNum": "B10083P",
+      "databaseId": "B10083P"
+    },
+    "mainDeck": [
+      {
+        "key": "D05009",
+        "name": "카자미 유야",
+        "count": 2,
+        "cardId": "0154",
+        "cardNum": "D05009",
+        "databaseId": "D05009"
+      },
+      {
+        "key": "B04083",
+        "name": "프라이빗 아이",
+        "count": 3,
+        "cardId": "0158",
+        "cardNum": "B04083",
+        "databaseId": "B04083"
+      },
+      {
+        "key": "B05095",
+        "name": "쿠로다 효우에",
+        "count": 3,
+        "cardId": "0593",
+        "cardNum": "B05095",
+        "databaseId": "B05095"
+      },
+      {
+        "key": "SP009",
+        "name": "모로후시 히로미츠",
+        "count": 3,
+        "cardId": "0619",
+        "cardNum": "SP009",
+        "databaseId": "SP009"
+      },
+      {
+        "key": "B06084",
+        "name": "아무로 토오루&에노모토 아즈사",
+        "count": 3,
+        "cardId": "0703",
+        "cardNum": "B06084",
+        "databaseId": "B06084"
+      },
+      {
+        "key": "B06085",
+        "name": "마츠다 진페이",
+        "count": 3,
+        "cardId": "0704",
+        "cardNum": "B06085",
+        "databaseId": "B06085"
+      },
+      {
+        "key": "B06087P",
+        "name": "하기와라 치하야",
+        "count": 2,
+        "cardId": "0706",
+        "cardNum": "B06087P",
+        "databaseId": "B06087P"
+      },
+      {
+        "key": "B06088",
+        "name": "미야모토 유미",
+        "count": 3,
+        "cardId": "0707",
+        "cardNum": "B06088",
+        "databaseId": "B06088"
+      },
+      {
+        "key": "PR181",
+        "name": "메구레 쥬조",
+        "count": 3,
+        "cardId": "0732",
+        "cardNum": "PR181",
+        "databaseId": "PR181"
+      },
+      {
+        "key": "B07080",
+        "name": "카자미 유야",
+        "count": 3,
+        "cardId": "0808",
+        "cardNum": "B07080",
+        "databaseId": "B07080"
+      },
+      {
+        "key": "D11007",
+        "name": "마츠다 진페이",
+        "count": 3,
+        "cardId": "0938",
+        "cardNum": "D11007",
+        "databaseId": "D11007"
+      },
+      {
+        "key": "PR278",
+        "name": "하기와라 치하야",
+        "count": 1,
+        "cardId": "0940",
+        "cardNum": "PR278",
+        "databaseId": "PR278"
+      },
+      {
+        "key": "B09075P",
+        "name": "미야모토 유미",
+        "count": 2,
+        "cardId": "1015",
+        "cardNum": "B09075P",
+        "databaseId": "B09075P"
+      },
+      {
+        "key": "B10068",
+        "name": "모로후시 히로미츠",
+        "count": 3,
+        "cardId": "1124",
+        "cardNum": "B10068",
+        "databaseId": "B10068"
+      },
+      {
+        "key": "B10078",
+        "name": "마츠다 진페이",
+        "count": 3,
+        "cardId": "1134",
+        "cardNum": "B10078",
+        "databaseId": "B10078"
+      }
+    ]
+  },
+  "notes": [
+    "이 스냅샷은 2026-10-29에 무작위 선택된 공개 덱을 재현하기 위한 입력 데이터입니다.",
+    "동일한 덱 키 PR181 중복 확인을 방지하기 위해 아래 generator는 고유 카드 키로 중복을 제거합니다."
+  ]
+}
