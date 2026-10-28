@@ -468,42 +468,18 @@ END
 $function$;
 
 
+
 DO $patch_ai$
 DECLARE v_definition text;
 BEGIN
   IF to_regprocedure('public.perform_private_ai_turn_action_v1(uuid,text,jsonb)') IS NULL THEN RETURN; END IF;
   v_definition := pg_get_functiondef('public.perform_private_ai_turn_action_v1(uuid,text,jsonb)'::regprocedure);
   IF position('card_effect_continue' in v_definition)=0 THEN
-    IF position($old FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON FUNCTION public.private_card_effect_start_event_v1(uuid,uuid,uuid,jsonb,text,jsonb,text,boolean) FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON FUNCTION public.private_card_effect_continue_v1(uuid,jsonb) FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON FUNCTION public.private_card_effect_recalculate_continuous_v1(uuid) FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON FUNCTION public.get_private_card_effect_options_v1(uuid) FROM PUBLIC, anon;
-REVOKE ALL ON FUNCTION public.perform_private_turn_action_v2(uuid,text,jsonb) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.perform_private_turn_action_v2(uuid,text,jsonb) TO authenticated, service_role;
-GRANT EXECUTE ON FUNCTION public.get_private_card_effect_options_v1(uuid) TO authenticated;
-shuffle_deck'$old$ in v_definition)=0 THEN
+    IF position('shuffle_deck' in v_definition)=0 THEN
       RAISE EXCEPTION 'AI action allow-list tail not found; refusing partial card effect integration';
     END IF;
-    v_definition := replace(v_definition,$old FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON FUNCTION public.private_card_effect_start_event_v1(uuid,uuid,uuid,jsonb,text,jsonb,text,boolean) FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON FUNCTION public.private_card_effect_continue_v1(uuid,jsonb) FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON FUNCTION public.private_card_effect_recalculate_continuous_v1(uuid) FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON FUNCTION public.get_private_card_effect_options_v1(uuid) FROM PUBLIC, anon;
-REVOKE ALL ON FUNCTION public.perform_private_turn_action_v2(uuid,text,jsonb) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.perform_private_turn_action_v2(uuid,text,jsonb) TO authenticated, service_role;
-GRANT EXECUTE ON FUNCTION public.get_private_card_effect_options_v1(uuid) TO authenticated;
-shuffle_deck'$old$,$new FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON FUNCTION public.private_card_effect_start_event_v1(uuid,uuid,uuid,jsonb,text,jsonb,text,boolean) FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON FUNCTION public.private_card_effect_continue_v1(uuid,jsonb) FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON FUNCTION public.private_card_effect_recalculate_continuous_v1(uuid) FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON FUNCTION public.get_private_card_effect_options_v1(uuid) FROM PUBLIC, anon;
-REVOKE ALL ON FUNCTION public.perform_private_turn_action_v2(uuid,text,jsonb) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.perform_private_turn_action_v2(uuid,text,jsonb) TO authenticated, service_role;
-GRANT EXECUTE ON FUNCTION public.get_private_card_effect_options_v1(uuid) TO authenticated;
-shuffle_deck','card_effect_continue'$new$);
+    v_definition := replace(v_definition, 'shuffle_deck', 'shuffle_deck','card_effect_continue');
   END IF;
-  -- Recompile after renaming the legacy action function so AI actions resolve the wrapper by its new name.
   EXECUTE v_definition;
 END
 $patch_ai$;
