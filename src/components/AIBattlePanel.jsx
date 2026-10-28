@@ -152,7 +152,7 @@ export default function AIBattlePanel({ deck, partnerId, eventId, cards = [], en
     setError("");
     setNotice("");
     try {
-      await ensureSignedIn();
+      const session = await ensureSignedIn();
       const humanDeck = buildHumanDeck(deck, cards);
       const aiDeck = buildAiDeck(cards);
       const event = cards.find((card) => String(card.key) === String(eventId));
@@ -169,7 +169,7 @@ export default function AIBattlePanel({ deck, partnerId, eventId, cards = [], en
       if (invokeError) throw invokeError;
       if (!data?.room_id || !data?.invite_code) throw new Error(data?.error || "AI 대전 생성 결과를 확인할 수 없습니다.");
       setNotice("AI 대전용 방을 만들었습니다. AI가 첫 행동을 준비하고 있습니다.");
-      onStarted?.({ roomId: data.room_id, inviteCode: data.invite_code });
+      await onStarted?.({ roomId: data.room_id, inviteCode: data.invite_code, userId: session?.user?.id });
     } catch (err) {
       setError(err?.message || "AI 대전을 시작하지 못했습니다.");
     } finally {
