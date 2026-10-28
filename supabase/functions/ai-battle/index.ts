@@ -40,6 +40,69 @@ function chooseMulligan(hand: any[]) {
   }
   return hand.filter((card) => cardCost(card) >= 5).map((card) => card.instance_id);
 }
+function cardAllowedByEvent(card: any) {
+  const colors = String(card?.color_key || "").split("").filter(Boolean);
+  const eventColors = new Set(String(card?.event_color_key || "").split("").filter(Boolean));
+  return colors.length > 0 && eventColors.size > 0 && colors.every((color) => eventColors.has(color));
+}
+function cardName(card: any) {
+  return String(card?.name || card?.card_name || card?.card_id || card?.card_num || "캐릭터 카드");
+}
+function describeAction(decision: any, state: any, aiId: string) {
+  const boards = Array.isArray(state?.boards) ? state.boards : [];
+  const me = boards.find((board: any) => board.user_id === aiId);
+  const opponent = boards.find((board: any) => board.user_id !== aiId);
+  const hand = Array.isArray(state?.my_hand) ? state.my_hand : [];
+  const field = Array.isArray(me?.field_cards) ? me.field_cards : [];
+  const card = hand.find((entry: any) => entry.instance_id === decision?.payload?.instance_id);
+  const cost = card ? cardCost(card) : null;
+  const attacker = field.find((entry: any) => entry.instance_id === decision?.payload?.attacker_instance_id);
+  const target = (Array.isArray(opponent?.field_cards) ? opponent.field_cards : [])
+    .find((entry: any) => entry.instance_id === decision?.payload?.target_instance_id);
+  switch (decision?.action) {
+    case "begin_turn": return "AI 탐정: 제 턴을 시작했습니다.";
+    case "place_files": return "AI 탐정: 턴 시작에 필요한 파일을 배치했습니다.";
+    case "play_character":
+      return `AI 탐정: 현재 레벨 상한에 맞는 ${cardName(card)}(코스트 ${cost})를 골라 등장시켰습니다.`;
+    case "next_hint_take_file":
+      return "AI 탐정: 해결편에서 합법적으로 등장시킬 수 있는 카드가 확인되어 넥스트 힌트를 선언하고 파일 1장을 소비했습니다.";
+    case "next_hint":
+      return `AI 탐정: 넥스트 힌트로 가져온 ${cardName(card)}(코스트 ${cost})를 등장시켰습니다.`;
+    case "cancel_next_hint":
+      return "AI 탐정: 파일을 소모한 뒤 등장시킬 합법적인 캐릭터가 없어 넥스트 힌트를 취소했습니다.";
+    case "partner_assist":
+      return "AI 탐정: 파트너를 어시스트해 이번 턴의 레벨 상한을 1 올렸습니다.";
+    case "partner_deduce":
+      return "AI 탐정: 파트너 추리로 증거 1장을 확보했습니다.";
+    case "declare_contact":
+      return `AI 탐정: ${cardName(attacker)}으로 ${cardName(target)}에게 컨택을 선언했습니다.`;
+    case "attack_evidence":
+      return `AI 탐정: ${cardName(attacker)}으로 상대 증거 에이리어를 공격했습니다.`;
+    case "guard_contact_with_character":
+    case "guard_with_character":
+      return `AI 탐정: ${cardName(field.find((entry: any) => entry.instance_id === decision?.payload?.instance_id))}으로 상대 공격을 가드했습니다.`;
+    case "decline_contact_guard":
+    case "decline_guard":
+      return "AI 탐정: 공격을 막기에 적합한 캐릭터가 없어 가드를 포기했습니다.";
+    case "contact_use_cutin":
+      return `AI 탐정: 컷인을 사용해 AP를 ${Number(hand.find((entry: any) => entry.instance_id === decision?.payload?.instance_id)?.cut_in_bonus || 0)} 올렸습니다.`;
+    case "contact_pass_cutin": return "AI 탐정: 컷인을 사용하지 않고 AP 비교를 진행했습니다.";
+    case "resolve_mislead": return "AI 탐정: 사용할 수 있는 미스리드 효과를 확인해 대응했습니다.";
+    case "pass_mislead": return "AI 탐정: 사용할 수 있는 미스리드 효과가 없어 대응을 넘겼습니다.";
+    case "resolve_evidence_attack": return "AI 탐정: 공개된 증거 공격의 결과를 처리했습니다.";
+    case "finish_event": return "AI 탐정: 이벤트 효과 처리가 끝나 해당 카드를 리무브했습니다.";
+    case "end_turn":
+      return "AI 탐정: 남은 행동의 이득과 파일 소모를 검토한 결과, 더 진행하지 않고 턴을 종료했습니다.";
+    case "acknowledge_culprits_crime": return "AI 탐정: 공개된 범행 증거를 확인했습니다.";
+    case "acknowledge_deck_remove": return "AI 탐정: 공개된 덱 리무브 결과를 확인했습니다.";
+    case "acknowledge_file_remove": return "AI 탐정: 공개된 파일 리무브 결과를 확인했습니다.";
+    case "acknowledge_hand_reveal": return "AI 탐정: 공개된 손패를 확인했습니다.";
+    case "acknowledge_evidence_remove": return "AI 탐정: 공개된 증거 리무브 결과를 확인했습니다.";
+    case "acknowledge_shared_deck_peek": return "AI 탐정: 상대에게 공개된 덱 정보를 확인했습니다.";
+    default: return `AI 탐정: ${decision?.action || "다음 행동"}을 처리했습니다.`;
+  }
+}
+
 function chooseResponse(state: any, aiId: string) {
   const pending = state?.pending_action;
   const boards = Array.isArray(state?.boards) ? state.boards : [];
