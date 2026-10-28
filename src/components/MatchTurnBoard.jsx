@@ -111,6 +111,9 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   const [loadingOpponentDeck, setLoadingOpponentDeck] = useState(false);
   const [showHandRevealSelector, setShowHandRevealSelector] = useState(false);
   const [selectedHandRevealIds, setSelectedHandRevealIds] = useState([]);
+  const [cardEffectActivations, setCardEffectActivations] = useState([]);
+  const [cardEffectOptions, setCardEffectOptions] = useState([]);
+  const [cardEffectSelectedIds, setCardEffectSelectedIds] = useState([]);
   const [setCardModal, setSetCardModal] = useState(null);
   const [handZoneChoice, setHandZoneChoice] = useState(null);
   const [handEvidenceChoice, setHandEvidenceChoice] = useState(null);
@@ -559,6 +562,41 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   const myFileCards = Array.isArray(game?.my_file_cards) ? game.my_file_cards : [];
   const opponentRemoveCards = Array.isArray(game?.opponent_remove_cards) ? game.opponent_remove_cards : [];
   const pending = game?.pending_action || null;
+
+  useEffect(() => {
+    let cancelled = false;
+    const pendingType = game?.pending_action?.type || "";
+    const chooserId = game?.pending_action?.chooser_user_id || "";
+    setCardEffectSelectedIds([]);
+    const loadEffectState = async () => {
+      if (!roomId || !userId || game?.game_over) {
+        if (!cancelled) {
+          setCardEffectActivations([]);
+          setCardEffectOptions([]);
+        }
+        return;
+      }
+      if (!pendingType) {
+        const { data, error } = await supabase.rpc("get_private_card_effect_activations_v1", { p_room_id: roomId });
+        if (!cancelled) setCardEffectActivations(!error && Array.isArray(data?.activations) ? data.activations : []);
+        if (!cancelled) setCardEffectOptions([]);
+        return;
+      }
+      setCardEffectActivations([]);
+      if (["card_effect_selection", "card_effect_order"].includes(pendingType) && chooserId === userId) {
+        const { data, error } = await supabase.rpc("get_private_card_effect_options_v1", { p_room_id: roomId });
+        if (!cancelled) setCardEffectOptions(!error && Array.isArray(data?.options) ? data.options : []);
+      } else if (!cancelled) {
+        setCardEffectOptions([]);
+      }
+    };
+    void loadEffectState();
+    return () => { cancelled = true; };
+  }, [
+    roomId, userId, game?.state_version, game?.game_over,
+    game?.pending_action?.type, game?.pending_action?.chooser_user_id,
+    game?.pending_action?.effect_id, game?.pending_action?.source_instance_id,
+  ]);
   const culpritRevealPending = pending?.type === "culprits_crime_reveal" ? pending : null;
   const culpritRevealCards = Array.isArray(culpritRevealPending?.revealed_evidence_cards) ? culpritRevealPending.revealed_evidence_cards : [];
   const culpritTraitCount = culpritRevealCards.filter(cardHasCulpritTrait).length;
@@ -1099,6 +1137,21 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
               {!myBoard?.field_cards?.length && <p style={st.muted}>아직 현장에 등장한 카드가 없습니다.</p>}
             </div>
           </div>
+          {cardEffectActivations.length > 0 && <div style={{ marginTop: 8, padding: 9, border: "1px solid rgba(96,165,250,.2)", borderRadius: 7, background: "#0a1425" }}>
+            <strong style={{ display: "block", marginBottom: 7, fontSize: 10, color: C.blue }}>발동 가능한 카드 능력</strong>
+            <div style={{ display: "grid", gap: 6 }}>
+              {cardEffectActivations.map((ability) => {
+                const source = (myBoard?.field_cards || []).find((card) => String(card.instance_id) === String(ability.source_instance_id));
+                return <div key={ability.effect_id + ":" + ability.source_instance_id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: 6, borderRadius: 6, background: "#111e32" }}>
+                  <div style={{ minWidth: 0 }}>
+                    <strong style={{ display: "block", fontSize: 10, overflowWrap: "anywhere" }}>{source ? nameOf(source) : ability.source_name || "카드"}</strong>
+                    <span style={{ display: "block", fontSize: 9, color: C.muted }}>{ability.label || "능력 발동"}</span>
+                  </div>
+                  <button type="button" style={{ ...st.smallButton, flexShrink: 0 }} disabled={loading || !isMyTurn || Boolean(pending)} onClick={() => void runAction("activate_card_effect", { source_instance_id: ability.source_instance_id, effect_id: ability.effect_id })}>발동</button>
+                </div>;
+              })}
+            </div>
+          </div>
         </div>
 
         <div className="mock-zone-deck" style={st.panel}>
@@ -1336,6 +1389,72 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
           </div>
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 12 }}>
             <button type="button" style={st.button} disabled={loading || myCulpritRevealAcknowledged} onClick={() => void runAction("acknowledge_culprits_crime")}>{myCulpritRevealAcknowledged ? "확인 완료 · 상대 확인 대기" : "카드 특징을 확인했습니다"}</button>
+          </div>
+        </section>
+      </div>}
+
+
+      {pending && String(pending.type || "").startsWith("card_effect_") && <div role="presentation" style={{ position: "fixed", inset: 0, zIndex: 100210, padding: 12, display: "flex", justifyContent: "center", alignItems: "center", background: "rgba(0,0,0,.86)", backdropFilter: "blur(5px)" }}>
+        <section role="dialog" aria-modal="true" aria-label="카드 효과 처리" style={{ width: "min(100%, 850px)", maxHeight: "90dvh", display: "flex", flexDirection: "column", overflow: "hidden", border: "1px solid rgba(96,165,250,.45)", borderRadius: 12, background: "#111a2a", color: C.text, boxShadow: "0 24px 70px rgba(0,0,0,.75)" }}>
+          <header style={{ padding: 14, borderBottom: "1px solid rgba(255,255,255,.09)" }}>
+            <h2 style={{ margin: 0, fontSize: 17 }}>카드 효과 처리</h2>
+            <p style={{ ...st.muted, marginTop: 7 }}>{pending.prompt || "카드 효과의 다음 절차를 진행해 주세요."}</p>
+            {pending.chooser_user_id && pending.chooser_user_id !== userId && <p style={{ color: C.gold, fontSize: 11, margin: "8px 0 0" }}>상대 플레이어의 선택을 기다리는 중입니다.</p>}
+          </header>
+          <div style={{ padding: 12, overflowY: "auto", minHeight: 0 }}>
+            {pending.type === "card_effect_selection" && pending.chooser_user_id === userId && <>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(108px,1fr))", gap: 8 }}>
+                {cardEffectOptions.map((option) => {
+                  const card = option.card || option;
+                  const id = String(option.instance_id || card.instance_id || "");
+                  const selected = cardEffectSelectedIds.includes(id);
+                  return <button key={id} type="button" aria-pressed={selected} onClick={() => setCardEffectSelectedIds((ids) => selected ? ids.filter((v) => v !== id) : (ids.length < Number(pending.max || 1) ? [...ids, id] : ids))} style={{ minWidth: 0, padding: 7, border: `2px solid ${selected ? C.gold : "rgba(255,255,255,.12)"}`, borderRadius: 8, background: selected ? "rgba(120,83,10,.25)" : "#080d16", color: C.text, textAlign: "left" }}>
+                    <CardArt instance={card} />
+                    <strong style={{ display: "block", marginTop: 5, fontSize: 10, lineHeight: 1.35, overflowWrap: "anywhere" }}>{selected ? "✓ " : ""}{nameOf(card)}</strong>
+                    <span style={{ display: "block", fontSize: 9, color: C.muted, marginTop: 3 }}>레벨 {card.cost ?? infoFor(card)?.cost ?? "-"} · AP {card.ap ?? "-"}</span>
+                  </button>;
+                })}
+                {!cardEffectOptions.length && <p style={st.muted}>조건에 맞는 선택 대상이 없습니다.</p>}
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+                <span style={{ fontSize: 10, color: C.muted }}>선택 {cardEffectSelectedIds.length}장 · 최대 {pending.max}장</span>
+                <button type="button" style={st.button} disabled={loading || cardEffectSelectedIds.length < Number(pending.min || 0) || cardEffectSelectedIds.length > Number(pending.max || 1)} onClick={() => void runAction("card_effect_continue", { selected_instance_ids: cardEffectSelectedIds })}>선택 완료</button>
+              </div>
+            </>}
+            {pending.type === "card_effect_order" && pending.chooser_user_id === userId && <>
+              <p style={{ ...st.muted, marginBottom: 8 }}>아래 카드를 클릭하여 덱 아래에 놓을 순서를 정하세요. 선택한 순서가 위에서부터 적용됩니다.</p>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(100px,1fr))", gap: 8 }}>
+                {cardEffectOptions.map((option) => {
+                  const card = option.card || option;
+                  const id = String(option.instance_id || card.instance_id || "");
+                  const order = cardEffectSelectedIds.indexOf(id);
+                  return <button key={id} type="button" onClick={() => setCardEffectSelectedIds((ids) => order >= 0 ? ids.filter((v) => v !== id) : [...ids, id])} style={{ minWidth: 0, padding: 7, border: `2px solid ${order >= 0 ? C.gold : "rgba(255,255,255,.12)"}`, borderRadius: 8, background: order >= 0 ? "rgba(120,83,10,.25)" : "#080d16", color: C.text, textAlign: "left" }}>
+                    {order >= 0 && <span style={{ display: "inline-flex", padding: "2px 5px", marginBottom: 4, borderRadius: 4, background: C.gold, color: "#111", fontSize: 9, fontWeight: 900 }}>{order + 1}번째</span>}
+                    <CardArt instance={card} />
+                    <strong style={{ display: "block", marginTop: 5, fontSize: 10, overflowWrap: "anywhere" }}>{nameOf(card)}</strong>
+                  </button>;
+                })}
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+                <span style={{ fontSize: 10, color: C.muted }}>순서 지정 {cardEffectSelectedIds.length} / {cardEffectOptions.length}장</span>
+                <button type="button" style={st.button} disabled={loading || cardEffectSelectedIds.length !== cardEffectOptions.length} onClick={() => void runAction("card_effect_continue", { selected_instance_ids: cardEffectSelectedIds })}>순서 확정</button>
+              </div>
+            </>}
+            {pending.type === "card_effect_reveal_ack" && <>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(112px,1fr))", gap: 8 }}>
+                {(pending.revealed_cards || []).map((card) => <button key={card.instance_id || card.key} type="button" onClick={() => openDetails(card)} style={{ minWidth: 0, padding: 7, border: "1px solid rgba(252,211,77,.28)", borderRadius: 8, background: "#080d16", color: C.text, textAlign: "left" }}><CardArt instance={card} /><strong style={{ display: "block", marginTop: 5, fontSize: 10 }}>{nameOf(card)}</strong></button>)}
+              </div>
+              {pending.chooser_user_id === userId ? <button type="button" style={{ ...st.button, width: "100%", marginTop: 12 }} disabled={loading} onClick={() => void runAction("card_effect_continue", { decision: "acknowledge" })}>확인 완료</button> : <p style={{ ...st.muted, marginTop: 12 }}>공개된 카드를 확인하고 있습니다.</p>}
+            </>}
+            {pending.type === "card_effect_reveal_sequence" && <>
+              {pending.revealed_card && <div style={{ width: "min(100%,220px)", margin: "0 auto", padding: 10, border: "1px solid rgba(252,211,77,.28)", borderRadius: 8, background: "#080d16" }}><CardArt instance={pending.revealed_card} /><strong style={{ display: "block", marginTop: 6, fontSize: 11, textAlign: "center" }}>{nameOf(pending.revealed_card)}</strong><p style={{ ...st.muted, textAlign: "center", marginTop: 5 }}>지금까지 공개 {pending.revealed_count || 1}장</p></div>}
+              {pending.chooser_user_id === userId ? <button type="button" style={{ ...st.button, width: "100%", marginTop: 12 }} disabled={loading} onClick={() => void runAction("card_effect_continue", { decision: "acknowledge" })}>다음 카드 공개</button> : <p style={{ ...st.muted, marginTop: 12 }}>카드 공개 진행 중입니다.</p>}
+            </>}
+            {pending.type === "card_effect_reaction" && <>
+              {pending.chooser_user_id === userId ? <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end", marginTop: 8 }}>
+                {(pending.choices || []).map((choice) => <button key={choice} type="button" style={st.button} disabled={loading} onClick={() => void runAction("card_effect_continue", { choice })}>{choice === "activate" ? "발동" : choice === "pass" ? "사용하지 않음" : choice}</button>)}
+              </div> : <p style={{ ...st.muted, marginTop: 12 }}>반응 선택을 기다리는 중입니다.</p>}
+            </>}
           </div>
         </section>
       </div>}
