@@ -14,7 +14,8 @@
     "translate:cards": "node scripts/translate-cards.mjs",
     "scrape:cards:local-images": "node scripts/scrape-cards.mjs --download-images",
     "sync:cards": "npm run scrape:cards && npm run translate:cards",
-    "sync:cards:local-images": "npm run scrape:cards:local-images && npm run translate:cards"
+    "sync:cards:local-images": "npm run scrape:cards:local-images && npm run translate:cards",
+    "validate:card-effects": "node scripts/validate-card-effects.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.3",
