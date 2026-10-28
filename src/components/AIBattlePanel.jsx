@@ -157,11 +157,18 @@ function preparePublicDeck(cards, item) {
   const eventColorKey = colorKey(event);
   if (!eventColorKey) return null;
   const mainDeck = [];
+  const copyCounts = new Map();
   for (const entry of entries) {
     const count = Math.max(0, Math.floor(Number(entry?.count) || 0));
     if (!count) continue;
     const card = resolvePublicDeckCard(cards, entry);
     if (!card || !cardAllowedByEvent(card, eventColorKey)) return null;
+    const sameCardId = identity(card) || String(card.key);
+    if (!exemptionId(card, card.key)) {
+      const nextCount = (copyCounts.get(sameCardId) || 0) + count;
+      if (nextCount > 3) return null;
+      copyCounts.set(sameCardId, nextCount);
+    }
     mainDeck.push(cardPayload(card, card.key, count, eventColorKey));
   }
   if (mainDeck.reduce((sum, card) => sum + card.count, 0) !== 40) return null;
