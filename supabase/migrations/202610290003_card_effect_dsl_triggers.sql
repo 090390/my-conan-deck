@@ -300,6 +300,7 @@ DECLARE
  v_before_pending jsonb; v_result jsonb; v_source_card jsonb; v_old_card jsonb; v_new_card jsonb;
  v_owner uuid; v_instance_id text; v_first_entry boolean; v_turn integer; v_old_field jsonb;
  v_old_board jsonb; v_old_entry jsonb; v_current_field jsonb; v_current_remove jsonb; v_removed boolean;
+ v_before_base_character_played boolean:=false;
  v_pending_actor uuid; v_context jsonb; v_event_source_user uuid;
  v_old_action text:=p_action;
 BEGIN
@@ -318,6 +319,7 @@ BEGIN
    SELECT * INTO v_match FROM public.room_match_states WHERE room_id=p_room_id FOR UPDATE;
    IF NOT FOUND OR v_match.phase<>'playing' OR v_match.game_over THEN RAISE EXCEPTION '진행 중인 게임에서만 효과를 발동할 수 있습니다.'; END IF;
    IF v_match.current_turn_user_id IS DISTINCT FROM v_user THEN RAISE EXCEPTION '자신의 턴에만 이 능력을 발동할 수 있습니다.'; END IF;
+   IF v_match.turn_step IS DISTINCT FROM 'main' THEN RAISE EXCEPTION '파일 배치가 끝난 뒤 메인 단계에서 능력을 발동할 수 있습니다.'; END IF;
    IF v_match.pending_action IS NOT NULL OR EXISTS(SELECT 1 FROM public.private_card_effect_runs_v1 WHERE room_id=p_room_id) THEN
      RAISE EXCEPTION '먼저 진행 중인 선택/응답을 완료해 주세요.';
    END IF;
@@ -342,6 +344,8 @@ BEGIN
    ORDER BY b.seat),'[]'::jsonb) INTO v_before_boards
  FROM public.room_player_turn_boards b WHERE b.room_id=p_room_id;
  v_turn:=v_before_match.turn_number;
+ SELECT coalesce(base_character_played_this_turn,false) INTO v_before_base_character_played
+   FROM public.room_player_turn_boards WHERE room_id=p_room_id AND user_id=v_user;
 
  v_result:=public.perform_private_turn_action_v2_legacy(p_room_id,p_action,coalesce(p_payload,'{}'::jsonb));
 
@@ -353,8 +357,7 @@ BEGIN
    IF v_source_card IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.private_card_effect_runs_v1 WHERE room_id=p_room_id) THEN
      SELECT value INTO v_before_board FROM jsonb_array_elements(v_before_boards) WHERE value->>'user_id'=v_user::text LIMIT 1;
      v_old_field:=coalesce(v_before_board->'field_cards','[]'::jsonb);
-     v_first_entry:=NOT EXISTS(SELECT 1 FROM jsonb_array_elements(v_old_field) e(value)
-       WHERE coalesce((e.value->>'summoned_this_turn')::boolean,false));
+     v_first_entry:=NOT v_before_base_character_played;
      v_context:=jsonb_build_object('entry',jsonb_build_object(
        'method','manual','is_first_character_this_turn',v_first_entry,'source',v_source_card),
        'turn_number',v_turn);
@@ -463,6 +466,47 @@ BEGIN
  RETURN public.get_private_turn_state_v2(p_room_id);
 END
 $function$;
+
+
+DO $patch_ai$
+DECLARE v_definition text;
+BEGIN
+  IF to_regprocedure('public.perform_private_ai_turn_action_v1(uuid,text,jsonb)') IS NULL THEN RETURN; END IF;
+  v_definition := pg_get_functiondef('public.perform_private_ai_turn_action_v1(uuid,text,jsonb)'::regprocedure);
+  IF position('card_effect_continue' in v_definition)=0 THEN
+    IF position($old FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.private_card_effect_start_event_v1(uuid,uuid,uuid,jsonb,text,jsonb,text,boolean) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.private_card_effect_continue_v1(uuid,jsonb) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.private_card_effect_recalculate_continuous_v1(uuid) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.get_private_card_effect_options_v1(uuid) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.perform_private_turn_action_v2(uuid,text,jsonb) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.perform_private_turn_action_v2(uuid,text,jsonb) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.get_private_card_effect_options_v1(uuid) TO authenticated;
+shuffle_deck'$old$ in v_definition)=0 THEN
+      RAISE EXCEPTION 'AI action allow-list tail not found; refusing partial card effect integration';
+    END IF;
+    v_definition := replace(v_definition,$old FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.private_card_effect_start_event_v1(uuid,uuid,uuid,jsonb,text,jsonb,text,boolean) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.private_card_effect_continue_v1(uuid,jsonb) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.private_card_effect_recalculate_continuous_v1(uuid) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.get_private_card_effect_options_v1(uuid) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.perform_private_turn_action_v2(uuid,text,jsonb) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.perform_private_turn_action_v2(uuid,text,jsonb) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.get_private_card_effect_options_v1(uuid) TO authenticated;
+shuffle_deck'$old$,$new FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.private_card_effect_start_event_v1(uuid,uuid,uuid,jsonb,text,jsonb,text,boolean) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.private_card_effect_continue_v1(uuid,jsonb) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.private_card_effect_recalculate_continuous_v1(uuid) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.get_private_card_effect_options_v1(uuid) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.perform_private_turn_action_v2(uuid,text,jsonb) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.perform_private_turn_action_v2(uuid,text,jsonb) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.get_private_card_effect_options_v1(uuid) TO authenticated;
+shuffle_deck','card_effect_continue'$new$);
+  END IF;
+  -- Recompile after renaming the legacy action function so AI actions resolve the wrapper by its new name.
+  EXECUTE v_definition;
+END
+$patch_ai$;
 
 REVOKE ALL ON FUNCTION public.perform_private_turn_action_v2_legacy(uuid,text,jsonb) FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.private_card_effect_start_event_v1(uuid,uuid,uuid,jsonb,text,jsonb,text,boolean) FROM PUBLIC, anon, authenticated;
