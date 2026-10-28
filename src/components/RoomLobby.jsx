@@ -3,9 +3,11 @@ import { supabase } from "../lib/supabase";
 import MatchStartFlow from "./MatchStartFlow";
 import MatchTurnBoard from "./MatchTurnBoard";
 import MatchGreetingStep from "./MatchGreetingStep";
+import AIBattlePanel from "./AIBattlePanel";
 
 const ACTIVE_ROOM_STORAGE_KEY = "conan-active-private-room-v1";
 const COMPLETED_GREETING_ROOM_KEY = "conan-completed-greeting-room-v1";
+const AI_ROOM_STORAGE_KEY = "conan-ai-battle-room-v1";
 
 function normalizeCardIdentifier(value) {
   const raw = String(value ?? "").trim().toLocaleUpperCase();
@@ -45,6 +47,7 @@ function getCardTraits(card) {
 export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", cards = [], onGameFieldChange }) {
   const [inviteCodeInput, setInviteCodeInput] = useState("");
   const [room, setRoom] = useState(null);
+  const [isAIBattle, setIsAIBattle] = useState(false);
   const [players, setPlayers] = useState([]);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [greetingFinished, setGreetingFinished] = useState(false);
@@ -72,6 +75,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
 
     async function restoreRoom() {
       try {
+        const restoredAiBattle = localStorage.getItem(AI_ROOM_STORAGE_KEY) === savedRoom.id;
         const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
         if (sessionError) throw sessionError;
         let session = sessionData?.session;
@@ -114,6 +118,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
         if (finishedMatch) {
           localStorage.removeItem(ACTIVE_ROOM_STORAGE_KEY);
           localStorage.removeItem(COMPLETED_GREETING_ROOM_KEY);
+      localStorage.removeItem(AI_ROOM_STORAGE_KEY);
           if (active) {
             setRoom(null);
             setPlayers([]);
@@ -127,6 +132,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
 
         if (!active) return;
         setUserId(session.user.id);
+        setIsAIBattle(restoredAiBattle);
         setInviteCodeInput(String(savedRoom.inviteCode).toUpperCase());
         setRoom(savedRoom);
         setMatchPhase(phase);
@@ -193,6 +199,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
       }
 
       localStorage.removeItem(COMPLETED_GREETING_ROOM_KEY);
+      localStorage.removeItem(AI_ROOM_STORAGE_KEY);
       setRoom({ id: result.out_room_id, inviteCode: result.out_invite_code });
       setGreetingFinished(false);
       setNotice("방이 생성되었습니다. 친구에게 초대 코드를 전달해 주세요.");
@@ -225,6 +232,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
       if (!result?.out_room_id) throw new Error("입장 결과를 확인할 수 없습니다.");
 
       localStorage.removeItem(COMPLETED_GREETING_ROOM_KEY);
+      localStorage.removeItem(AI_ROOM_STORAGE_KEY);
       setRoom({ id: result.out_room_id, inviteCode: code });
       setGreetingFinished(false);
       setNotice("방에 입장했습니다.");
@@ -313,6 +321,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
   const returnToRoomLobby = useCallback(() => {
     localStorage.removeItem(ACTIVE_ROOM_STORAGE_KEY);
     localStorage.removeItem(COMPLETED_GREETING_ROOM_KEY);
+      localStorage.removeItem(AI_ROOM_STORAGE_KEY);
     setRoom(null);
     setPlayers([]);
     setReadyDeckSignature("");
@@ -324,6 +333,22 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
     setError("");
     setNotice("이전 게임을 닫았습니다. 새 방을 만들거나 초대 코드로 입장해 주세요.");
   }, []);
+
+  async function handleAIBattleStarted({ roomId, inviteCode, userId: aiHumanUserId }) {
+    localStorage.setItem(AI_ROOM_STORAGE_KEY, roomId);
+    localStorage.removeItem(COMPLETED_GREETING_ROOM_KEY);
+    setIsAIBattle(true);
+    setUserId(aiHumanUserId || userId);
+    setInviteCodeInput(String(inviteCode || "").toUpperCase());
+    setRoom({ id: roomId, inviteCode });
+    setPlayers([]);
+    setMatchPhase("mulligan");
+    setCanLeaveBeforeMulligan(true);
+    setGreetingFinished(false);
+    setShowFieldOnly(true);
+    await loadPlayers(roomId);
+    setNotice("AI 대전용 방을 만들었습니다. AI 탐정과 대전을 시작할 수 있습니다.");
+  }
 
   async function leaveRoom() {
     if (!room?.id || loading || !canLeaveBeforeMulligan) return;
@@ -340,6 +365,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
 
       localStorage.removeItem(ACTIVE_ROOM_STORAGE_KEY);
       localStorage.removeItem(COMPLETED_GREETING_ROOM_KEY);
+      localStorage.removeItem(AI_ROOM_STORAGE_KEY);
       setRoom(null);
       setPlayers([]);
       setReadyDeckSignature("");
@@ -511,8 +537,8 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
 
   if (room?.id && matchPhase === "playing" && showFieldOnly) {
     return greetingFinished
-      ? <MatchTurnBoard roomId={room.id} userId={userId} cards={cards} inviteCode={room.inviteCode} onLeaveField={() => setShowFieldOnly(false)} onReturnToLobby={returnToRoomLobby} />
-      : <MatchGreetingStep roomId={room.id} userId={userId} players={players} onComplete={completeGreeting} />;
+      ? <MatchTurnBoard roomId={room.id} userId={userId} cards={cards} inviteCode={room.inviteCode} isAIBattle={isAIBattle} onLeaveField={() => setShowFieldOnly(false)} onReturnToLobby={returnToRoomLobby} />
+      : <MatchGreetingStep roomId={room.id} userId={userId} players={players} isAIBattle={isAIBattle} onComplete={completeGreeting} />;
   }
 
   const panelStyle = {
@@ -550,6 +576,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
   };
 
   return (
+    <>
     <section style={panelStyle}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
         <div>
@@ -621,7 +648,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
             <p style={{ margin: "10px 0 0", color: "#74839a", fontSize: 11, lineHeight: 1.6 }}>상대에게는 준비 여부만 표시됩니다. 카드별 덱 목록은 별도의 비공개 테이블에 저장됩니다.</p>
           </div>
 
-          {bothReady && <MatchStartFlow roomId={room.id} userId={userId} players={players} cards={cards} inviteCode={room.inviteCode} onPhaseChange={handleMatchPhaseChange} onReturnToLobby={returnToRoomLobby} />}
+          {bothReady && <MatchStartFlow roomId={room.id} userId={userId} players={players} cards={cards} inviteCode={room.inviteCode} isAIBattle={isAIBattle} onPhaseChange={handleMatchPhaseChange} onReturnToLobby={returnToRoomLobby} />}
         </>
       )}
 
@@ -644,5 +671,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
       {notice && <p role="status" style={{ color: "#86efac", marginTop: 16, fontSize: 13 }}>{notice}</p>}
       {error && <p role="alert" style={{ color: "#fda4af", marginTop: 16, fontSize: 13, overflowWrap: "anywhere" }}>오류: {error}</p>}
     </section>
+    {!room && <AIBattlePanel deck={deck} partnerId={partnerId} eventId={eventId} cards={cards} ensureSignedIn={ensureSignedIn} onStarted={handleAIBattleStarted} />}
+    </>
   );
 }
