@@ -98,6 +98,10 @@ BEGIN
      v_waiting:=jsonb_build_object('kind','selection','save_as',v_step->>'saveAs','options',v_options,
        'min',coalesce((v_step->>'min')::integer,0),'max',coalesce((v_step->>'max')::integer,1),
        'unique_by',v_step->>'uniqueBy','prompt',coalesce(v_step->>'prompt','효과 대상을 선택하세요.'));
+     IF nullif(v_step->>'displayVariable','') IS NOT NULL THEN
+       v_path:=string_to_array(replace(v_step->>'displayVariable','vars.',''),'.');
+       v_waiting:=v_waiting||jsonb_build_object('display_options',coalesce(v_vars #> v_path,'[]'::jsonb));
+     END IF;
      v_pending:=jsonb_build_object('type','card_effect_selection','effect_id',v_effect_id,
        'source_instance_id',v_run.source_instance_id,'chooser_user_id',v_owner,
        'prompt',coalesce(v_step->>'prompt','효과 대상을 선택하세요.'),
