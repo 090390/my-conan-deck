@@ -8,7 +8,6 @@
   "cards": [
     {
       "sourceKey": "card/B06087P",
-      "sourceDeckId": "570f0ac3-05ec-457d-b921-1d0d08a3730d",
       "databaseId": "B06087P",
       "cardKey": "B06087P",
       "internalCardId": "0706",
@@ -34,7 +33,6 @@
     },
     {
       "sourceKey": "card/B06088",
-      "sourceDeckId": "570f0ac3-05ec-457d-b921-1d0d08a3730d",
       "databaseId": "B06088",
       "cardKey": "B06088",
       "internalCardId": "0707",
@@ -136,7 +134,6 @@
     },
     {
       "sourceKey": "card/B07080",
-      "sourceDeckId": "570f0ac3-05ec-457d-b921-1d0d08a3730d",
       "databaseId": "B07080",
       "cardKey": "B07080",
       "internalCardId": "0808",
@@ -216,7 +213,6 @@
     },
     {
       "sourceKey": "card/PR278",
-      "sourceDeckId": "570f0ac3-05ec-457d-b921-1d0d08a3730d",
       "databaseId": "PR278",
       "cardKey": "PR278",
       "internalCardId": "0940",
@@ -242,7 +238,6 @@
     },
     {
       "sourceKey": "card/SP009",
-      "sourceDeckId": "570f0ac3-05ec-457d-b921-1d0d08a3730d",
       "databaseId": "SP009",
       "cardKey": "SP009",
       "internalCardId": "0619",
@@ -268,7 +263,6 @@
     },
     {
       "sourceKey": "card/PR181",
-      "sourceDeckId": "570f0ac3-05ec-457d-b921-1d0d08a3730d",
       "databaseId": "PR181",
       "cardKey": "PR181",
       "internalCardId": "0732",
@@ -294,7 +288,6 @@
     },
     {
       "sourceKey": "card/B05095",
-      "sourceDeckId": "570f0ac3-05ec-457d-b921-1d0d08a3730d",
       "databaseId": "B05095",
       "cardKey": "B05095",
       "internalCardId": "0593",
@@ -320,7 +313,6 @@
     },
     {
       "sourceKey": "card/B10068",
-      "sourceDeckId": "570f0ac3-05ec-457d-b921-1d0d08a3730d",
       "databaseId": "B10068",
       "cardKey": "B10068",
       "internalCardId": "1124",
@@ -498,7 +490,6 @@
     },
     {
       "sourceKey": "card/D05009",
-      "sourceDeckId": "570f0ac3-05ec-457d-b921-1d0d08a3730d",
       "databaseId": "D05009",
       "cardKey": "D05009",
       "internalCardId": "0154",
@@ -524,7 +515,6 @@
     },
     {
       "sourceKey": "card/D11007",
-      "sourceDeckId": "570f0ac3-05ec-457d-b921-1d0d08a3730d",
       "databaseId": "D11007",
       "cardKey": "D11007",
       "internalCardId": "0938",
@@ -550,7 +540,6 @@
     },
     {
       "sourceKey": "card/B09075P",
-      "sourceDeckId": "570f0ac3-05ec-457d-b921-1d0d08a3730d",
       "databaseId": "B09075P",
       "cardKey": "B09075P",
       "internalCardId": "1015",
@@ -646,7 +635,6 @@
     },
     {
       "sourceKey": "card/B10078",
-      "sourceDeckId": "570f0ac3-05ec-457d-b921-1d0d08a3730d",
       "databaseId": "B10078",
       "cardKey": "B10078",
       "internalCardId": "1134",
@@ -672,7 +660,6 @@
     },
     {
       "sourceKey": "card/B04083",
-      "sourceDeckId": "570f0ac3-05ec-457d-b921-1d0d08a3730d",
       "databaseId": "B04083",
       "cardKey": "B04083",
       "internalCardId": "0158",
@@ -698,7 +685,6 @@
     },
     {
       "sourceKey": "card/B06084",
-      "sourceDeckId": "570f0ac3-05ec-457d-b921-1d0d08a3730d",
       "databaseId": "B06084",
       "cardKey": "B06084",
       "internalCardId": "0703",
@@ -724,7 +710,6 @@
     },
     {
       "sourceKey": "card/B06085",
-      "sourceDeckId": "570f0ac3-05ec-457d-b921-1d0d08a3730d",
       "databaseId": "B06085",
       "cardKey": "B06085",
       "internalCardId": "0704",
@@ -750,7 +735,6 @@
     },
     {
       "sourceKey": "card/PR261",
-      "sourceDeckId": "570f0ac3-05ec-457d-b921-1d0d08a3730d",
       "databaseId": "PR261",
       "cardKey": "PR261",
       "internalCardId": "P081",
@@ -776,7 +760,6 @@
     },
     {
       "sourceKey": "card/B10083P",
-      "sourceDeckId": "570f0ac3-05ec-457d-b921-1d0d08a3730d",
       "databaseId": "B10083P",
       "cardKey": "B10083P",
       "internalCardId": "1139",
@@ -802,7 +785,6 @@
     },
     {
       "sourceKey": "card/B11049P2",
-      "sourceDeckId": "71767296-f20a-4c5d-bb9f-94ce58234b12",
       "databaseId": "B11049P2",
       "cardKey": "B11049P2",
       "internalCardId": "1215",
@@ -828,7 +810,6 @@
     },
     {
       "sourceKey": "card/PR328",
-      "sourceDeckId": "71767296-f20a-4c5d-bb9f-94ce58234b12",
       "databaseId": "PR328",
       "cardKey": "PR328",
       "internalCardId": "1166",
@@ -854,7 +835,6 @@
     },
     {
       "sourceKey": "card/B09038P",
-      "sourceDeckId": "71767296-f20a-4c5d-bb9f-94ce58234b12",
       "databaseId": "B09038P",
       "cardKey": "B09038P",
       "internalCardId": "0981",
@@ -880,7 +860,6 @@
     },
     {
       "sourceKey": "card/B09037P",
-      "sourceDeckId": "71767296-f20a-4c5d-bb9f-94ce58234b12",
       "databaseId": "B09037P",
       "cardKey": "B09037P",
       "internalCardId": "0980",
@@ -906,7 +885,6 @@
     },
     {
       "sourceKey": "card/B05052",
-      "sourceDeckId": "71767296-f20a-4c5d-bb9f-94ce58234b12",
       "databaseId": "B05052",
       "cardKey": "B05052",
       "internalCardId": "0554",
@@ -932,7 +910,6 @@
     },
     {
       "sourceKey": "card/B11095P",
-      "sourceDeckId": "71767296-f20a-4c5d-bb9f-94ce58234b12",
       "databaseId": "B11095P",
       "cardKey": "B11095P",
       "internalCardId": "1258",
@@ -958,7 +935,6 @@
     },
     {
       "sourceKey": "card/B11031",
-      "sourceDeckId": "71767296-f20a-4c5d-bb9f-94ce58234b12",
       "databaseId": "B11031",
       "cardKey": "B11031",
       "internalCardId": "1197",
@@ -984,7 +960,6 @@
     },
     {
       "sourceKey": "card/PR274",
-      "sourceDeckId": "71767296-f20a-4c5d-bb9f-94ce58234b12",
       "databaseId": "PR274",
       "cardKey": "PR274",
       "internalCardId": "1057",
@@ -1078,7 +1053,6 @@
     },
     {
       "sourceKey": "card/D03014",
-      "sourceDeckId": "71767296-f20a-4c5d-bb9f-94ce58234b12",
       "databaseId": "D03014",
       "cardKey": "D03014",
       "internalCardId": "0130",
@@ -1104,7 +1078,6 @@
     },
     {
       "sourceKey": "card/B05053",
-      "sourceDeckId": "71767296-f20a-4c5d-bb9f-94ce58234b12",
       "databaseId": "B05053",
       "cardKey": "B05053",
       "internalCardId": "0555",
@@ -1130,7 +1103,6 @@
     },
     {
       "sourceKey": "card/B06070",
-      "sourceDeckId": "71767296-f20a-4c5d-bb9f-94ce58234b12",
       "databaseId": "B06070",
       "cardKey": "B06070",
       "internalCardId": "0691",
@@ -1156,7 +1128,6 @@
     },
     {
       "sourceKey": "card/B10041",
-      "sourceDeckId": "71767296-f20a-4c5d-bb9f-94ce58234b12",
       "databaseId": "B10041",
       "cardKey": "B10041",
       "internalCardId": "1101",
@@ -1182,7 +1153,6 @@
     },
     {
       "sourceKey": "card/B02038P",
-      "sourceDeckId": "71767296-f20a-4c5d-bb9f-94ce58234b12",
       "databaseId": "B02038P",
       "cardKey": "B02038P",
       "internalCardId": "0205",
@@ -1208,7 +1178,6 @@
     },
     {
       "sourceKey": "card/B02045",
-      "sourceDeckId": "71767296-f20a-4c5d-bb9f-94ce58234b12",
       "databaseId": "B02045",
       "cardKey": "B02045",
       "internalCardId": "0211",
@@ -1234,7 +1203,6 @@
     },
     {
       "sourceKey": "card/B02035Sec1",
-      "sourceDeckId": "71767296-f20a-4c5d-bb9f-94ce58234b12",
       "databaseId": "B02035Sec1",
       "cardKey": "B02035Sec1",
       "internalCardId": "P004",
@@ -1260,7 +1228,6 @@
     },
     {
       "sourceKey": "card/B11098",
-      "sourceDeckId": "71767296-f20a-4c5d-bb9f-94ce58234b12",
       "databaseId": "B11098",
       "cardKey": "B11098",
       "internalCardId": "1261",
