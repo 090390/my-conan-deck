@@ -151,7 +151,7 @@ function chooseTurnAction(state: any, aiId: string) {
     return { action: "partner_deduce", payload: { evidence_count: 1 } };
   }
 
-  if (!me.next_hint_used && Number(me.file_count || 0) > 0) {
+  if (me.base_action_done && !me.next_hint_used && Number(me.file_count || 0) > 0) {
     const canContinue = hand.some((card: any) => isCharacter(card)
       && cardCost(card) <= level + 1 && characterCount < 5);
     if (canContinue) return { action: "next_hint_take_file" };
