@@ -73,10 +73,10 @@ async function exists(filePath) {
 async function loadLocalApiEnv(filePath = path.resolve(".env.api.local")) {
   if (!(await exists(filePath))) return;
   const lines = await readFile(filePath, "utf8");
-  for (const rawLine of lines.split(/\\r?\\n/u)) {
+  for (const rawLine of lines.split(/\r?\n/u)) {
     const line = rawLine.trim();
     if (!line || line.startsWith("#")) continue;
-    const match = line.match(/^(?:export\\s+)?([A-Z][A-Z0-9_]*)\\s*=\\s*(.*)$/u);
+    const match = line.match(/^(?:export\s+)?([A-Z][A-Z0-9_]*)\s*=\s*(.*)$/u);
     if (!match) continue;
     const [, key] = match;
     let value = match[2].trim();
@@ -233,8 +233,8 @@ const options = parseArgs(process.argv.slice(2));
 await loadLocalApiEnv();
 if (!options.model) options.model = String(process.env.OPENAI_MODEL || "").trim();
 const apiKey = String(process.env.OPENAI_API_KEY || "").trim();
-if (!apiKey) throw new Error("OPENAI_API_KEY 환경 변수가 없습니다. 키를 저장소 파일이나 소스 코드에 넣지 마세요.");
-if (!options.model) throw new Error("OPENAI_MODEL 환경 변수 또는 --model 옵션으로 모델 이름을 지정해 주세요.");
+if (!apiKey) throw new Error("OPENAI_API_KEY가 없습니다. 로컬 .env.api.local 파일 또는 환경 변수에 설정해 주세요. 키를 소스 코드에 넣지 마세요.");
+if (!options.model) throw new Error("OPENAI_MODEL이 없습니다. 로컬 .env.api.local 파일 또는 --model 옵션으로 모델 ID를 지정해 주세요.");
 
 const inputPath = path.resolve(options.input);
 const inputText = await readFile(inputPath, "utf8");
