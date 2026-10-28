@@ -230,9 +230,6 @@ if (await exists(outputPath) && !options.overwrite) {
 if (await exists(partialPath) && !options.resume) {
   throw new Error("체크포인트 파일이 있습니다: " + partialPath + ". 이어서 하려면 --resume을 쓰거나 파일을 직접 검토한 뒤 이름을 바꾸세요.");
 }
-if (options.resume && await exists(outputPath)) {
-  throw new Error("--resume과 기존 최종 출력 파일은 함께 사용할 수 없습니다.");
-}
 
 const { data: catalog, facts } = await loadActiveCatalog();
 const dslContext = {
