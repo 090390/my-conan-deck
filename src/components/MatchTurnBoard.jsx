@@ -1157,7 +1157,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
                 </div>;
               })}
             </div>
-          </div>
+          </div>}
         </div>
 
         <div className="mock-zone-deck" style={st.panel}>
