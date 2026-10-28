@@ -993,15 +993,15 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
             <span style={{ border: "1px solid rgba(147,197,253,.25)", borderRadius: 5, padding: "4px 7px", color: C.blue, fontSize: 10 }}>내 역할: {roleText}</span>
             <span style={{ border: "1px solid rgba(255,255,255,.13)", borderRadius: 5, padding: "4px 7px", color: C.text, fontSize: 10 }}>턴 {game.turn_number} · {currentTurnRole}</span>
-            <span style={{ border: "1px solid rgba(196,181,253,.28)", borderRadius: 5, padding: "4px 7px", color: "#ddd6fe", fontSize: 10 }}>손패 내 {myHand.length}장 · 상대 {n(opponentBoard?.hand_count)}장</span>
+            <span style={{ border: "1px solid rgba(196,181,253,.28)", borderRadius: 5, padding: "4px 7px", color: "#ddd6fe", fontSize: 10 }}>손패: 나 {myHand.length}장 · 상대 {n(opponentBoard?.hand_count)}장</span>
             <span style={{ border: "1px solid rgba(255,255,255,.13)", borderRadius: 5, padding: "4px 7px", color: myBoard?.case_phase === "solution" ? C.green : C.gold, fontSize: 10 }}>{myBoard?.case_phase === "solution" ? "해결편" : "사건편"}</span>
             {game.game_over && <span style={{ border: "1px solid rgba(134,239,172,.3)", borderRadius: 5, padding: "4px 7px", color: C.green, fontSize: 10 }}>{game.winner_user_id === userId ? "승리" : "패배"}</span>}
           </div>
         </div>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-          {inviteCode && <button type="button" style={{ ...st.button, background: "#164e63", borderColor: "rgba(103,232,249,.3)" }} onClick={() => void copyRoomInviteCode()}>초대 코드 {inviteCode} · 복사</button>}
+          {!isAIBattle && inviteCode && <button type="button" style={{ ...st.button, background: "#164e63", borderColor: "rgba(103,232,249,.3)" }} onClick={() => void copyRoomInviteCode()}>초대 코드 {inviteCode} · 복사</button>}
           <button type="button" style={st.button} disabled={loading} onClick={() => void refresh()}>상태 새로고침</button>
-          <button type="button" style={{ ...st.button, background: "#7f2935", borderColor: "rgba(248,113,113,.5)", opacity: loading || game?.game_over || (Array.isArray(game?.cancel_requested_by) && game.cancel_requested_by.length > 0) ? .65 : 1 }} disabled={loading || game?.game_over || (Array.isArray(game?.cancel_requested_by) && game.cancel_requested_by.length > 0)} onClick={() => void voteToCancelMatch()}>중도 종료</button>
+          {!isAIBattle && <button type="button" style={{ ...st.button, background: "#7f2935", borderColor: "rgba(248,113,113,.5)", opacity: loading || game?.game_over || (Array.isArray(game?.cancel_requested_by) && game.cancel_requested_by.length > 0) ? .65 : 1 }} disabled={loading || game?.game_over || (Array.isArray(game?.cancel_requested_by) && game.cancel_requested_by.length > 0)} onClick={() => void voteToCancelMatch()}>중도 종료</button>}
           {onLeaveField && <button type="button" style={{ ...st.button, background: "#273244" }} onClick={onLeaveField}>전체 화면 해제</button>}
         </div>
       </header>
