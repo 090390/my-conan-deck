@@ -34,7 +34,7 @@ npm run build
 
 ## AI 생성기 사용법
 
-저장소의 초안 생성기는 OpenAI Responses API를 호출합니다. 처음 한 번 `.env.api.example`을 복사해 `.env.api.local`을 만들고, 그 파일 안에 `OPENAI_API_KEY`와 `OPENAI_MODEL`을 입력하면 됩니다. `.env.api.local`은 현재 `.gitignore`의 `.env.*.local` 패턴에 따라 Git 추적에서 제외됩니다. 이 파일을 GitHub에 올리거나 채팅으로 키를 보내지 마세요.
+저장소의 초안 생성기는 OpenAI Responses API를 호출합니다. 처음 한 번 `.env.api.example`을 복사해 `.env.api.local`을 만들고, 그 파일 안에 `OPENAI_API_KEY`와 `OPENAI_MODEL`을 입력하면 됩니다. `.env.api.local`은 현재 `.gitignore`의 `.env.*.local` 패턴에 따라 Git 추적에서 제외됩니다. 이 파일을 GitHub에 올리거나 채팅으로 키를 보내지 마세요. OpenAI API 사용 요금은 ChatGPT 구독 요금과 별도로 청구되므로, API 플랫폼에서 결제 설정과 사용 한도도 먼저 확인하세요.
 
 설정 예시 파일: `.env.api.example`. 다음 내용을 복사해 만든 `.env.api.local`에서 키 값을 직접 입력하세요. `OPENAI_MODEL`에는 API 플랫폼에서 현재 사용 가능한 모델 ID를 넣습니다. 예시의 `gpt-4.1-mini`는 시작용 예시일 뿐이며, 계정에서 사용할 수 있는 모델인지 확인해야 합니다.
 
