@@ -200,6 +200,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
 
       localStorage.removeItem(COMPLETED_GREETING_ROOM_KEY);
       localStorage.removeItem(AI_ROOM_STORAGE_KEY);
+      setIsAIBattle(false);
       setRoom({ id: result.out_room_id, inviteCode: result.out_invite_code });
       setGreetingFinished(false);
       setNotice("방이 생성되었습니다. 친구에게 초대 코드를 전달해 주세요.");
@@ -233,6 +234,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
 
       localStorage.removeItem(COMPLETED_GREETING_ROOM_KEY);
       localStorage.removeItem(AI_ROOM_STORAGE_KEY);
+      setIsAIBattle(false);
       setRoom({ id: result.out_room_id, inviteCode: code });
       setGreetingFinished(false);
       setNotice("방에 입장했습니다.");
@@ -323,6 +325,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
     localStorage.removeItem(COMPLETED_GREETING_ROOM_KEY);
       localStorage.removeItem(AI_ROOM_STORAGE_KEY);
     setRoom(null);
+    setIsAIBattle(false);
     setPlayers([]);
     setReadyDeckSignature("");
     setMatchPhase("waiting");
@@ -367,7 +370,9 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
       localStorage.removeItem(ACTIVE_ROOM_STORAGE_KEY);
       localStorage.removeItem(COMPLETED_GREETING_ROOM_KEY);
       localStorage.removeItem(AI_ROOM_STORAGE_KEY);
+      setIsAIBattle(false);
       setRoom(null);
+      setIsAIBattle(false);
       setPlayers([]);
       setReadyDeckSignature("");
       setMatchPhase("waiting");
