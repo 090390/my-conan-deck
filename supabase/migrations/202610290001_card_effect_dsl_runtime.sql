@@ -38,10 +38,10 @@ RETURNS text LANGUAGE sql IMMUTABLE
 SET search_path TO 'pg_catalog'
 AS $function$
   SELECT CASE
-    WHEN v ~ '^\\d+$' THEN coalesce(nullif(ltrim(v, '0'), ''), '0')
+    WHEN v ~ '^[0-9]+$' THEN coalesce(nullif(ltrim(v, '0'), ''), '0')
     ELSE v
   END
-  FROM (SELECT regexp_replace(upper(trim(coalesce(p_value, ''))), '^ID\\s*:\\s*', '') AS v) n
+  FROM (SELECT regexp_replace(upper(trim(coalesce(p_value, ''))), '^ID[[:space:]]*:[[:space:]]*', '') AS v) n
 $function$;
 
 CREATE OR REPLACE FUNCTION public.private_card_effect_matches_id_v1(p_card jsonb, p_card_ids jsonb)
