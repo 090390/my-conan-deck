@@ -324,10 +324,36 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
       || pending.next_responder_user_id === battle.ai_user_id
       || (pending.type === "culprits_crime_reveal" && pending.initiator_user_id === battle.ai_user_id)
       || (pending.type === "evidence_attack_reveal" && pending.attacker_user_id === battle.ai_user_id)
+      || pending.chooser_user_id === battle.ai_user_id
     ));
     if (state.current_turn_user_id !== battle.ai_user_id && !aiMustRespond) return { is_ai: true, actions: [] };
 
-    const decision = chooseTurnAction(state, battle.ai_user_id, battle.last_next_hint_turn_number);
+    let decision: any = null;
+    if (pending?.chooser_user_id === battle.ai_user_id && String(pending?.type || "").startsWith("card_effect_")) {
+      if (pending.type === "card_effect_selection" || pending.type === "card_effect_order") {
+        const { data: effectOptions, error: optionsError } = await service.rpc("get_private_card_effect_options_for_ai_v1", {
+          p_room_id: roomId, p_ai_user_id: battle.ai_user_id,
+        });
+        if (optionsError) throw optionsError;
+        const options = Array.isArray(effectOptions?.options) ? effectOptions.options : [];
+        const ids = options.map((option: any) => String(option?.instance_id || option?.card?.instance_id || "")).filter(Boolean);
+        if (pending.type === "card_effect_order") {
+          decision = { action: "card_effect_continue", payload: { selected_instance_ids: ids } };
+        } else {
+          const min = Math.max(0, Number(pending.min || 0));
+          const max = Math.max(0, Number(pending.max || 1));
+          const take = Math.min(max, Math.max(min, Math.min(1, ids.length)));
+          decision = { action: "card_effect_continue", payload: { selected_instance_ids: ids.slice(0, take) } };
+        }
+      } else if (pending.type === "card_effect_reveal_ack" || pending.type === "card_effect_reveal_sequence") {
+        decision = { action: "card_effect_continue", payload: { decision: "acknowledge" } };
+      } else if (pending.type === "card_effect_reaction") {
+        const choices = Array.isArray(pending.choices) ? pending.choices : [];
+        const choice = choices.includes("pass") ? "pass" : choices[0];
+        if (choice) decision = { action: "card_effect_continue", payload: { choice } };
+      }
+    }
+    if (!decision) decision = chooseTurnAction(state, battle.ai_user_id, battle.last_next_hint_turn_number);
     if (!decision) return { is_ai: true, actions: [] };
     const message = describeAction(decision, state, battle.ai_user_id);
     let { error: actionError } = await service.rpc("perform_private_ai_turn_action_v1", {
