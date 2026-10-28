@@ -44,6 +44,33 @@ function getCardTraits(card) {
   }))];
 }
 
+const COLOR_ORDER = ["청", "적", "황", "녹", "흑", "백"];
+const COLOR_ALIASES = [
+  ["청", ["청", "파랑", "파란색", "파랑색", "푸른색", "青色", "青", "ブルー", "blue"]],
+  ["적", ["적", "빨강", "빨간색", "빨강색", "赤色", "赤", "レッド", "red"]],
+  ["황", ["황", "노랑", "노란색", "노랑색", "黄色", "黄", "イエロー", "yellow"]],
+  ["녹", ["녹", "녹색", "초록", "초록색", "緑色", "緑", "グリーン", "green"]],
+  ["흑", ["흑", "검정", "검정색", "검은색", "黒色", "黒", "黑", "ブラック", "black"]],
+  ["백", ["백", "흰색", "하양", "하얀색", "白色", "白", "ホワイト", "white"]],
+].flatMap(([tag, aliases]) => aliases.map((alias) => ({ tag, alias: alias.toLocaleLowerCase() })))
+ .sort((a, b) => b.alias.length - a.alias.length);
+function getCardColorKey(card) {
+  const raw = card?.color ?? card?.sourceData?.color ?? card?.sourceData?.colour ?? card?.raw?.color ?? "";
+  let remaining = String(raw).trim().toLocaleLowerCase()
+    .replace(/[【】［］\[\]()（）]/gu, "")
+    .replace(/[\s,，、/&＋+・·|｜]/gu, "");
+  if (!remaining) return "";
+  const tags = [];
+  while (remaining) {
+    const match = COLOR_ALIASES.find((entry) => remaining.startsWith(entry.alias));
+    if (!match) return "";
+    tags.push(match.tag);
+    remaining = remaining.slice(match.alias.length);
+  }
+  const unique = new Set(tags);
+  return COLOR_ORDER.filter((tag) => unique.has(tag)).join("");
+}
+
 export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", cards = [], onGameFieldChange }) {
   const [inviteCodeInput, setInviteCodeInput] = useState("");
   const [room, setRoom] = useState(null);
@@ -450,6 +477,8 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
   }, [room?.id, myPlayer?.is_ready, readyDeckSignature, deckSignature]);
 
   function makePrivateDeckPayload() {
+    const eventCard = cardsByKey.get(String(eventId));
+    const eventColorKey = getCardColorKey(eventCard);
     return Object.entries(deck || {})
       .map(([key, rawCount]) => {
         const count = Math.floor(Number(rawCount) || 0);
@@ -474,6 +503,10 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
           : 0;
         return {
           key: String(key), count, limit_key: identity, card_type: cardType,
+          name: String(card?.name || card?.originalName || card?.cardId || key),
+          color: String(card?.color ?? card?.sourceData?.color ?? card?.raw?.color ?? ""),
+          color_key: getCardColorKey(card),
+          event_color_key: eventColorKey,
           copy_limit_exemption_id: getCopyLimitExemptionId(card, key),
           card_id: String(card?.cardId || card?.sourceData?.card_id || ""),
           card_num: String(card?.cardNum || card?.sourceData?.card_num || ""),
