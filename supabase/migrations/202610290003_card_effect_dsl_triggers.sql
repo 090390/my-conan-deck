@@ -173,6 +173,7 @@ BEGIN
    RAISE EXCEPTION '카드 효과의 선택 후보는 지정된 선택자만 볼 수 있습니다.';
  END IF;
  RETURN jsonb_build_object('options',coalesce(v_run.waiting->'options','[]'::jsonb),
+   'display_options',coalesce(v_run.waiting->'display_options','[]'::jsonb),
    'kind',v_run.waiting->>'kind','prompt',v_run.waiting->>'prompt');
 END
 $function$;
