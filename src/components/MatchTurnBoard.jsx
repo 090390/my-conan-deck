@@ -265,8 +265,9 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
     aiStepBusyRef.current = true;
     let active = true;
     (async () => {
+      let refreshAfterAction = false;
       try {
-        // 각 행동의 메시지가 화면에 머물 수 있도록 다음 판단 전 2.5초 쉬어 갑니다.
+        // Keep each announcement visible for about 2.5 seconds before the next decision.
         setAiIsWaiting(true);
         await new Promise((resolve) => window.setTimeout(resolve, 2500));
         if (!active) return;
@@ -282,7 +283,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
           setError(data.message || "AI의 행동이 규칙 검사에서 거부되었습니다. 진행 상태를 확인해 주세요.");
         } else if (Array.isArray(data?.actions) && data.actions.length > 0) {
           setError("");
-          await refresh();
+          refreshAfterAction = true;
         }
       } catch (err) {
         if (active) {
@@ -291,8 +292,16 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
           setError(message);
         }
       } finally {
+        // Release the lock before refreshing: the new game-state effect can then schedule the next step.
         aiStepBusyRef.current = false;
         if (active) setAiIsWaiting(false);
+      }
+      if (active && refreshAfterAction) {
+        try {
+          await refresh();
+        } catch (err) {
+          if (active) setError(err?.message || "AI 행동 후 게임 상태를 새로고침하지 못했습니다.");
+        }
       }
     })();
     return () => { active = false; };
