@@ -16,6 +16,7 @@ export default function MatchStartFlow({
   players = [],
   cards = [],
   inviteCode = "",
+  isAIBattle = false,
   onReturnToLobby = null,
   onPhaseChange = () => {},
 }) {
@@ -130,6 +131,12 @@ export default function MatchStartFlow({
       });
       if (rpcError) throw rpcError;
       setSelectedInstanceIds([]);
+      if (isAIBattle) {
+        const { error: aiError } = await supabase.functions.invoke("ai-battle", {
+          body: { action: "step", room_id: roomId },
+        });
+        if (aiError) throw aiError;
+      }
       setNotice("멀리건 선택을 확정했습니다.");
     });
   }

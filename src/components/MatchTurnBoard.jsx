@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 
 const C = {
@@ -90,7 +90,7 @@ function cardHasCulpritTrait(card) {
   });
 }
 
-export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode = "", onLeaveField = null, onReturnToLobby = null }) {
+export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode = "", isAIBattle = false, onLeaveField = null, onReturnToLobby = null }) {
   const [game, setGame] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -122,6 +122,8 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   const [showActionLog, setShowActionLog] = useState(false);
   const [loadingActionLog, setLoadingActionLog] = useState(false);
   const [actionLogError, setActionLogError] = useState("");
+  const aiStepBusyRef = useRef(false);
+  const aiStepSignatureRef = useRef("");
 
   useEffect(() => {
     setLocalBaseCardPlayLocked(false);
@@ -246,6 +248,40 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
       });
     return () => { active = false; void supabase.removeChannel(channel); };
   }, [roomId]);
+
+  useEffect(() => {
+    if (!isAIBattle || !roomId || !game || game.game_over || aiStepBusyRef.current) return;
+    const pendingAction = game.pending_action || null;
+    const signature = [
+      game.state_version, game.current_turn_user_id, game.turn_number, game.turn_step,
+      pendingAction?.type, pendingAction?.target_user_id, pendingAction?.next_responder_user_id,
+      pendingAction?.attacker_cut_in_used, pendingAction?.target_cut_in_used,
+      pendingAction?.acknowledged_user_ids?.length,
+    ].join("|");
+    if (aiStepSignatureRef.current === signature) return;
+    aiStepSignatureRef.current = signature;
+    aiStepBusyRef.current = true;
+    let active = true;
+    (async () => {
+      try {
+        const { data, error: aiError } = await supabase.functions.invoke("ai-battle", {
+          body: { action: "step", room_id: roomId },
+        });
+        if (aiError) throw aiError;
+        if (active && data?.is_ai && Array.isArray(data.actions) && data.actions.length > 0) {
+          await refresh();
+        }
+      } catch (err) {
+        if (active) setError(err?.message || "AI의 다음 행동을 처리하지 못했습니다.");
+      } finally {
+        aiStepBusyRef.current = false;
+      }
+    })();
+    return () => { active = false; };
+  }, [
+    isAIBattle, roomId, game?.state_version, game?.current_turn_user_id, game?.turn_number,
+    game?.turn_step, game?.pending_action, game?.game_over, refresh,
+  ]);
 
   const runAction = useCallback(async (action, payload = {}) => {
     if (loading) return false;

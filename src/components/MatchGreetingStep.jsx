@@ -3,7 +3,7 @@ import { supabase } from "../lib/supabase";
 
 const DEFAULT_GREETING = "안녕하세요. 이번 게임 잘 부탁드리겠습니다.";
 
-export default function MatchGreetingStep({ roomId, userId, players = [], onComplete = () => {} }) {
+export default function MatchGreetingStep({ roomId, userId, players = [], isAIBattle = false, onComplete = () => {} }) {
   const [greeting, setGreeting] = useState(null);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -54,6 +54,23 @@ export default function MatchGreetingStep({ roomId, userId, players = [], onComp
   }, [roomId]);
 
   useEffect(() => {
+    if (!isAIBattle || !roomId) return undefined;
+    let active = true;
+    (async () => {
+      try {
+        const { error: aiError } = await supabase.functions.invoke("ai-battle", {
+          body: { action: "step", room_id: roomId },
+        });
+        if (aiError) throw aiError;
+        if (active) await refreshGreeting();
+      } catch (err) {
+        if (active) setError(err?.message || "AI 상대의 인사 처리를 불러오지 못했습니다.");
+      }
+    })();
+    return () => { active = false; };
+  }, [isAIBattle, roomId, refreshGreeting]);
+
+  useEffect(() => {
     if (greeting?.is_ready_for_review) setShowBubbles(true);
     if (!greeting?.is_complete) return;
     const signature = [greeting.seat1_message, greeting.seat2_message, greeting.completed_at].join("|");
@@ -76,6 +93,12 @@ export default function MatchGreetingStep({ roomId, userId, players = [], onComp
       if (rpcError) throw rpcError;
       setGreeting(data && typeof data === "object" ? data : null);
       setSubmitted(true);
+      if (isAIBattle) {
+        const { error: aiError } = await supabase.functions.invoke("ai-battle", {
+          body: { action: "step", room_id: roomId },
+        });
+        if (aiError) throw aiError;
+      }
       await refreshGreeting();
     } catch (err) {
       setError(err?.message || "인사말을 전송하지 못했습니다.");
@@ -94,6 +117,13 @@ export default function MatchGreetingStep({ roomId, userId, players = [], onComp
       });
       if (rpcError) throw rpcError;
       setGreeting(data && typeof data === "object" ? data : null);
+      if (isAIBattle) {
+        const { error: aiError } = await supabase.functions.invoke("ai-battle", {
+          body: { action: "step", room_id: roomId },
+        });
+        if (aiError) throw aiError;
+      }
+      await refreshGreeting();
     } catch (err) {
       setError(err?.message || "인사말 확인을 처리하지 못했습니다.");
     } finally {
