@@ -478,7 +478,7 @@ BEGIN
     IF position('shuffle_deck' in v_definition)=0 THEN
       RAISE EXCEPTION 'AI action allow-list tail not found; refusing partial card effect integration';
     END IF;
-    v_definition := replace(v_definition, 'shuffle_deck', 'shuffle_deck','card_effect_continue');
+    v_definition := replace(v_definition, '''shuffle_deck''', '''shuffle_deck'',''card_effect_continue''');
   END IF;
   EXECUTE v_definition;
 END
