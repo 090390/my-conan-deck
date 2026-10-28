@@ -16,7 +16,8 @@
     "sync:cards": "npm run scrape:cards && npm run translate:cards",
     "sync:cards:local-images": "npm run scrape:cards:local-images && npm run translate:cards",
     "validate:card-effects": "node scripts/validate-card-effects.mjs",
-    "validate:card-effect-drafts": "node scripts/validate-card-effect-drafts.mjs --input supabase/seed/card_effect_review_batches/20261029-matsuda-bakuchung-deck-review.json"
+    "validate:card-effect-drafts": "node scripts/validate-card-effect-drafts.mjs",
+    "generate:card-effect-drafts": "node scripts/generate-card-effect-drafts.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.3",
