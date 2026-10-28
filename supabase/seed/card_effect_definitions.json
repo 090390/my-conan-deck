@@ -367,7 +367,8 @@
             "value": 0
           }
         }
-      ]
+      ],
+      "activationLabelKo": "질풍 조건부 슬립·리무브"
     },
     {
       "effectId": "card-1013-opponent-turn-field-remove",
@@ -475,7 +476,8 @@
       "afterResolve": {
         "note": "선택한 카드가 없으면 손패 이동과 추가 리무브는 건너뜁니다.",
         "removeHandOnlyIfSelectedCardLevelAtLeast": 8
-      }
+      },
+      "activationLabelKo": "상대 턴 현장 리무브 효과"
     },
     {
       "effectId": "card-0636-on-enter-search-shinichi",
@@ -715,7 +717,8 @@
             "value": 0
           }
         }
-      ]
+      ],
+      "activationLabelKo": "레벨 7 이하 캐릭터 리무브"
     },
     {
       "effectId": "card-0501-continuous-bond-yamato-ap",
@@ -1060,7 +1063,8 @@
             "value": 0
           }
         }
-      ]
+      ],
+      "activationLabelKo": "파트너 황 · 슬립 리무브"
     },
     {
       "effectId": "card-1010-end-turn-ready-haya-users",
