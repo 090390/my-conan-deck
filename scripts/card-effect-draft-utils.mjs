@@ -67,8 +67,8 @@ export function validateDslDefinition(def, expectedCardId, knownFacts = new Set(
   need(object(def), "정의는 객체여야 합니다.");
   if (!object(def)) return errors;
   need(typeof def.effectId === "string" && def.effectId.length > 0, "effectId가 필요합니다.");
-  need(Array.isArray(def.cardIds) && def.cardIds.length > 0 && def.cardIds.every((id) => typeof id === "string" && /^\\d{4}$/.test(id)), "cardIds는 네 자리 문자열 배열이어야 합니다.");
-  if (expectedCardId && /^\\d{4}$/.test(expectedCardId)) need(def.cardIds?.includes(expectedCardId), `cardIds에 내부 ID ${expectedCardId}가 포함되어야 합니다.`);
+  need(Array.isArray(def.cardIds) && def.cardIds.length > 0 && def.cardIds.every((id) => typeof id === "string" && /^\d{4}$/.test(id)), "cardIds는 네 자리 문자열 배열이어야 합니다.");
+  if (expectedCardId && /^\d{4}$/.test(expectedCardId)) need(def.cardIds?.includes(expectedCardId), `cardIds에 내부 ID ${expectedCardId}가 포함되어야 합니다.`);
   need(object(def.trigger) && ALLOWED_EVENTS.has(def.trigger.event), `지원하지 않는 trigger.event: ${String(def.trigger?.event)}`);
   need(object(def.trigger) && ["immediate", "after", "continuous"].includes(def.trigger.timing), `지원하지 않는 trigger.timing: ${String(def.trigger?.timing)}`);
   need(Array.isArray(def.conditions ?? []), "conditions는 배열이어야 합니다.");
