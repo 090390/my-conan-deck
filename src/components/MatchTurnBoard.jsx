@@ -274,7 +274,6 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
         pendingAction.target_user_id === aiBoard.user_id
         || pendingAction.next_responder_user_id === aiBoard.user_id
         || (pendingAction.type === "culprits_crime_reveal" && pendingAction.initiator_user_id === aiBoard.user_id)
-        || (pendingAction.type === "evidence_attack_reveal" && pendingAction.attacker_user_id === aiBoard.user_id)
         || pendingAction.chooser_user_id === aiBoard.user_id
       ));
       return state.current_turn_user_id === aiBoard.user_id || aiMustRespond;
@@ -994,6 +993,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
             <span style={{ border: "1px solid rgba(147,197,253,.25)", borderRadius: 5, padding: "4px 7px", color: C.blue, fontSize: 10 }}>내 역할: {roleText}</span>
             <span style={{ border: "1px solid rgba(255,255,255,.13)", borderRadius: 5, padding: "4px 7px", color: C.text, fontSize: 10 }}>턴 {game.turn_number} · {currentTurnRole}</span>
+            <span style={{ border: "1px solid rgba(196,181,253,.28)", borderRadius: 5, padding: "4px 7px", color: "#ddd6fe", fontSize: 10 }}>손패 내 {myHand.length}장 · 상대 {n(opponentBoard?.hand_count)}장</span>
             <span style={{ border: "1px solid rgba(255,255,255,.13)", borderRadius: 5, padding: "4px 7px", color: myBoard?.case_phase === "solution" ? C.green : C.gold, fontSize: 10 }}>{myBoard?.case_phase === "solution" ? "해결편" : "사건편"}</span>
             {game.game_over && <span style={{ border: "1px solid rgba(134,239,172,.3)", borderRadius: 5, padding: "4px 7px", color: C.green, fontSize: 10 }}>{game.winner_user_id === userId ? "승리" : "패배"}</span>}
           </div>
@@ -1486,6 +1486,16 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 9 }}>
             {[{ title: "공격자", board: contactAttackerBoard, card: contactAttackerCard, ap: n(pending.attacker_ap) + n(pending.attacker_bonus) }, { title: "수비자", board: contactTargetBoard, card: contactTargetCard, ap: n(pending.target_ap) + n(pending.target_bonus) }].map((entry) => <div key={entry.title} style={{ padding: 8, border: "1px solid rgba(255,255,255,.1)", borderRadius: 8, background: "#080d16", minWidth: 0 }}><div style={{ fontSize: 9, color: C.muted }}>{entry.title} · {entry.board?.display_name || "플레이어"}</div>{entry.card && <button type="button" onClick={() => openDetails(entry.card)} style={{ display: "block", width: "100%", padding: 0, marginTop: 6, border: 0, background: "transparent", color: C.text }}>{infoFor(entry.card)?.imageUrl ? <img src={infoFor(entry.card).imageUrl} alt={nameOf(entry.card)} style={{ width: "100%", maxHeight: 175, aspectRatio: "3/4", objectFit: "contain" }} /> : <div style={st.faceDown} />}<span style={{ display: "block", fontSize: 10, marginTop: 5, overflowWrap: "anywhere" }}>{nameOf(entry.card)}</span></button>}<strong style={{ display: "block", marginTop: 8, fontSize: 16 }}>AP {entry.ap}</strong></div>)}
           </div>
+          <div aria-label="양쪽 플레이어의 증거·파일·손패 개수" style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 7, marginTop: 9 }}>
+            {[{ label: "내 상태", board: myBoard, handCount: myHand.length }, { label: "상대 상태", board: opponentBoard, handCount: n(opponentBoard?.hand_count) }].map((entry) => (
+              <div key={entry.label} style={{ minWidth: 0, display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", gap: 5, padding: 8, border: "1px solid rgba(148,163,184,.16)", borderRadius: 7, background: "#080d16" }}>
+                <strong style={{ gridColumn: "1 / -1", fontSize: 9, color: entry.label === "내 상태" ? C.blue : C.gold }}>{entry.label} · {entry.board?.display_name || (entry.label === "내 상태" ? "나" : "상대")}</strong>
+                <span style={{ fontSize: 9, color: C.muted }}>증거 <b style={{ color: C.text }}>{n(entry.board?.evidence_count)}장</b></span>
+                <span style={{ fontSize: 9, color: C.muted }}>파일 <b style={{ color: C.text }}>{n(entry.board?.file_count)}장</b></span>
+                <span style={{ fontSize: 9, color: C.muted }}>손패 <b style={{ color: C.text }}>{entry.handCount}장</b></span>
+              </div>
+            ))}
+          </div>
           {pending.next_responder_user_id === userId ? <><p style={{ fontSize: 11, color: C.gold, margin: "12px 0 7px" }}>{userId === pending.target_user_id ? "현재 순서: 수비자 · 컷인 사용 여부를 선택해 주세요." : "현재 순서: 공격자 · 컷인 사용 여부를 선택해 주세요."}</p><div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6, marginBottom: 8, padding: 8, border: "1px solid rgba(96,165,250,.28)", borderRadius: 8, background: "rgba(30,58,95,.22)" }}><span style={{ fontSize: 10, color: "#bfdbfe", fontWeight: 800, marginRight: 3 }}>컨택 AP 수동 조정 · 컷인과 별도</span><button type="button" style={{ ...st.smallButton, background: "#1d4ed8" }} disabled={loading} onClick={() => { const raw = window.prompt("본인 컨택 카드에 더할 AP를 입력하세요. (예: 1000)", "1000"); if (raw === null) return; const amount = Math.abs(Number(String(raw).replace(/[,，\s]/gu, ""))); if (!Number.isSafeInteger(amount) || amount < 1 || amount > 100000) { setError("AP 변화량은 1~100000 사이의 정수로 입력해 주세요."); return; } void runAction("contact_adjust_ap", { amount }); }}>AP +N</button><button type="button" style={{ ...st.smallButton, background: "#374151" }} disabled={loading} onClick={() => { const raw = window.prompt("본인 컨택 카드에서 뺄 AP를 입력하세요. (예: 1000)", "1000"); if (raw === null) return; const amount = Math.abs(Number(String(raw).replace(/[,，\s]/gu, ""))); if (!Number.isSafeInteger(amount) || amount < 1 || amount > 100000) { setError("AP 변화량은 1~100000 사이의 정수로 입력해 주세요."); return; } void runAction("contact_adjust_ap", { amount: -amount }); }}>AP −N</button></div><div style={{ display: "grid", gap: 6 }}>{myHand.filter((card) => n(card.cut_in_bonus) > 0 || Boolean(String(infoFor(card)?.cutInEffect || card.cut_in_effect || "").trim())).map((card) => {
             const effectText = String(infoFor(card)?.cutInEffect || card.cut_in_effect || "").trim();
             const cardInfo = infoFor(card);
@@ -1585,6 +1595,31 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
           <div style={{ padding: 12, overflowY: "auto" }}>{opponentDeckGroups.map((group) => group.cards.length > 0 && <section key={group.key} style={{ marginBottom: 15 }}><header style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, marginBottom: 8, paddingBottom: 6, borderBottom: "1px solid rgba(255,255,255,.1)" }}><h3 style={{ margin: 0, color: group.key === "event" ? C.gold : C.blue, fontSize: 12, fontWeight: 900 }}>{group.label}</h3><span style={st.muted}>{group.cards.length}장 · 레벨 높은 순</span></header><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(95px,1fr))", gap: 7 }}>{group.cards.map((card, index) => <button key={`${card.instance_id || card.key}-${index}`} type="button" onClick={() => openDetails(card)} style={{ minWidth: 0, padding: 6, border: "1px solid rgba(255,255,255,.1)", borderRadius: 7, background: "#080d16", color: C.text, textAlign: "left" }}>{infoFor(card)?.imageUrl ? <img src={infoFor(card).imageUrl} alt={nameOf(card)} style={{ width: "100%", aspectRatio: "3/4", objectFit: "contain" }} /> : <div style={st.faceDown} />}<span style={{ display: "block", marginTop: 4, fontSize: 9, fontWeight: 800, lineHeight: 1.3, overflowWrap: "anywhere" }}>{nameOf(card)}</span><span style={{ display: "block", marginTop: 3, color: C.muted, fontSize: 8 }}>레벨 {card.cost ?? infoFor(card)?.cost ?? "-"}</span></button>)}</div></section>)}</div>
         </section>
       </div>}
+
+      {isAIBattle && onReturnToLobby && <button
+        type="button"
+        aria-label="AI 대전을 강제 종료하고 로비로 돌아가기"
+        title="어떤 모달이 열려 있어도 AI 대전을 종료하고 로비로 돌아갑니다."
+        onClick={() => {
+          aiMountedRef.current = false;
+          onReturnToLobby();
+        }}
+        style={{
+          position: "fixed",
+          top: "max(12px, env(safe-area-inset-top, 0px))",
+          right: "max(12px, env(safe-area-inset-right, 0px))",
+          zIndex: 2147483647,
+          padding: "10px 13px",
+          border: "1px solid rgba(254,202,202,.9)",
+          borderRadius: 9,
+          background: "rgba(127,29,29,.98)",
+          color: "#fff",
+          fontSize: 12,
+          fontWeight: 950,
+          boxShadow: "0 5px 24px rgba(0,0,0,.75)",
+          cursor: "pointer",
+        }}
+      >강제 종료</button>}
     </main>
   );
 }
