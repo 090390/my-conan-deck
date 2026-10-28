@@ -295,7 +295,7 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
     if (requestedBy.includes(humanId)) {
       const { error } = await service.rpc("respond_private_ai_cancel_v1", { p_room_id: roomId });
       if (error) throw error;
-      return { is_ai: true, actions: ["respond_private_ai_cancel_v1"], message: "AI 탐정: 중도 종료 제안을 확인하고 게임을 종료하겠습니다." };
+      return { is_ai: true, actions: ["respond_private_ai_cancel_v1"], message: "AI 탐정: 중도 종료 제안을 확인하고 게임을 종료했습니다." };
     }
 
     if (state.phase === "mulligan") {
@@ -311,8 +311,8 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
           is_ai: true,
           actions: ["submit_private_ai_mulligan"],
           message: returnedNames.length
-            ? `AI 탐정: 시작 손패를 살펴보고 ${returnedNames.join(", ")}을 덱에 돌려보내 멀리건하겠습니다.`
-            : "AI 탐정: 시작 손패를 검토했습니다. 이번에는 멀리건하지 않고 그대로 시작하겠습니다.",
+            ? `AI 탐정: 시작 손패를 검토해 ${returnedNames.join(", ")}을 덱에 돌려보내 멀리건했습니다.`
+            : "AI 탐정: 시작 손패를 검토한 결과, 멀리건하지 않고 그대로 시작했습니다.",
         };
       }
       return { is_ai: true, actions: [] };
@@ -346,7 +346,7 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
         p_room_id: roomId, p_action: "end_turn", p_payload: {},
       });
       if (!fallback.error) {
-        return { is_ai: true, actions: ["end_turn"], message: "AI 탐정: 넥스트 힌트의 후속 전개를 안전하게 진행할 수 없어, 파일을 더 소모하지 않고 턴을 종료하겠습니다." };
+        return { is_ai: true, actions: ["end_turn"], message: "AI 탐정: 넥스트 힌트의 후속 전개를 안전하게 진행할 수 없어 파일을 더 소모하지 않고 턴을 종료했습니다." };
       }
       actionError = fallback.error;
     } else if (actionError && decision.action === "next_hint") {
@@ -354,7 +354,7 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
         p_room_id: roomId, p_action: "cancel_next_hint", p_payload: {},
       });
       if (!fallback.error) {
-        return { is_ai: true, actions: ["cancel_next_hint"], message: "AI 탐정: 넥스트 힌트로 가져온 카드의 등장이 처리되지 않아 응급 취소로 진행을 복구하겠습니다." };
+        return { is_ai: true, actions: ["cancel_next_hint"], message: "AI 탐정: 넥스트 힌트로 가져온 카드의 등장이 처리되지 않아 응급 취소로 진행을 복구했습니다." };
       }
       actionError = fallback.error;
     }
