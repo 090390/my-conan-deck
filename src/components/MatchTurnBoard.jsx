@@ -330,7 +330,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
           const newFieldIds = new Set((newBoard?.field_cards || []).map((card) => String(card.instance_id)));
           for (const card of oldBoard.field_cards || []) {
             const rarity = String(card.rarity || card.rarity_code || card.rarityCode || card.sourceData?.rarity || card.raw?.rarity || cardsByKey.get(String(card.key))?.rarity || "").trim().toUpperCase();
-            if (action !== "contact_use_disguise" && ["MR", "MRP"].includes(rarity) && card.instance_id && !newFieldIds.has(String(card.instance_id))) {
+            if (["MR", "MRP"].includes(rarity) && card.instance_id && !newFieldIds.has(String(card.instance_id))) {
               // The server helper requires rarity on the card object; pass the resolved, normalized rarity.
               departedMrs.push({ owner_user_id: oldBoard.user_id, card: { ...card, rarity } });
             }
