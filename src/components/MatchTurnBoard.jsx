@@ -302,8 +302,26 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
       if (rpcError) throw rpcError;
       let updatedGame = data && typeof data === "object" ? data : null;
       const oldBoards = Array.isArray(game?.boards) ? game.boards : [];
-      const newBoards = Array.isArray(updatedGame?.boards) ? updatedGame.boards : [];
+      let newBoards = Array.isArray(updatedGame?.boards) ? updatedGame.boards : [];
       if (updatedGame) {
+        const departedAttachments = oldBoards.some((oldBoard) => {
+          const nextBoard = newBoards.find((board) => board.user_id === oldBoard.user_id);
+          const nextIds = new Set((nextBoard?.field_cards || []).map((card) => String(card.instance_id)));
+          return (oldBoard.field_cards || []).some((card) =>
+            card.instance_id &&
+            !nextIds.has(String(card.instance_id)) &&
+            ((Array.isArray(card.set_cards) && card.set_cards.length > 0) ||
+             (Array.isArray(card.stacked_cards) && card.stacked_cards.length > 0))
+          );
+        });
+        if (departedAttachments) {
+          // Deferred DB triggers split attachments after the action transaction commits.
+          const { data: freshState, error: refreshError } = await supabase.rpc("get_private_turn_state_v2", { p_room_id: roomId });
+          if (!refreshError && freshState && typeof freshState === "object") {
+            updatedGame = freshState;
+            newBoards = Array.isArray(updatedGame?.boards) ? updatedGame.boards : [];
+          }
+        }
         const departedMrs = [];
         const enteredMrs = [];
         for (const oldBoard of oldBoards) {
