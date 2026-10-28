@@ -34,16 +34,20 @@ npm run build
 
 ## AI 생성기 사용법
 
-저장소의 초안 생성기는 OpenAI Responses API를 호출합니다. 실행할 때만 로컬 환경에 `OPENAI_API_KEY`와 `OPENAI_MODEL`을 설정해야 합니다. API 키는 프런트엔드, Git에서 추적되는 파일, 커밋된 .env 파일에 저장하지 마세요.
+저장소의 초안 생성기는 OpenAI Responses API를 호출합니다. 처음 한 번 `.env.api.example`을 복사해 `.env.api.local`을 만들고, 그 파일 안에 `OPENAI_API_KEY`와 `OPENAI_MODEL`을 입력하면 됩니다. `.env.api.local`은 현재 `.gitignore`의 `.env.*.local` 패턴에 따라 Git 추적에서 제외됩니다. 이 파일을 GitHub에 올리거나 채팅으로 키를 보내지 마세요.
+
+설정 예시 파일: `.env.api.example`. 다음 내용을 복사해 만든 `.env.api.local`에서 키 값을 직접 입력하세요. `OPENAI_MODEL`에는 API 플랫폼에서 현재 사용 가능한 모델 ID를 넣습니다. 예시의 `gpt-4.1-mini`는 시작용 예시일 뿐이며, 계정에서 사용할 수 있는 모델인지 확인해야 합니다.
 
 기본 생성 명령은 카드 5장씩 요청하고 배치마다 `.partial.json` 체크포인트를 저장합니다. 연결이 끊겼다면 동일한 원본/모델/출력 경로로 `--resume`을 사용합니다.
 
-```bash
-OPENAI_API_KEY=... OPENAI_MODEL=... npm run generate:card-effect-drafts -- --input supabase/seed/card_effect_review_batches/card-effect-review-20261029-attempt-01.json --output supabase/seed/card_effect_review_batches/card-effect-review-20261029-attempt-01-ai.json
+```powershell
+Copy-Item .env.api.example .env.api.local
+notepad .env.api.local
+npm run generate:card-effect-drafts -- --input supabase/seed/card_effect_review_batches/card-effect-review-20261029-attempt-01.json --output supabase/seed/card_effect_review_batches/card-effect-review-20261029-attempt-01-ai.json
 npm run validate:card-effect-drafts -- --input supabase/seed/card_effect_review_batches/card-effect-review-20261029-attempt-01-ai.json
 ```
 
-Windows PowerShell에서는 `$env:OPENAI_API_KEY`와 `$env:OPENAI_MODEL` 환경 변수를 먼저 설정하세요. 생성기는 결과를 별도 파일로 저장하며, 입력/활성 카탈로그를 덮어쓰지 않습니다.
+생성기는 결과를 별도 파일로 저장하며, 입력/활성 카탈로그를 덮어쓰지 않습니다.
 
 ## 안전한 자동화 원칙
 
