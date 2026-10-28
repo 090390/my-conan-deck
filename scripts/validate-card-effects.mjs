@@ -20,7 +20,7 @@ const allowedOps = new Set([
   "refill_deck_from_remove_area", "peek_top_cards", "select_cards", "reveal_cards",
   "move_cards", "move_unselected_to_deck_bottom", "move_unselected_to_zone",
   "reveal_until_match", "attach_cards", "grant_keyword", "modify_stat",
-  "offer_reaction", "pay_cost", "modify_lp", "draw_cards", "gain_evidence",
+  "offer_reaction", "pay_cost", "set_mislead_value", "draw_cards", "gain_evidence",
   "ready_cards_that_used_keyword", "mark_keyword_activated", "shuffle_deck",
   "set_continuous_stat", "set_continuous_keyword",
 ]);
