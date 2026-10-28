@@ -364,7 +364,7 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
     setNotice("이전 게임을 닫았습니다. 새 방을 만들거나 초대 코드로 입장해 주세요.");
   }, []);
 
-  async function handleAIBattleStarted({ roomId, inviteCode, userId: aiHumanUserId }) {
+  async function handleAIBattleStarted({ roomId, inviteCode, userId: aiHumanUserId, aiDeckName, aiDeckComposer, initialAiMessage }) {
     localStorage.setItem(AI_ROOM_STORAGE_KEY, roomId);
     localStorage.removeItem(COMPLETED_GREETING_ROOM_KEY);
     setIsAIBattle(true);
@@ -378,7 +378,10 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
     setGreetingFinished(false);
     setShowFieldOnly(true);
     await loadPlayers(roomId);
-    setNotice("AI 대전용 방을 만들었습니다. AI 탐정과 대전을 시작할 수 있습니다.");
+    const deckInfo = aiDeckName
+      ? `AI 탐정이 공개 덱 저장소에서 ‘${aiDeckName}’ 덱${aiDeckComposer ? `(편성자: ${aiDeckComposer})` : ""}을 선택했습니다.`
+      : "AI 대전용 방을 만들었습니다.";
+    setNotice([deckInfo, initialAiMessage].filter(Boolean).join(" "));
   }
 
   async function leaveRoom() {
