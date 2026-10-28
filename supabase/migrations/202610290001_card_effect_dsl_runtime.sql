@@ -215,7 +215,7 @@ AS $function$
 DECLARE
  v_match public.room_match_states%rowtype; v_game public.room_player_game_states%rowtype;
  v_board public.room_player_turn_boards%rowtype; v_other_game public.room_player_game_states%rowtype;
- v_cards jsonb; v_result jsonb; v_kw text; v_path text[];
+ v_cards jsonb; v_result jsonb; v_kw text; v_path text[]; v_bool boolean;
 BEGIN
  SELECT * INTO v_match FROM public.room_match_states WHERE room_id=p_room_id;
  SELECT * INTO v_game FROM public.room_player_game_states WHERE room_id=p_room_id AND user_id=p_actor;
@@ -245,8 +245,8 @@ BEGIN
    SELECT EXISTS(
      SELECT 1 FROM jsonb_array_elements(coalesce(v_board.field_cards,'[]'::jsonb)) e(value)
      WHERE public.private_card_effect_has_keyword_v1(e.value,v_kw)
-   ) INTO v_result;
-   RETURN to_jsonb(coalesce(v_result::text,'false')::boolean);
+   ) INTO v_bool;
+   RETURN to_jsonb(v_bool);
  END IF;
  IF p_fact LIKE 'vars.%' THEN
    v_path := string_to_array(substr(p_fact,6),'.');
@@ -278,7 +278,7 @@ SET search_path TO 'pg_catalog', 'public'
 AS $function$
 DECLARE
  v_fact text:=p_condition->>'fact'; v_op text:=p_condition->>'operator';
- v_actual jsonb; v_expected jsonb; v_match public.room_match_states%rowtype;
+ v_actual jsonb; v_expected jsonb; v_match public.room_match_states%rowtype; v_bool boolean;
  v_board public.room_player_turn_boards%rowtype; v_game public.room_player_game_states%rowtype;
  v_count integer; v_expected_name text; v_card jsonb; v_trait text; v_typ text;
 BEGIN
@@ -290,8 +290,8 @@ BEGIN
  IF v_fact='player.field.has_card_name' THEN
    SELECT * INTO v_board FROM public.room_player_turn_boards WHERE room_id=p_room_id AND user_id=p_actor;
    SELECT EXISTS(SELECT 1 FROM jsonb_array_elements(coalesce(v_board.field_cards,'[]'::jsonb)) e(value)
-      WHERE public.private_card_effect_name_matches_v1(e.value,trim(both '"' from v_expected::text))) INTO v_actual;
-   v_actual:=to_jsonb(v_actual);
+      WHERE public.private_card_effect_name_matches_v1(e.value,trim(both '"' from v_expected::text))) INTO v_bool;
+   v_actual:=to_jsonb(v_bool);
  ELSIF v_fact='player.remove_area.count_matching_trait' THEN
    SELECT * INTO v_game FROM public.room_player_game_states WHERE room_id=p_room_id AND user_id=p_actor;
    v_trait:=coalesce(p_condition->>'trait','');
@@ -584,3 +584,24 @@ BEGIN
  RETURN v_out;
 END
 $function$;
+
+REVOKE ALL ON FUNCTION public.private_card_effect_normalize_id_v1(text) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.private_card_effect_matches_id_v1(jsonb,jsonb) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.private_card_effect_level_v1(jsonb) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.private_card_effect_color_v1(jsonb) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.private_card_effect_name_v1(jsonb) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.private_card_effect_name_matches_v1(jsonb,text) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.private_card_effect_has_keyword_v1(jsonb,text) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.private_card_effect_has_trait_v1(jsonb,text) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.private_card_effect_is_character_v1(jsonb) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.private_card_effect_is_active_v1(jsonb) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.private_card_effect_partner_color_v1(uuid,uuid) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.private_card_effect_fact_v1(uuid,uuid,uuid,jsonb,jsonb,jsonb,text) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.private_card_effect_condition_matches_v1(uuid,uuid,uuid,jsonb,jsonb,jsonb,jsonb) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.private_card_effect_conditions_match_v1(uuid,uuid,uuid,jsonb,jsonb,jsonb,jsonb) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.private_card_effect_filter_matches_v1(uuid,jsonb,uuid,uuid,jsonb) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.private_card_effect_get_card_v1(uuid,uuid,text) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.private_card_effect_patch_card_v1(uuid,uuid,text,jsonb) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.private_card_effect_remove_from_array_v1(jsonb,text) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.private_card_effect_move_card_v1(uuid,uuid,text,jsonb,text,uuid) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.private_card_effect_get_candidates_v1(uuid,uuid,uuid,text,jsonb,text,text,jsonb) FROM PUBLIC, anon, authenticated;
