@@ -1,0 +1,48 @@
+name: Card effect draft validation
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "supabase/seed/card_effect_review_batches/**"
+      - "supabase/seed/card_effect_definitions.json"
+      - "scripts/card-effect-draft-utils.mjs"
+      - "scripts/validate-card-effect-drafts.mjs"
+      - "scripts/validate-card-effects.mjs"
+      - "package.json"
+      - ".github/workflows/card-effect-draft-validation.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "supabase/seed/card_effect_review_batches/**"
+      - "supabase/seed/card_effect_definitions.json"
+      - "scripts/card-effect-draft-utils.mjs"
+      - "scripts/validate-card-effect-drafts.mjs"
+      - "scripts/validate-card-effects.mjs"
+      - "package.json"
+      - ".github/workflows/card-effect-draft-validation.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Validate active DSL catalog
+        run: npm run validate:card-effects
+      - name: Validate the selected review batch
+        run: npm run validate:card-effect-drafts
+      - name: Build production bundle
+        run: npm run build
