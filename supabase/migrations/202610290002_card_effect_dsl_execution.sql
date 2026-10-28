@@ -117,6 +117,12 @@ BEGIN
        UPDATE public.private_card_effect_runs_v1 SET step_index=step_index+1,updated_at=now() WHERE room_id=p_room_id;
        CONTINUE;
      END IF;
+     IF coalesce((v_step->>'awaitAcknowledgement')::boolean,false) IS NOT TRUE THEN
+       UPDATE public.room_match_states SET state_version=state_version+1,
+         last_action_label='카드 효과: 선택한 카드를 공개했습니다.' WHERE room_id=p_room_id;
+       UPDATE public.private_card_effect_runs_v1 SET step_index=step_index+1,updated_at=now() WHERE room_id=p_room_id;
+       CONTINUE;
+     END IF;
      v_target_owner:=v_owner;
      IF coalesce(v_step->'to','[]'::jsonb) @> '["opponent"]'::jsonb THEN
        SELECT user_id INTO v_target_owner FROM public.room_players WHERE room_id=p_room_id AND user_id<>v_owner LIMIT 1;
