@@ -153,7 +153,7 @@ for (const [index, def] of (data.definitions ?? []).entries()) {
     need(!effectIds.has(def.effectId), `${loc}: 중복 effectId ${def.effectId}`);
     effectIds.add(def.effectId);
   }
-  need(Array.isArray(def.cardIds) && def.cardIds.length > 0 && def.cardIds.every((id) => typeof id === "string" && /^\\d{4}$/.test(id)), `${loc}: cardIds는 네 자리 문자열 배열이어야 합니다.`);
+  need(Array.isArray(def.cardIds) && def.cardIds.length > 0 && def.cardIds.every((id) => typeof id === "string" && /^\d{4}$/.test(id)), `${loc}: cardIds는 네 자리 문자열 배열이어야 합니다.`);
   need(isObject(def.trigger) && allowedEvents.has(def.trigger.event), `${loc}: 지원하지 않는 trigger.event ${String(def.trigger?.event)}`);
   need(isObject(def.trigger) && typeof def.trigger.timing === "string", `${loc}: trigger.timing이 필요합니다.`);
   need(Array.isArray(def.conditions ?? []), `${loc}: conditions는 배열이어야 합니다.`);
