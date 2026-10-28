@@ -372,7 +372,6 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
       localStorage.removeItem(AI_ROOM_STORAGE_KEY);
       setIsAIBattle(false);
       setRoom(null);
-      setIsAIBattle(false);
       setPlayers([]);
       setReadyDeckSignature("");
       setMatchPhase("waiting");
