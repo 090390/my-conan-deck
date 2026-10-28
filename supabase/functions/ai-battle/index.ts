@@ -151,7 +151,7 @@ function chooseResponse(state: any, aiId: string) {
   }
   if (pending.type === "deck_remove_reveal") return { action: "acknowledge_deck_remove" };
   if (pending.type === "file_remove_reveal") return { action: "acknowledge_file_remove" };
-  if (pending.type === "evidence_attack_reveal" && pending.attacker_user_id === aiId) {
+  if (pending.type === "evidence_attack_reveal" && pending.target_user_id === aiId) {
     return { action: "resolve_evidence_attack" };
   }
   if (pending.type === "hand_reveal") return { action: "acknowledge_hand_reveal" };
@@ -181,6 +181,11 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
   const basePlayed = Boolean(me.base_card_played_this_turn || me.character_played_this_turn);
   const turnNumber = Number(state?.turn_number || 0);
   const nextHintAlreadyUsedThisTurn = turnNumber > 0 && Number(lastNextHintTurnNumber) === turnNumber;
+  const isSolution = String(me.case_phase || "incident").toLocaleLowerCase() === "solution";
+  const canPlanNextHint = Boolean(
+    me.base_action_done && !me.next_hint_used && !nextHintAlreadyUsedThisTurn
+      && isSolution && Number(me.file_count || 0) >= 4 && characterCount < 5
+  );
 
   if (state.turn_step === "begin") return { action: "begin_turn" };
   if (state.turn_step === "file") return { action: "place_files" };
@@ -195,17 +200,20 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
       : { action: "cancel_next_hint" };
   }
 
+  const canAssist = !me.partner_rested && !me.partner_assist_used && Boolean(me.partner_key);
+  const unlocksCharacterWithAssist = hand.some((card: any) => isCharacter(card)
+    && cardCost(card) > level && cardCost(card) <= level + 1 && characterCount < 5);
+  // 기본 등장 전에는 어시스트로 먼저 레벨 상한을 올려 고레벨 카드를 우선 고려합니다.
+  // 기본 카드가 이미 나온 뒤에는 넥스트 힌트를 이어갈 계획일 때만 어시스트합니다.
+  if (canAssist && unlocksCharacterWithAssist && (!basePlayed || canPlanNextHint)) {
+    return { action: "partner_assist" };
+  }
+
   if (!basePlayed) {
     const play = hand.filter((card: any) => isCharacter(card)
       && cardCost(card) <= level && characterCount < 5)
       .sort((a: any, b: any) => cardStrength(b) - cardStrength(a))[0];
     if (play) return { action: "play_character", payload: { instance_id: play.instance_id } };
-  }
-
-  if (!me.partner_rested && !me.partner_assist_used && me.partner_key) {
-    const unlocksCard = hand.some((card: any) => isCharacter(card)
-      && cardCost(card) > level && cardCost(card) <= level + 1 && characterCount < 5);
-    if (unlocksCard) return { action: "partner_assist" };
   }
 
   if (!me.partner_rested && !me.partner_deduction_used && me.partner_key && Number(me.evidence_count || 0) < 2) {
@@ -214,9 +222,7 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
 
   // 넥스트 힌트는 해결편에서만, 파일 소모 후에도 실제로 등장 가능한 카드가
   // 확인되고 이번 턴에 아직 사용하지 않은 경우에 한해 선언합니다.
-  const isSolution = String(me.case_phase || "incident").toLocaleLowerCase() === "solution";
-  if (me.base_action_done && !me.next_hint_used && !nextHintAlreadyUsedThisTurn
-      && isSolution && Number(me.file_count || 0) >= 4 && characterCount < 5) {
+  if (canPlanNextHint) {
     const canContinue = hand.some((card: any) => isCharacter(card)
       && cardCost(card) <= level && characterCount < 5);
     if (canContinue) return { action: "next_hint_take_file" };
@@ -323,7 +329,6 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
       pending.target_user_id === battle.ai_user_id
       || pending.next_responder_user_id === battle.ai_user_id
       || (pending.type === "culprits_crime_reveal" && pending.initiator_user_id === battle.ai_user_id)
-      || (pending.type === "evidence_attack_reveal" && pending.attacker_user_id === battle.ai_user_id)
       || pending.chooser_user_id === battle.ai_user_id
     ));
     if (state.current_turn_user_id !== battle.ai_user_id && !aiMustRespond) return { is_ai: true, actions: [] };
