@@ -1,0 +1,304 @@
+{
+  "schemaVersion": 1,
+  "language": "conan-card-effect-dsl",
+  "definitions": [
+    {
+      "effectId": "card-0062-on-enter",
+      "cardIds": [
+        "0062"
+      ],
+      "cardNameKo": "조디 스털링",
+      "cardNameJa": "ジョディ・スターリング",
+      "trigger": {
+        "event": "character.entered_field",
+        "timing": "after"
+      },
+      "conditions": [],
+      "steps": [
+        {
+          "op": "refill_deck_from_remove_area",
+          "when": {
+            "fact": "player.deck.count",
+            "operator": "less_than",
+            "value": 4
+          },
+          "includeRemainingDeck": true,
+          "includeRemoveArea": true,
+          "shuffle": true
+        },
+        {
+          "op": "peek_top_cards",
+          "count": 4,
+          "allowFewer": true,
+          "saveAs": "seen"
+        },
+        {
+          "op": "select_cards",
+          "from": "seen",
+          "min": 0,
+          "max": 1,
+          "optional": true,
+          "filter": {
+            "field": "color",
+            "operator": "equals",
+            "value": "red"
+          },
+          "prompt": "공개하여 패에 넣을 적 카드를 최대 1장 선택하세요.",
+          "saveAs": "selected_red"
+        },
+        {
+          "op": "reveal_cards",
+          "from": "selected_red",
+          "to": [
+            "opponent"
+          ],
+          "awaitAcknowledgement": true,
+          "when": {
+            "fact": "vars.selected_red.count",
+            "operator": "greater_than",
+            "value": 0
+          }
+        },
+        {
+          "op": "move_cards",
+          "from": "selected_red",
+          "to": "hand",
+          "when": {
+            "fact": "vars.selected_red.count",
+            "operator": "greater_than",
+            "value": 0
+          }
+        },
+        {
+          "op": "move_unselected_to_deck_bottom",
+          "from": "seen",
+          "selectedVariable": "selected_red",
+          "order": "player_choice"
+        },
+        {
+          "op": "select_cards",
+          "from": "hand",
+          "min": 1,
+          "max": 1,
+          "optional": false,
+          "prompt": "패에 추가한 경우, 리무브할 손패 1장을 선택하세요.",
+          "saveAs": "hand_to_remove",
+          "when": {
+            "fact": "vars.selected_red.count",
+            "operator": "greater_than",
+            "value": 0
+          }
+        },
+        {
+          "op": "move_cards",
+          "from": "hand_to_remove",
+          "to": "remove_area",
+          "when": {
+            "fact": "vars.selected_red.count",
+            "operator": "greater_than",
+            "value": 0
+          }
+        }
+      ]
+    },
+    {
+      "effectId": "card-0110-on-enter-partner-green",
+      "cardIds": [
+        "0110"
+      ],
+      "cardNameKo": "오키타 소지",
+      "cardNameJa": "沖田総司",
+      "trigger": {
+        "event": "character.entered_field",
+        "timing": "after"
+      },
+      "conditions": [
+        {
+          "fact": "player.partner.color",
+          "operator": "equals",
+          "value": "green"
+        }
+      ],
+      "steps": [
+        {
+          "op": "grant_keyword",
+          "target": "source_character",
+          "keyword": "charge",
+          "displayNameKo": "돌격",
+          "duration": "turn_end"
+        }
+      ]
+    },
+    {
+      "effectId": "card-0011-on-enter-from-level3-effect",
+      "cardIds": [
+        "0011"
+      ],
+      "cardNameKo": "츠부라야 미츠히코",
+      "cardNameJa": "円谷光彦",
+      "trigger": {
+        "event": "character.entered_field",
+        "timing": "after"
+      },
+      "conditions": [
+        {
+          "fact": "entry.method",
+          "operator": "in",
+          "value": [
+            "character_ability",
+            "event_effect"
+          ]
+        },
+        {
+          "fact": "entry.source.card_type",
+          "operator": "in",
+          "value": [
+            "character",
+            "event"
+          ]
+        },
+        {
+          "fact": "entry.source.level",
+          "operator": "greater_than_or_equal",
+          "value": 3
+        }
+      ],
+      "steps": [
+        {
+          "op": "select_cards",
+          "from": "field",
+          "min": 0,
+          "max": 1,
+          "optional": true,
+          "filter": {
+            "field": "card_type",
+            "operator": "equals",
+            "value": "character"
+          },
+          "targetController": "any",
+          "prompt": "턴 종료 시까지 AP를 2000 올릴 캐릭터를 최대 1장 선택하세요.",
+          "saveAs": "ap_target"
+        },
+        {
+          "op": "modify_stat",
+          "target": "ap_target",
+          "stat": "ap",
+          "amount": 2000,
+          "duration": "turn_end",
+          "stacking": "additive",
+          "when": {
+            "fact": "vars.ap_target.count",
+            "operator": "greater_than",
+            "value": 0
+          }
+        }
+      ]
+    },
+    {
+      "effectId": "card-0223-on-enter-ap-minus-1000",
+      "cardIds": [
+        "0223"
+      ],
+      "cardNameKo": "조디 스털링",
+      "cardNameJa": "ジョディ・スターリング",
+      "trigger": {
+        "event": "character.entered_field",
+        "timing": "after"
+      },
+      "conditions": [],
+      "steps": [
+        {
+          "op": "select_cards",
+          "from": "field",
+          "min": 0,
+          "max": 1,
+          "optional": true,
+          "filter": {
+            "field": "card_type",
+            "operator": "equals",
+            "value": "character"
+          },
+          "targetController": "any",
+          "prompt": "턴 종료 시까지 AP를 1000 낮출 캐릭터를 최대 1장 선택하세요.",
+          "saveAs": "ap_target"
+        },
+        {
+          "op": "modify_stat",
+          "target": "ap_target",
+          "stat": "ap",
+          "amount": -1000,
+          "duration": "turn_end",
+          "stacking": "additive",
+          "when": {
+            "fact": "vars.ap_target.count",
+            "operator": "greater_than",
+            "value": 0
+          }
+        }
+      ]
+    },
+    {
+      "effectId": "card-0223-mislead-reaction",
+      "cardIds": [
+        "0223"
+      ],
+      "cardNameKo": "조디 스털링",
+      "cardNameJa": "ジョディ・スターリング",
+      "trigger": {
+        "event": "opponent.deduction.declared",
+        "timing": "during_response_window"
+      },
+      "conditions": [
+        {
+          "fact": "source.is_active",
+          "operator": "equals",
+          "value": true
+        },
+        {
+          "fact": "source.status",
+          "operator": "equals",
+          "value": "active"
+        },
+        {
+          "fact": "source.rested",
+          "operator": "equals",
+          "value": false
+        }
+      ],
+      "steps": [
+        {
+          "op": "offer_reaction",
+          "reactionId": "mislead-1",
+          "actor": "source_controller",
+          "choices": [
+            "activate",
+            "pass"
+          ],
+          "allowDuringOpponentTurn": true,
+          "prompt": "미스리드 1을 사용해 이 카드를 슬립시키고, 상대의 추리에 LP -1을 부여할까요?",
+          "saveAs": "mislead_choice"
+        },
+        {
+          "op": "pay_cost",
+          "cost": "sleep_source_character",
+          "when": {
+            "fact": "vars.mislead_choice",
+            "operator": "equals",
+            "value": "activate"
+          }
+        },
+        {
+          "op": "modify_lp",
+          "target": "deduction_player",
+          "amount": -1,
+          "duration": "immediate",
+          "when": {
+            "fact": "vars.mislead_choice",
+            "operator": "equals",
+            "value": "activate"
+          }
+        }
+      ]
+    }
+  ]
+}
