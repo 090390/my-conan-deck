@@ -30,7 +30,7 @@ function cardCutInBonus(card: any): number {
     : card?.raw && typeof card.raw === "object" ? card.raw : {};
   const printed = [
     card?.cut_in, card?.cutIn, card?.cut_in_text, card?.cutInText,
-    card?.cut_in_description, card?.cutInDescription,
+    card?.cut_in_effect, card?.cutInEffect, card?.cut_in_description, card?.cutInDescription,
     source?.cut_in, source?.cutIn, source?.cut_in_text, source?.cutInText,
   ].filter((value) => typeof value === "string").join(" ");
   if (!printed || !/(?:カットイン|컷인|cut[\s_-]*in)/iu.test(printed)) return 0;
