@@ -50,6 +50,7 @@
 | `select_cards` | `from` 영역/변수에서 `min`~`max`장을 선택합니다. `filter`, `targetController`, `optional`, `saveAs`를 지원합니다. 최대 0장은 선택하지 않는 선택을 허용합니다. |
 | `reveal_cards` | `from` 결과를 `to` 대상에게 공개합니다. `awaitAcknowledgement: true`이면 상대 확인 응답 전에는 다음 단계로 넘어가지 않습니다. |
 | `move_cards` | 카드 인스턴스를 `from`에서 `to` 영역으로 이동합니다. |
+| `filter_cards` | 앞 단계 변수 `from`에서 `filter` 조건에 맞는 카드만 선택 UI 없이 골라 `saveAs` 변수에 저장합니다. 카드를 실제로 이동하지 않으며, 적격 카드 수는 `vars.변수명.count`으로 조건 판정에 사용할 수 있습니다. |
 | `move_unselected_to_deck_bottom` | 확인한 카드 중 `selectedVariable`에 포함되지 않은 카드를 덱 아래로 옮깁니다. `order: player_choice`는 사용자가 순서를 정한다는 뜻입니다. |
 | `grant_keyword` | 카드에 임시 키워드를 부여합니다. `target`, `keyword`, `duration`을 사용합니다. 지속 키워드는 턴 종료 때 만료되어야 합니다. |
 | `modify_stat` | 대상 카드의 수치를 바꿉니다. `stat`, `amount`, `duration`, `stacking`을 사용합니다. 기존 기본 AP를 덮어쓰지 말고 임시 보정으로 저장합니다. |
