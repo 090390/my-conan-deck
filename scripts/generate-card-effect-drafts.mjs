@@ -117,10 +117,17 @@ function systemPrompt() {
     "draftStatus must be one of: draft_candidate, review_required, unsupported_trigger, native_existing_rule, native_existing_cut_in, native_general_partner_rules, no_candidate.",
     "Never mark anything approved. This task only creates review drafts; later validation and a human reviewer decide approval.",
     "When a rule requires a trigger, operation, operator, fact path, duration, target zone, or timing not supported by the supplied DSL context, set proposedDefinition to null and explain the missing support in unsupportedReasons. Do not invent DSL commands or fact paths.",
+    "Apply the reviewer-provided interpretationRules and runtimeCapabilities in the user payload before generic assumptions. Reviewer-confirmed rules take priority over uncertain translations or generic ambiguity warnings.",
+    "Target-owner rule: when text says to remove a character without specifying a source zone or owner, target the opponent's field. Explicit modifiers such as 'from hand', 'from my hand', or 'from my field' override this and identify the stated zone/owner.",
+    "Bond rule: 【인연: X】 means the source controller's own field must contain a card whose name includes X. Compound names that contain X count. This is a trigger condition, distinct from card names listed as possible search targets.",
+    "A [FILEn] condition means the source controller currently has at least n files and must be expressed using player.file.count >= n. [사건편]/[해결편] refer to the source controller's current player.case_phase (incident/solution).",
+    "For [선언][슬립] activated abilities, require the source controller's own turn and an active source card. These may be activated at a legal timing during that own turn; do not restrict them to contact or to a specific action unless the card says so.",
+    "Any reveal whose recipient includes opponent or all must use reveal_cards with awaitAcknowledgement=true. The opponent must be shown the revealed card and confirm before the next step. Never bypass public reveal acknowledgement.",
+    "A condition that a case/event has a non-blue color is true when it contains any color other than blue; mixed-color cases containing blue and another color also satisfy it.",
     "Do not map event-card resolution to character.entered_field. Distinguish card activation, enter-field, field removal, acted, turn-end, opponent deduction, continuous recalculation, disguise, hirameki, cut-in, and partner rules. If current DSL has no exact event for a timing, mark unsupported_trigger or review_required.",
     "Definitions must use four-digit internal card IDs such as 0707 in cardIds, not print keys such as B06088. Use the provided internalCardId.",
     "A definition must have unique effectId, cardIds, trigger {event,timing}, conditions array, and ordered steps array. Use only allowed trigger events, operators, operations, required fields, and known fact paths from DSL context.",
-    "For a potentially ambiguous target owner, conditional duration, reveal/acknowledgement, or interpretation, either express it accurately with current supported fields or leave proposedDefinition null and explain uncertainty. Never silently choose an owner when source text does not establish one.",
+    "For a potentially ambiguous conditional duration, reveal/acknowledgement, or interpretation, either express it accurately with current supported fields or leave proposedDefinition null and explain uncertainty. Do not mark reviewer-confirmed target-owner rules as ambiguous.",
     "Keep sourceClause as an exact substring of sourceText when possible. Keep interpretation concise and identify cost, target, operation order, conditions, duration, and once-per-turn constraints.",
     "For cards without gameplay effects, return one no_candidate candidate explaining there is no effect to compile. Existing native cut-ins or partner behavior should be labeled accordingly and not duplicated as DSL definitions.",
     "Return every input sourceKey exactly once. Do not invent, omit, rename, merge, or duplicate sourceKey values.",
@@ -176,18 +183,30 @@ async function callModel({ apiKey, model, userPayload }) {
 function normalizeGeneratedCard(sourceCard, generatedCard) {
   const rawCandidates = Array.isArray(generatedCard?.effectCandidates) ? generatedCard.effectCandidates : [];
   const sourceText = String(sourceCard.sourceText || [sourceCard.abilityKo, sourceCard.hirameki, sourceCard.cutIn].filter(Boolean).join("\n") || "");
-  const candidates = rawCandidates.length ? rawCandidates : [{
+  const protectedCandidates = (Array.isArray(sourceCard.effectCandidates) ? sourceCard.effectCandidates : [])
+    .filter((candidate) => candidate?.reviewedByUser === true || candidate?.approvalStatus === "approved");
+  const protectedSourceTexts = protectedCandidates
+    .map((candidate) => String(candidate.sourceText || candidate.sourceClause || candidate.proposedDefinition?.reviewNotes?.sourceText || "").trim())
+    .filter(Boolean);
+  const generatedCandidates = rawCandidates.filter((candidate) => {
+    const clause = String(candidate?.sourceClause || "").trim();
+    if (!clause) return protectedSourceTexts.length === 0;
+    return !protectedSourceTexts.some((source) => source.includes(clause) || clause.includes(source));
+  });
+  const candidates = generatedCandidates.length ? generatedCandidates : (rawCandidates.length ? [] : [{
     sourceClause: "",
     interpretation: "",
     unsupportedReasons: ["모델이 후보 효과를 반환하지 않았습니다. 직접 검토해야 합니다."],
     confidence: "low",
     draftStatus: "review_required",
     proposedDefinition: null,
-  }];
+  }]);
   return {
     ...sourceCard,
     sourceText,
-    effectCandidates: candidates.map((candidate, index) => {
+    effectCandidates: [
+      ...protectedCandidates,
+      ...candidates.map((candidate, index) => {
       const proposedDefinition = candidate?.proposedDefinition && typeof candidate.proposedDefinition === "object" && !Array.isArray(candidate.proposedDefinition)
         ? candidate.proposedDefinition
         : null;
@@ -210,6 +229,7 @@ function normalizeGeneratedCard(sourceCard, generatedCard) {
         proposedDefinition,
       };
     }),
+    ],
   };
 }
 
@@ -288,7 +308,9 @@ for (let offset = 0; offset < remaining.length; offset += options.batchSize) {
   const chunk = remaining.slice(offset, offset + options.batchSize);
   const userPayload = {
     task: "Interpret the card effect text and propose DSL definitions for these cards only.",
-    rule: "Draft generation only. Never promote a definition to the active catalog.",
+    rule: "Draft generation only. Never promote a definition to the active catalog. Do not regenerate effects already marked reviewedByUser or approved.",
+    reviewerInterpretationRules: Array.isArray(inputBatch.interpretationRules) ? inputBatch.interpretationRules : [],
+    runtimeCapabilitiesAdded: Array.isArray(inputBatch.runtimeCapabilitiesAdded) ? inputBatch.runtimeCapabilitiesAdded : [],
     dslContext,
     cards: chunk.map((card) => ({
       sourceKey: card.sourceKey,
@@ -301,6 +323,14 @@ for (let offset = 0; offset < remaining.length; offset += options.batchSize) {
       hirameki: card.hirameki,
       cutIn: card.cutIn,
       sourceText: String(card.sourceText || [card.abilityKo, card.hirameki, card.cutIn].filter(Boolean).join("\n") || ""),
+      reviewedCandidates: (Array.isArray(card.effectCandidates) ? card.effectCandidates : [])
+        .filter((candidate) => candidate?.reviewedByUser === true || candidate?.approvalStatus === "approved")
+        .map((candidate) => ({
+          candidateId: candidate.candidateId,
+          sourceText: candidate.sourceText || candidate.sourceClause || "",
+          interpretation: candidate.interpretation || "",
+          proposedDefinition: candidate.proposedDefinition || null,
+        })),
     })),
   };
   const generated = await callModel({ apiKey, model: options.model, userPayload });
