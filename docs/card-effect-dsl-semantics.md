@@ -20,3 +20,5 @@
 - `unsupported_trigger`는 현재 트리거 체계로 정확한 발동 시점을 나타낼 수 없는 상태입니다.
 - 이미 `reviewedByUser: true`로 표시된 후보와 `approvalStatus: approved`인 후보는 후속 OpenAI 초안 생성에서 보존하며, 모델이 같은 효과를 다시 생성해 중복시키지 않도록 합니다.
 - 초안 생성 및 구조 검증은 `supabase/seed/card_effect_definitions.json`의 운영 카탈로그를 자동 변경하지 않습니다. 운영 카탈로그에 들어가려면 별도의 런타임 검증과 사람 승인이 필요합니다.
+
+- `filter_cards`는 플레이어의 선택을 요구하지 않는 내부 필터 명령입니다. 카드 인스턴스·소유자·출처 영역 래퍼를 보존하므로 후속 `move_cards` 단계가 동일한 실제 카드를 올바른 영역으로 이동할 수 있습니다.
