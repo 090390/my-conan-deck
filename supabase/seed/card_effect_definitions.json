@@ -2572,7 +2572,9 @@
     },
     {
       "effectId": "card-1166-on-yusaku-enter-remove-ap8k",
-      "cardIds": "1166",
+      "cardIds": [
+        "1166"
+      ],
       "cardNameKo": "쿠도 유키코",
       "cardNameJa": "工藤有希子",
       "trigger": {
@@ -2637,7 +2639,9 @@
     },
     {
       "effectId": "card-1166-activated-bond-alias",
-      "cardIds": "1166",
+      "cardIds": [
+        "1166"
+      ],
       "cardNameKo": "쿠도 유키코",
       "cardNameJa": "工藤有希子",
       "trigger": {
@@ -2693,7 +2697,9 @@
     },
     {
       "effectId": "card-1197-activated-ready-ap-minus2000-and-rest-character",
-      "cardIds": "1197",
+      "cardIds": [
+        "1197"
+      ],
       "cardNameKo": "괴도 키드",
       "cardNameJa": "怪盗キッド",
       "trigger": {
@@ -2762,7 +2768,9 @@
     },
     {
       "effectId": "card-1197-activated-contact-opponent-rested",
-      "cardIds": "1197",
+      "cardIds": [
+        "1197"
+      ],
       "cardNameKo": "괴도 키드",
       "cardNameJa": "怪盗キッド",
       "trigger": {
@@ -2881,7 +2889,9 @@
     },
     {
       "effectId": "card-1258-on-enter-total-evidence-five-draw-discard",
-      "cardIds": "1258",
+      "cardIds": [
+        "1258"
+      ],
       "cardNameKo": "에도가와 코난&괴도 키드",
       "cardNameJa": "江戸川コナン＆怪盗キッド",
       "trigger": {
@@ -2924,7 +2934,9 @@
     },
     {
       "effectId": "card-1258-on-enter-total-evidence-four-or-less-may-discard-for-evidence",
-      "cardIds": "1258",
+      "cardIds": [
+        "1258"
+      ],
       "cardNameKo": "에도가와 코난&괴도 키드",
       "cardNameJa": "江戸川コナン＆怪盗キッド",
       "trigger": {
@@ -3006,7 +3018,9 @@
     },
     {
       "effectId": "card-1258-turn-end-draw-discard-if-five",
-      "cardIds": "1258",
+      "cardIds": [
+        "1258"
+      ],
       "cardNameKo": "에도가와 코난&괴도 키드",
       "cardNameJa": "江戸川コナン＆怪盗キッド",
       "trigger": {
