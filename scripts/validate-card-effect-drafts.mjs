@@ -25,9 +25,24 @@ for (const card of batch.cards ?? []) {
     }
   }
 }
+const invalidCandidates = [];
+for (const card of batch.cards ?? []) {
+  for (const candidate of card.effectCandidates ?? []) {
+    if (candidate.proposedDefinition) {
+      const validation = validateDslDefinition(candidate.proposedDefinition, card.internalCardId, facts);
+      if (validation.length) invalidCandidates.push({
+        databaseId: card.databaseId,
+        candidateId: candidate.candidateId,
+        effectId: candidate.proposedDefinition.effectId,
+        errors: validation
+      });
+    }
+  }
+}
 console.log(JSON.stringify({
   result: errors.length || summary.dslInvalid ? "FAILED" : "PASSED_WITH_REVIEW_ITEMS",
   summary,
+  invalidCandidates,
   note: "구조 검증 통과는 런타임 의미 검증이나 사람 승인이 아닙니다. 이 명령은 서버 카탈로그를 수정하지 않습니다."
 }, null, 2));
 if (errors.length || summary.dslInvalid > 0) process.exitCode = 1;
