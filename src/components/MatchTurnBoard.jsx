@@ -1240,6 +1240,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
             <div style={{ display: "grid", gap: 6 }}>
               {cardEffectActivations.map((ability) => {
                 const isCaseAbility = String(ability.source_instance_id || "").startsWith("case:");
+                const canUseAnyTiming = String(ability.activation_timing || "") === "any";
                 const source = (myBoard?.field_cards || []).find((card) => String(card.instance_id) === String(ability.source_instance_id));
                 return <div key={ability.effect_id + ":" + ability.source_instance_id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: 6, borderRadius: 6, background: "#111e32" }}>
                   <div style={{ minWidth: 0 }}>
@@ -1248,7 +1249,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
                     {Number(ability.required_file_count || 0) > 0 && <span style={{ display: "block", marginTop: 3, fontSize: 8, color: "#93c5fd" }}>파일 조건 충족 · 내 파일 {Number(ability.current_file_count ?? myBoard?.file_count ?? 0)}/{Number(ability.required_file_count)}장 이상</span>}
                     {ability.required_case_phase && <span style={{ display: "block", marginTop: 3, fontSize: 8, color: "#c4b5fd" }}>진행 단계 · {ability.required_case_phase === "solution" ? "해결편" : "사건편"}</span>}
                   </div>
-                  <button type="button" style={{ ...st.smallButton, flexShrink: 0 }} disabled={loading || !isMyTurn || Boolean(pending)} onClick={() => void runAction(isCaseAbility ? "activate_case_effect" : "activate_card_effect", isCaseAbility ? { effect_id: ability.effect_id } : { source_instance_id: ability.source_instance_id, effect_id: ability.effect_id })}>발동</button>
+                  <button type="button" style={{ ...st.smallButton, flexShrink: 0 }} disabled={loading || (!isMyTurn && !canUseAnyTiming) || Boolean(pending)} onClick={() => void runAction(isCaseAbility ? "activate_case_effect" : "activate_card_effect", isCaseAbility ? { effect_id: ability.effect_id } : { source_instance_id: ability.source_instance_id, effect_id: ability.effect_id })}>발동</button>
                 </div>;
               })}
             </div>
