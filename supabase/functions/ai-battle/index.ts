@@ -676,14 +676,10 @@ Deno.serve(async (req: Request) => {
         p_ai_main_deck: aiDeck.main_deck,
         p_ai_partner_key: String(aiDeck.partner_key),
         p_ai_event_key: String(aiDeck.event_key),
+        p_ai_event_has_non_blue_color: Boolean(aiDeck.event_has_non_blue_color),
         p_ai_event_rule_code: String(aiDeck.event_rule_code || ""),
       });
       if (battleError) throw battleError;
-      const { error: aiEventColorError } = await service.from("room_player_decks")
-        .update({ event_has_non_blue_color: Boolean(aiDeck.event_has_non_blue_color) })
-        .eq("room_id", room.out_room_id)
-        .eq("user_id", botId);
-      if (aiEventColorError) throw aiEventColorError;
 
       const initial = await driveAiTurns(service, room.out_room_id, user.id);
       return json({ room_id: room.out_room_id, invite_code: room.out_invite_code, initial_ai: initial });
