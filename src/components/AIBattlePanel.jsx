@@ -69,7 +69,16 @@ function isCharacter(card) {
 }
 function cardPayload(card, key, count) {
   const identityValue = identity(card) || String(key);
-  const cutInText = String(card?.cutInEffect || "").trim();
+  const cutInText = String(
+    card?.cutInEffect
+      || card?.cut_in
+      || card?.cutIn
+      || card?.sourceData?.cut_in
+      || card?.sourceData?.cutIn
+      || card?.raw?.cut_in
+      || card?.raw?.cutIn
+      || ""
+  ).trim();
   const cutInMatch = cutInText.normalize("NFKC").match(/AP\s*\+\s*(\d{1,5})/iu);
   const misleadSource = [...(card?.keywordTags || []), card?.ability || "", card?.originalAbility || ""].join(" ");
   const misleadMatch = misleadSource.match(/[【〚［\[]\s*(?:미스리드|ミスリード)\s*([0-9０-９]+)\s*[】〛］\]]/iu)
