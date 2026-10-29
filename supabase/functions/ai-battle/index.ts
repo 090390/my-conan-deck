@@ -81,12 +81,15 @@ function canDeployTokyoPoliceFromRemoveArea(state: any): boolean {
 function hasReadyPr181AnyTiming(state: any, aiId: string): boolean {
   if (!state || state.game_over || state.pending_action
       || state.current_turn_user_id === aiId
-      || String(state.phase || "playing") !== "playing"
-      || !canDeployTokyoPoliceFromRemoveArea(state)) return false;
+      || String(state.phase || "playing") !== "playing") return false;
   const aiBoard = (Array.isArray(state.boards) ? state.boards : [])
     .find((board: any) => board.user_id === aiId);
-  return (Array.isArray(aiBoard?.field_cards) ? aiBoard.field_cards : [])
-    .some((card: any) => isPr181AnyTimingSource(card) && isActive(card));
+  const ownField = Array.isArray(aiBoard?.field_cards) ? aiBoard.field_cards : [];
+  // Once PR181 has put a charge[case] character onto the field, keep the AI
+  // worker active long enough to perform its immediate investigation as well.
+  if (ownField.some((card: any) => isCharacter(card) && isActive(card) && hasCaseOnlyCharge(card))) return true;
+  if (!canDeployTokyoPoliceFromRemoveArea(state)) return false;
+  return ownField.some((card: any) => isPr181AnyTimingSource(card) && isActive(card));
 }
 function normalizedColor(value: unknown): string {
   const token = String(value ?? "").trim().toLocaleLowerCase();
@@ -491,6 +494,23 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
     return { action: "place_files" };
   }
   if (state.turn_step !== "main") return null;
+
+  // PR181 may resolve during the opponent's turn. The deployed charge[case]
+  // character gets exactly the immediate case action (investigate), not contact.
+  if (field.some((card: any) => isCharacter(card) && isActive(card) && hasCaseOnlyCharge(card))) {
+    const caseOnlyAttacker = field.find((card: any) =>
+      isCharacter(card) && isActive(card) && hasCaseOnlyCharge(card));
+    if (caseOnlyAttacker) {
+      return {
+        action: "investigate",
+        payload: {
+          instance_id: caseOnlyAttacker.instance_id,
+          evidence_count: Math.max(0, Math.min(3, Number(caseOnlyAttacker.lp || 1))),
+          allow_newly_played: true,
+        },
+      };
+    }
+  }
 
   if (me.next_hint_pending) {
     const nextCard = hand.filter((card: any) => isCharacter(card)
