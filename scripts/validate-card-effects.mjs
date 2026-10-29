@@ -10,6 +10,7 @@ const allowedEvents = new Set([
   "character.acted",
   "player.turn_ended",
   "continuous.recalculate",
+  "event.played",
   "opponent.deduction.declared",
 ]);
 const allowedOperators = new Set([
