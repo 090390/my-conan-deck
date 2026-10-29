@@ -48,11 +48,11 @@
         {
           "candidateId": "b06088-on-enter-search-keishicho-1",
           "sourceText": "【등장 시】 - 자신의 덱에서 위쪽부터 3장의 카드를 확인한다. 그중에서 〚특징 [경시청]〛을 가진 캐릭터 카드를 최대 1장까지 공개하여 패에 추가하고, 나머지는 원하는 순서대로 덱 밑으로 옮긴다.",
-          "interpretation": "등장 시 덱 위 최대 3장을 확인한다. 그중 특징 [경시청]을 가진 캐릭터를 최대 1장 선택해 상대에게 공개한 뒤 손패에 넣는다. 선택할 적격 카드가 없거나 선택하지 않으면 공개·손패 이동 없이 확인한 카드를 원하는 순서로 덱 아래에 둔다. 공개는 필수지만 상대의 별도 확인/승인을 기다리지는 않는다.",
-          "draftStatus": "review_required",
+          "interpretation": "등장 시 덱 위 최대 3장을 확인한다. 그중 특징 [경시청]인 캐릭터를 최대 1장 선택해 공개한다. 상대가 공개된 카드를 실제로 확인하고 확인 완료를 누른 뒤 손패로 이동한다. 적격 카드가 없거나 선택하지 않으면 공개와 손패 이동 없이 확인한 카드들을 원하는 순서로 덱 아래에 둔다.",
+          "draftStatus": "draft_candidate",
           "approvalStatus": "pending",
-          "confidence": "medium",
-          "reviewNotes": "정의 의도는 reveal_cards.awaitAcknowledgement=false로 공개와 별도 승인 절차를 분리하는 것이다. 다만 현재 런타임의 reveal_cards는 awaitAcknowledgement=false일 때 상대가 공개 카드 자체를 볼 수 있는 공유 상태를 만들지 않고 로그 문구만 갱신하므로, '상대에게 실제 공개'가 구현되기 전에는 실행 가능 정의로 승인할 수 없다. 덱에 적격 카드가 없는 경우에도 확인한 카드를 원하는 순서로 덱 아래에 돌려보내는 의미는 유지한다.",
+          "confidence": "high",
+          "reviewNotes": "reveal_cards.awaitAcknowledgement=true로 설정했다. 이제 상대에게 공개한 카드가 확인용 모달에 표시되고, 상대가 확인 완료를 눌러야 뒤이은 손패 이동과 덱 아래 정리가 진행된다. 확인한 3장 전체를 displayVariable로 표시해 적격 카드가 없는 경우에도 순서를 정할 수 있다.",
           "proposedDefinition": {
             "effectId": "card-0707-on-enter-search-keishicho",
             "cardIds": [
@@ -101,7 +101,7 @@
                 "to": [
                   "opponent"
                 ],
-                "awaitAcknowledgement": false,
+                "awaitAcknowledgement": true,
                 "when": {
                   "fact": "vars.selected.count",
                   "operator": "greater_than",
@@ -127,7 +127,7 @@
             ],
             "reviewNotes": {
               "sourceText": "【登場時】デッキの上から3枚を確認。その中から〚特徴［警視庁］〛のキャラを1枚まで公開して手札に加え、残りを好きな順でデッキの下に置く。",
-              "rationale": "등장 시 덱 위 최대 3장을 확인한다. 그중 특징 [경시청]을 가진 캐릭터를 최대 1장 선택해 상대에게 공개한 뒤 손패에 넣는다. 선택할 적격 카드가 없거나 선택하지 않으면 공개·손패 이동 없이 확인한 카드를 원하는 순서로 덱 아래에 둔다. 공개는 필수지만 상대의 별도 확인/승인을 기다리지는 않는다."
+              "rationale": "등장 시 덱 위 최대 3장을 확인한다. 그중 특징 [경시청]인 캐릭터를 최대 1장 선택해 공개한다. 상대가 공개된 카드를 실제로 확인하고 확인 완료를 누른 뒤 손패로 이동한다. 적격 카드가 없거나 선택하지 않으면 공개와 손패 이동 없이 확인한 카드들을 원하는 순서로 덱 아래에 둔다."
             }
           },
           "reviewedSemantics": {
@@ -282,29 +282,39 @@
         {
           "candidateId": "b07080-activated-partner-yellow-file5-police-bottom-remove-2",
           "sourceText": "【파트너 황】【FILE5】【선언】【슬립】〚현장에 있는 레벨 7 이하의 특징 [경시청]을 가진 캐릭터 1장을 덱 맨 아래로 옮긴다〛 - 캐릭터를 1장까지 선택하여 리무브한다.",
-          "interpretation": "파트너 카드 색상이 황이고 자신의 파일이 5장 이상일 때 발동한다. 이 카드 자신을 슬립시키고, 자신의 현장에서 레벨 7 이하·특징 [경시청]인 캐릭터 1장을 선택해 자신의 덱 맨 아래로 옮긴 뒤, 상대 현장의 캐릭터를 최대 1장 선택해 리무브한다. FILE5 조건을 판정하는 런타임 fact가 아직 없으므로 실행 DSL 초안은 보류한다.",
-          "draftStatus": "review_required",
+          "interpretation": "파트너 색상이 황이고 자신의 파일이 5장 이상인 자신의 턴에, 이 카드를 슬립시키고 자신의 현장에 있는 레벨 7 이하·특징 [경시청] 캐릭터 1장을 덱 맨 아래로 옮긴다. 이어서 상대 현장 캐릭터를 최대 1장 선택해 리무브한다.",
+          "draftStatus": "draft_candidate",
           "approvalStatus": "pending",
-          "confidence": "low",
-          "reviewNotes": "필요한 런타임 지원: player.file.count(또는 동등한 파일 수 fact). 파트너 색상·슬립 비용·각 카드 이동은 기존 DSL 구성요소에 가깝지만, FILE5 조건을 생략한 runnable 정의를 만들면 조건 없이 발동하는 오동작이 생기므로 초안을 승격하지 않는다.",
-          "reviewedSemantics": {
+          "confidence": "high",
+          "reviewNotes": "FILE5 조건은 player.file.count >= 5로 구현했다. 효과 순서와 대상 소유자를 확인한 규칙대로 반영했다.",
+          "proposedDefinition": {
+            "effectId": "card-0808-activated-partner-yellow-file5-police-bottom-remove",
+            "cardIds": [
+              "0808"
+            ],
+            "cardNameKo": "카자미 유야",
             "trigger": {
               "event": "character.activated_ability",
               "timing": "immediate"
             },
             "conditions": [
               {
-                "kind": "player.partner.color",
+                "fact": "player.partner.color",
                 "operator": "equals",
                 "value": "yellow"
               },
               {
-                "kind": "player.file.count",
+                "fact": "player.file.count",
                 "operator": "greater_than_or_equal",
                 "value": 5
               },
               {
-                "kind": "source.is_active",
+                "fact": "turn.is_source_controller_turn",
+                "operator": "equals",
+                "value": true
+              },
+              {
+                "fact": "source.is_active",
                 "operator": "equals",
                 "value": true
               }
@@ -340,6 +350,7 @@
                     }
                   ]
                 },
+                "prompt": "덱 맨 아래로 보낼 레벨 7 이하·특징 [경시청]인 자신의 현장 캐릭터를 1장 선택하세요.",
                 "saveAs": "police_target"
               },
               {
@@ -358,6 +369,7 @@
                   "operator": "equals",
                   "value": "character"
                 },
+                "prompt": "리무브할 상대 현장 캐릭터를 최대 1장 선택하세요.",
                 "saveAs": "target"
               },
               {
@@ -372,9 +384,11 @@
                 }
               }
             ],
-            "runtimeBlockers": [
-              "player.file.count fact가 현재 런타임에 구현되어 있지 않다."
-            ]
+            "activationLabelKo": "파트너 황 · FILE5 · 슬립 · 경시청 캐릭터 덱 아래 이동 / 상대 리무브",
+            "reviewNotes": {
+              "sourceText": "【파트너 황】【FILE5】【선언】【슬립】〚현장에 있는 레벨 7 이하의 특징 [경시청]을 가진 캐릭터 1장을 덱 맨 아래로 옮긴다〛 - 캐릭터를 1장까지 선택하여 리무브한다.",
+              "rationale": "player.file.count가 현재 파일 수를 반환하도록 런타임을 보강했다. FILE5는 자신의 파일 수가 5장 이상일 때를 뜻하며, 파트너 황·본인 턴·액티브 상태도 함께 검사한다."
+            }
           }
         }
       ]
@@ -564,21 +578,30 @@
         {
           "candidateId": "b10068-end-turn-search-listed-police-academy-2",
           "sourceText": "【파트너 황】【등장 시】 - AP 8000 이하의 캐릭터를 1장까지 선택하여 리무브한다.\n【인연 : 후루야 레이】 - 자신의 턴 종료 시, 자신의 덱에서 위쪽부터 2장의 카드를 확인한다. 그 중에서 〚카드명 [후루야 레이] 또는 [모로후시 히로미츠] 또는 [다테 와타루] 또는 [하기와라 켄지] 또는 [마츠다 진페이]〛 중 1장까지 공개하여 패에 추가하고, 나머지는 리무브 에이리어로 옮긴다.",
-          "interpretation": "자신의 턴 종료 시 이 카드가 현장에 남아 있고, 자신의 현장에 카드명에 [후루야 레이]를 포함하는 카드가 있을 때만 효과가 발동한다. 덱 위 2장을 확인해 지정된 다섯 카드명 중 하나를 최대 1장 공개해 손패에 넣고, 선택되지 않은 카드는 모두 리무브한다. 해당하는 카드가 없으면 아무 카드도 공개·손패 이동하지 않고 두 장 모두 리무브한다.",
-          "draftStatus": "review_required",
+          "interpretation": "자신의 턴 종료 시 이 카드가 자신의 현장에 남아 있고, 자신의 현장에 카드명에 [후루야 레이]가 포함된 카드가 있을 때 발동한다. 덱 위 2장 중 지정된 다섯 카드명 중 하나를 최대 1장 공개해 상대 확인 후 손패에 넣고, 선택되지 않은 카드는 리무브한다. 조건에 맞는 카드가 없으면 공개나 손패 이동 없이 2장 모두 리무브한다.",
+          "draftStatus": "draft_candidate",
           "approvalStatus": "pending",
-          "confidence": "low",
-          "reviewNotes": "카드명 부분 일치 조건과 '선택된 카드 공개는 하되 상대 승인을 기다리지 않음'을 정확히 표현해야 한다. 현행 런타임의 player.field.has_card_name 조건은 이름 일치 여부를 계산하지만, 조건 스키마가 이름 포함 검색과 boolean 결과를 함께 표현하지 못하므로 정확한 실행 DSL을 만들지 않고 검토 후보로 보류한다. 기존 임시 proposedDefinition은 조건이 빠진 채 발동할 수 있어 제거했다.",
-          "reviewedSemantics": {
+          "confidence": "high",
+          "reviewNotes": "사용자가 [후루야 레이]를 인연 조건으로 확정했다. [모로후시 히로미츠]는 검색 대상 다섯 카드명 중 하나로 처리한다. 이름 포함형 인연 조건과 실제 공개 확인을 적용했다.",
+          "proposedDefinition": {
+            "effectId": "card-1124-end-turn-search-listed-police-academy",
+            "cardIds": [
+              "1124"
+            ],
+            "cardNameKo": "모로후시 히로미츠",
             "trigger": {
               "event": "player.turn_ended",
-              "timing": "after",
-              "controllerTurnOnly": true,
-              "sourceMustRemainOnOwnField": true
+              "timing": "after"
             },
             "conditions": [
               {
-                "kind": "own_field_card_name_contains",
+                "fact": "turn.is_source_controller_turn",
+                "operator": "equals",
+                "value": true
+              },
+              {
+                "fact": "player.field.has_card_name",
+                "operator": "name_matches",
                 "value": "후루야 레이"
               }
             ],
@@ -615,6 +638,7 @@
                     }
                   ]
                 },
+                "prompt": "공개하여 손패로 가져올 지정된 다섯 카드명 중 캐릭터를 최대 1장 선택하세요.",
                 "saveAs": "selected"
               },
               {
@@ -623,7 +647,7 @@
                 "to": [
                   "opponent"
                 ],
-                "awaitAcknowledgement": false,
+                "awaitAcknowledgement": true,
                 "when": {
                   "fact": "vars.selected.count",
                   "operator": "greater_than",
@@ -648,91 +672,14 @@
                 "order": "preserve"
               }
             ],
-            "runtimeBlockers": [
-              "own-field card-name substring condition must express both target name and true/false matching in the DSL condition contract."
-            ],
-            "recoveredFromPriorDraft": {
-              "trigger": {
-                "event": "player.turn_ended",
-                "timing": "after"
-              },
-              "conditions": [
-                {
-                  "fact": "turn.is_source_controller_turn",
-                  "operator": "equals",
-                  "value": true
-                }
-              ],
-              "steps": [
-                {
-                  "op": "peek_top_cards",
-                  "count": 2,
-                  "allowFewer": true,
-                  "saveAs": "seen"
-                },
-                {
-                  "op": "select_cards",
-                  "from": "seen",
-                  "min": 0,
-                  "max": 1,
-                  "optional": true,
-                  "filter": {
-                    "allOf": [
-                      {
-                        "field": "card_type",
-                        "operator": "equals",
-                        "value": "character"
-                      },
-                      {
-                        "field": "card_name",
-                        "operator": "in",
-                        "value": [
-                          "후루야 레이",
-                          "모로후시 히로미츠",
-                          "다테 와타루",
-                          "하기와라 켄지",
-                          "마츠다 진페이"
-                        ]
-                      }
-                    ]
-                  },
-                  "prompt": "공개하여 패에 추가할 지정된 경찰학교 관계자 캐릭터를 최대 1장 선택하세요.",
-                  "saveAs": "selected"
-                },
-                {
-                  "op": "reveal_cards",
-                  "from": "selected",
-                  "to": [
-                    "opponent"
-                  ],
-                  "awaitAcknowledgement": true,
-                  "when": {
-                    "fact": "vars.selected.count",
-                    "operator": "greater_than",
-                    "value": 0
-                  }
-                },
-                {
-                  "op": "move_cards",
-                  "from": "selected",
-                  "to": "hand",
-                  "when": {
-                    "fact": "vars.selected.count",
-                    "operator": "greater_than",
-                    "value": 0
-                  }
-                },
-                {
-                  "op": "move_unselected_to_zone",
-                  "from": "seen",
-                  "selectedVariable": "selected",
-                  "to": "remove_area",
-                  "order": "original"
-                }
-              ]
+            "reviewNotes": {
+              "sourceText": "【파트너 황】【등장 시】 - AP 8000 이하의 캐릭터를 1장까지 선택하여 리무브한다.\n【인연 : 후루야 레이】 - 자신의 턴 종료 시, 자신의 덱에서 위쪽부터 2장의 카드를 확인한다. 그 중에서 〚카드명 [후루야 레이] 또는 [모로후시 히로미츠] 또는 [다테 와타루] 또는 [하기와라 켄지] 또는 [마츠다 진페이]〛 중 1장까지 공개하여 패에 추가하고, 나머지는 리무브 에이리어로 옮긴다.",
+              "rationale": "[인연: 후루야 레이]는 자신의 현장에 카드명에 후루야 레이를 포함하는 카드가 있어야 한다는 발동 조건이다. 검색 가능한 다섯 카드명은 별도의 선택 대상 목록이다. 선택 카드가 있으면 상대가 실제 공개 카드를 확인하고 확인 완료를 눌러야 다음 단계가 진행된다. 적격 카드가 없으면 공개/손패 이동을 생략하고 확인한 두 장 모두 리무브한다.",
+              "bondConditionConfirmedByReviewer": true,
+              "japaneseOwnNameIsAlsoSearchTarget": true
             }
           },
-          "sourceTextConflict": "abilityKo에는 【인연: 후루야 레이】로 적혀 있으나 sourceText에는 【絆 諸伏景光】가 기재되어 있다. 이번 해석은 검토자가 지정한 [후루야 레이] 조건을 따른다."
+          "sourceTextConflictResolved": "사용자 확인: [인연: 후루야 레이]가 발동 조건이고, [모로후시 히로미츠]는 검색 대상 카드명 중 하나다."
         }
       ]
     },
@@ -803,11 +750,11 @@
         {
           "candidateId": "b09075p-activated-police-ap-plus-2000-1",
           "sourceText": "【해결편】 - 【질풍】 자신의 리무브 에이리어에 있는 레벨 6 이하의 〚특징 [경찰]〛 캐릭터를 1장까지 선택하여 등장시킨다. (이번 턴 자신의 현장에 가장 먼저 등장했을 때 발동)\n【선언】【슬립】 - 〚특징 [경찰]〛을 가진 캐릭터를 1장까지 선택하여, 턴 종료 시까지 AP를 +2000한다.",
-          "interpretation": "타이밍 제한 없이 이 카드를 슬립시키고, 자신의 현장에 있는 특징 [경찰] 캐릭터를 최대 1장 선택해 턴 종료 시까지 AP +2000을 부여한다. 액티브한 공격 캐릭터에 부여하는 것이 일반적으로 유리하지만, 카드 효과 자체가 대상의 액티브 상태를 조건으로 요구하지는 않는다.",
-          "draftStatus": "review_required",
+          "interpretation": "자신의 턴 중 원하는 타이밍에 이 카드를 슬립시키고, 자신의 현장에 있는 특징 [경찰] 캐릭터를 최대 1장 선택해 턴 종료 시까지 AP +2000을 부여한다. AI는 공격 직전 등 유리한 타이밍을 판단한다. 대상은 액티브 상태일 필요는 없지만, 전략상 액티브한 아군에게 부여하는 것이 유리할 수 있다.",
+          "draftStatus": "draft_candidate",
           "approvalStatus": "pending",
-          "confidence": "medium",
-          "reviewNotes": "문구에 '자신의 턴 중' 조건이 없으므로 turn.is_source_controller_turn 조건을 제거했다. 다만 현재 activate_card_effect RPC가 자신의 턴 메인 단계로 발동을 제한하므로, 실제 '아무 타이밍' 발동을 보장하기 전까지 review_required로 유지한다.",
+          "confidence": "high",
+          "reviewNotes": "본인 턴 여부는 DSL 조건과 서버의 발동 권한에서 검사한다. 서버는 begin/file/main을 포함한 자신의 턴 중 어느 단계든 허용하고, 진행 중인 선택/응답이나 다른 효과가 있으면 발동을 막는다.",
           "proposedDefinition": {
             "effectId": "card-1015-activated-police-ap-plus-2000",
             "cardIds": [
@@ -820,6 +767,11 @@
             },
             "oncePerTurn": false,
             "conditions": [
+              {
+                "fact": "turn.is_source_controller_turn",
+                "operator": "equals",
+                "value": true
+              },
               {
                 "fact": "source.is_active",
                 "operator": "equals",
@@ -870,31 +822,36 @@
             ],
             "reviewNotes": {
               "sourceText": "【宣言】【スリープ】：〚特徴［警察］〛を持つキャラを1枚まで選び、ターン終了までAP+2000。",
-              "rationale": "타이밍 제한 없이 이 카드를 슬립시키고, 자신의 현장에 있는 특징 [경찰] 캐릭터를 최대 1장 선택해 턴 종료 시까지 AP +2000을 부여한다. 액티브한 공격 캐릭터에 부여하는 것이 일반적으로 유리하지만, 카드 효과 자체가 대상의 액티브 상태를 조건으로 요구하지는 않는다."
+              "rationale": "자신의 턴 중 원하는 타이밍에 이 카드를 슬립시키고, 자신의 현장에 있는 특징 [경찰] 캐릭터를 최대 1장 선택해 턴 종료 시까지 AP +2000을 부여한다. AI는 공격 직전 등 유리한 타이밍을 판단한다. 대상은 액티브 상태일 필요는 없지만, 전략상 액티브한 아군에게 부여하는 것이 유리할 수 있다."
             }
           }
         },
         {
           "candidateId": "b09075p-solution-first-entry-recover-police-2",
           "sourceText": "【해결편】 - 【질풍】 자신의 리무브 에이리어에 있는 레벨 6 이하의 〚특징 [경찰]〛 캐릭터를 1장까지 선택하여 등장시킨다. (이번 턴 자신의 현장에 가장 먼저 등장했을 때 발동)",
-          "interpretation": "이번 턴 자신의 현장에 처음 등장한 캐릭터가 이 카드이고 사건이 해결편일 때, 자신의 리무브 에이리어에서 레벨 6 이하·특징 [경찰] 캐릭터를 최대 1장 선택해 현장에 등장시킨다.",
-          "draftStatus": "review_required",
+          "interpretation": "자신의 사건이 해결편이고 이번 턴 자신의 현장에 가장 먼저 등장했을 때, 자신의 리무브 에이리어에서 레벨 6 이하·특징 [경찰] 캐릭터를 최대 1장 선택해 현장에 등장시킨다.",
+          "draftStatus": "draft_candidate",
           "approvalStatus": "pending",
-          "confidence": "low",
-          "reviewNotes": "entry.is_first_character_this_turn는 기존 fact지만 사건이 해결편인지 판정하는 fact는 현재 DSL 런타임에 없다. 해결편 조건을 빼고 정의하면 사건편에서도 잘못 발동하므로 실행 DSL 초안 생성을 보류한다.",
-          "reviewedSemantics": {
+          "confidence": "high",
+          "reviewNotes": "해결편 조건과 이번 턴 첫 등장 조건을 DSL fact로 함께 검사하도록 했다.",
+          "proposedDefinition": {
+            "effectId": "card-1015-solution-first-entry-recover-police",
+            "cardIds": [
+              "1015"
+            ],
+            "cardNameKo": "미야모토 유미",
             "trigger": {
               "event": "character.entered_field",
               "timing": "after"
             },
             "conditions": [
               {
-                "kind": "player.case_phase",
+                "fact": "player.case_phase",
                 "operator": "equals",
                 "value": "solution"
               },
               {
-                "kind": "entry.is_first_character_this_turn",
+                "fact": "entry.is_first_character_this_turn",
                 "operator": "equals",
                 "value": true
               }
@@ -925,6 +882,7 @@
                     }
                   ]
                 },
+                "prompt": "자신의 리무브 에이리어에서 등장시킬 레벨 6 이하·특징 [경찰] 캐릭터를 최대 1장 선택하세요.",
                 "saveAs": "recovered"
               },
               {
@@ -938,9 +896,10 @@
                 }
               }
             ],
-            "runtimeBlockers": [
-              "player.case_phase fact가 현재 DSL fact evaluator에 없다."
-            ]
+            "reviewNotes": {
+              "sourceText": "【해결편】 - 【질풍】 자신의 리무브 에이리어에 있는 레벨 6 이하의 〚특징 [경찰]〛 캐릭터를 1장까지 선택하여 등장시킨다. (이번 턴 자신의 현장에 가장 먼저 등장했을 때 발동)",
+              "rationale": "player.case_phase는 효과를 가진 플레이어의 보드에서 현재 사건편/해결편 상태를 읽는다. entry.is_first_character_this_turn이 참일 때만 효과가 시작된다."
+            }
           }
         }
       ]
@@ -1287,11 +1246,11 @@
         {
           "candidateId": "pr274-activated-remove-level9-1",
           "sourceText": "【자신의 턴 중】 - 자신의 사건이 【청】 이외의 색을 가질 경우, 자신의 현장에 있는 이 캐릭터를 제외한 다른 캐릭터의 AP를 +1000한다.\n【선언】【슬립】 - 레벨 9 이하의 캐릭터를 1장까지 선택하여 리무브한다.",
-          "interpretation": "타이밍 제한 없이 이 카드를 슬립시키고, 상대 현장의 레벨 9 이하 캐릭터를 최대 1장 선택해 리무브한다.",
-          "draftStatus": "review_required",
+          "interpretation": "자신의 턴 중 원하는 타이밍에 이 카드를 슬립시키고, 상대 현장의 레벨 9 이하 캐릭터를 최대 1장 선택해 리무브한다. AI가 공격 전 등 적절한 시점을 판단한다.",
+          "draftStatus": "draft_candidate",
           "approvalStatus": "pending",
-          "confidence": "medium",
-          "reviewNotes": "대상 소유자 규칙에 따라 상대 현장을 대상으로 한다. 문구에 자신의 턴 제한이 없어서 turn.is_source_controller_turn 조건을 제거했으나, 현재 activate_card_effect RPC가 자신의 턴 메인 단계로 발동을 제한하므로 런타임 변경 전까지 review_required로 둔다.",
+          "confidence": "high",
+          "reviewNotes": "본인 턴 중 발동을 보장하도록 DSL 조건과 서버 발동 게이트를 반영했다.",
           "proposedDefinition": {
             "effectId": "card-1057-activated-remove-level9",
             "cardIds": [
@@ -1303,6 +1262,11 @@
               "timing": "immediate"
             },
             "conditions": [
+              {
+                "fact": "turn.is_source_controller_turn",
+                "operator": "equals",
+                "value": true
+              },
               {
                 "fact": "source.is_active",
                 "operator": "equals",
@@ -1351,7 +1315,7 @@
             ],
             "reviewNotes": {
               "sourceText": "【宣言】【スリープ】：レベル9以下のキャラを1枚まで選び、リムーブする。",
-              "rationale": "타이밍 제한 없이 이 카드를 슬립시키고, 상대 현장의 레벨 9 이하 캐릭터를 최대 1장 선택해 리무브한다.",
+              "rationale": "자신의 턴 중 원하는 타이밍에 이 카드를 슬립시키고, 상대 현장의 레벨 9 이하 캐릭터를 최대 1장 선택해 리무브한다. AI가 공격 전 등 적절한 시점을 판단한다.",
               "confidence": "medium",
               "targetOwnerAssumption": "opponent_confirmed_by_user"
             }
@@ -1360,39 +1324,48 @@
         {
           "candidateId": "pr274-continuous-nonblue-case-other-field-ap-1000-2",
           "sourceText": "【自分ターン中】 - 自分の事件が【青】以外の色を持つ場合、自分の現場にいるこのキャラ以外のキャラのAPを＋1000する。",
-          "interpretation": "자신의 턴 중, 자신의 사건 색에 청 이외의 색이 하나라도 포함되어 있으면 자신의 현장에 있는 이 카드 자신을 제외한 모든 캐릭터에게 AP +1000을 부여한다. 순수 백/황 사건뿐 아니라 청백·청녹 등 청과 다른 색이 섞인 사건도 조건을 만족한다.",
-          "draftStatus": "review_required",
+          "interpretation": "자신의 턴 중 자신의 사건 색에 청 이외의 색이 포함되어 있으면, 자신을 제외한 자신의 현장 캐릭터 전원에게 AP +1000을 부여한다. 순수 백·황뿐 아니라 청백·청녹 같은 복수 색 사건도 해당한다.",
+          "draftStatus": "draft_candidate",
           "approvalStatus": "pending",
-          "confidence": "low",
-          "reviewNotes": "현재 DSL의 연속 AP 보정은 정의가 연결된 source_character 본인에 적용되며, 'source_character를 제외한 자신의 현장 캐릭터 전원'을 대상으로 지정할 수 없다. 사건 색의 복합 색상 판정도 fact evaluator에 없어 실행 정의를 만들지 않는다.",
-          "reviewedSemantics": {
+          "confidence": "high",
+          "reviewNotes": "비청색 포함 조건 fact와 원본 캐릭터를 제외한 자신의 현장 캐릭터 전체를 대상으로 하는 연속 AP 보정 명령을 런타임에 추가했다.",
+          "proposedDefinition": {
+            "effectId": "card-1057-continuous-nonblue-case-other-field-ap-1000",
+            "cardIds": [
+              "1057"
+            ],
+            "cardNameKo": "쿠도 신이치",
             "trigger": {
               "event": "continuous.recalculate",
               "timing": "continuous"
             },
+            "continuous": true,
             "conditions": [
               {
-                "kind": "turn.is_source_controller_turn",
+                "fact": "turn.is_source_controller_turn",
                 "operator": "equals",
                 "value": true
               },
               {
-                "kind": "player.event.has_non_blue_color",
+                "fact": "player.event.has_non_blue_color",
                 "operator": "equals",
                 "value": true
               }
             ],
-            "effect": {
-              "op": "modify_stat",
-              "target": "own_field_characters_except_source",
-              "stat": "ap",
-              "amount": 1000,
-              "duration": "while_condition_true"
-            },
-            "runtimeBlockers": [
-              "연속 AP 보정 대상을 source_character가 아닌 나머지 자신의 현장 캐릭터 전체로 지정할 수 없다.",
-              "player.event.has_non_blue_color fact 및 복합 색상 판정이 구현되어 있지 않다."
-            ]
+            "steps": [
+              {
+                "op": "set_continuous_stat",
+                "target": "own_field_characters_except_source",
+                "stat": "ap",
+                "amount": 1000,
+                "modifierId": "non-blue-case-other-field-ap",
+                "duration": "while_condition_true"
+              }
+            ],
+            "reviewNotes": {
+              "sourceText": "【自分ターン中】 - 自分の事件が【青】以外の色を持つ場合、自分の現場にいるこのキャラ以外のキャラのAPを＋1000する。",
+              "rationale": "자신의 턴 중, 자신의 사건 색상에 청 이외의 색이 하나라도 포함되어 있으면 자신을 제외한 자신의 현장 캐릭터 전원의 AP를 +1000한다. 사건 색상 정보는 덱 제출 시 저장되는 event_has_non_blue_color 값을 참조하고, 연속 보정 런타임은 원본 이외의 현장 캐릭터에 해당 보정을 반영한다."
+            }
           }
         }
       ]
@@ -1606,6 +1579,28 @@
     {
       "ruleId": "bond-field-condition",
       "rule": "【인연: ○○】는 효과 발동 시 자신의 현장에 카드명이 ○○인 카드가 함께 있어야 하는 조건으로 해석한다. 카드명이 정확히 일치할 필요가 없는 지시라면 지정 이름을 포함하는 복합 카드명도 인정한다."
+    }
+  ],
+  "runtimeCapabilitiesAdded": [
+    {
+      "fact": "player.file.count",
+      "meaning": "효과를 가진 플레이어의 현재 파일 수. FILE5 등 임계 조건은 greater_than_or_equal로 검사한다."
+    },
+    {
+      "fact": "player.case_phase",
+      "meaning": "효과를 가진 플레이어의 사건 진행 단계: incident 또는 solution."
+    },
+    {
+      "fact": "player.event.has_non_blue_color",
+      "meaning": "자신의 사건 색상에 청 이외의 색이 하나라도 포함되는지 여부. 혼색 사건도 포함한다."
+    },
+    {
+      "fact": "public_reveal_acknowledgement",
+      "meaning": "reveal_cards.awaitAcknowledgement=true일 때 카드 정보를 양쪽에 표시하고, 상대가 확인 완료를 눌러야 다음 단계로 진행한다."
+    },
+    {
+      "fact": "own_turn_activated_abilities",
+      "meaning": "[선언][슬립] 능력은 본인 턴의 begin/file/main 단계 중 진행 중인 선택이나 효과가 없을 때 발동할 수 있다. AI는 활성 정의와 유효 대상을 바탕으로 시점을 판단한다."
     }
   ]
 }
