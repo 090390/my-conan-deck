@@ -35,6 +35,24 @@ function getEventRuleCode(card, fallbackKey = "") {
   return "";
 }
 
+function eventHasNonBlueColor(card) {
+  const source = card?.sourceData && typeof card.sourceData === "object"
+    ? card.sourceData
+    : card?.raw && typeof card.raw === "object" ? card.raw : {};
+  const values = [
+    card?.color, card?.colorKo, card?.color_ko, card?.colorKey, card?.color_key,
+    card?.colorText, card?.color_text, card?.colors, card?.originalColor,
+    source?.color, source?.colorKo, source?.color_ko, source?.colorKey, source?.color_key,
+    source?.colors, source?.raw?.color,
+  ];
+  const text = values.flatMap((value) => Array.isArray(value) ? value : [value])
+    .filter((value) => value !== null && value !== undefined)
+    .map((value) => String(value).trim().toLocaleLowerCase())
+    .join(" ");
+  if (!text) return false;
+  return /(?:red|yellow|green|white|black|purple|orange|pink|brown|gold|silver|적|황|녹|백|흑|자|주|빨강|노랑|초록|흰색|검정|보라|桃|赤|黄|緑|白|黒|紫|橙|金|銀)/iu.test(text);
+}
+
 function getCardTraits(card) {
   const values = [card?.traits, card?.category1, card?.category2, card?.category3];
   return [...new Set(values.flatMap((value) => {
@@ -512,6 +530,11 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
         p_event_rule_code: getEventRuleCode(cardsByKey.get(String(eventId)), eventId),
       });
       if (rpcError) throw rpcError;
+      const { error: eventColorError } = await supabase.rpc("set_private_room_event_has_non_blue_color_v1", {
+        p_room_id: room.id,
+        p_has_non_blue_color: eventHasNonBlueColor(cardsByKey.get(String(eventId))),
+      });
+      if (eventColorError) throw eventColorError;
       setReadyDeckSignature(deckSignature);
       await loadPlayers(room.id);
       setNotice("덱은 비공개로 저장되었으며, 준비 완료 상태로 표시되었습니다.");
