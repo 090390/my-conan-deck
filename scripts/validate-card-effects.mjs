@@ -12,9 +12,11 @@ const allowedEvents = new Set([
   "continuous.recalculate",
   "event.played",
   "opponent.deduction.declared",
+  "character.disguised", "character.contact_removed_opponent", "character.contact_started",
+  "case.solution_entered", "case.activated_ability", "evidence.card_removed",
 ]);
 const allowedOperators = new Set([
-  "equals", "in", "less_than", "less_than_or_equal", "greater_than",
+  "equals", "not_equals", "in", "less_than", "less_than_or_equal", "greater_than",
   "greater_than_or_equal", "has_keyword", "has_trait", "name_matches",
 ]);
 const allowedOps = new Set([
@@ -24,10 +26,13 @@ const allowedOps = new Set([
   "offer_reaction", "pay_cost", "set_mislead_value", "draw_cards", "gain_evidence",
   "ready_cards_that_used_keyword", "mark_keyword_activated", "shuffle_deck",
   "set_continuous_stat", "set_continuous_keyword",
+  "rest_cards", "ready_source_character", "schedule_move_to_deck_bottom",
+  "attach_top_card", "flip_evidence", "win_game", "start_contact",
+  "modify_contact_ap", "grant_bond_alias",
 ]);
 const zoneNames = new Set([
   "deck", "hand", "field", "opponent_field", "remove_area", "evidence_area", "partner_area",
-  "source_character", "deck_bottom",
+  "source_character", "deck_bottom", "both_fields", "opponent_hand", "attached_cards",
 ]);
 const errors = [];
 const need = (ok, message) => { if (!ok) errors.push(message); };
@@ -93,6 +98,15 @@ function checkStep(step, location, vars, def) {
     mark_keyword_activated: ["keyword"],
     set_continuous_stat: ["target", "stat", "amount", "modifierId", "duration"],
     set_continuous_keyword: ["target", "keyword", "modifierId", "duration"],
+    rest_cards: ["target"],
+    ready_source_character: [],
+    schedule_move_to_deck_bottom: ["target"],
+    attach_top_card: ["target"],
+    flip_evidence: ["count"],
+    win_game: [],
+    start_contact: ["target", "allowActiveTarget", "allowNewlyPlayed"],
+    modify_contact_ap: ["amount"],
+    grant_bond_alias: ["target", "name", "duration"],
   };
   if (required[step.op]) need(has(step, required[step.op]), `${location}: ${step.op}의 필수 필드(${required[step.op].join(", ")})가 빠졌습니다.`);
 
@@ -127,6 +141,7 @@ function checkStep(step, location, vars, def) {
   if (step.op === "refill_deck_from_remove_area") need(step.shuffle === true, `${location}: refill은 반드시 섞어야 합니다.`);
   if (step.op === "offer_reaction") need(Array.isArray(step.choices) && step.choices.length >= 2, `${location}: 반응 choices가 필요합니다.`);
   if (step.op === "grant_keyword") need(step.duration === "turn_end", `${location}: 현재 grant_keyword는 turn_end 지속만 지원합니다.`);
+  if (step.op === "grant_bond_alias") need(step.duration === "turn_end", `${location}: grant_bond_alias는 turn_end 지속이어야 합니다.`);
   if (step.op === "modify_stat") {
     need(step.duration === "turn_end", `${location}: 현재 modify_stat은 turn_end만 지원합니다.`);
     need(Number.isInteger(step.amount) && step.amount !== 0, `${location}: amount는 0이 아닌 정수여야 합니다.`);
