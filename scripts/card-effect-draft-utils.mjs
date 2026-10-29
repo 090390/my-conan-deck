@@ -2,10 +2,12 @@ import { readFile } from "node:fs/promises";
 
 export const ALLOWED_EVENTS = new Set([
   "character.entered_field", "character.removed_from_field", "character.activated_ability",
-  "character.acted", "player.turn_ended", "continuous.recalculate", "event.played", "opponent.deduction.declared"
+  "character.acted", "player.turn_ended", "continuous.recalculate", "event.played", "opponent.deduction.declared",
+  "character.disguised", "character.contact_removed_opponent", "character.contact_started",
+  "case.solution_entered", "case.activated_ability", "evidence.card_removed"
 ]);
 export const ALLOWED_OPERATORS = new Set([
-  "equals", "in", "less_than", "less_than_or_equal", "greater_than", "greater_than_or_equal",
+  "equals", "not_equals", "in", "less_than", "less_than_or_equal", "greater_than", "greater_than_or_equal",
   "has_keyword", "has_trait", "name_matches"
 ]);
 export const ALLOWED_OPS = new Set([
@@ -13,7 +15,9 @@ export const ALLOWED_OPS = new Set([
   "move_cards", "move_unselected_to_deck_bottom", "move_unselected_to_zone", "filter_cards",
   "reveal_until_match", "attach_cards", "grant_keyword", "modify_stat", "offer_reaction",
   "pay_cost", "set_mislead_value", "draw_cards", "gain_evidence", "ready_cards_that_used_keyword",
-  "mark_keyword_activated", "shuffle_deck", "set_continuous_stat", "set_continuous_keyword"
+  "mark_keyword_activated", "shuffle_deck", "set_continuous_stat", "set_continuous_keyword",
+  "rest_cards", "ready_source_character", "schedule_move_to_deck_bottom", "attach_top_card",
+  "flip_evidence", "win_game", "start_contact", "modify_contact_ap", "grant_bond_alias"
 ]);
 export const REQUIRED_FIELDS = {
   refill_deck_from_remove_area: ["includeRemainingDeck", "includeRemoveArea", "shuffle"],
@@ -37,10 +41,14 @@ export const REQUIRED_FIELDS = {
   mark_keyword_activated: ["keyword"],
   shuffle_deck: [],
   set_continuous_stat: ["target", "stat", "amount", "modifierId", "duration"],
-  set_continuous_keyword: ["target", "keyword", "modifierId", "duration"]
+  set_continuous_keyword: ["target", "keyword", "modifierId", "duration"],
+  rest_cards: ["target"], ready_source_character: [],
+  schedule_move_to_deck_bottom: ["target"], attach_top_card: ["target"], flip_evidence: ["count"],
+  win_game: [], start_contact: ["target", "allowActiveTarget", "allowNewlyPlayed"],
+  modify_contact_ap: ["amount"], grant_bond_alias: ["target", "name", "duration"]
 };
-const ZONES = new Set(["deck", "hand", "field", "opponent_field", "remove_area", "evidence_area", "partner_area", "source_character", "deck_bottom"]);
-const VALUE_FIELDS = new Set(["card_type", "level", "color", "keyword", "trait", "card_name", "ap_current", "controller", "is_active"]);
+const ZONES = new Set(["deck", "hand", "field", "opponent_field", "remove_area", "evidence_area", "partner_area", "source_character", "deck_bottom", "both_fields", "opponent_hand", "attached_cards"]);
+const VALUE_FIELDS = new Set(["card_type", "level", "color", "keyword", "trait", "card_name", "card_id", "rarity", "face_up", "ap_current", "controller", "is_active", "status"]);
 const object = (v) => !!v && typeof v === "object" && !Array.isArray(v);
 const variableRoot = (v) => typeof v === "string" ? v.split(".")[0] : "";
 
@@ -58,7 +66,10 @@ export async function loadActiveCatalog() {
     "player.field.has_card_name", "player.partner.color", "player.deck.count", "player.hand.count",
     "player.file.count", "player.case_phase", "player.event.has_non_blue_color",
     "opponent.hand.count", "entry.method", "entry.source.card_type", "entry.source.level",
-    "entry.is_first_character_this_turn", "source.under_cards.count"
+    "entry.is_first_character_this_turn", "entry.source.card_name", "entry.source.card_id",
+    "source.under_cards.count", "player.evidence.count", "player.evidence.facedown_count",
+    "game.total_evidence_count", "turn.number", "contact.source.ap", "contact.target.ap",
+    "player.event.has_detective_vs_kid_trait"
   ].forEach((f) => facts.add(f));
   return { data, facts };
 }
