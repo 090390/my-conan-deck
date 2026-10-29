@@ -1168,7 +1168,8 @@
           },
           "prompt": "공개하여 패에 추가할 황 캐릭터를 최대 1장 선택하세요.",
           "saveAs": "selected",
-          "optional": true
+          "optional": true,
+          "displayVariable": "seen"
         },
         {
           "op": "reveal_cards",
@@ -1286,7 +1287,8 @@
           },
           "prompt": "공개하여 패에 추가할 백 캐릭터를 최대 1장 선택하세요.",
           "saveAs": "selected",
-          "optional": true
+          "optional": true,
+          "displayVariable": "seen"
         },
         {
           "op": "reveal_cards",
