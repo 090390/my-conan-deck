@@ -12,6 +12,7 @@ on:
       - "scripts/generate-card-effect-drafts.mjs"
       - "scripts/validate-card-effects.mjs"
       - "package.json"
+      - "postcss.config.js"
       - ".github/workflows/card-effect-draft-validation.yml"
   pull_request:
     branches:
