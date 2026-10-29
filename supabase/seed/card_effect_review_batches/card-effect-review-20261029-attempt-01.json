@@ -198,7 +198,9 @@
               "awaitAcknowledgement=false 경로가 선택된 카드의 공개 정보를 양측에게 표시하지 않는다. 승인 대기 없이 공유 공개하는 런타임 동작이 필요하다."
             ],
             "emptyEligibleSetBehavior": "선택 대상이 없으면 reveal_cards와 move_cards를 건너뛰고 확인한 카드를 원하는 순서로 덱 아래에 둔다."
-          }
+          },
+          "reviewedByUser": true,
+          "reviewedByUserAt": "2026-10-30"
         }
       ]
     },
@@ -277,7 +279,9 @@
               "targetOwnerAssumption": "opponent_confirmed_by_user",
               "confidence": "high"
             }
-          }
+          },
+          "reviewedByUser": true,
+          "reviewedByUserAt": "2026-10-30"
         },
         {
           "candidateId": "b07080-activated-partner-yellow-file5-police-bottom-remove-2",
@@ -389,7 +393,9 @@
               "sourceText": "【파트너 황】【FILE5】【선언】【슬립】〚현장에 있는 레벨 7 이하의 특징 [경시청]을 가진 캐릭터 1장을 덱 맨 아래로 옮긴다〛 - 캐릭터를 1장까지 선택하여 리무브한다.",
               "rationale": "player.file.count가 현재 파일 수를 반환하도록 런타임을 보강했다. FILE5는 자신의 파일 수가 5장 이상일 때를 뜻하며, 파트너 황·본인 턴·액티브 상태도 함께 검사한다."
             }
-          }
+          },
+          "reviewedByUser": true,
+          "reviewedByUserAt": "2026-10-30"
         }
       ]
     },
@@ -573,7 +579,9 @@
               "rationale": "파트너 카드의 색상이 황이고 이 카드가 등장했을 때, 상대 현장의 AP 8000 이하 캐릭터를 최대 1장 선택해 리무브한다.",
               "confidence": "high"
             }
-          }
+          },
+          "reviewedByUser": true,
+          "reviewedByUserAt": "2026-10-30"
         },
         {
           "candidateId": "b10068-end-turn-search-listed-police-academy-2",
@@ -679,7 +687,9 @@
               "japaneseOwnNameIsAlsoSearchTarget": true
             }
           },
-          "sourceTextConflictResolved": "사용자 확인: [인연: 후루야 레이]가 발동 조건이고, [모로후시 히로미츠]는 검색 대상 카드명 중 하나다."
+          "sourceTextConflictResolved": "사용자 확인: [인연: 후루야 레이]가 발동 조건이고, [모로후시 히로미츠]는 검색 대상 카드명 중 하나다.",
+          "reviewedByUser": true,
+          "reviewedByUserAt": "2026-10-30"
         }
       ]
     },
@@ -824,7 +834,9 @@
               "sourceText": "【宣言】【スリープ】：〚特徴［警察］〛を持つキャラを1枚まで選び、ターン終了までAP+2000。",
               "rationale": "자신의 턴 중 원하는 타이밍에 이 카드를 슬립시키고, 자신의 현장에 있는 특징 [경찰] 캐릭터를 최대 1장 선택해 턴 종료 시까지 AP +2000을 부여한다. AI는 공격 직전 등 유리한 타이밍을 판단한다. 대상은 액티브 상태일 필요는 없지만, 전략상 액티브한 아군에게 부여하는 것이 유리할 수 있다."
             }
-          }
+          },
+          "reviewedByUser": true,
+          "reviewedByUserAt": "2026-10-30"
         },
         {
           "candidateId": "b09075p-solution-first-entry-recover-police-2",
@@ -900,7 +912,9 @@
               "sourceText": "【해결편】 - 【질풍】 자신의 리무브 에이리어에 있는 레벨 6 이하의 〚특징 [경찰]〛 캐릭터를 1장까지 선택하여 등장시킨다. (이번 턴 자신의 현장에 가장 먼저 등장했을 때 발동)",
               "rationale": "player.case_phase는 효과를 가진 플레이어의 보드에서 현재 사건편/해결편 상태를 읽는다. entry.is_first_character_this_turn이 참일 때만 효과가 시작된다."
             }
-          }
+          },
+          "reviewedByUser": true,
+          "reviewedByUserAt": "2026-10-30"
         }
       ]
     },
@@ -1319,7 +1333,9 @@
               "confidence": "medium",
               "targetOwnerAssumption": "opponent_confirmed_by_user"
             }
-          }
+          },
+          "reviewedByUser": true,
+          "reviewedByUserAt": "2026-10-30"
         },
         {
           "candidateId": "pr274-continuous-nonblue-case-other-field-ap-1000-2",
@@ -1366,7 +1382,9 @@
               "sourceText": "【自分ターン中】 - 自分の事件が【青】以外の色を持つ場合、自分の現場にいるこのキャラ以外のキャラのAPを＋1000する。",
               "rationale": "자신의 턴 중, 자신의 사건 색상에 청 이외의 색이 하나라도 포함되어 있으면 자신을 제외한 자신의 현장 캐릭터 전원의 AP를 +1000한다. 사건 색상 정보는 덱 제출 시 저장되는 event_has_non_blue_color 값을 참조하고, 연속 보정 런타임은 원본 이외의 현장 캐릭터에 해당 보정을 반영한다."
             }
-          }
+          },
+          "reviewedByUser": true,
+          "reviewedByUserAt": "2026-10-30"
         }
       ]
     },
@@ -1578,7 +1596,27 @@
     },
     {
       "ruleId": "bond-field-condition",
-      "rule": "【인연: ○○】는 효과 발동 시 자신의 현장에 카드명이 ○○인 카드가 함께 있어야 하는 조건으로 해석한다. 카드명이 정확히 일치할 필요가 없는 지시라면 지정 이름을 포함하는 복합 카드명도 인정한다."
+      "rule": "【인연: ○○】는 효과 발동 시 자신의 현장에 카드명이 ○○인 카드가 함께 있어야 하는 조건으로 해석한다. 지정 이름을 포함하는 복합 카드명도 인정한다."
+    },
+    {
+      "ruleId": "file-threshold",
+      "rule": "【FILEn】은 효과를 발동하는 플레이어 자신의 파일 수가 n장 이상일 때 충족한다."
+    },
+    {
+      "ruleId": "case-phase-condition",
+      "rule": "【사건편】과 【해결편】은 효과를 발동하는 플레이어의 현재 사건 진행 단계(case_phase)를 조건으로 사용한다."
+    },
+    {
+      "ruleId": "public-reveal-confirmation",
+      "rule": "카드가 상대 또는 양측에게 공개되면 실제 공개 카드 정보를 표시하고 상대가 확인 완료를 눌러야 다음 효과 단계로 진행한다. 공개 대상이 opponent/all이면 별도 승인 대기를 생략하지 않는다."
+    },
+    {
+      "ruleId": "declare-sleep-timing",
+      "rule": "【선언】【슬립】은 자기 턴 중 합법적인 타이밍에 액티브 상태의 원본 카드를 슬립시켜 발동하는 능력이다. 컨택 직전 등 특정 타이밍은 카드 문구가 별도로 정하지 않는 한 AI가 게임 상태를 보고 판단한다."
+    },
+    {
+      "ruleId": "non-blue-event-color",
+      "rule": "사건 색 조건이 청 이외의 색을 포함한다고 하면 청 외 단색뿐 아니라 청과 다른 색이 섞인 복수 색 사건도 조건을 충족한다."
     }
   ],
   "runtimeCapabilitiesAdded": [
