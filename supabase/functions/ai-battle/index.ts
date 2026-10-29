@@ -19,6 +19,29 @@ function cardAp(card: any) {
   const value = Number(card?.ap) + Number(card?.ap_bonus || 0);
   return Number.isFinite(value) ? value : 0;
 }
+function cardCutInBonus(card: any): number {
+  const explicit = Number(card?.cut_in_bonus ?? card?.cutInBonus ?? card?.cut_in_ap_bonus ?? card?.cutInApBonus);
+  if (Number.isFinite(explicit) && explicit > 0) return explicit;
+
+  // Some imported cards store their cut-in as printed text instead of a normalized
+  // numeric field (e.g. B10041: 「【カットイン】AP＋2000」). Read only cut-in
+  // fields so a normal ability mentioning AP does not get mistaken for a cut-in.
+  const source = card?.sourceData && typeof card.sourceData === "object" ? card.sourceData
+    : card?.raw && typeof card.raw === "object" ? card.raw : {};
+  const printed = [
+    card?.cut_in, card?.cutIn, card?.cut_in_text, card?.cutInText,
+    card?.cut_in_description, card?.cutInDescription,
+    source?.cut_in, source?.cutIn, source?.cut_in_text, source?.cutInText,
+  ].filter((value) => typeof value === "string").join(" ");
+  if (!printed || !/(?:カットイン|컷인|cut[\s_-]*in)/iu.test(printed)) return 0;
+
+  const match = printed.match(/(?:ＡＰ|AP)\s*[＋+]\s*([0-9０-９,，]+)/iu);
+  if (!match) return 0;
+  const digits = match[1].replace(/[０-９]/gu, (digit: string) =>
+    String(digit.charCodeAt(0) - "０".charCodeAt(0))).replace(/[，,]/gu, "");
+  const bonus = Number(digits);
+  return Number.isFinite(bonus) && bonus > 0 ? bonus : 0;
+}
 function isCharacter(card: any) {
   return String(card?.card_type || "").toLowerCase() === "character";
 }
@@ -362,7 +385,7 @@ function describeAction(decision: any, state: any, aiId: string) {
     case "decline_guard":
       return "AI 탐정: 공격을 막기에 적합한 캐릭터가 없어 가드를 포기했습니다.";
     case "contact_use_cutin":
-      return `AI 탐정: 컷인을 사용해 AP를 ${Number(hand.find((entry: any) => entry.instance_id === decision?.payload?.instance_id)?.cut_in_bonus || 0)} 올렸습니다.`;
+      return `AI 탐정: 컷인을 사용해 AP를 ${cardCutInBonus(hand.find((entry: any) => entry.instance_id === decision?.payload?.instance_id))} 올렸습니다.`;
     case "contact_pass_cutin": return "AI 탐정: 컷인을 사용하지 않고 AP 비교를 진행했습니다.";
     case "resolve_mislead": return "AI 탐정: 사용할 수 있는 미스리드 효과를 확인해 대응했습니다.";
     case "pass_mislead": return "AI 탐정: 사용할 수 있는 미스리드 효과가 없어 대응을 넘겼습니다.";
@@ -440,9 +463,9 @@ function chooseResponse(state: any, aiId: string) {
       ? Number(pending.target_ap || 0) + Number(pending.target_bonus || 0)
       : Number(pending.attacker_ap || 0) + Number(pending.attacker_bonus || 0);
     const needed = Math.max(0, opponentAp - myAp + 1);
-    const cutin = hand.filter((card: any) => Number(card?.cut_in_bonus || 0) >= needed
-      && Number(card?.cut_in_bonus || 0) > 0)
-      .sort((a: any, b: any) => Number(a.cut_in_bonus) - Number(b.cut_in_bonus))[0];
+    const cutin = hand.filter((card: any) => cardCutInBonus(card) >= needed
+      && cardCutInBonus(card) > 0)
+      .sort((a: any, b: any) => cardCutInBonus(a) - cardCutInBonus(b))[0];
     if (cutin && needed > 0) {
       return { action: "contact_use_cutin", payload: { instance_id: cutin.instance_id } };
     }
@@ -589,8 +612,8 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
     const targetAp = cardAp(activeHighLevelTarget);
     const canWinWithoutCost = attackerAp > targetAp;
     const canWinByD11007 = hand.length > 0 && attackerAp < targetAp && attackerAp + 3000 > targetAp;
-    const canWinByCutin = hand.some((card: any) => Number(card?.cut_in_bonus || 0) > 0
-      && attackerAp + Number(card.cut_in_bonus || 0) > targetAp);
+    const canWinByCutin = hand.some((card: any) => cardCutInBonus(card) > 0
+      && attackerAp + cardCutInBonus(card) > targetAp);
     if (canWinWithoutCost || canWinByD11007 || canWinByCutin) {
       return {
         action: "declare_contact",
@@ -614,7 +637,7 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
       const attackerAp = cardAp(candidate);
       const targetAp = cardAp(restedTarget);
       return attackerAp > targetAp || hand.some((card: any) => {
-        const bonus = Number(card?.cut_in_bonus || 0);
+        const bonus = cardCutInBonus(card);
         return bonus > 0 && attackerAp + bonus > targetAp;
       });
     });
