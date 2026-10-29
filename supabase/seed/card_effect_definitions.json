@@ -3104,6 +3104,178 @@
           }
         }
       ]
+    },
+    {
+      "effectId": "card-0706-contact-remove-opponent-police-deploy",
+      "cardIds": [
+        "0706"
+      ],
+      "cardNameKo": "하기와라 치하야",
+      "cardNameJa": "萩原千速",
+      "trigger": {
+        "event": "character.contact_removed_opponent",
+        "timing": "after"
+      },
+      "conditions": [
+        {
+          "fact": "player.file.count",
+          "operator": "greater_than_or_equal",
+          "value": 6
+        }
+      ],
+      "steps": [
+        {
+          "op": "offer_reaction",
+          "reactionId": "b06087p-contact-removed-opponent",
+          "actor": "controller",
+          "choices": [
+            "yes",
+            "no"
+          ],
+          "saveAs": "remove_self",
+          "prompt": "파일이 6장 이상이고 상대 캐릭터를 컨택으로 리무브했습니다. 하기와라 치하야를 리무브하고 손패의 경찰 캐릭터를 등장시킬까요?"
+        },
+        {
+          "op": "move_cards",
+          "from": "source_character",
+          "to": "remove_area",
+          "when": {
+            "fact": "vars.remove_self",
+            "operator": "equals",
+            "value": "yes"
+          }
+        },
+        {
+          "op": "select_cards",
+          "from": "hand",
+          "min": 0,
+          "max": 1,
+          "optional": true,
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "operator": "equals",
+                "value": "character"
+              },
+              {
+                "field": "level",
+                "operator": "less_than_or_equal",
+                "value": 7
+              },
+              {
+                "field": "trait",
+                "operator": "has_trait",
+                "value": "警察"
+              },
+              {
+                "field": "card_id",
+                "operator": "not_equals",
+                "value": "0706"
+              }
+            ]
+          },
+          "prompt": "손패에서 하기와라 치하야 이외의 레벨 7 이하 경찰 캐릭터를 최대 1장 선택해 등장시킵니다.",
+          "saveAs": "police_deployment",
+          "when": {
+            "fact": "vars.remove_self",
+            "operator": "equals",
+            "value": "yes"
+          }
+        },
+        {
+          "op": "move_cards",
+          "from": "police_deployment",
+          "to": "field",
+          "entryMethod": "character_ability",
+          "when": {
+            "fact": "vars.police_deployment.count",
+            "operator": "greater_than",
+            "value": 0
+          }
+        }
+      ],
+      "notes": "자신의 FILE 6장 이상, 해당 캐릭터와의 컨택으로 상대 캐릭터가 실제 리무브되었을 때만 선택지 제공."
+    },
+    {
+      "effectId": "card-0732-activated-deploy-tokyo-police-temporary-charge-return",
+      "cardIds": [
+        "0732"
+      ],
+      "cardNameKo": "메구레 쥬조",
+      "cardNameJa": "目暮十三",
+      "trigger": {
+        "event": "character.activated_ability",
+        "timing": "after"
+      },
+      "conditions": [],
+      "steps": [
+        {
+          "op": "pay_cost",
+          "cost": "sleep_source_character"
+        },
+        {
+          "op": "select_cards",
+          "from": "remove_area",
+          "min": 0,
+          "max": 1,
+          "optional": true,
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "operator": "equals",
+                "value": "character"
+              },
+              {
+                "field": "level",
+                "operator": "less_than_or_equal",
+                "value": 4
+              },
+              {
+                "field": "trait",
+                "operator": "has_trait",
+                "value": "警視庁"
+              }
+            ]
+          },
+          "prompt": "리무브 에이리어에서 레벨 4 이하 경시청 캐릭터를 최대 1장 선택해 등장시킵니다.",
+          "saveAs": "deployment"
+        },
+        {
+          "op": "move_cards",
+          "from": "deployment",
+          "to": "field",
+          "entryMethod": "character_ability",
+          "when": {
+            "fact": "vars.deployment.count",
+            "operator": "greater_than",
+            "value": 0
+          }
+        },
+        {
+          "op": "grant_keyword",
+          "target": "vars.deployment",
+          "keyword": "charge_case",
+          "duration": "turn_end",
+          "displayNameKo": "돌격[사건]",
+          "when": {
+            "fact": "vars.deployment.count",
+            "operator": "greater_than",
+            "value": 0
+          }
+        },
+        {
+          "op": "schedule_move_to_deck_bottom",
+          "target": "vars.deployment",
+          "when": {
+            "fact": "vars.deployment.count",
+            "operator": "greater_than",
+            "value": 0
+          }
+        }
+      ],
+      "activationLabelKo": "선언 · 경시청 캐릭터 등장 후 턴 종료 시 덱 아래로 이동"
     }
   ]
 }
