@@ -47,18 +47,19 @@ function cardNameText(card: any): string {
     source?.name, source?.name_ja, source?.card_name, source?.card_id, source?.card_num]
     .map((value) => String(value ?? "")).join(" ").toLocaleLowerCase();
 }
-function normalizedRuleToken(value: unknown): string {
-  const token = String(value ?? "").trim().toLocaleLowerCase();
-  const aliases: Record<string, string[]> = {
-    "경찰": ["경찰", "警察", "police"],
-    "경시청": ["경시청", "警視庁", "警視廳", "tokyo metropolitan police"],
-    "후루야 레이": ["후루야 레이", "降谷零", "降谷 零", "furuya rei", "rei furuya"],
-    "모로후시 히로미츠": ["모로후시 히로미츠", "諸伏景光", "もろふし ひろみつ", "hiromitsu morofushi"],
-    "다테 와타루": ["다테 와타루", "伊達航", "wataru date"],
-    "하기와라 켄지": ["하기와라 켄지", "萩原研二", "kenji hagiwara"],
-    "마츠다 진페이": ["마츠다 진페이", "松田陣平", "jinpei matsuda"],
-  };
-  return (aliases[token] || [token])[0] || token;
+const CARD_NAME_ALIASES: Record<string, string[]> = {
+  "후루야 레이": ["후루야 레이", "降谷零", "降谷 零", "furuya rei", "rei furuya"],
+  "모로후시 히로미츠": ["모로후시 히로미츠", "諸伏景光", "もろふし ひろみつ", "hiromitsu morofushi"],
+  "다테 와타루": ["다테 와타루", "伊達航", "wataru date"],
+  "하기와라 켄지": ["하기와라 켄지", "萩原研二", "kenji hagiwara"],
+  "마츠다 진페이": ["마츠다 진페이", "松田陣平", "jinpei matsuda"],
+  "쿠도 신이치": ["쿠도 신이치", "工藤新一", "kudo shinichi", "kudou shinichi"],
+};
+function matchesCardName(card: any, expected: unknown): boolean {
+  const token = String(expected ?? "").trim().toLocaleLowerCase();
+  const aliases = CARD_NAME_ALIASES[token] || [token];
+  const haystack = cardNameText(card);
+  return aliases.some((alias) => alias && haystack.includes(alias.toLocaleLowerCase()));
 }
 function hasTrait(card: any, expected: unknown): boolean {
   const token = String(expected ?? "").trim().toLocaleLowerCase();
@@ -67,7 +68,7 @@ function hasTrait(card: any, expected: unknown): boolean {
     "경시청": ["경시청", "警視庁", "警視廳", "tokyo metropolitan police"],
   };
   const values = aliases[token] || [token];
-  const haystack = cardTraits(card).join(" ") + " " + cardNameText(card);
+  const haystack = cardTraits(card).join(" ");
   return values.some((value) => value && haystack.includes(value.toLocaleLowerCase()));
 }
 function matchesDslFilter(card: any, filter: any): boolean {
@@ -87,8 +88,8 @@ function matchesDslFilter(card: any, filter: any): boolean {
     case "trait": return op === "has_trait" ? hasTrait(card, expected) : false;
     case "card_name": {
       const haystack = cardNameText(card);
-      if (op === "name_matches") return haystack.includes(String(expected ?? "").toLocaleLowerCase());
-      if (op === "in") return Array.isArray(expected) && expected.some((name) => haystack.includes(String(name).toLocaleLowerCase()));
+      if (op === "name_matches") return matchesCardName(card, expected);
+      if (op === "in") return Array.isArray(expected) && expected.some((name) => matchesCardName(card, name));
       actual = String(card?.name || card?.card_name || "");
       break;
     }
@@ -143,7 +144,7 @@ function chooseActivatedAbility(state: any, aiId: string) {
         // A rested source is being slept, so favor a different active teammate for an AP buff.
         const preferred = validTargets.filter((card: any) => isActive(card)
           && String(card.instance_id || "") !== sourceId);
-        if (preferred.length) validTargets = preferred;
+        validTargets = preferred;
       }
       selections.push({ step, targets: validTargets });
       const min = Math.max(0, Number(step.min || 0));
