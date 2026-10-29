@@ -87,6 +87,13 @@ export function validateDslDefinition(def, expectedCardId, knownFacts = new Set(
   need(Array.isArray(def.conditions ?? []), "conditions는 배열이어야 합니다.");
   const checkCondition = (c, at) => {
     need(object(c), `${at}: 조건은 객체여야 합니다.`); if (!object(c)) return;
+    if (c.allOf !== undefined || c.anyOf !== undefined) {
+      for (const branch of ["allOf", "anyOf"]) if (c[branch] !== undefined) {
+        need(Array.isArray(c[branch]) && c[branch].length > 0, `${at}.${branch}는 비어 있지 않은 배열이어야 합니다.`);
+        (c[branch] || []).forEach((x, i) => checkCondition(x, `${at}.${branch}[${i}]`));
+      }
+      return;
+    }
     need(typeof c.fact === "string" && c.fact, `${at}: fact가 필요합니다.`);
     if (typeof c.fact === "string" && !knownFacts.has(c.fact) && !c.fact.startsWith("vars.")) need(false, `${at}: 확인되지 않은 fact 경로 '${c.fact}'`);
     need(ALLOWED_OPERATORS.has(c.operator), `${at}: 지원하지 않는 operator '${String(c.operator)}'`);
