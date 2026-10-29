@@ -2279,7 +2279,7 @@ export default function App() {
   }
 
   return (
-    <main className="app-shell min-h-screen bg-[#080d17] p-3 text-slate-100 md:p-5">
+    <main className="app-shell min-h-screen bg-[#080d17] text-slate-100">
       {/* Tailwind 미적용 환경에서도 카드 그리드와 상세 모달의 핵심 레이아웃이 유지되도록 하는 안전장치 */}
       <style>{`
         .conan-card-grid {
@@ -2316,7 +2316,7 @@ export default function App() {
 
         /* Standalone visual fallback: keeps the intended UI polished even without Tailwind CSS. */
         .app-shell {
-          box-sizing: border-box; min-height: 100vh; padding: 16px !important;
+          box-sizing: border-box; min-height: 100vh; padding: 0 !important; margin: 0 !important;
           color: #e8edf7 !important; background: #080d17 !important;
           font-family: Inter, Pretendard, "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
           font-size: 14px; line-height: 1.5;
