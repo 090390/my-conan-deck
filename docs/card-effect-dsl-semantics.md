@@ -26,3 +26,5 @@
 - **이벤트 사용 트리거**: 이벤트 카드가 기본 이벤트 행동으로 현장에 놓이면 `event.played`가 발생합니다. 이벤트 효과 실행은 선택/공개 확인을 완료한 뒤 이어지며, 효과가 끝난 이벤트는 기존 `finish_event` 행동으로 리무브 영역에 옮깁니다.
 
 - **동적 필터 값**: `filter.value`가 `{ "fact": "player.file.count" }` 같은 fact 객체이면 현재 플레이어 상태에서 값을 읽어 필터 비교에 사용합니다.
+
+- **탐정 VS 괴도 사건 특징**: 현재 지원하는 코난 VS 괴도 키드 사건 규칙 코드 `conan_vs_kid_1261`를 `player.event.has_detective_vs_kid_trait` fact로 판정합니다. 새 사건 규칙이 추가되면 해당 fact의 매핑도 확장해야 합니다.
