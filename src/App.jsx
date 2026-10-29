@@ -2584,14 +2584,14 @@ export default function App() {
           .conan-card-grid { grid-template-columns: repeat(9, minmax(0, 1fr)) !important; }
         }
         @media (max-width: 800px) {
-          .app-shell { padding: 12px !important; }
+          .app-shell { padding: 0 !important; margin: 0 !important; }
           .conan-card-grid { grid-template-columns: repeat(7, minmax(0, 1fr)) !important; }
           .card-detail-header h2 { font-size: 18px; }
           .card-detail-layout { grid-template-columns: minmax(0, 1fr) !important; }
           .card-detail-layout > div:first-child > img { max-width: 185px; max-height: 34vh; }
         }
         @media (max-width: 600px) {
-          .app-shell { padding: 9px !important; }
+          .app-shell { padding: 0 !important; margin: 0 !important; }
           .app-header h1 { font-size: 20px; }
           .app-panel { padding: 10px !important; border-radius: 12px !important; }
           .conan-card-grid { grid-template-columns: repeat(5, minmax(0, 1fr)) !important; gap: 6px !important; }
