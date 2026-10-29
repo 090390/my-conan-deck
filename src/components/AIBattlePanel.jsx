@@ -222,6 +222,7 @@ export default function AIBattlePanel({ deck, partnerId, eventId, cards = [], en
   const [selectedDeckIds, setSelectedDeckIds] = useState([]);
   const [deckListLoading, setDeckListLoading] = useState(true);
   const [deckListError, setDeckListError] = useState("");
+  const [deckPickerOpen, setDeckPickerOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -282,7 +283,18 @@ export default function AIBattlePanel({ deck, partnerId, eventId, cards = [], en
       if (!data?.room_id || !data?.invite_code) throw new Error(data?.error || "AI 대전 생성 결과를 확인할 수 없습니다.");
       await onStarted?.({ roomId: data.room_id, inviteCode: data.invite_code, userId: session?.user?.id, initialAiMessage: data.initial_ai?.message || "" });
     } catch (err) {
-      setError(err?.message || "AI 대전을 시작하지 못했습니다.");
+      let readableMessage = err?.message || "AI 대전을 시작하지 못했습니다.";
+      if (err?.context && typeof err.context.clone === "function") {
+        try {
+          const responseBody = await err.context.clone().json();
+          if (responseBody?.error || responseBody?.message) {
+            readableMessage = String(responseBody.error || responseBody.message);
+          }
+        } catch {
+          // Some invocation errors return a non-JSON response; keep the original message.
+        }
+      }
+      setError(readableMessage);
     } finally {
       setLoading(false);
     }
@@ -295,57 +307,78 @@ export default function AIBattlePanel({ deck, partnerId, eventId, cards = [], en
           <p style={{ margin: "0 0 5px", color: "#7dd3fc", fontSize: 10, fontWeight: 900, letterSpacing: ".18em" }}>AI BATTLE · EXPERIMENTAL</p>
           <h2 style={{ margin: 0, fontSize: 22, fontWeight: 850 }}>AI 대전</h2>
           <p style={{ color: "#9aa8bd", marginTop: 7, fontSize: 13, lineHeight: 1.7 }}>
-            아래에서 AI가 사용할 공개 덱 후보를 선택하세요. 체크한 덱 가운데 하나를 무작위로 골라 대전합니다.
+            기본적으로 공개 덱 후보가 모두 선택되어 있습니다. 후보 상자를 열어 일부 덱만 선택할 수도 있으며, 선택한 덱 중 하나를 무작위로 골라 대전합니다.
           </p>
         </div>
       </div>
       <div style={{ marginTop: 14, padding: 12, borderRadius: 9, border: "1px solid rgba(252,211,77,.24)", background: "rgba(161,98,7,.09)", color: "#fcd34d", fontSize: 11, lineHeight: 1.7 }}>
-        실험 중인 기능입니다. 덱 효과별 지원 범위에 따라 일부 행동이 정상적으로 처리되지 않을 수 있습니다.
+        개발 중인 기능으로, 카드 효과는 정상 동작되는 것보다 정상 동작되지 않는 것이 훨씬 더 많습니다. 현재로서는 문제가 많은 시스템이므로 사용을 권장하지 않습니다.
       </div>
       <div style={{ marginTop: 16, border: "1px solid rgba(148,163,184,.2)", borderRadius: 12, overflow: "hidden" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10, padding: "12px 14px", background: "rgba(15,23,42,.7)" }}>
-          <div>
-            <strong style={{ fontSize: 13 }}>AI 덱 후보</strong>
-            <div style={{ color: "#94a3b8", fontSize: 11, marginTop: 3 }}>
-              {deckListLoading ? "공개 덱 목록을 불러오는 중…" : `${selectedDeckIds.length} / ${publicDecks.length}개 선택됨`}
+        <button
+          type="button"
+          aria-expanded={deckPickerOpen}
+          onClick={() => setDeckPickerOpen((open) => !open)}
+          style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+            width: "100%", padding: "13px 14px", border: 0, textAlign: "left",
+            background: "rgba(15,23,42,.7)", color: "#e8edf7", cursor: "pointer",
+          }}
+        >
+          <span style={{ minWidth: 0 }}>
+            <strong style={{ display: "block", fontSize: 13 }}>AI 덱 후보</strong>
+            <span style={{ display: "block", color: "#94a3b8", fontSize: 11, marginTop: 4 }}>
+              {deckListLoading ? "공개 덱 목록을 불러오는 중…" : deckListError ? "공개 덱 목록을 불러오지 못했습니다" : `${selectedDeckIds.length} / ${publicDecks.length}개 선택됨`}
+            </span>
+            {!deckPickerOpen && !deckListError && <span style={{ display: "block", color: "#64748b", fontSize: 10, marginTop: 4 }}>눌러서 후보 목록 열기</span>}
+          </span>
+          <span aria-hidden="true" style={{ color: "#7dd3fc", fontSize: 12, fontWeight: 800, flexShrink: 0 }}>
+            {deckPickerOpen ? "접기 ▲" : "선택 변경 ▼"}
+          </span>
+        </button>
+        {deckListError && !deckPickerOpen && <p role="alert" style={{ margin: 0, padding: "10px 14px", color: "#fda4af", fontSize: 12 }}>{deckListError}</p>}
+        {deckPickerOpen && (
+          <>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, padding: "10px 12px", borderTop: "1px solid rgba(148,163,184,.12)", background: "rgba(2,6,23,.35)" }}>
+              <span style={{ color: "#94a3b8", fontSize: 11 }}>기본값은 전체 선택입니다.</span>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                <button type="button" style={{ ...buttonStyle, padding: "7px 10px", fontSize: 11 }} disabled={deckListLoading || publicDecks.length === 0 || selectedDeckIds.length === publicDecks.length} onClick={() => setSelectedDeckIds(publicDecks.map((item) => String(item.id)))}>전체 선택</button>
+                <button type="button" style={{ ...buttonStyle, padding: "7px 10px", fontSize: 11, background: "#1e293b", borderColor: "rgba(148,163,184,.28)" }} disabled={deckListLoading || selectedDeckIds.length === 0} onClick={() => setSelectedDeckIds([])}>전체 해제</button>
+              </div>
             </div>
-          </div>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            <button type="button" style={{ ...buttonStyle, padding: "7px 10px", fontSize: 11 }} disabled={deckListLoading || publicDecks.length === 0} onClick={() => setSelectedDeckIds(publicDecks.map((item) => String(item.id)))}>전체 선택</button>
-            <button type="button" style={{ ...buttonStyle, padding: "7px 10px", fontSize: 11, background: "#1e293b", borderColor: "rgba(148,163,184,.28)" }} disabled={deckListLoading || selectedDeckIds.length === 0} onClick={() => setSelectedDeckIds([])}>전체 해제</button>
-          </div>
-        </div>
-        {deckListError && <p role="alert" style={{ margin: 0, padding: 12, color: "#fda4af", fontSize: 12 }}>{deckListError}</p>}
-        {!deckListLoading && !deckListError && publicDecks.length === 0 && <p style={{ margin: 0, padding: 12, color: "#fda4af", fontSize: 12 }}>공개 덱 저장소에 등록된 덱이 없습니다.</p>}
-        <div style={{ maxHeight: 340, overflowY: "auto" }}>
-          {publicDecks.map((item) => {
-            const id = String(item.id);
-            const checked = selectedDeckIds.includes(id);
-            const details = publicDeckLabels(cards, item);
-            return (
-              <label key={id} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "11px 13px", borderTop: "1px solid rgba(148,163,184,.12)", background: checked ? "rgba(8,47,73,.18)" : "transparent", cursor: "pointer" }}>
-                <input
-                  type="checkbox"
-                  checked={checked}
-                  disabled={deckListLoading}
-                  onChange={(event) => setSelectedDeckIds((current) => event.target.checked
-                    ? [...new Set([...current, id])]
-                    : current.filter((selectedId) => selectedId !== id))}
-                  style={{ marginTop: 3, accentColor: "#38bdf8" }}
-                />
-                <span style={{ minWidth: 0, flex: 1 }}>
-                  <span style={{ display: "block", color: "#e2e8f0", fontSize: 12, fontWeight: 800, overflowWrap: "anywhere" }}>{item.deck_name || "이름 없는 덱"}</span>
-                  <span style={{ display: "block", marginTop: 3, color: "#94a3b8", fontSize: 10, lineHeight: 1.6 }}>
-                    제작자: {item.composer_name || "미상"}
-                    {" · "}파트너: {details.partnerColor ? `[${details.partnerColor}] ` : ""}{details.partnerName}
-                    {" · "}사건: {details.eventName}
-                  </span>
-                  {item.description && <span style={{ display: "block", marginTop: 3, color: "#718096", fontSize: 10, lineHeight: 1.5, overflowWrap: "anywhere" }}>{item.description}</span>}
-                </span>
-              </label>
-            );
-          })}
-        </div>
+            {deckListError && <p role="alert" style={{ margin: 0, padding: 12, color: "#fda4af", fontSize: 12 }}>{deckListError}</p>}
+            {!deckListLoading && !deckListError && publicDecks.length === 0 && <p style={{ margin: 0, padding: 12, color: "#fda4af", fontSize: 12 }}>공개 덱 저장소에 등록된 덱이 없습니다.</p>}
+            <div style={{ maxHeight: 340, overflowY: "auto" }}>
+              {publicDecks.map((item) => {
+                const id = String(item.id);
+                const checked = selectedDeckIds.includes(id);
+                const details = publicDeckLabels(cards, item);
+                return (
+                  <label key={id} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "11px 13px", borderTop: "1px solid rgba(148,163,184,.12)", background: checked ? "rgba(8,47,73,.18)" : "transparent", cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      disabled={deckListLoading}
+                      onChange={(event) => setSelectedDeckIds((current) => event.target.checked
+                        ? [...new Set([...current, id])]
+                        : current.filter((selectedId) => selectedId !== id))}
+                      style={{ marginTop: 3, accentColor: "#38bdf8" }}
+                    />
+                    <span style={{ minWidth: 0, flex: 1 }}>
+                      <span style={{ display: "block", color: "#e2e8f0", fontSize: 12, fontWeight: 800, overflowWrap: "anywhere" }}>{item.deck_name || "이름 없는 덱"}</span>
+                      <span style={{ display: "block", marginTop: 3, color: "#94a3b8", fontSize: 10, lineHeight: 1.6 }}>
+                        제작자: {item.composer_name || "미상"}
+                        {" · "}파트너: {details.partnerColor ? `[${details.partnerColor}] ` : ""}{details.partnerName}
+                        {" · "}사건: {details.eventName}
+                      </span>
+                      {item.description && <span style={{ display: "block", marginTop: 3, color: "#718096", fontSize: 10, lineHeight: 1.5, overflowWrap: "anywhere" }}>{item.description}</span>}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </>
+        )}
       </div>
       <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8, marginTop: 16 }}>
         <button type="button" style={{ ...buttonStyle, opacity: loading ? .6 : 1, cursor: loading ? "wait" : "pointer" }} disabled={loading || deckListLoading || !!deckListError || publicDecks.length === 0} onClick={() => void startAIBattle()}>
