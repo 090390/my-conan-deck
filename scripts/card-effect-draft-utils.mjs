@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 
 export const ALLOWED_EVENTS = new Set([
   "character.entered_field", "character.removed_from_field", "character.activated_ability",
-  "character.acted", "player.turn_ended", "continuous.recalculate", "opponent.deduction.declared"
+  "character.acted", "player.turn_ended", "continuous.recalculate", "event.played", "opponent.deduction.declared"
 ]);
 export const ALLOWED_OPERATORS = new Set([
   "equals", "in", "less_than", "less_than_or_equal", "greater_than", "greater_than_or_equal",
