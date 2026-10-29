@@ -628,6 +628,18 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
 }
 
 
+function getReadableErrorMessage(error: any): string {
+  if (error instanceof Error && error.message) return error.message;
+  if (error && typeof error === "object") {
+    const message = typeof error.message === "string" ? error.message.trim() : "";
+    const details = typeof error.details === "string" ? error.details.trim() : "";
+    const hint = typeof error.hint === "string" ? error.hint.trim() : "";
+    const combined = [message, details, hint].filter(Boolean).join("\\n");
+    if (combined) return combined;
+  }
+  return "AI 대전을 처리하지 못했습니다. 서버 로그를 확인해 주세요.";
+}
+
 async function ensureBotAccount(service: any) {
   const { data, error } = await service.auth.admin.listUsers({ page: 1, perPage: 1000 });
   if (error) throw error;
@@ -875,7 +887,21 @@ Deno.serve(async (req: Request) => {
       });
       if (battleError) throw battleError;
 
-      const initial = await driveAiTurns(service, room.out_room_id, user.id);
+      let initial;
+      try {
+        initial = await driveAiTurns(service, room.out_room_id, user.id);
+      } catch (initialError) {
+        // The room and both submitted decks are already committed at this point.
+        // Do not return HTTP 500 and strand the user in the lobby: the realtime
+        // MatchTurnBoard worker will retry an AI step after the match view mounts.
+        console.error("ai-battle initial AI step error", initialError);
+        initial = {
+          is_ai: true,
+          actions: [],
+          message: "대전은 생성됐지만 AI의 첫 행동을 처리하지 못했습니다. 게임 화면에서 자동으로 다시 시도합니다.",
+          initial_step_error: getReadableErrorMessage(initialError),
+        };
+      }
       return json({ room_id: room.out_room_id, invite_code: room.out_invite_code, initial_ai: initial });
     }
 
@@ -898,6 +924,6 @@ Deno.serve(async (req: Request) => {
     return json({ error: "지원하지 않는 AI 대전 요청입니다." }, 400);
   } catch (error) {
     console.error("ai-battle error", error);
-    return json({ error: error instanceof Error ? error.message : "AI 대전을 처리하지 못했습니다." }, 500);
+    return json({ error: getReadableErrorMessage(error) }, 500);
   }
 });
