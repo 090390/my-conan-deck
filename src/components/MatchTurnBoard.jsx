@@ -777,6 +777,42 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
     const count = promptCount("리무브할 내 덱 위쪽 카드 수", 1, available);
     if (count !== null) void runAction("remove_top_deck", { count });
   }
+  function cardHasDslKeyword(instance, keywordAliases) {
+    const turn = n(game?.turn_number, 0);
+    const stored = [
+      ...(Array.isArray(instance?.dsl_keywords) ? instance.dsl_keywords : []),
+      ...(Array.isArray(instance?.dsl_continuous_keywords) ? instance.dsl_continuous_keywords : []),
+    ].filter((entry) => {
+      const expires = Number(entry?.expires_turn_number);
+      return !Number.isFinite(expires) || expires >= turn;
+    });
+    const wanted = new Set(keywordAliases.map((word) => String(word).toLocaleLowerCase()));
+    if (stored.some((entry) => wanted.has(String(entry?.keyword || "").toLocaleLowerCase()))) return true;
+    const cardMeta = cardsByKey.get(String(instance?.key || ""));
+    const printed = [
+      instance?.abilityJp, instance?.abilityKo, instance?.feature, instance?.ability,
+      instance?.sourceData?.feature, instance?.raw?.feature,
+      cardMeta?.abilityJp, cardMeta?.abilityKo, cardMeta?.feature,
+    ].filter(Boolean).join(" ").toLocaleLowerCase();
+    return keywordAliases.some((word) => {
+      const key = String(word).toLocaleLowerCase();
+      if (key === "charge") {
+        return /突撃(?!［(?:事件|キャラ)］)(?!\[(?:事件|キャラ)\])|돌격(?![［\[](?:사건|캐릭터|캐라)[]］])/u.test(printed);
+      }
+      if (key === "charge_case") return /突撃[［\[]事件[]］]|돌격[［\[]사건[]］]/u.test(printed);
+      if (key === "charge_character") return /突撃[［\[]キャラ[]］]|突撃[［\[]キャラクター[]］]|돌격[［\[]캐릭터[]］]/u.test(printed);
+      return printed.includes(key);
+    });
+  }
+  function canActOnFreshCharacter(instance, actionKind = "character") {
+    if (!instance?.summoned_this_turn) return true;
+    const manual = Boolean(allowFreshlyPlayedByCard[instance?.instance_id]);
+    const genericCharge = cardHasDslKeyword(instance, ["charge"]);
+    const scopedCharge = actionKind === "case"
+      ? cardHasDslKeyword(instance, ["charge_case", "charge_character"])
+      : cardHasDslKeyword(instance, ["charge_character"]);
+    return manual || genericCharge || scopedCharge;
+  }
   function invokeInvestigate(instance, isPartner = false) {
     if (isPartner) {
       void runAction("partner_deduce", { evidence_count: 1 });
@@ -784,7 +820,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
     }
     const suggested = Math.max(0, Math.min(3, n(instance?.lp, 1)));
     const count = promptCount("캐릭터 추리로 얻을 증거", suggested, 3, 0);
-    if (count !== null) void runAction("investigate", { instance_id: instance.instance_id, evidence_count: count, allow_newly_played: Boolean(allowFreshlyPlayedByCard[instance.instance_id]) });
+    if (count !== null) void runAction("investigate", { instance_id: instance.instance_id, evidence_count: count, allow_newly_played: canActOnFreshCharacter(instance, "case") });
   }
   function moveField(card, ownerId, destination) {
     const cardRarity = String(card?.rarity || card?.rarity_code || card?.rarityCode || card?.sourceData?.rarity || card?.raw?.rarity || cardsByKey.get(String(card?.key))?.rarity || "").trim().toUpperCase();
@@ -834,7 +870,9 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
       ? "stunned"
       : (instance.rested ? "rested" : (instance.status || "active"));
     const allowFreshForCard = Boolean(allowFreshlyPlayedByCard[instance.instance_id]);
-    const notReadyYet = Boolean(instance.summoned_this_turn) && !allowFreshForCard;
+    const notReadyForCharacterAction = !canActOnFreshCharacter(instance, "character");
+    const notReadyForCaseAction = !canActOnFreshCharacter(instance, "case");
+    const selectedAttackerCard = (myBoard?.field_cards || []).find((card) => String(card.instance_id) === String(selectedAttacker));
     const canOfferContact = Boolean(selectedAttacker) && !mine && !isEvent && canActMain;
     const canManage = !game?.game_over && !pending;
     const ownerLabel = ownerId === userId ? "내" : "상대";
@@ -863,12 +901,12 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
         {eventResolving && mine && <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 5, background: "#075985" }} disabled={loading} onClick={() => void runAction("finish_event", { instance_id: instance.instance_id })}>효과 처리 완료 → 리무브</button>}
         {canOfferContact && <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 5, borderColor: "#fb7185", color: C.red }} disabled={loading} onClick={() => {
           if (cardStatus === "active" && !allowActiveTargetsByCard[selectedAttacker]) { showBlockedReason("액티브 상태의 캐릭터는 기본적으로 공격 대상으로 지정할 수 없습니다. 공격자로 선택한 카드의 파란 체크박스를 활성화해 주세요."); return; }
-          void runAction("declare_contact", { attacker_instance_id: selectedAttacker, target_user_id: ownerId, target_instance_id: instance.instance_id, allow_active_target: Boolean(allowActiveTargetsByCard[selectedAttacker]), allow_newly_played: Boolean(allowFreshlyPlayedByCard[selectedAttacker]) });
+          void runAction("declare_contact", { attacker_instance_id: selectedAttacker, target_user_id: ownerId, target_instance_id: instance.instance_id, allow_active_target: Boolean(allowActiveTargetsByCard[selectedAttacker]), allow_newly_played: canActOnFreshCharacter(selectedAttackerCard, "character") });
         }}>컨택 시작</button>}
         {mine && !isEvent && canActMain && <div style={{ display: "grid", gap: 4, marginTop: 5 }}>
-          <button type="button" style={{ ...st.smallButton, opacity: cardStatus !== "active" || notReadyYet ? .72 : 1 }} disabled={loading} title={cardStatus !== "active" ? "슬립/스턴 상태에서는 추리할 수 없습니다." : notReadyYet ? "이번 턴에 등장한 카드는 기본적으로 행동할 수 없습니다." : ""} onClick={() => { if (cardStatus !== "active") { showBlockedReason("슬립/스턴 상태의 캐릭터는 추리할 수 없습니다."); return; } if (notReadyYet) { showBlockedReason("등장 후 1턴이 지나지 않아 행동할 수 없습니다. 효과 예외 옵션을 활성화해 주세요."); return; } invokeInvestigate(instance); }}>추리</button>
-          <button type="button" style={{ ...st.smallButton, opacity: cardStatus !== "active" || notReadyYet ? .72 : 1, borderColor: selectedAttacker === instance.instance_id ? "#fb7185" : "rgba(255,255,255,.13)" }} disabled={loading} onClick={() => { if (cardStatus !== "active") { showBlockedReason("슬립/스턴 상태의 캐릭터는 공격자로 지정할 수 없습니다."); return; } if (notReadyYet) { showBlockedReason("등장 후 1턴이 지나지 않아 공격자로 선택할 수 없습니다. 효과 예외 옵션을 활성화해 주세요."); return; } setSelectedAttacker((current) => current === instance.instance_id ? "" : instance.instance_id); }}>{selectedAttacker === instance.instance_id ? "공격자 선택 해제" : "공격자로 선택"}</button>
-          <button type="button" style={{ ...st.smallButton, opacity: cardStatus !== "active" || notReadyYet ? .72 : 1 }} disabled={loading} onClick={() => { if (cardStatus !== "active") { showBlockedReason("슬립/스턴 상태의 캐릭터는 공격할 수 없습니다."); return; } if (notReadyYet && !allowFreshForCard) { showBlockedReason("등장 후 1턴이 지나지 않아 공격할 수 없습니다. 이 카드의 노란 체크박스를 활성화해 주세요."); return; } if (!opponentBoard?.evidence_count) { showBlockedReason("상대 증거 에이리어에 공격할 증거가 없습니다."); return; } void runAction("attack_evidence", { attacker_instance_id: instance.instance_id, target_user_id: opponentBoard?.user_id, allow_newly_played: allowFreshForCard }); }}>상대 증거 공격</button>
+          <button type="button" style={{ ...st.smallButton, opacity: cardStatus !== "active" || notReadyYet ? .72 : 1 }} disabled={loading} title={cardStatus !== "active" ? "슬립/스턴 상태에서는 추리할 수 없습니다." : notReadyYet ? "이번 턴에 등장한 카드는 기본적으로 행동할 수 없습니다." : ""} onClick={() => { if (cardStatus !== "active") { showBlockedReason("슬립/스턴 상태의 캐릭터는 추리할 수 없습니다."); return; } if (notReadyForCaseAction) { showBlockedReason("등장 후 1턴이 지나지 않아 사건 행동을 할 수 없습니다. 돌격[사건] 또는 즉시 행동 옵션을 확인해 주세요."); return; } invokeInvestigate(instance); }}>추리</button>
+          <button type="button" style={{ ...st.smallButton, opacity: cardStatus !== "active" || notReadyForCharacterAction ? .72 : 1, borderColor: selectedAttacker === instance.instance_id ? "#fb7185" : "rgba(255,255,255,.13)" }} disabled={loading} onClick={() => { if (cardStatus !== "active") { showBlockedReason("슬립/스턴 상태의 캐릭터는 공격자로 지정할 수 없습니다."); return; } if (notReadyForCharacterAction) { showBlockedReason("등장 후 1턴이 지나지 않아 캐릭터 컨택을 할 수 없습니다. 돌격[캐릭터] 또는 즉시 행동 옵션을 확인해 주세요."); return; } setSelectedAttacker((current) => current === instance.instance_id ? "" : instance.instance_id); }}>{selectedAttacker === instance.instance_id ? "공격자 선택 해제" : "공격자로 선택"}</button>
+          <button type="button" style={{ ...st.smallButton, opacity: cardStatus !== "active" || notReadyForCaseAction ? .72 : 1 }} disabled={loading} onClick={() => { if (cardStatus !== "active") { showBlockedReason("슬립/스턴 상태의 캐릭터는 공격할 수 없습니다."); return; } if (notReadyForCaseAction) { showBlockedReason("등장 후 1턴이 지나지 않아 사건 행동을 할 수 없습니다. 돌격[사건] 또는 즉시 행동 옵션을 확인해 주세요."); return; } if (!opponentBoard?.evidence_count) { showBlockedReason("상대 증거 에이리어에 공격할 증거가 없습니다."); return; } void runAction("attack_evidence", { attacker_instance_id: instance.instance_id, target_user_id: opponentBoard?.user_id, allow_newly_played: allowFreshForCard }); }}>상대 증거 공격</button>
         </div>}
         {canManage && <>
           <details style={{ marginTop: 5 }}><summary style={{ cursor: "pointer", fontSize: 8, color: "#8796ac" }}>효과 처리</summary><div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 4, marginTop: 5 }}>
@@ -1163,6 +1201,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
             <strong style={{ display: "block", marginBottom: 7, fontSize: 10, color: C.blue }}>발동 가능한 카드 능력</strong>
             <div style={{ display: "grid", gap: 6 }}>
               {cardEffectActivations.map((ability) => {
+                const isCaseAbility = String(ability.source_instance_id || "").startsWith("case:");
                 const source = (myBoard?.field_cards || []).find((card) => String(card.instance_id) === String(ability.source_instance_id));
                 return <div key={ability.effect_id + ":" + ability.source_instance_id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: 6, borderRadius: 6, background: "#111e32" }}>
                   <div style={{ minWidth: 0 }}>
@@ -1171,7 +1210,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
                     {Number(ability.required_file_count || 0) > 0 && <span style={{ display: "block", marginTop: 3, fontSize: 8, color: "#93c5fd" }}>파일 조건 충족 · 내 파일 {Number(ability.current_file_count ?? myBoard?.file_count ?? 0)}/{Number(ability.required_file_count)}장 이상</span>}
                     {ability.required_case_phase && <span style={{ display: "block", marginTop: 3, fontSize: 8, color: "#c4b5fd" }}>진행 단계 · {ability.required_case_phase === "solution" ? "해결편" : "사건편"}</span>}
                   </div>
-                  <button type="button" style={{ ...st.smallButton, flexShrink: 0 }} disabled={loading || !isMyTurn || Boolean(pending)} onClick={() => void runAction("activate_card_effect", { source_instance_id: ability.source_instance_id, effect_id: ability.effect_id })}>발동</button>
+                  <button type="button" style={{ ...st.smallButton, flexShrink: 0 }} disabled={loading || !isMyTurn || Boolean(pending)} onClick={() => void runAction(isCaseAbility ? "activate_case_effect" : "activate_card_effect", isCaseAbility ? { effect_id: ability.effect_id } : { source_instance_id: ability.source_instance_id, effect_id: ability.effect_id })}>발동</button>
                 </div>;
               })}
             </div>
