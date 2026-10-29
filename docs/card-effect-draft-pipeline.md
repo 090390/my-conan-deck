@@ -36,7 +36,7 @@ npm run build
 5. **승인 및 승격** — 구조 검증과 테스트를 통과한 뒤 사람이 원문과 대조해 `approvalStatus: approved`로 승인합니다. 승인된 정의만 `supabase/seed/card_effect_definitions.json`에 합치고 중복 `effectId`/카드 ID를 재검사합니다.
 6. **서버 카탈로그 배포** — 마이그레이션/관리 RPC를 통해 `private_card_effect_catalog_v1`을 교체하고, 배포 이후 샘플 대전을 실행해 실제 런타임 동작을 확인합니다. 초안 생성기는 서비스 롤 키나 DB 권한을 갖지 않아야 합니다.
 
-생성기는 입력 배치에 이미 있는 `reviewedByUser: true` 및 `approvalStatus: approved` 후보를 보존하고, 같은 원문 효과를 다시 생성하지 않도록 제외합니다. 따라서 검토자가 확인한 정의를 보호하면서 다른 카드 후보만 추가로 생성할 수 있습니다. 현재 9개 정의 초안은 사람 검토로 고정되었으며, OpenAI 호출은 아직 실행하지 않았습니다.
+생성기는 입력 배치에 이미 있는 `manualInterpretationLocked: true`, `reviewedByUser: true` 또는 `approvalStatus: approved` 후보를 보존하고, 같은 원문 효과를 다시 생성하지 않도록 제외합니다. 수동 고정은 중복 초안 방지용이지 운영 승인 표시가 아닙니다. 현재 9개 정의 초안은 사용자 피드백을 반영해 수동 보완했으나, 운영 카탈로그에 승인·승격하지 않았고 OpenAI 호출도 아직 실행하지 않았습니다.
 
 ## AI 생성기 사용법
 
