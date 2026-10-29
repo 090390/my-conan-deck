@@ -313,10 +313,20 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
           && Number.isFinite(level) && level <= 4
           && /警視庁|警視廳|경시청/u.test(rawTraits);
       });
+      const hasActiveChargeCaseCharacter = aiField.some((card) => {
+        const keywords = [
+          card?.dsl_keywords, card?.dsl_continuous_keywords,
+          card?.keyword, card?.keywords, card?.keyword_tags,
+        ].flatMap((value) => Array.isArray(value) ? value : value == null ? [] : [value])
+          .map((value) => String(value?.keyword ?? value?.value ?? value?.name ?? value).toLocaleLowerCase());
+        return String(card?.card_type || card?.type || "").toLocaleLowerCase() === "character"
+          && !card?.rested && String(card?.status || "active") === "active"
+          && keywords.some((keyword) => ["charge_case", "돌격[사건]", "돌격［사건］", "突撃[事件]", "突撃［事件］"].includes(keyword));
+      });
       const canUsePr181AnyTime = !pendingAction && !state.game_over
         && String(state.phase || "playing") === "playing"
         && state.current_turn_user_id !== aiBoard.user_id
-        && hasActivePr181 && hasLegalTokyoPoliceTarget;
+        && ((hasActivePr181 && hasLegalTokyoPoliceTarget) || hasActiveChargeCaseCharacter);
 
       return state.current_turn_user_id === aiBoard.user_id || aiMustRespond || canUsePr181AnyTime;
     };
