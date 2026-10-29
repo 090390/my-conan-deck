@@ -199,9 +199,9 @@
             ],
             "emptyEligibleSetBehavior": "선택 대상이 없으면 reveal_cards와 move_cards를 건너뛰고 확인한 카드를 원하는 순서로 덱 아래에 둔다."
           },
-          "reviewedByUser": true,
-          "reviewedByUserAt": "2026-10-30",
-          "sourceClause": "【등장 시】 - 자신의 덱에서 위쪽부터 3장의 카드를 확인한다. 그중에서 〚특징 [경시청]〛을 가진 캐릭터 카드를 최대 1장까지 공개하여 패에 추가하고, 나머지는 원하는 순서대로 덱 밑으로 옮긴다."
+          "sourceClause": "【등장 시】 - 자신의 덱에서 위쪽부터 3장의 카드를 확인한다. 그중에서 〚특징 [경시청]〛을 가진 캐릭터 카드를 최대 1장까지 공개하여 패에 추가하고, 나머지는 원하는 순서대로 덱 밑으로 옮긴다.",
+          "manualInterpretationLocked": true,
+          "manualInterpretationLockReason": "사용자 피드백에 따라 수동 보완한 초안. OpenAI가 중복 재생성하지 않도록 보호하지만, 운영 승격 승인 상태는 아님."
         }
       ]
     },
@@ -281,9 +281,9 @@
               "confidence": "high"
             }
           },
-          "reviewedByUser": true,
-          "reviewedByUserAt": "2026-10-30",
-          "sourceClause": "【등장 시】 - 레벨 7 이하의 캐릭터를 1장까지 선택하여 리무브한다."
+          "sourceClause": "【등장 시】 - 레벨 7 이하의 캐릭터를 1장까지 선택하여 리무브한다.",
+          "manualInterpretationLocked": true,
+          "manualInterpretationLockReason": "사용자 피드백에 따라 수동 보완한 초안. OpenAI가 중복 재생성하지 않도록 보호하지만, 운영 승격 승인 상태는 아님."
         },
         {
           "candidateId": "b07080-activated-partner-yellow-file5-police-bottom-remove-2",
@@ -396,9 +396,9 @@
               "rationale": "player.file.count가 현재 파일 수를 반환하도록 런타임을 보강했다. FILE5는 자신의 파일 수가 5장 이상일 때를 뜻하며, 파트너 황·본인 턴·액티브 상태도 함께 검사한다."
             }
           },
-          "reviewedByUser": true,
-          "reviewedByUserAt": "2026-10-30",
-          "sourceClause": "【파트너 황】【FILE5】【선언】【슬립】〚현장에 있는 레벨 7 이하의 특징 [경시청]을 가진 캐릭터 1장을 덱 맨 아래로 옮긴다〛 - 캐릭터를 1장까지 선택하여 리무브한다."
+          "sourceClause": "【파트너 황】【FILE5】【선언】【슬립】〚현장에 있는 레벨 7 이하의 특징 [경시청]을 가진 캐릭터 1장을 덱 맨 아래로 옮긴다〛 - 캐릭터를 1장까지 선택하여 리무브한다.",
+          "manualInterpretationLocked": true,
+          "manualInterpretationLockReason": "사용자 피드백에 따라 수동 보완한 초안. OpenAI가 중복 재생성하지 않도록 보호하지만, 운영 승격 승인 상태는 아님."
         }
       ]
     },
@@ -583,9 +583,9 @@
               "confidence": "high"
             }
           },
-          "reviewedByUser": true,
-          "reviewedByUserAt": "2026-10-30",
-          "sourceClause": "【파트너 황】【등장 시】 - AP 8000 이하의 캐릭터를 1장까지 선택하여 리무브한다."
+          "sourceClause": "【파트너 황】【등장 시】 - AP 8000 이하의 캐릭터를 1장까지 선택하여 리무브한다.",
+          "manualInterpretationLocked": true,
+          "manualInterpretationLockReason": "사용자 피드백에 따라 수동 보완한 초안. OpenAI가 중복 재생성하지 않도록 보호하지만, 운영 승격 승인 상태는 아님."
         },
         {
           "candidateId": "b10068-end-turn-search-listed-police-academy-2",
@@ -692,9 +692,9 @@
             }
           },
           "sourceTextConflictResolved": "사용자 확인: [인연: 후루야 레이]가 발동 조건이고, [모로후시 히로미츠]는 검색 대상 카드명 중 하나다.",
-          "reviewedByUser": true,
-          "reviewedByUserAt": "2026-10-30",
-          "sourceClause": "【인연 : 후루야 레이】 - 자신의 턴 종료 시, 자신의 덱에서 위쪽부터 2장의 카드를 확인한다. 그 중에서 〚카드명 [후루야 레이] 또는 [모로후시 히로미츠] 또는 [다테 와타루] 또는 [하기와라 켄지] 또는 [마츠다 진페이]〛 중 1장까지 공개하여 패에 추가하고, 나머지는 리무브 에이리어로 옮긴다."
+          "sourceClause": "【인연 : 후루야 레이】 - 자신의 턴 종료 시, 자신의 덱에서 위쪽부터 2장의 카드를 확인한다. 그 중에서 〚카드명 [후루야 레이] 또는 [모로후시 히로미츠] 또는 [다테 와타루] 또는 [하기와라 켄지] 또는 [마츠다 진페이]〛 중 1장까지 공개하여 패에 추가하고, 나머지는 리무브 에이리어로 옮긴다.",
+          "manualInterpretationLocked": true,
+          "manualInterpretationLockReason": "사용자 피드백에 따라 수동 보완한 초안. OpenAI가 중복 재생성하지 않도록 보호하지만, 운영 승격 승인 상태는 아님."
         }
       ]
     },
@@ -840,9 +840,9 @@
               "rationale": "자신의 턴 중 원하는 타이밍에 이 카드를 슬립시키고, 자신의 현장에 있는 특징 [경찰] 캐릭터를 최대 1장 선택해 턴 종료 시까지 AP +2000을 부여한다. AI는 공격 직전 등 유리한 타이밍을 판단한다. 대상은 액티브 상태일 필요는 없지만, 전략상 액티브한 아군에게 부여하는 것이 유리할 수 있다."
             }
           },
-          "reviewedByUser": true,
-          "reviewedByUserAt": "2026-10-30",
-          "sourceClause": "【선언】【슬립】 - 〚특징 [경찰]〛을 가진 캐릭터를 1장까지 선택하여, 턴 종료 시까지 AP를 +2000한다."
+          "sourceClause": "【선언】【슬립】 - 〚특징 [경찰]〛을 가진 캐릭터를 1장까지 선택하여, 턴 종료 시까지 AP를 +2000한다.",
+          "manualInterpretationLocked": true,
+          "manualInterpretationLockReason": "사용자 피드백에 따라 수동 보완한 초안. OpenAI가 중복 재생성하지 않도록 보호하지만, 운영 승격 승인 상태는 아님."
         },
         {
           "candidateId": "b09075p-solution-first-entry-recover-police-2",
@@ -919,9 +919,9 @@
               "rationale": "player.case_phase는 효과를 가진 플레이어의 보드에서 현재 사건편/해결편 상태를 읽는다. entry.is_first_character_this_turn이 참일 때만 효과가 시작된다."
             }
           },
-          "reviewedByUser": true,
-          "reviewedByUserAt": "2026-10-30",
-          "sourceClause": "【해결편】 - 【질풍】 자신의 리무브 에이리어에 있는 레벨 6 이하의 〚특징 [경찰]〛 캐릭터를 1장까지 선택하여 등장시킨다. (이번 턴 자신의 현장에 가장 먼저 등장했을 때 발동)"
+          "sourceClause": "【해결편】 - 【질풍】 자신의 리무브 에이리어에 있는 레벨 6 이하의 〚특징 [경찰]〛 캐릭터를 1장까지 선택하여 등장시킨다. (이번 턴 자신의 현장에 가장 먼저 등장했을 때 발동)",
+          "manualInterpretationLocked": true,
+          "manualInterpretationLockReason": "사용자 피드백에 따라 수동 보완한 초안. OpenAI가 중복 재생성하지 않도록 보호하지만, 운영 승격 승인 상태는 아님."
         }
       ]
     },
@@ -1341,9 +1341,9 @@
               "targetOwnerAssumption": "opponent_confirmed_by_user"
             }
           },
-          "reviewedByUser": true,
-          "reviewedByUserAt": "2026-10-30",
-          "sourceClause": "【선언】【슬립】 - 레벨 9 이하의 캐릭터를 1장까지 선택하여 리무브한다."
+          "sourceClause": "【선언】【슬립】 - 레벨 9 이하의 캐릭터를 1장까지 선택하여 리무브한다.",
+          "manualInterpretationLocked": true,
+          "manualInterpretationLockReason": "사용자 피드백에 따라 수동 보완한 초안. OpenAI가 중복 재생성하지 않도록 보호하지만, 운영 승격 승인 상태는 아님."
         },
         {
           "candidateId": "pr274-continuous-nonblue-case-other-field-ap-1000-2",
@@ -1391,9 +1391,9 @@
               "rationale": "자신의 턴 중, 자신의 사건 색상에 청 이외의 색이 하나라도 포함되어 있으면 자신을 제외한 자신의 현장 캐릭터 전원의 AP를 +1000한다. 사건 색상 정보는 덱 제출 시 저장되는 event_has_non_blue_color 값을 참조하고, 연속 보정 런타임은 원본 이외의 현장 캐릭터에 해당 보정을 반영한다."
             }
           },
-          "reviewedByUser": true,
-          "reviewedByUserAt": "2026-10-30",
-          "sourceClause": "【자신의 턴 중】 - 자신의 사건이 【청】 이외의 색을 가질 경우, 자신의 현장에 있는 이 캐릭터를 제외한 다른 캐릭터의 AP를 +1000한다."
+          "sourceClause": "【자신의 턴 중】 - 자신의 사건이 【청】 이외의 색을 가질 경우, 자신의 현장에 있는 이 캐릭터를 제외한 다른 캐릭터의 AP를 +1000한다.",
+          "manualInterpretationLocked": true,
+          "manualInterpretationLockReason": "사용자 피드백에 따라 수동 보완한 초안. OpenAI가 중복 재생성하지 않도록 보호하지만, 운영 승격 승인 상태는 아님."
         }
       ]
     },
