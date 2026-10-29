@@ -28,6 +28,11 @@ function isEvent(card: any) {
 function isActive(card: any) {
   return !card?.rested && String(card?.status || "active") === "active";
 }
+function isBasicSearchEvent(card: any) {
+  const ids = [card?.key, card?.database_id, card?.databaseId, card?.card_id, card?.card_num]
+    .map((value) => String(value ?? "").trim().toLocaleUpperCase());
+  return ids.some((id) => ["0158", "0130", "B04083", "D03014"].includes(id));
+}
 function cardStrength(card: any) {
   return cardAp(card) * 2 + Math.max(0, 4 - cardCost(card)) * 250 + Number(card?.lp || 0) * 20;
 }
@@ -372,10 +377,19 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
   }
 
   if (!basePlayed) {
-    const play = hand.filter((card: any) => isCharacter(card)
+    const playableCharacters = hand.filter((card: any) => isCharacter(card)
       && cardCost(card) <= level && characterCount < 5)
-      .sort((a: any, b: any) => cardStrength(b) - cardStrength(a))[0];
-    if (play) return { action: "play_character", payload: { instance_id: play.instance_id } };
+      .sort((a: any, b: any) => cardStrength(b) - cardStrength(a));
+    if (playableCharacters[0]) {
+      return { action: "play_character", payload: { instance_id: playableCharacters[0].instance_id } };
+    }
+    // Use the color-search events as a fallback when no character in hand is currently playable.
+    const searchEvent = hand.filter((card: any) => isEvent(card) && isBasicSearchEvent(card)
+      && cardCost(card) <= level)
+      .sort((a: any, b: any) => cardCost(a) - cardCost(b))[0];
+    if (searchEvent && characterCount < 5) {
+      return { action: "play_event", payload: { instance_id: searchEvent.instance_id } };
+    }
   }
 
   // Activated abilities are evaluated only after the basic character play has been considered.
