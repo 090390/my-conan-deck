@@ -88,3 +88,8 @@ npm run validate:card-effects
 추가 트리거: `event.played`는 이벤트 카드가 메인 단계에서 현장에 놓인 직후 발생합니다.
 
 동적 fact 필터: `filter.value`에 `{ "fact": "player.file.count" }`를 지정하면 현재 파일 수를 읽어 카드 레벨과 비교할 수 있습니다.
+
+
+## 백청덱 추가 구현 명령
+
+실행 엔진은 이제 `field_watch` 트리거, `both_fields`, `opponent_hand`, `attached_cards` 대상 출처, 선택한 증거를 지정해 뒤집는 `flip_evidence`, 턴 종료 시 덱 아래로 되돌리는 `schedule_move_to_deck_bottom`, 현재 컨택 중 AP 보정 `modify_contact_ap`, 임시 인연 별명 `grant_bond_alias` 및 특수 컨택 `start_contact` 명령을 지원합니다. `charge`(일반), `charge_character`, `charge_case` 키워드는 캐릭터 행동과 사건 행동의 즉시 행동 조건에 별도로 반영됩니다.
