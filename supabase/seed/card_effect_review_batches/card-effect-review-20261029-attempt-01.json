@@ -490,11 +490,17 @@
         {
           "candidateId": "pr278-review-required-1",
           "sourceText": "【컷인】【파트너 황】AP＋1000, 〚특징 [경찰]〛을 가진 캐릭터에게 【컷인】을 사용했을 경우, 카드를 1장 뽑는다. (컨택 시 패에서 리무브하여 사용)",
-          "interpretation": "컷인 수치가 고정값이 아니며 파트너 색상과 대상의 특징에 따라 추가 드로우가 생깁니다. 단순 cut_in_bonus 수치 추출만으로는 효과가 빠져 잘못된 정의를 만들 수 있습니다.",
-          "draftStatus": "review_required",
-          "approvalStatus": "pending",
-          "confidence": "low",
-          "reviewNotes": "컷인 수치가 고정값이 아니며 파트너 색상과 대상의 특징에 따라 추가 드로우가 생깁니다. 단순 cut_in_bonus 수치 추출만으로는 효과가 빠져 잘못된 정의를 만들 수 있습니다."
+          "interpretation": "파트너 색상이 황일 때 컷인 AP를 추가로 1000 올린다. 그 컷인을 적용받는 자신의 캐릭터가 특징 [경찰]이면 덱에서 1장을 드로우한다. 두 효과 모두 파트너 황 조건이 필요하다.",
+          "draftStatus": "native_existing_cut_in",
+          "approvalStatus": "approved",
+          "confidence": "high",
+          "reviewNotes": "실제 contact_use_cutin 서버 처리에서 파트너 색을 확인해 AP +1000을 추가하고, 컷인 대상 캐릭터의 경찰 특징을 확인해 손패 1장을 드로우한다.",
+          "implementedRuntimePath": "public.perform_private_turn_action_v2_legacy / contact_use_cutin",
+          "runtimeBlockers": [],
+          "structuralValidation": {
+            "status": "passed",
+            "errors": []
+          }
         }
       ]
     },
@@ -695,11 +701,17 @@
         {
           "candidateId": "b05095-review-required-1",
           "sourceText": "【컷인】【자신의 턴 중】 자신의 현장에 있는 〚특징 [경찰]〛 캐릭터 1장당 AP＋1000 (자신 턴 중 컨택 시 패에서 리무브하여 사용)",
-          "interpretation": "현장 경찰 캐릭터 수에 따라 컷인 AP가 동적으로 증가하므로 고정 AP 보너스 필드만으로 정의하면 정확하지 않습니다.",
-          "draftStatus": "review_required",
-          "approvalStatus": "pending",
-          "confidence": "low",
-          "reviewNotes": "현장 경찰 캐릭터 수에 따라 컷인 AP가 동적으로 증가하므로 고정 AP 보너스 필드만으로 정의하면 정확하지 않습니다."
+          "interpretation": "자신의 턴 중 컷인으로 사용하면 자신의 현장에 있는 특징 [경찰] 캐릭터 수 ×1000만큼 컷인 AP를 추가한다.",
+          "draftStatus": "native_existing_cut_in",
+          "approvalStatus": "approved",
+          "confidence": "high",
+          "reviewNotes": "실제 contact_use_cutin 서버 처리에서 현재 턴 플레이어인지 확인하고, 자신의 현장 캐릭터 중 경찰 특징을 가진 캐릭터 수를 세어 AP 보너스에 반영한다.",
+          "implementedRuntimePath": "public.perform_private_turn_action_v2_legacy / contact_use_cutin",
+          "runtimeBlockers": [],
+          "structuralValidation": {
+            "status": "passed",
+            "errors": []
+          }
         }
       ]
     },
