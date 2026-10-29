@@ -1096,11 +1096,243 @@
         {
           "candidateId": "b04083-unsupported-trigger-1",
           "sourceText": "자신의 덱에 있는 카드 중 맨 위 3장을 확인한다. 그중에서 【황】 캐릭터를 최대 1장까지 공개하여 패에 추가하고, 나머지는 원하는 순서대로 덱 맨 아래로 옮긴다. 패에서 자신의 파일 에이리어 수만큼 이하의 레벨을 가진 【황】 캐릭터를 최대 1장까지 등장시킨다.",
-          "interpretation": "이벤트 해결편을 시작하는 명시적 DSL 트리거가 현재 허용 목록에 없어, 등장 트리거로 잘못 정의하지 않았습니다.",
-          "draftStatus": "unsupported_trigger",
+          "interpretation": "덱에 적격 황 캐릭터가 없고 손패에도 등장 가능한 캐릭터가 없으면 검색한 카드만 손패에 넣고 이벤트 처리를 마친다.",
+          "draftStatus": "draft_candidate",
           "approvalStatus": "pending",
-          "confidence": "low",
-          "reviewNotes": "이벤트 해결편을 시작하는 명시적 DSL 트리거가 현재 허용 목록에 없어, 등장 트리거로 잘못 정의하지 않았습니다."
+          "confidence": "high",
+          "reviewNotes": "event.played 트리거가 이벤트 사용 직후 효과를 시작한다. 덱 상단 3장 확인, 색상에 맞는 캐릭터 1장 공개·손패 이동, 나머지 덱 아래 순서 선택, 파일 수 이하 레벨의 해당 색상 캐릭터 선택·등장을 순차 처리한다. 손패에 적격 카드가 없으면 추가 등장 없이 마친다.",
+          "proposedDefinition": {
+            "steps": [
+              {
+                "op": "peek_top_cards",
+                "count": 3,
+                "saveAs": "seen",
+                "allowFewer": true
+              },
+              {
+                "op": "select_cards",
+                "max": 1,
+                "min": 0,
+                "from": "seen",
+                "filter": {
+                  "allOf": [
+                    {
+                      "field": "card_type",
+                      "value": "character",
+                      "operator": "equals"
+                    },
+                    {
+                      "field": "color",
+                      "value": "yellow",
+                      "operator": "equals"
+                    }
+                  ]
+                },
+                "prompt": "공개하여 패에 추가할 황 캐릭터를 최대 1장 선택하세요.",
+                "saveAs": "selected",
+                "optional": true
+              },
+              {
+                "op": "reveal_cards",
+                "to": [
+                  "opponent"
+                ],
+                "from": "selected",
+                "when": {
+                  "fact": "vars.selected.count",
+                  "value": 0,
+                  "operator": "greater_than"
+                },
+                "awaitAcknowledgement": true
+              },
+              {
+                "op": "move_cards",
+                "to": "hand",
+                "from": "selected",
+                "when": {
+                  "fact": "vars.selected.count",
+                  "value": 0,
+                  "operator": "greater_than"
+                }
+              },
+              {
+                "op": "move_unselected_to_deck_bottom",
+                "from": "seen",
+                "order": "player_choice",
+                "selectedVariable": "selected"
+              },
+              {
+                "op": "select_cards",
+                "max": 1,
+                "min": 0,
+                "from": "hand",
+                "filter": {
+                  "allOf": [
+                    {
+                      "field": "card_type",
+                      "value": "character",
+                      "operator": "equals"
+                    },
+                    {
+                      "field": "color",
+                      "value": "yellow",
+                      "operator": "equals"
+                    },
+                    {
+                      "field": "level",
+                      "value": {
+                        "fact": "player.file.count"
+                      },
+                      "operator": "less_than_or_equal"
+                    }
+                  ]
+                },
+                "prompt": "자신의 파일 수 이하 레벨인 황 캐릭터를 최대 1장 등장시킬 수 있습니다.",
+                "saveAs": "deployment",
+                "optional": true
+              },
+              {
+                "op": "move_cards",
+                "to": "field",
+                "from": "deployment",
+                "when": {
+                  "fact": "vars.deployment.count",
+                  "value": 0,
+                  "operator": "greater_than"
+                },
+                "entryMethod": "event_effect"
+              }
+            ],
+            "cardIds": [
+              "0158"
+            ],
+            "trigger": {
+              "event": "event.played",
+              "timing": "after"
+            },
+            "effectId": "card-0158-on-play-private-eye",
+            "cardNameJa": "プライベート・アイ",
+            "cardNameKo": "프라이빗 아이",
+            "conditions": [],
+            "reviewNotes": {
+              "rationale": "덱에 적격 황 캐릭터가 없고 손패에도 등장 가능한 캐릭터가 없으면 검색한 카드만 손패에 넣고 이벤트 처리를 마친다.",
+              "sourceText": "덱 위 3장을 확인하고 황 캐릭터를 최대 1장 공개해 패에 추가한다. 나머지는 원하는 순서로 덱 아래에 둔 뒤 파일 수 이하 레벨의 황 캐릭터를 최대 1장 등장시킨다."
+            }
+          },
+          "reviewedSemantics": {
+            "trigger": {
+              "event": "event.played",
+              "timing": "after"
+            },
+            "conditions": [],
+            "steps": [
+              {
+                "op": "peek_top_cards",
+                "count": 3,
+                "saveAs": "seen",
+                "allowFewer": true
+              },
+              {
+                "op": "select_cards",
+                "max": 1,
+                "min": 0,
+                "from": "seen",
+                "filter": {
+                  "allOf": [
+                    {
+                      "field": "card_type",
+                      "value": "character",
+                      "operator": "equals"
+                    },
+                    {
+                      "field": "color",
+                      "value": "yellow",
+                      "operator": "equals"
+                    }
+                  ]
+                },
+                "prompt": "공개하여 패에 추가할 황 캐릭터를 최대 1장 선택하세요.",
+                "saveAs": "selected",
+                "optional": true
+              },
+              {
+                "op": "reveal_cards",
+                "to": [
+                  "opponent"
+                ],
+                "from": "selected",
+                "when": {
+                  "fact": "vars.selected.count",
+                  "value": 0,
+                  "operator": "greater_than"
+                },
+                "awaitAcknowledgement": true
+              },
+              {
+                "op": "move_cards",
+                "to": "hand",
+                "from": "selected",
+                "when": {
+                  "fact": "vars.selected.count",
+                  "value": 0,
+                  "operator": "greater_than"
+                }
+              },
+              {
+                "op": "move_unselected_to_deck_bottom",
+                "from": "seen",
+                "order": "player_choice",
+                "selectedVariable": "selected"
+              },
+              {
+                "op": "select_cards",
+                "max": 1,
+                "min": 0,
+                "from": "hand",
+                "filter": {
+                  "allOf": [
+                    {
+                      "field": "card_type",
+                      "value": "character",
+                      "operator": "equals"
+                    },
+                    {
+                      "field": "color",
+                      "value": "yellow",
+                      "operator": "equals"
+                    },
+                    {
+                      "field": "level",
+                      "value": {
+                        "fact": "player.file.count"
+                      },
+                      "operator": "less_than_or_equal"
+                    }
+                  ]
+                },
+                "prompt": "자신의 파일 수 이하 레벨인 황 캐릭터를 최대 1장 등장시킬 수 있습니다.",
+                "saveAs": "deployment",
+                "optional": true
+              },
+              {
+                "op": "move_cards",
+                "to": "field",
+                "from": "deployment",
+                "when": {
+                  "fact": "vars.deployment.count",
+                  "value": 0,
+                  "operator": "greater_than"
+                },
+                "entryMethod": "event_effect"
+              }
+            ],
+            "runtimeBlockers": [],
+            "emptyEligibleSetBehavior": "파일 수 이하 레벨의 해당 색상 캐릭터가 손패에 없으면 추가 등장 없이 효과를 마친다."
+          },
+          "structuralValidation": {
+            "status": "passed",
+            "errors": []
+          }
         }
       ]
     },
@@ -1543,11 +1775,243 @@
         {
           "candidateId": "d03014-unsupported-trigger-1",
           "sourceText": "자신의 덱에 있는 카드 중 맨 위 3장을 확인한다. 그중에서 【백】 캐릭터를 최대 1장까지 공개하여 패에 추가하고, 나머지는 원하는 순서대로 덱 맨 아래로 옮긴다. 패에서 자신의 파일 에이리어 장 수 이하의 레벨인 【백】 캐릭터를 최대 1장까지 등장시킨다.",
-          "interpretation": "이벤트 해결을 시작하는 DSL trigger가 허용 목록에 없어, 카드 등장 이벤트로 잘못 정의하지 않았습니다.",
-          "draftStatus": "unsupported_trigger",
+          "interpretation": "프라이빗 아이와 같은 순서이며 대상 카드 색상만 백색으로 다르다.",
+          "draftStatus": "draft_candidate",
           "approvalStatus": "pending",
-          "confidence": "low",
-          "reviewNotes": "이벤트 해결을 시작하는 DSL trigger가 허용 목록에 없어, 카드 등장 이벤트로 잘못 정의하지 않았습니다."
+          "confidence": "high",
+          "reviewNotes": "event.played 트리거가 이벤트 사용 직후 효과를 시작한다. 덱 상단 3장 확인, 색상에 맞는 캐릭터 1장 공개·손패 이동, 나머지 덱 아래 순서 선택, 파일 수 이하 레벨의 해당 색상 캐릭터 선택·등장을 순차 처리한다. 손패에 적격 카드가 없으면 추가 등장 없이 마친다.",
+          "proposedDefinition": {
+            "steps": [
+              {
+                "op": "peek_top_cards",
+                "count": 3,
+                "saveAs": "seen",
+                "allowFewer": true
+              },
+              {
+                "op": "select_cards",
+                "max": 1,
+                "min": 0,
+                "from": "seen",
+                "filter": {
+                  "allOf": [
+                    {
+                      "field": "card_type",
+                      "value": "character",
+                      "operator": "equals"
+                    },
+                    {
+                      "field": "color",
+                      "value": "white",
+                      "operator": "equals"
+                    }
+                  ]
+                },
+                "prompt": "공개하여 패에 추가할 백 캐릭터를 최대 1장 선택하세요.",
+                "saveAs": "selected",
+                "optional": true
+              },
+              {
+                "op": "reveal_cards",
+                "to": [
+                  "opponent"
+                ],
+                "from": "selected",
+                "when": {
+                  "fact": "vars.selected.count",
+                  "value": 0,
+                  "operator": "greater_than"
+                },
+                "awaitAcknowledgement": true
+              },
+              {
+                "op": "move_cards",
+                "to": "hand",
+                "from": "selected",
+                "when": {
+                  "fact": "vars.selected.count",
+                  "value": 0,
+                  "operator": "greater_than"
+                }
+              },
+              {
+                "op": "move_unselected_to_deck_bottom",
+                "from": "seen",
+                "order": "player_choice",
+                "selectedVariable": "selected"
+              },
+              {
+                "op": "select_cards",
+                "max": 1,
+                "min": 0,
+                "from": "hand",
+                "filter": {
+                  "allOf": [
+                    {
+                      "field": "card_type",
+                      "value": "character",
+                      "operator": "equals"
+                    },
+                    {
+                      "field": "color",
+                      "value": "white",
+                      "operator": "equals"
+                    },
+                    {
+                      "field": "level",
+                      "value": {
+                        "fact": "player.file.count"
+                      },
+                      "operator": "less_than_or_equal"
+                    }
+                  ]
+                },
+                "prompt": "자신의 파일 수 이하 레벨인 백 캐릭터를 최대 1장 등장시킬 수 있습니다.",
+                "saveAs": "deployment",
+                "optional": true
+              },
+              {
+                "op": "move_cards",
+                "to": "field",
+                "from": "deployment",
+                "when": {
+                  "fact": "vars.deployment.count",
+                  "value": 0,
+                  "operator": "greater_than"
+                },
+                "entryMethod": "event_effect"
+              }
+            ],
+            "cardIds": [
+              "0130"
+            ],
+            "trigger": {
+              "event": "event.played",
+              "timing": "after"
+            },
+            "effectId": "card-0130-on-play-ladies-gentlemen",
+            "cardNameJa": "“Ladies♡ and… Gentlemen!!”",
+            "cardNameKo": "“Ladies♡ and… Gentlemen!!”",
+            "conditions": [],
+            "reviewNotes": {
+              "rationale": "프라이빗 아이와 같은 순서이며 대상 카드 색상만 백색으로 다르다.",
+              "sourceText": "덱 위 3장을 확인하고 백 캐릭터를 최대 1장 공개해 패에 추가한다. 나머지는 원하는 순서로 덱 아래에 둔 뒤 파일 수 이하 레벨의 백 캐릭터를 최대 1장 등장시킨다."
+            }
+          },
+          "reviewedSemantics": {
+            "trigger": {
+              "event": "event.played",
+              "timing": "after"
+            },
+            "conditions": [],
+            "steps": [
+              {
+                "op": "peek_top_cards",
+                "count": 3,
+                "saveAs": "seen",
+                "allowFewer": true
+              },
+              {
+                "op": "select_cards",
+                "max": 1,
+                "min": 0,
+                "from": "seen",
+                "filter": {
+                  "allOf": [
+                    {
+                      "field": "card_type",
+                      "value": "character",
+                      "operator": "equals"
+                    },
+                    {
+                      "field": "color",
+                      "value": "white",
+                      "operator": "equals"
+                    }
+                  ]
+                },
+                "prompt": "공개하여 패에 추가할 백 캐릭터를 최대 1장 선택하세요.",
+                "saveAs": "selected",
+                "optional": true
+              },
+              {
+                "op": "reveal_cards",
+                "to": [
+                  "opponent"
+                ],
+                "from": "selected",
+                "when": {
+                  "fact": "vars.selected.count",
+                  "value": 0,
+                  "operator": "greater_than"
+                },
+                "awaitAcknowledgement": true
+              },
+              {
+                "op": "move_cards",
+                "to": "hand",
+                "from": "selected",
+                "when": {
+                  "fact": "vars.selected.count",
+                  "value": 0,
+                  "operator": "greater_than"
+                }
+              },
+              {
+                "op": "move_unselected_to_deck_bottom",
+                "from": "seen",
+                "order": "player_choice",
+                "selectedVariable": "selected"
+              },
+              {
+                "op": "select_cards",
+                "max": 1,
+                "min": 0,
+                "from": "hand",
+                "filter": {
+                  "allOf": [
+                    {
+                      "field": "card_type",
+                      "value": "character",
+                      "operator": "equals"
+                    },
+                    {
+                      "field": "color",
+                      "value": "white",
+                      "operator": "equals"
+                    },
+                    {
+                      "field": "level",
+                      "value": {
+                        "fact": "player.file.count"
+                      },
+                      "operator": "less_than_or_equal"
+                    }
+                  ]
+                },
+                "prompt": "자신의 파일 수 이하 레벨인 백 캐릭터를 최대 1장 등장시킬 수 있습니다.",
+                "saveAs": "deployment",
+                "optional": true
+              },
+              {
+                "op": "move_cards",
+                "to": "field",
+                "from": "deployment",
+                "when": {
+                  "fact": "vars.deployment.count",
+                  "value": 0,
+                  "operator": "greater_than"
+                },
+                "entryMethod": "event_effect"
+              }
+            ],
+            "runtimeBlockers": [],
+            "emptyEligibleSetBehavior": "파일 수 이하 레벨의 해당 색상 캐릭터가 손패에 없으면 추가 등장 없이 효과를 마친다."
+          },
+          "structuralValidation": {
+            "status": "passed",
+            "errors": []
+          }
         }
       ]
     },
