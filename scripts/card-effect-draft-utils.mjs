@@ -55,6 +55,7 @@ export async function loadActiveCatalog() {
   [
     "turn.is_source_controller_turn", "turn.is_opponent_turn", "source.is_active", "source.status",
     "player.field.has_card_name", "player.partner.color", "player.deck.count", "player.hand.count",
+    "player.file.count", "player.case_phase", "player.event.has_non_blue_color",
     "opponent.hand.count", "entry.method", "entry.source.card_type", "entry.source.level",
     "entry.is_first_character_this_turn", "source.under_cards.count"
   ].forEach((f) => facts.add(f));
