@@ -1471,6 +1471,38 @@
         "sourceText": "사건의 특징에 [탐정 VS 괴도]가 있고 파트너 카드의 색상이 백일 경우, 덱에서 카드 2장을 뽑고 손패에서 카드 2장을 리무브한다. 이어서 리무브 에이리어의 레벨 7 이하 청/백 캐릭터를 최대 1장 선택해 등장시킬 수 있다.",
         "rationale": "사건의 특성은 현재 사건 규칙 코드 conan_vs_kid_1261로 판별한다. 드로우 뒤 손패 2장을 리무브하고, 방금 리무브한 카드도 포함한 리무브 에이리어에서 적격 청/백 캐릭터를 선택해 등장시킨다."
       }
+    },
+    {
+      "effectId": "card-0938-on-enter-partner-yellow-charge",
+      "cardIds": [
+        "0938"
+      ],
+      "cardNameKo": "마츠다 진페이",
+      "cardNameJa": "松田陣平",
+      "trigger": {
+        "event": "character.entered_field",
+        "timing": "after"
+      },
+      "conditions": [
+        {
+          "fact": "player.partner.color",
+          "operator": "equals",
+          "value": "yellow"
+        }
+      ],
+      "steps": [
+        {
+          "op": "grant_keyword",
+          "target": "source_character",
+          "keyword": "charge",
+          "displayNameKo": "돌격",
+          "duration": "turn_end"
+        }
+      ],
+      "reviewNotes": {
+        "sourceText": "【파트너 황】 - 〚돌격〛（등장한 턴부터 바로 액션 수행 가능）",
+        "rationale": "전체 카드 효과 중 파트너 황 조건부 돌격 부분만 독립 정의한다. 대상 지정 제한과 턴당 1회 컨택 중 손패 리무브/AP +3000은 별도 런타임 기능이 필요해 미구현으로 남긴다."
+      }
     }
   ]
 }
