@@ -28,6 +28,78 @@
           "approvalStatus": "pending",
           "confidence": "low",
           "reviewNotes": "파트너 색상에 따른 돌격 부여는 현장에 있는 동안 지속되는 조건부 키워드이고, 컨택으로 상대가 리무브된 뒤의 선택적 자기 리무브/등장 연계도 필요합니다. 현재 DSL의 턴 종료 키워드 부여로는 지속 시간을 정확히 표현할 수 없습니다."
+        },
+        {
+          "candidateId": "b06087p-partner-yellow-charge",
+          "sourceText": "【파트너 황】 - 〚돌격〛(등장한 턴부터 바로 액션 수행 가능)",
+          "interpretation": "복합 카드 효과에서 파트너 색상이 황일 때 등장 직후 돌격을 얻는 부분만 독립 정의로 분리했습니다. 나머지 효과는 별도의 트리거/연산이 필요합니다.",
+          "draftStatus": "draft_candidate",
+          "approvalStatus": "pending",
+          "confidence": "high",
+          "reviewNotes": "부분 구현 후보입니다. 이 정의는 파트너 황 조건부 돌격만 처리하며, 카드의 나머지 능력까지 구현 완료라는 의미는 아닙니다.",
+          "proposedDefinition": {
+            "steps": [
+              {
+                "op": "grant_keyword",
+                "target": "source_character",
+                "keyword": "charge",
+                "duration": "turn_end",
+                "displayNameKo": "돌격"
+              }
+            ],
+            "cardIds": [
+              "0706"
+            ],
+            "trigger": {
+              "event": "character.entered_field",
+              "timing": "after"
+            },
+            "effectId": "card-0706-on-enter-partner-yellow-charge",
+            "cardNameJa": "萩原千速",
+            "cardNameKo": "하기와라 치하야",
+            "conditions": [
+              {
+                "fact": "player.partner.color",
+                "value": "yellow",
+                "operator": "equals"
+              }
+            ],
+            "reviewNotes": {
+              "rationale": "파트너 색상이 황일 때 등장한 턴부터 액션할 수 있도록 턴 종료까지 돌격을 부여한다.",
+              "sourceText": "【パートナー黄】 - 〚突撃〛"
+            }
+          },
+          "reviewedSemantics": {
+            "trigger": {
+              "event": "character.entered_field",
+              "timing": "after"
+            },
+            "conditions": [
+              {
+                "fact": "player.partner.color",
+                "value": "yellow",
+                "operator": "equals"
+              }
+            ],
+            "steps": [
+              {
+                "op": "grant_keyword",
+                "target": "source_character",
+                "keyword": "charge",
+                "duration": "turn_end",
+                "displayNameKo": "돌격"
+              }
+            ],
+            "runtimeBlockers": [
+              "컨택으로 상대 캐릭터를 리무브한 결과 트리거",
+              "자기 자신 리무브 후 손패의 Police 캐릭터 추가 등장"
+            ],
+            "implementedSubset": "파트너가 황색인 경우 등장 시 턴 종료까지 돌격 부여"
+          },
+          "structuralValidation": {
+            "status": "passed",
+            "errors": []
+          }
         }
       ]
     },
@@ -874,6 +946,78 @@
           "approvalStatus": "pending",
           "confidence": "low",
           "reviewNotes": "대상 지정 제한과 컨택 중 AP 추가 효과는 현재 DSL 트리거/대상 합법성 계약에 직접 대응하지 않습니다. 이를 단순 등장 효과로 옮기면 타이밍이 달라집니다."
+        },
+        {
+          "candidateId": "d11007-partner-yellow-charge",
+          "sourceText": "【파트너 황】 - 〚돌격〛(등장한 턴부터 바로 액션 수행 가능)",
+          "interpretation": "복합 카드 효과에서 파트너 색상이 황일 때 등장 직후 돌격을 얻는 부분만 독립 정의로 분리했습니다. 나머지 효과는 별도의 트리거/연산이 필요합니다.",
+          "draftStatus": "draft_candidate",
+          "approvalStatus": "pending",
+          "confidence": "high",
+          "reviewNotes": "부분 구현 후보입니다. 이 정의는 파트너 황 조건부 돌격만 처리하며, 카드의 나머지 능력까지 구현 완료라는 의미는 아닙니다.",
+          "proposedDefinition": {
+            "effectId": "card-0938-on-enter-partner-yellow-charge",
+            "cardIds": [
+              "0938"
+            ],
+            "cardNameKo": "마츠다 진페이",
+            "cardNameJa": "松田陣平",
+            "trigger": {
+              "event": "character.entered_field",
+              "timing": "after"
+            },
+            "conditions": [
+              {
+                "fact": "player.partner.color",
+                "operator": "equals",
+                "value": "yellow"
+              }
+            ],
+            "steps": [
+              {
+                "op": "grant_keyword",
+                "target": "source_character",
+                "keyword": "charge",
+                "displayNameKo": "돌격",
+                "duration": "turn_end"
+              }
+            ],
+            "reviewNotes": {
+              "sourceText": "【파트너 황】 - 〚돌격〛（등장한 턴부터 바로 액션 수행 가능）",
+              "rationale": "전체 카드 효과 중 파트너 황 조건부 돌격 부분만 독립 정의한다. 대상 지정 제한과 턴당 1회 컨택 중 손패 리무브/AP +3000은 별도 런타임 기능이 필요해 미구현으로 남긴다."
+            }
+          },
+          "reviewedSemantics": {
+            "trigger": {
+              "event": "character.entered_field",
+              "timing": "after"
+            },
+            "conditions": [
+              {
+                "fact": "player.partner.color",
+                "operator": "equals",
+                "value": "yellow"
+              }
+            ],
+            "steps": [
+              {
+                "op": "grant_keyword",
+                "target": "source_character",
+                "keyword": "charge",
+                "displayNameKo": "돌격",
+                "duration": "turn_end"
+              }
+            ],
+            "runtimeBlockers": [
+              "레벨 7 이상 액티브 상대 캐릭터를 대상으로 하는 액션 제한",
+              "컨택 결과 이벤트 및 손패 비용/일시 AP +3000"
+            ],
+            "implementedSubset": "파트너가 황색인 경우 등장 시 턴 종료까지 돌격 부여"
+          },
+          "structuralValidation": {
+            "status": "passed",
+            "errors": []
+          }
         }
       ]
     },
