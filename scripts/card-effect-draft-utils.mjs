@@ -128,26 +128,68 @@ export function validateDraftBatch(batch, knownFacts = new Set()) {
   if (!object(batch)) return ["초안 파일의 최상위 값은 객체여야 합니다."];
   if (batch.artifactType !== "conan-card-effect-draft-batch") errors.push("artifactType이 올바르지 않습니다.");
   if (!Array.isArray(batch.cards)) errors.push("cards 배열이 필요합니다.");
+
+  // A model must never be asked to infer basic card identity or reconstruct missing source text.
+  // Blank ability/hirameki/cut-in fields are allowed when that card simply has no such section,
+  // but each field must exist and sourceText must faithfully combine the non-empty sections.
+  const requiredCardFields = [
+    "sourceKey", "databaseId", "cardKey", "internalCardId", "nameKo",
+    "typeKo", "colorKo", "rarityKo", "abilityKo", "hirameki", "cutIn", "sourceText",
+  ];
+  const requiredNonEmptyCardFields = [
+    "sourceKey", "databaseId", "cardKey", "internalCardId",
+    "nameKo", "typeKo", "colorKo", "rarityKo",
+  ];
   const sourceKeys = new Set();
   const candidateIds = new Set();
   for (const [i, card] of (batch.cards || []).entries()) {
     const at = `cards[${i}]`;
     if (!object(card)) { errors.push(`${at}: 카드 객체가 아닙니다.`); continue; }
+
+    for (const field of requiredCardFields) {
+      if (!Object.prototype.hasOwnProperty.call(card, field) || card[field] === null || card[field] === undefined) {
+        errors.push(`${at}: 기본 카드 필드 ${field}가 누락되었습니다.`);
+      }
+    }
+    for (const field of requiredNonEmptyCardFields) {
+      if (typeof card[field] !== "string" || !card[field].trim()) {
+        errors.push(`${at}: 기본 카드 필드 ${field} 값이 비어 있습니다.`);
+      }
+    }
+    const expectedSourceText = [card.abilityKo, card.hirameki, card.cutIn]
+      .filter((section) => typeof section === "string" && section.trim())
+      .join("\n");
+    if (typeof card.sourceText === "string" && card.sourceText !== expectedSourceText) {
+      errors.push(`${at}: sourceText가 abilityKo/hirameki/cutIn 원문을 정확히 반영하지 않습니다.`);
+    }
+
     if (!card.sourceKey) errors.push(`${at}: sourceKey가 필요합니다.`);
     if (sourceKeys.has(card.sourceKey)) errors.push(`${at}: sourceKey 중복 ${card.sourceKey}`);
     sourceKeys.add(card.sourceKey);
     if (!Array.isArray(card.effectCandidates)) { errors.push(`${at}: effectCandidates 배열이 필요합니다.`); continue; }
     for (const [j, c] of card.effectCandidates.entries()) {
       const loc = `${at}.effectCandidates[${j}]`;
-      if (candidateIds.has(c.candidateId)) errors.push(`${loc}: candidateId 중복 ${c.candidateId}`);
-      candidateIds.add(c.candidateId);
-      if (!c.proposedDefinition) continue;
+      if (!c?.candidateId) errors.push(`${loc}: candidateId가 필요합니다.`);
+      if (candidateIds.has(c?.candidateId)) errors.push(`${loc}: candidateId 중복 ${c.candidateId}`);
+      candidateIds.add(c?.candidateId);
+      if (!c?.draftStatus) errors.push(`${loc}: draftStatus가 필요합니다.`);
+      if (!c?.approvalStatus) errors.push(`${loc}: approvalStatus가 필요합니다.`);
+      if (c?.manualInterpretationLocked === true && !c?.proposedDefinition) {
+        errors.push(`${loc}: 수동 검토 잠금 후보에 proposedDefinition이 없습니다.`);
+      }
+      if (!c?.proposedDefinition) continue;
       const de = validateDslDefinition(c.proposedDefinition, card.internalCardId, knownFacts);
       c.structuralValidation = { status: de.length ? "failed" : "passed", errors: de };
       c.approvalStatus = c.approvalStatus || "pending";
       if (de.length) c.draftStatus = "review_required";
       else if (c.draftStatus === "draft_candidate") c.draftStatus = "dsl_valid_pending_human_review";
     }
+  }
+
+  if (batch.dataReadinessAudit && Array.isArray(batch.cards)) {
+    const sourceCandidateCount = batch.cards.reduce((sum, card) => sum + (card.effectCandidates?.length || 0), 0);
+    if (batch.dataReadinessAudit.cardCount !== batch.cards.length) errors.push("dataReadinessAudit.cardCount가 실제 카드 수와 다릅니다.");
+    if (batch.dataReadinessAudit.effectCandidateCount !== sourceCandidateCount) errors.push("dataReadinessAudit.effectCandidateCount가 실제 후보 수와 다릅니다.");
   }
   return errors;
 }
