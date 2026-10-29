@@ -186,7 +186,7 @@ function normalizeGeneratedCard(sourceCard, generatedCard) {
   const protectedCandidates = (Array.isArray(sourceCard.effectCandidates) ? sourceCard.effectCandidates : [])
     .filter((candidate) => candidate?.reviewedByUser === true || candidate?.approvalStatus === "approved");
   const protectedSourceTexts = protectedCandidates
-    .map((candidate) => String(candidate.sourceText || candidate.sourceClause || candidate.proposedDefinition?.reviewNotes?.sourceText || "").trim())
+    .map((candidate) => String(candidate.sourceClause || candidate.proposedDefinition?.reviewNotes?.sourceText || candidate.sourceText || "").trim())
     .filter(Boolean);
   const generatedCandidates = rawCandidates.filter((candidate) => {
     const clause = String(candidate?.sourceClause || "").trim();
@@ -327,7 +327,7 @@ for (let offset = 0; offset < remaining.length; offset += options.batchSize) {
         .filter((candidate) => candidate?.reviewedByUser === true || candidate?.approvalStatus === "approved")
         .map((candidate) => ({
           candidateId: candidate.candidateId,
-          sourceText: candidate.sourceText || candidate.sourceClause || "",
+          sourceText: candidate.sourceClause || candidate.proposedDefinition?.reviewNotes?.sourceText || candidate.sourceText || "",
           interpretation: candidate.interpretation || "",
           proposedDefinition: candidate.proposedDefinition || null,
         })),
