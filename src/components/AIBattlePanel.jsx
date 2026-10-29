@@ -24,6 +24,24 @@ function getEventRuleCode(card, fallback = "") {
   if (normalized.includes("1261") || normalized.includes("B11098") || normalized.includes("B11098P")) return "conan_vs_kid_1261";
   return "";
 }
+function eventHasNonBlueColor(card) {
+  const source = card?.sourceData && typeof card.sourceData === "object"
+    ? card.sourceData
+    : card?.raw && typeof card.raw === "object" ? card.raw : {};
+  const values = [
+    card?.color, card?.colorKo, card?.color_ko, card?.colorKey, card?.color_key,
+    card?.colorText, card?.color_text, card?.colors, card?.originalColor,
+    source?.color, source?.colorKo, source?.color_ko, source?.colorKey, source?.color_key,
+    source?.colors, source?.raw?.color,
+  ];
+  const text = values.flatMap((value) => Array.isArray(value) ? value : [value])
+    .filter((value) => value !== null && value !== undefined)
+    .map((value) => String(value).trim().toLocaleLowerCase())
+    .join(" ");
+  if (!text) return false;
+  return /(?:red|yellow|green|white|black|purple|orange|pink|brown|gold|silver|적|황|녹|백|흑|자|주|빨강|노랑|초록|흰색|검정|보라|桃|赤|黄|緑|白|黒|紫|橙|金|銀)/iu.test(text);
+}
+
 function getTraits(card) {
   const values = [card?.traits, card?.category1, card?.category2, card?.category3];
   return [...new Set(values.flatMap((value) => {
@@ -139,6 +157,7 @@ function preparePublicDeck(cards, item) {
     partner_key: String(partner.key),
     event_key: String(event.key),
     event_rule_code: getEventRuleCode(event, event.key),
+    event_has_non_blue_color: eventHasNonBlueColor(event),
     deck_name: String(item.deck_name || "이름 없는 공개 덱"),
     composer_name: String(item.composer_name || ""),
   };
@@ -196,6 +215,7 @@ export default function AIBattlePanel({ deck, partnerId, eventId, cards = [], en
           partner_key: String(partnerId),
           event_key: String(eventId),
           event_rule_code: getEventRuleCode(event, eventId),
+          event_has_non_blue_color: eventHasNonBlueColor(event),
           ai_deck: aiDeck,
         },
       });
