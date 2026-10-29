@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 
 function identity(card) {
@@ -162,18 +162,45 @@ function preparePublicDeck(cards, item) {
     composer_name: String(item.composer_name || ""),
   };
 }
-async function pickRandomPublicDeck(cards) {
+async function fetchPublicDecks() {
   const { data, error } = await supabase.from("public_deck_library")
-    .select("id, deck_name, composer_name, deck_json, created_at")
+    .select("id, deck_name, description, composer_name, deck_json, created_at")
     .order("created_at", { ascending: false })
     .limit(200);
   if (error) throw new Error(`공개 덱 저장소를 불러오지 못했습니다: ${error.message}`);
-  if (!Array.isArray(data) || data.length === 0) {
-    throw new Error("공개 덱 저장소에 등록된 덱이 없습니다. 먼저 덱을 공개 업로드해 주세요.");
+  return Array.isArray(data) ? data : [];
+}
+
+function getCardColorLabel(card) {
+  const source = card?.sourceData && typeof card.sourceData === "object" ? card.sourceData : {};
+  const values = [
+    card?.colorKo, card?.color_ko, card?.colorText, card?.color_text, card?.color,
+    card?.colors, card?.originalColor, card?.colorKey, card?.color_key,
+    source?.colorKo, source?.color_ko, source?.color, source?.colors,
+  ];
+  for (const value of values) {
+    if (Array.isArray(value) && value.length) return value.map((item) => String(item ?? "").trim()).filter(Boolean).join("/");
+    if (value != null && String(value).trim()) return String(value).trim();
   }
-  // Choose first; do not pre-filter by competitive legality or special-case deck construction.
-  const picked = data[Math.floor(Math.random() * data.length)];
-  return preparePublicDeck(cards, picked);
+  return "";
+}
+
+function publicDeckLabels(cards, item) {
+  const source = item?.deck_json && typeof item.deck_json === "object" ? item.deck_json : {};
+  const partnerEntry = source.partner ?? source.partnerId ?? source.partner_id;
+  const eventEntry = source.event ?? source.eventId ?? source.event_id;
+  const partner = resolvePublicDeckCard(cards, partnerEntry);
+  const event = resolvePublicDeckCard(cards, eventEntry);
+  const fallbackName = (entry) => {
+    if (entry == null || entry === "") return "정보 없음";
+    if (typeof entry === "object") return String(entry.name ?? entry.cardName ?? entry.card_name ?? entry.cardId ?? entry.card_id ?? entry.key ?? entry.id ?? "정보 없음");
+    return String(entry);
+  };
+  return {
+    partnerName: String(partner?.name || partner?.originalName || fallbackName(partnerEntry)),
+    partnerColor: getCardColorLabel(partner),
+    eventName: String(event?.name || event?.originalName || fallbackName(eventEntry)),
+  };
 }
 
 const panelStyle = {
@@ -191,6 +218,33 @@ export default function AIBattlePanel({ deck, partnerId, eventId, cards = [], en
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [publicDecks, setPublicDecks] = useState([]);
+  const [selectedDeckIds, setSelectedDeckIds] = useState([]);
+  const [deckListLoading, setDeckListLoading] = useState(true);
+  const [deckListError, setDeckListError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    async function loadDecks() {
+      setDeckListLoading(true);
+      setDeckListError("");
+      try {
+        const data = await fetchPublicDecks();
+        if (!active) return;
+        setPublicDecks(data);
+        setSelectedDeckIds(data.map((item) => String(item.id)));
+      } catch (err) {
+        if (!active) return;
+        setPublicDecks([]);
+        setSelectedDeckIds([]);
+        setDeckListError(err?.message || "공개 덱 목록을 불러오지 못했습니다.");
+      } finally {
+        if (active) setDeckListLoading(false);
+      }
+    }
+    void loadDecks();
+    return () => { active = false; };
+  }, []);
 
   async function startAIBattle() {
     if (loading) return;
@@ -206,8 +260,13 @@ export default function AIBattlePanel({ deck, partnerId, eventId, cards = [], en
       const session = await ensureSignedIn();
       const event = cards.find((card) => String(card.key) === String(eventId));
       if (!event || !isEvent(event)) throw new Error("선택한 사건 카드를 확인할 수 없습니다.");
+      if (deckListLoading) throw new Error("AI 덱 후보 목록을 불러오는 중입니다. 잠시 후 다시 시도해 주세요.");
+      if (deckListError) throw new Error(deckListError);
+      const candidates = publicDecks.filter((item) => selectedDeckIds.includes(String(item.id)));
+      if (!candidates.length) throw new Error("AI가 사용할 덱을 하나 이상 선택해 주세요.");
+      const pickedDeck = candidates[Math.floor(Math.random() * candidates.length)];
       const humanDeck = buildHumanDeck(deck, cards);
-      const aiDeck = await pickRandomPublicDeck(cards);
+      const aiDeck = preparePublicDeck(cards, pickedDeck);
       const { data, error: invokeError } = await supabase.functions.invoke("ai-battle", {
         body: {
           action: "create",
@@ -236,18 +295,63 @@ export default function AIBattlePanel({ deck, partnerId, eventId, cards = [], en
           <p style={{ margin: "0 0 5px", color: "#7dd3fc", fontSize: 10, fontWeight: 900, letterSpacing: ".18em" }}>AI BATTLE · EXPERIMENTAL</p>
           <h2 style={{ margin: 0, fontSize: 22, fontWeight: 850 }}>AI 대전</h2>
           <p style={{ color: "#9aa8bd", marginTop: 7, fontSize: 13, lineHeight: 1.7 }}>
-            내 덱으로 AI 탐정과 별도 대전을 시작합니다. AI는 공개 덱 저장소에 등록된 덱 하나를 무작위로 사용합니다.
+            아래에서 AI가 사용할 공개 덱 후보를 선택하세요. 체크한 덱 가운데 하나를 무작위로 골라 대전합니다.
           </p>
         </div>
       </div>
       <div style={{ marginTop: 14, padding: 12, borderRadius: 9, border: "1px solid rgba(252,211,77,.24)", background: "rgba(161,98,7,.09)", color: "#fcd34d", fontSize: 11, lineHeight: 1.7 }}>
-        ※ 현재 개발 중으로, 정상 동작하지 않습니다. 관리자의 검토를 위해 사이트에 통합되어 있을 뿐으로 일반 모의전을 원하는 분들께선 신경 쓰지 말아 주세요.
+        실험 중인 기능입니다. 덱 효과별 지원 범위에 따라 일부 행동이 정상적으로 처리되지 않을 수 있습니다.
+      </div>
+      <div style={{ marginTop: 16, border: "1px solid rgba(148,163,184,.2)", borderRadius: 12, overflow: "hidden" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10, padding: "12px 14px", background: "rgba(15,23,42,.7)" }}>
+          <div>
+            <strong style={{ fontSize: 13 }}>AI 덱 후보</strong>
+            <div style={{ color: "#94a3b8", fontSize: 11, marginTop: 3 }}>
+              {deckListLoading ? "공개 덱 목록을 불러오는 중…" : `${selectedDeckIds.length} / ${publicDecks.length}개 선택됨`}
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            <button type="button" style={{ ...buttonStyle, padding: "7px 10px", fontSize: 11 }} disabled={deckListLoading || publicDecks.length === 0} onClick={() => setSelectedDeckIds(publicDecks.map((item) => String(item.id)))}>전체 선택</button>
+            <button type="button" style={{ ...buttonStyle, padding: "7px 10px", fontSize: 11, background: "#1e293b", borderColor: "rgba(148,163,184,.28)" }} disabled={deckListLoading || selectedDeckIds.length === 0} onClick={() => setSelectedDeckIds([])}>전체 해제</button>
+          </div>
+        </div>
+        {deckListError && <p role="alert" style={{ margin: 0, padding: 12, color: "#fda4af", fontSize: 12 }}>{deckListError}</p>}
+        {!deckListLoading && !deckListError && publicDecks.length === 0 && <p style={{ margin: 0, padding: 12, color: "#fda4af", fontSize: 12 }}>공개 덱 저장소에 등록된 덱이 없습니다.</p>}
+        <div style={{ maxHeight: 340, overflowY: "auto" }}>
+          {publicDecks.map((item) => {
+            const id = String(item.id);
+            const checked = selectedDeckIds.includes(id);
+            const details = publicDeckLabels(cards, item);
+            return (
+              <label key={id} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "11px 13px", borderTop: "1px solid rgba(148,163,184,.12)", background: checked ? "rgba(8,47,73,.18)" : "transparent", cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  disabled={deckListLoading}
+                  onChange={(event) => setSelectedDeckIds((current) => event.target.checked
+                    ? [...new Set([...current, id])]
+                    : current.filter((selectedId) => selectedId !== id))}
+                  style={{ marginTop: 3, accentColor: "#38bdf8" }}
+                />
+                <span style={{ minWidth: 0, flex: 1 }}>
+                  <span style={{ display: "block", color: "#e2e8f0", fontSize: 12, fontWeight: 800, overflowWrap: "anywhere" }}>{item.deck_name || "이름 없는 덱"}</span>
+                  <span style={{ display: "block", marginTop: 3, color: "#94a3b8", fontSize: 10, lineHeight: 1.6 }}>
+                    제작자: {item.composer_name || "미상"}
+                    {" · "}파트너: {details.partnerColor ? `[${details.partnerColor}] ` : ""}{details.partnerName}
+                    {" · "}사건: {details.eventName}
+                  </span>
+                  {item.description && <span style={{ display: "block", marginTop: 3, color: "#718096", fontSize: 10, lineHeight: 1.5, overflowWrap: "anywhere" }}>{item.description}</span>}
+                </span>
+              </label>
+            );
+          })}
+        </div>
       </div>
       <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8, marginTop: 16 }}>
-        <button type="button" style={{ ...buttonStyle, opacity: loading ? .6 : 1, cursor: loading ? "wait" : "pointer" }} disabled={loading} onClick={() => void startAIBattle()}>
+        <button type="button" style={{ ...buttonStyle, opacity: loading ? .6 : 1, cursor: loading ? "wait" : "pointer" }} disabled={loading || deckListLoading || !!deckListError || publicDecks.length === 0} onClick={() => void startAIBattle()}>
           {loading ? "AI 대전 준비 중…" : "AI 대전 시작"}
         </button>
-        <span style={{ color: "#74839a", fontSize: 11 }}>AI는 공개 덱 저장소의 덱을 무작위로 선택합니다.</span>
+        <span style={{ color: "#74839a", fontSize: 11 }}>체크한 덱 {selectedDeckIds.length}개 중 무작위 선택</span>
       </div>
       {notice && <p role="status" style={{ color: "#86efac", marginTop: 13, fontSize: 12 }}>{notice}</p>}
       {error && <p role="alert" style={{ color: "#fda4af", marginTop: 13, fontSize: 12, overflowWrap: "anywhere" }}>{error}</p>}
