@@ -18,7 +18,7 @@ const allowedOperators = new Set([
 ]);
 const allowedOps = new Set([
   "refill_deck_from_remove_area", "peek_top_cards", "select_cards", "reveal_cards",
-  "move_cards", "move_unselected_to_deck_bottom", "move_unselected_to_zone",
+  "move_cards", "move_unselected_to_deck_bottom", "move_unselected_to_zone", "filter_cards",
   "reveal_until_match", "attach_cards", "grant_keyword", "modify_stat",
   "offer_reaction", "pay_cost", "set_mislead_value", "draw_cards", "gain_evidence",
   "ready_cards_that_used_keyword", "mark_keyword_activated", "shuffle_deck",
@@ -76,6 +76,7 @@ function checkStep(step, location, vars, def) {
     select_cards: ["from", "min", "max", "optional", "saveAs"],
     reveal_cards: ["from", "to", "awaitAcknowledgement"],
     move_cards: ["from", "to"],
+    filter_cards: ["from", "filter", "saveAs"],
     move_unselected_to_deck_bottom: ["from", "selectedVariable", "order"],
     move_unselected_to_zone: ["from", "selectedVariable", "to", "order"],
     reveal_until_match: ["from", "saveAs", "match", "includeMatchingCard", "publicReveal", "oneByOne"],
@@ -93,6 +94,13 @@ function checkStep(step, location, vars, def) {
     set_continuous_keyword: ["target", "keyword", "modifierId", "duration"],
   };
   if (required[step.op]) need(has(step, required[step.op]), `${location}: ${step.op}의 필수 필드(${required[step.op].join(", ")})가 빠졌습니다.`);
+
+  if (step.op === "filter_cards") {
+    if (typeof step.from === "string" && !zoneNames.has(step.from)) {
+      need(vars.has(variableRoot(step.from)), `${location}: 필터 출처 변수 '${step.from}'가 앞 단계에 정의되지 않았습니다.`);
+    }
+    checkFilter(step.filter, `${location}.filter`);
+  }
 
   if (step.op === "select_cards") {
     need(Number.isInteger(step.min) && step.min >= 0, `${location}: min은 0 이상의 정수여야 합니다.`);
