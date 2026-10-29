@@ -28,6 +28,57 @@ function isEvent(card: any) {
 function isActive(card: any) {
   return !card?.rested && String(card?.status || "active") === "active";
 }
+function cardIdentifierValues(card: any): string[] {
+  const source = card?.sourceData && typeof card.sourceData === "object" ? card.sourceData
+    : card?.raw && typeof card.raw === "object" ? card.raw : {};
+  return [
+    card?.card_id, card?.cardId, card?.database_id, card?.databaseId,
+    card?.card_num, card?.cardNum, card?.key, card?.id,
+    source?.card_id, source?.cardId, source?.database_id, source?.databaseId,
+    source?.card_num, source?.cardNum, source?.key, source?.id,
+  ].map((value) => String(value ?? "").trim()).filter(Boolean);
+}
+function matchesInternalCardId(card: any, internalId: string): boolean {
+  const wanted = String(internalId).replace(/^0+/u, "");
+  return cardIdentifierValues(card).some((value) => {
+    const normalized = value.toLocaleUpperCase();
+    const digits = value.replace(/\\D/gu, "").replace(/^0+/u, "");
+    return normalized === String(internalId).toLocaleUpperCase()
+      || normalized === String(internalId).replace(/^0+/u, "").toLocaleUpperCase()
+      || (wanted.length > 0 && digits === wanted);
+  });
+}
+function dslKeywordValues(card: any): string[] {
+  const fields = [card?.dsl_keywords, card?.dsl_continuous_keywords, card?.keywords, card?.keyword_tags, card?.keyword];
+  return fields.flatMap((field) => {
+    if (Array.isArray(field)) return field.map((item: any) =>
+      String(item?.keyword ?? item?.value ?? item?.name ?? item ?? "").trim().toLocaleLowerCase());
+    return field == null ? [] : [String(field).trim().toLocaleLowerCase()];
+  }).filter(Boolean);
+}
+function hasCaseOnlyCharge(card: any): boolean {
+  return dslKeywordValues(card).some((value) =>
+    ["charge_case", "돌격[사건]", "돌격［사건］", "突撃[事件]", "突撃［事件］"].includes(value));
+}
+function hasCharge(card: any): boolean {
+  return hasCaseOnlyCharge(card) || dslKeywordValues(card).some((value) =>
+    ["charge", "돌격", "突撃"].includes(value));
+}
+function isDetectiveVsKidCycleEvent(card: any): boolean {
+  const aliases = ["1215", "B11049P2", "B11049P", "B11049"];
+  return cardIdentifierValues(card).some((value) => aliases.includes(value.toLocaleUpperCase())
+    || value.replace(/\\D/gu, "").replace(/^0+/u, "") === "1215");
+}
+function normalizedColor(value: unknown): string {
+  const token = String(value ?? "").trim().toLocaleLowerCase();
+  if (["white", "백", "백색", "白", "白色"].includes(token)) return "white";
+  if (["blue", "청", "청색", "青", "青色"].includes(token)) return "blue";
+  if (["yellow", "황", "황색", "黄", "黄色"].includes(token)) return "yellow";
+  if (["red", "적", "적색", "赤", "赤色"].includes(token)) return "red";
+  if (["green", "녹", "녹색", "緑", "緑色"].includes(token)) return "green";
+  if (["black", "흑", "흑색", "黒", "黒色"].includes(token)) return "black";
+  return token;
+}
 function isBasicSearchEvent(card: any) {
   const ids = [card?.key, card?.database_id, card?.databaseId, card?.card_id, card?.card_num]
     .map((value) => String(value ?? "").trim().toLocaleUpperCase());
@@ -127,9 +178,15 @@ function chooseActivatedAbility(state: any, aiId: string) {
   const removeArea = Array.isArray(state?.my_remove_cards) ? state.my_remove_cards : [];
   for (const ability of activations) {
     const sourceId = String(ability?.source_instance_id || "");
-    const source = ownField.find((card: any) => String(card?.instance_id || "") === sourceId);
     const definition = ability?.definition;
-    if (!source || !isActive(source) || !definition || !Array.isArray(definition.steps)) continue;
+    if (!definition || !Array.isArray(definition.steps)) continue;
+    // 사건 카드는 현장 인스턴스가 아닌 합성 source로 전달된다. 서버 RPC가
+    // 사건 단계·증거·파트너 조건을 미리 검증했으므로 별도 액션으로 발동한다.
+    if (sourceId.startsWith("case:")) {
+      return { action: "activate_case_effect", payload: { effect_id: String(ability?.effect_id || "") } };
+    }
+    const source = ownField.find((card: any) => String(card?.instance_id || "") === sourceId);
+    if (!source || !isActive(source)) continue;
     const selections: Array<{ step: any; targets: any[] }> = [];
     let invalid = false;
     for (const step of definition.steps.filter((candidate: any) => candidate?.op === "select_cards")) {
@@ -216,6 +273,8 @@ function describeAction(decision: any, state: any, aiId: string) {
         ?.find((entry: any) => String(entry.instance_id || "") === String(decision?.payload?.source_instance_id || ""));
       return `AI 탐정: ${cardName(source)}의 능력을 발동했습니다.`;
     }
+    case "activate_case_effect":
+      return "AI 탐정: 사건 카드의 선언 효과를 발동했습니다.";
     case "declare_contact":
       return `AI 탐정: ${cardName(attacker)}으로 ${cardName(target)}에게 컨택을 선언했습니다.`;
     case "attack_evidence":
@@ -334,8 +393,10 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
   const hand = Array.isArray(state?.my_hand) ? state.my_hand : [];
   const field = Array.isArray(me.field_cards) ? me.field_cards : [];
   const enemyField = Array.isArray(opponent.field_cards) ? opponent.field_cards : [];
-  const activeAttackers = field.filter((card: any) => isCharacter(card) && isActive(card) && !card.summoned_this_turn)
+  const activeAttackers = field.filter((card: any) => isCharacter(card) && isActive(card)
+    && (!card.summoned_this_turn || hasCharge(card)))
     .sort((a: any, b: any) => cardAp(b) - cardAp(a));
+  const characterAttackers = activeAttackers.filter((card: any) => !hasCaseOnlyCharge(card));
   const characterCount = field.filter((card: any) => isCharacter(card)).length;
   const level = Math.max(0, Number(me.file_count || 0)) + (me.partner_assist_used ? 1 : 0);
   const basePlayed = Boolean(me.base_card_played_this_turn || me.character_played_this_turn);
@@ -383,12 +444,24 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
     if (playableCharacters[0]) {
       return { action: "play_character", payload: { instance_id: playableCharacters[0].instance_id } };
     }
-    // Use the color-search events as a fallback when no character in hand is currently playable.
+    // Use color-search events when no character in hand is currently playable.
     const searchEvent = hand.filter((card: any) => isEvent(card) && isBasicSearchEvent(card)
       && cardCost(card) <= level)
       .sort((a: any, b: any) => cardCost(a) - cardCost(b))[0];
     if (searchEvent && characterCount < 5) {
       return { action: "play_event", payload: { instance_id: searchEvent.instance_id } };
+    }
+
+    // In the Detective-vs-Kid case with a white partner, B11049P2 is a useful
+    // hand-cycling fallback even when no character can currently be deployed.
+    const eventKey = String(me.event_key || me.eventKey || me.event_rule_code || me.eventRuleCode || "").toLocaleUpperCase();
+    const partnerColor = normalizedColor(me.partner_color || me.partnerColor
+      || me.partner?.color || me.partner_card?.color || me.partnerCard?.color);
+    const isDetectiveVsKidCase = ["B11098", "B11098P", "1261", "CONAN_VS_KID_1261"].includes(eventKey);
+    const cycleEvent = hand.filter((card: any) => isEvent(card) && isDetectiveVsKidCycleEvent(card)
+      && cardCost(card) <= level).sort((a: any, b: any) => cardCost(a) - cardCost(b))[0];
+    if (cycleEvent && characterCount < 5 && partnerColor === "white" && isDetectiveVsKidCase) {
+      return { action: "play_event", payload: { instance_id: cycleEvent.instance_id } };
     }
   }
 
@@ -409,12 +482,39 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
     if (canContinue) return { action: "next_hint_take_file" };
   }
 
+  // D11007 can select an active opposing character of level 7 or higher.
+  // Its discard ability can bridge an AP deficit of less than 3000 during that contact.
+  const specialTargetAttacker = activeAttackers.find((card: any) => matchesInternalCardId(card, "0938"));
+  const activeHighLevelTarget = enemyField
+    .filter((card: any) => isCharacter(card) && isActive(card) && cardCost(card) >= 7)
+    .sort((a: any, b: any) => cardAp(a) - cardAp(b))[0];
+  if (specialTargetAttacker && activeHighLevelTarget) {
+    const attackerAp = cardAp(specialTargetAttacker);
+    const targetAp = cardAp(activeHighLevelTarget);
+    const canWinWithoutCost = attackerAp > targetAp;
+    const canWinByD11007 = hand.length > 0 && attackerAp < targetAp && attackerAp + 3000 > targetAp;
+    const canWinByCutin = hand.some((card: any) => Number(card?.cut_in_bonus || 0) > 0
+      && attackerAp + Number(card.cut_in_bonus || 0) > targetAp);
+    if (canWinWithoutCost || canWinByD11007 || canWinByCutin) {
+      return {
+        action: "declare_contact",
+        payload: {
+          attacker_instance_id: specialTargetAttacker.instance_id,
+          target_user_id: opponent.user_id,
+          target_instance_id: activeHighLevelTarget.instance_id,
+          allow_active_target: true,
+          allow_newly_played: false,
+        },
+      };
+    }
+  }
+
   const restedTarget = enemyField.filter((card: any) => isCharacter(card) && !isActive(card))
     .sort((a: any, b: any) => cardAp(a) - cardAp(b))[0];
-  if (activeAttackers.length && restedTarget) {
+  if (characterAttackers.length && restedTarget) {
     // Do not throw a lower-AP attacker into a losing contact unless a hand cut-in can
     // raise it above the target's AP during that contact.
-    const attacker = activeAttackers.find((candidate: any) => {
+    const attacker = characterAttackers.find((candidate: any) => {
       const attackerAp = cardAp(candidate);
       const targetAp = cardAp(restedTarget);
       return attackerAp > targetAp || hand.some((card: any) => {
@@ -558,7 +658,9 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
         } else {
           const min = Math.max(0, Number(pending.min || 0));
           const max = Math.max(0, Number(pending.max || 1));
-          const take = Math.min(max, Math.max(min, Math.min(1, ids.length)));
+          // Choose up to max rather than silently discarding only one card from
+          // multi-card effects such as B11049P2's draw-two, remove-two sequence.
+          const take = Math.min(max, ids.length);
           decision = { action: "card_effect_continue", payload: { selected_instance_ids: ids.slice(0, take) } };
         }
       } else if (pending.type === "card_effect_reveal_ack" || pending.type === "card_effect_reveal_sequence") {
