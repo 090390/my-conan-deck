@@ -69,6 +69,25 @@ function isDetectiveVsKidCycleEvent(card: any): boolean {
   return cardIdentifierValues(card).some((value) => aliases.includes(value.toLocaleUpperCase())
     || value.replace(/\D/gu, "").replace(/^0+/u, "") === "1215");
 }
+function isPr181AnyTimingSource(card: any): boolean {
+  return cardIdentifierValues(card).some((value) => value.toLocaleUpperCase() === "PR181")
+    || matchesInternalCardId(card, "0732");
+}
+function canDeployTokyoPoliceFromRemoveArea(state: any): boolean {
+  const removeArea = Array.isArray(state?.my_remove_cards) ? state.my_remove_cards : [];
+  return removeArea.some((card: any) => isCharacter(card) && cardCost(card) <= 4
+    && cardTraits(card).some((trait: string) => /(?:警視庁|경시청)/u.test(trait)));
+}
+function hasReadyPr181AnyTiming(state: any, aiId: string): boolean {
+  if (!state || state.game_over || state.pending_action
+      || state.current_turn_user_id === aiId
+      || String(state.phase || "playing") !== "playing"
+      || !canDeployTokyoPoliceFromRemoveArea(state)) return false;
+  const aiBoard = (Array.isArray(state.boards) ? state.boards : [])
+    .find((board: any) => board.user_id === aiId);
+  return (Array.isArray(aiBoard?.field_cards) ? aiBoard.field_cards : [])
+    .some((card: any) => isPr181AnyTimingSource(card) && isActive(card));
+}
 function normalizedColor(value: unknown): string {
   const token = String(value ?? "").trim().toLocaleLowerCase();
   if (["white", "백", "백색", "白", "白色"].includes(token)) return "white";
@@ -686,10 +705,15 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
       || pending.chooser_user_id === battle.ai_user_id
       || needsAiAcknowledgement
     ));
-    if (state.current_turn_user_id !== battle.ai_user_id && !aiMustRespond) return { is_ai: true, actions: [] };
+    const canUseAnyTiming = hasReadyPr181AnyTiming(state, battle.ai_user_id);
+    if (state.current_turn_user_id !== battle.ai_user_id && !aiMustRespond && !canUseAnyTiming) {
+      return { is_ai: true, actions: [] };
+    }
 
-    if (!pending && state.current_turn_user_id === battle.ai_user_id
-      && ["file", "main"].includes(String(state.turn_step || ""))) {
+    if (!pending && (
+      (state.current_turn_user_id === battle.ai_user_id && ["file", "main"].includes(String(state.turn_step || "")))
+      || canUseAnyTiming
+    )) {
       // DECLARE/SLEEP is legal at any non-blocked timing in the AI's own turn.
       // Evaluate eligible activations during the file step as well as main; the planner
       // will still place files first when no useful, legal activation is available.
@@ -735,7 +759,11 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
         if (choice) decision = { action: "card_effect_continue", payload: { choice } };
       }
     }
-    if (!decision) decision = chooseTurnAction(state, battle.ai_user_id, battle.last_next_hint_turn_number);
+    if (!decision) {
+      decision = state.current_turn_user_id === battle.ai_user_id || pending
+        ? chooseTurnAction(state, battle.ai_user_id, battle.last_next_hint_turn_number)
+        : chooseActivatedAbility(state, battle.ai_user_id);
+    }
     if (!decision) return { is_ai: true, actions: [] };
     const message = describeAction(decision, state, battle.ai_user_id);
     let { error: actionError } = await service.rpc("perform_private_ai_turn_action_v1", {
