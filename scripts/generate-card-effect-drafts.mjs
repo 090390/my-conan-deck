@@ -184,7 +184,7 @@ function normalizeGeneratedCard(sourceCard, generatedCard) {
   const rawCandidates = Array.isArray(generatedCard?.effectCandidates) ? generatedCard.effectCandidates : [];
   const sourceText = String(sourceCard.sourceText || [sourceCard.abilityKo, sourceCard.hirameki, sourceCard.cutIn].filter(Boolean).join("\n") || "");
   const protectedCandidates = (Array.isArray(sourceCard.effectCandidates) ? sourceCard.effectCandidates : [])
-    .filter((candidate) => candidate?.reviewedByUser === true || candidate?.approvalStatus === "approved");
+    .filter((candidate) => candidate?.manualInterpretationLocked === true || candidate?.reviewedByUser === true || candidate?.approvalStatus === "approved");
   const protectedSourceTexts = protectedCandidates
     .map((candidate) => String(candidate.sourceClause || candidate.proposedDefinition?.reviewNotes?.sourceText || candidate.sourceText || "").trim())
     .filter(Boolean);
@@ -324,7 +324,7 @@ for (let offset = 0; offset < remaining.length; offset += options.batchSize) {
       cutIn: card.cutIn,
       sourceText: String(card.sourceText || [card.abilityKo, card.hirameki, card.cutIn].filter(Boolean).join("\n") || ""),
       reviewedCandidates: (Array.isArray(card.effectCandidates) ? card.effectCandidates : [])
-        .filter((candidate) => candidate?.reviewedByUser === true || candidate?.approvalStatus === "approved")
+        .filter((candidate) => candidate?.manualInterpretationLocked === true || candidate?.reviewedByUser === true || candidate?.approvalStatus === "approved")
         .map((candidate) => ({
           candidateId: candidate.candidateId,
           sourceText: candidate.sourceClause || candidate.proposedDefinition?.reviewNotes?.sourceText || candidate.sourceText || "",
