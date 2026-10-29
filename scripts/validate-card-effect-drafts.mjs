@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { loadActiveCatalog, validateDraftBatch } from "./card-effect-draft-utils.mjs";
+import { loadActiveCatalog, validateDraftBatch, validateDslDefinition } from "./card-effect-draft-utils.mjs";
 
 const args = process.argv.slice(2);
 const inputIndex = args.findIndex((x) => x === "--input");
