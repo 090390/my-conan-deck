@@ -43,6 +43,13 @@ const variableRoot = (ref) => typeof ref === "string" ? ref.split(".")[0] : "";
 function checkCondition(condition, location) {
   need(isObject(condition), `${location}: condition은 객체여야 합니다.`);
   if (!isObject(condition)) return;
+  if (condition.allOf !== undefined || condition.anyOf !== undefined) {
+    for (const branch of ["allOf", "anyOf"]) if (condition[branch] !== undefined) {
+      need(Array.isArray(condition[branch]) && condition[branch].length > 0, `${location}.${branch}는 비어 있지 않은 배열이어야 합니다.`);
+      for (const [i, part] of (condition[branch] ?? []).entries()) checkCondition(part, `${location}.${branch}[${i}]`);
+    }
+    return;
+  }
   need(typeof condition.fact === "string" && condition.fact.length > 0, `${location}: fact가 필요합니다.`);
   need(allowedOperators.has(condition.operator), `${location}: 지원하지 않는 operator ${String(condition.operator)}`);
   need(Object.hasOwn(condition, "value"), `${location}: value가 필요합니다.`);
