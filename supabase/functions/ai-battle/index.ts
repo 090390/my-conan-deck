@@ -343,7 +343,14 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
   );
 
   if (state.turn_step === "begin") return { action: "begin_turn" };
-  if (state.turn_step === "file") return { action: "place_files" };
+  if (state.turn_step === "file") {
+    // Ability timing is a tactical choice. Use a legal DECLARE/SLEEP ability here
+    // only if its condition and a meaningful target are currently available; otherwise
+    // proceed with the normal file placement.
+    const earlyActivatedAbility = chooseActivatedAbility(state, aiId);
+    if (earlyActivatedAbility) return earlyActivatedAbility;
+    return { action: "place_files" };
+  }
   if (state.turn_step !== "main") return null;
 
   if (me.next_hint_pending) {
@@ -510,7 +517,11 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
     ));
     if (state.current_turn_user_id !== battle.ai_user_id && !aiMustRespond) return { is_ai: true, actions: [] };
 
-    if (!pending && state.current_turn_user_id === battle.ai_user_id && state.turn_step === "main") {
+    if (!pending && state.current_turn_user_id === battle.ai_user_id
+      && ["file", "main"].includes(String(state.turn_step || ""))) {
+      // DECLARE/SLEEP is legal at any non-blocked timing in the AI's own turn.
+      // Evaluate eligible activations during the file step as well as main; the planner
+      // will still place files first when no useful, legal activation is available.
       const { data: activationData, error: activationError } = await service.rpc("get_private_ai_card_effect_activations_v1", {
         p_room_id: roomId,
         p_ai_user_id: battle.ai_user_id,
