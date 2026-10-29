@@ -112,6 +112,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   const [showHandRevealSelector, setShowHandRevealSelector] = useState(false);
   const [selectedHandRevealIds, setSelectedHandRevealIds] = useState([]);
   const [cardEffectActivations, setCardEffectActivations] = useState([]);
+  const [cardEffectLockedActivations, setCardEffectLockedActivations] = useState([]);
   const [cardEffectOptions, setCardEffectOptions] = useState([]);
   const [cardEffectVisibleCards, setCardEffectVisibleCards] = useState([]);
   const [cardEffectSelectedIds, setCardEffectSelectedIds] = useState([]);
@@ -580,6 +581,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
       if (!roomId || !userId || game?.game_over) {
         if (!cancelled) {
           setCardEffectActivations([]);
+          setCardEffectLockedActivations([]);
           setCardEffectOptions([]);
           setCardEffectVisibleCards([]);
         }
@@ -588,11 +590,13 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
       if (!pendingType) {
         const { data, error } = await supabase.rpc("get_private_card_effect_activations_v1", { p_room_id: roomId });
         if (!cancelled) setCardEffectActivations(!error && Array.isArray(data?.activations) ? data.activations : []);
+        if (!cancelled) setCardEffectLockedActivations(!error && Array.isArray(data?.locked_activations) ? data.locked_activations : []);
         if (!cancelled) setCardEffectOptions([]);
         if (!cancelled) setCardEffectVisibleCards([]);
         return;
       }
       setCardEffectActivations([]);
+      setCardEffectLockedActivations([]);
       if (["card_effect_selection", "card_effect_order"].includes(pendingType) && chooserId === userId) {
         const { data, error } = await supabase.rpc("get_private_card_effect_options_v1", { p_room_id: roomId });
         if (!cancelled) setCardEffectOptions(!error && Array.isArray(data?.options) ? data.options : []);
@@ -1164,8 +1168,26 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
                   <div style={{ minWidth: 0 }}>
                     <strong style={{ display: "block", fontSize: 10, overflowWrap: "anywhere" }}>{source ? nameOf(source) : ability.source_name || "카드"}</strong>
                     <span style={{ display: "block", fontSize: 9, color: C.muted }}>{ability.label || "능력 발동"}</span>
+                    {Number(ability.required_file_count || 0) > 0 && <span style={{ display: "block", marginTop: 3, fontSize: 8, color: "#93c5fd" }}>파일 조건 충족 · 내 파일 {Number(ability.current_file_count ?? myBoard?.file_count ?? 0)}/{Number(ability.required_file_count)}장 이상</span>}
+                    {ability.required_case_phase && <span style={{ display: "block", marginTop: 3, fontSize: 8, color: "#c4b5fd" }}>진행 단계 · {ability.required_case_phase === "solution" ? "해결편" : "사건편"}</span>}
                   </div>
                   <button type="button" style={{ ...st.smallButton, flexShrink: 0 }} disabled={loading || !isMyTurn || Boolean(pending)} onClick={() => void runAction("activate_card_effect", { source_instance_id: ability.source_instance_id, effect_id: ability.effect_id })}>발동</button>
+                </div>;
+              })}
+            </div>
+          </div>}
+          {cardEffectLockedActivations.length > 0 && <div style={{ marginTop: 7, padding: 8, border: "1px solid rgba(148,163,184,.18)", borderRadius: 7, background: "#0b1220" }}>
+            <strong style={{ display: "block", marginBottom: 6, fontSize: 9, color: C.muted }}>파일 조건 미충족 · 발동 대기</strong>
+            <div style={{ display: "grid", gap: 5 }}>
+              {cardEffectLockedActivations.map((ability) => {
+                const source = (myBoard?.field_cards || []).find((card) => String(card.instance_id) === String(ability.source_instance_id));
+                return <div key={ability.effect_id + ":" + ability.source_instance_id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: 6, borderRadius: 6, background: "#111827" }}>
+                  <div style={{ minWidth: 0 }}>
+                    <strong style={{ display: "block", fontSize: 9, overflowWrap: "anywhere", color: "#cbd5e1" }}>{source ? nameOf(source) : ability.source_name || "카드"}</strong>
+                    <span style={{ display: "block", fontSize: 8, color: C.muted }}>{ability.label || "능력 발동"}</span>
+                    <span style={{ display: "block", fontSize: 8, marginTop: 3, color: "#fbbf24" }}>내 파일 {Number(ability.current_file_count ?? myBoard?.file_count ?? 0)}/{Number(ability.required_file_count)}장 이상 필요 · {Math.max(0, Number(ability.required_file_count) - Number(ability.current_file_count ?? myBoard?.file_count ?? 0))}장 부족</span>
+                  </div>
+                  <button type="button" style={{ ...st.smallButton, flexShrink: 0, opacity: 0.5, cursor: "not-allowed" }} disabled>발동 불가</button>
                 </div>;
               })}
             </div>
