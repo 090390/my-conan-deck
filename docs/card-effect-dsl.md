@@ -83,3 +83,8 @@ npm run validate:card-effects
 ```
 
 검증 통과는 데이터 형식의 일관성을 뜻할 뿐, 효과가 실제 온라인 대전에서 이미 활성화됐다는 뜻은 아닙니다.
+
+
+추가 트리거: `event.played`는 이벤트 카드가 메인 단계에서 현장에 놓인 직후 발생합니다.
+
+동적 fact 필터: `filter.value`에 `{ "fact": "player.file.count" }`를 지정하면 현재 파일 수를 읽어 카드 레벨과 비교할 수 있습니다.
