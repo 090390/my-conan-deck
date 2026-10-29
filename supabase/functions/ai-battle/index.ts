@@ -97,6 +97,14 @@ function describeAction(decision: any, state: any, aiId: string) {
   }
 }
 
+const SHARED_REVEAL_ACKNOWLEDGEMENTS: Record<string, string> = {
+  culprits_crime_reveal: "acknowledge_culprits_crime",
+  deck_remove_reveal: "acknowledge_deck_remove",
+  file_remove_reveal: "acknowledge_file_remove",
+  hand_reveal: "acknowledge_hand_reveal",
+  evidence_remove_reveal: "acknowledge_evidence_remove",
+};
+
 function chooseResponse(state: any, aiId: string) {
   const pending = state?.pending_action;
   const boards = Array.isArray(state?.boards) ? state.boards : [];
@@ -104,9 +112,13 @@ function chooseResponse(state: any, aiId: string) {
   const field = Array.isArray(me?.field_cards) ? me.field_cards : [];
   const hand = Array.isArray(state?.my_hand) ? state.my_hand : [];
   if (!pending) return null;
-  if (pending.type === "culprits_crime_reveal") {
+
+  // Shared reveal windows always need an AI acknowledgement, even when it is not the AI's turn.
+  // Once acknowledged, do not acknowledge the same window again while waiting for the human.
+  const acknowledgementAction = SHARED_REVEAL_ACKNOWLEDGEMENTS[String(pending.type || "")];
+  if (acknowledgementAction) {
     const acknowledged = Array.isArray(pending.acknowledged_user_ids) ? pending.acknowledged_user_ids : [];
-    return acknowledged.includes(aiId) ? null : { action: "acknowledge_culprits_crime" };
+    return acknowledged.includes(aiId) ? null : { action: acknowledgementAction };
   }
   if (pending.type === "character_contact_guard" && pending.target_user_id === aiId) {
     const attackerPower = Number(pending.attacker_ap || 0) + Number(pending.attacker_bonus || 0);
@@ -153,13 +165,9 @@ function chooseResponse(state: any, aiId: string) {
     }
     return { action: "contact_pass_cutin" };
   }
-  if (pending.type === "deck_remove_reveal") return { action: "acknowledge_deck_remove" };
-  if (pending.type === "file_remove_reveal") return { action: "acknowledge_file_remove" };
   if (pending.type === "evidence_attack_reveal" && pending.target_user_id === aiId) {
     return { action: "resolve_evidence_attack" };
   }
-  if (pending.type === "hand_reveal") return { action: "acknowledge_hand_reveal" };
-  if (pending.type === "evidence_remove_reveal") return { action: "acknowledge_evidence_remove" };
   if (pending.type === "shared_deck_peek" && pending.target_user_id === aiId) {
     return { action: "acknowledge_shared_deck_peek" };
   }
@@ -327,8 +335,8 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
           is_ai: true,
           actions: ["submit_private_ai_mulligan"],
           message: returnIds.length
-            ? `AI 탐정: 카드 ${returnIds.length}장을 덱으로 돌려보내 멀리건을 진행했습니다.`
-            : "AI 탐정: 멀리건을 진행하지 않았습니다.",
+            ? `AI 탐정: 시작 손패를 검토해 ${returnIds.length}장을 덱에 돌려보내 멀리건했습니다.`
+            : "AI 탐정: 시작 손패를 검토해 멀리건하지 않았습니다.",
         };
       }
       return { is_ai: true, actions: [] };
@@ -341,9 +349,11 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
 
     const pending = state.pending_action || null;
     const acknowledgedIds = Array.isArray(pending?.acknowledged_user_ids) ? pending.acknowledged_user_ids : [];
-    const needsAiAcknowledgement = Boolean(pending
-      && ["culprits_crime_reveal", "deck_remove_reveal", "file_remove_reveal", "hand_reveal", "evidence_remove_reveal"].includes(pending.type)
-      && !acknowledgedIds.includes(battle.ai_user_id));
+    const sharedAcknowledgementAction = SHARED_REVEAL_ACKNOWLEDGEMENTS[String(pending?.type || "")];
+    const needsAiAcknowledgement = Boolean(
+      (sharedAcknowledgementAction && !acknowledgedIds.includes(battle.ai_user_id))
+      || (pending?.type === "shared_deck_peek" && pending.target_user_id === battle.ai_user_id)
+    );
     const aiMustRespond = Boolean(pending && (
       pending.target_user_id === battle.ai_user_id
       || pending.next_responder_user_id === battle.ai_user_id
