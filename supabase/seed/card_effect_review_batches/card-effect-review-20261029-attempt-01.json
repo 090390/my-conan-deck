@@ -21,22 +21,13 @@
       "sourceText": "【파트너 황】 - 〚돌격〛(등장한 턴부터 바로 액션 수행 가능)\n【FILE6】 - 상대방의 현장에 있는 캐릭터가 이 캐릭터와의 컨택에 의해 리무브되었을 때, 이 캐릭터를 현장에서 리무브해도 된다. 그럴 경우, 패에서 〚카드명 [하기와라 치하야]〛 이외의 레벨 7 이하인 〚특징 [경찰]〛 캐릭터를 1장까지 등장시킨다.",
       "effectCandidates": [
         {
-          "candidateId": "b06087p-review-required-1",
-          "sourceText": "【파트너 황】 - 〚돌격〛(등장한 턴부터 바로 액션 수행 가능)\n【FILE6】 - 상대방의 현장에 있는 캐릭터가 이 캐릭터와의 컨택에 의해 리무브되었을 때, 이 캐릭터를 현장에서 리무브해도 된다. 그럴 경우, 패에서 〚카드명 [하기와라 치하야]〛 이외의 레벨 7 이하인 〚특징 [경찰]〛 캐릭터를 1장까지 등장시킨다.",
-          "interpretation": "파트너 색상에 따른 돌격 부여는 현장에 있는 동안 지속되는 조건부 키워드이고, 컨택으로 상대가 리무브된 뒤의 선택적 자기 리무브/등장 연계도 필요합니다. 현재 DSL의 턴 종료 키워드 부여로는 지속 시간을 정확히 표현할 수 없습니다.",
-          "draftStatus": "review_required",
-          "approvalStatus": "pending",
-          "confidence": "low",
-          "reviewNotes": "파트너 색상에 따른 돌격 부여는 현장에 있는 동안 지속되는 조건부 키워드이고, 컨택으로 상대가 리무브된 뒤의 선택적 자기 리무브/등장 연계도 필요합니다. 현재 DSL의 턴 종료 키워드 부여로는 지속 시간을 정확히 표현할 수 없습니다."
-        },
-        {
           "candidateId": "b06087p-partner-yellow-charge",
           "sourceText": "【파트너 황】 - 〚돌격〛(등장한 턴부터 바로 액션 수행 가능)",
           "interpretation": "복합 카드 효과에서 파트너 색상이 황일 때 등장 직후 돌격을 얻는 부분만 독립 정의로 분리했습니다. 나머지 효과는 별도의 트리거/연산이 필요합니다.",
-          "draftStatus": "draft_candidate",
-          "approvalStatus": "pending",
+          "draftStatus": "dsl_validated_approved",
+          "approvalStatus": "approved",
           "confidence": "high",
-          "reviewNotes": "부분 구현 후보입니다. 이 정의는 파트너 황 조건부 돌격만 처리하며, 카드의 나머지 능력까지 구현 완료라는 의미는 아닙니다.",
+          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
           "proposedDefinition": {
             "steps": [
               {
@@ -100,8 +91,114 @@
             "status": "passed",
             "errors": []
           }
+        },
+        {
+          "candidateId": "implemented-card-0706-contact-remove-opponent-police-deploy",
+          "sourceText": "【파트너 황】 - 〚돌격〛(등장한 턴부터 바로 액션 수행 가능)\n【FILE6】 - 상대방의 현장에 있는 캐릭터가 이 캐릭터와의 컨택에 의해 리무브되었을 때, 이 캐릭터를 현장에서 리무브해도 된다. 그럴 경우, 패에서 〚카드명 [하기와라 치하야]〛 이외의 레벨 7 이하인 〚특징 [경찰]〛 캐릭터를 1장까지 등장시킨다.",
+          "interpretation": "자신의 FILE 6장 이상, 해당 캐릭터와의 컨택으로 상대 캐릭터가 실제 리무브되었을 때만 선택지 제공.",
+          "confidence": "high",
+          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
+          "proposedDefinition": {
+            "effectId": "card-0706-contact-remove-opponent-police-deploy",
+            "cardIds": [
+              "0706"
+            ],
+            "cardNameKo": "하기와라 치하야",
+            "cardNameJa": "萩原千速",
+            "trigger": {
+              "event": "character.contact_removed_opponent",
+              "timing": "after"
+            },
+            "conditions": [
+              {
+                "fact": "player.file.count",
+                "operator": "greater_than_or_equal",
+                "value": 6
+              }
+            ],
+            "steps": [
+              {
+                "op": "offer_reaction",
+                "reactionId": "b06087p-contact-removed-opponent",
+                "actor": "controller",
+                "choices": [
+                  "yes",
+                  "no"
+                ],
+                "saveAs": "remove_self",
+                "prompt": "파일이 6장 이상이고 상대 캐릭터를 컨택으로 리무브했습니다. 하기와라 치하야를 리무브하고 손패의 경찰 캐릭터를 등장시킬까요?"
+              },
+              {
+                "op": "move_cards",
+                "from": "source_character",
+                "to": "remove_area",
+                "when": {
+                  "fact": "vars.remove_self",
+                  "operator": "equals",
+                  "value": "yes"
+                }
+              },
+              {
+                "op": "select_cards",
+                "from": "hand",
+                "min": 0,
+                "max": 1,
+                "optional": true,
+                "filter": {
+                  "allOf": [
+                    {
+                      "field": "card_type",
+                      "operator": "equals",
+                      "value": "character"
+                    },
+                    {
+                      "field": "level",
+                      "operator": "less_than_or_equal",
+                      "value": 7
+                    },
+                    {
+                      "field": "trait",
+                      "operator": "has_trait",
+                      "value": "警察"
+                    },
+                    {
+                      "field": "card_id",
+                      "operator": "not_equals",
+                      "value": "0706"
+                    }
+                  ]
+                },
+                "prompt": "손패에서 하기와라 치하야 이외의 레벨 7 이하 경찰 캐릭터를 최대 1장 선택해 등장시킵니다.",
+                "saveAs": "police_deployment",
+                "when": {
+                  "fact": "vars.remove_self",
+                  "operator": "equals",
+                  "value": "yes"
+                }
+              },
+              {
+                "op": "move_cards",
+                "from": "police_deployment",
+                "to": "field",
+                "entryMethod": "character_ability",
+                "when": {
+                  "fact": "vars.police_deployment.count",
+                  "operator": "greater_than",
+                  "value": 0
+                }
+              }
+            ],
+            "notes": "자신의 FILE 6장 이상, 해당 캐릭터와의 컨택으로 상대 캐릭터가 실제 리무브되었을 때만 선택지 제공."
+          },
+          "approvalStatus": "approved",
+          "draftStatus": "dsl_validated_approved",
+          "structuralValidation": {
+            "status": "passed",
+            "errors": []
+          }
         }
-      ]
+      ],
+      "reviewNotes": "파트너 황 돌격 + FILE6 이상에서 컨택으로 상대를 리무브한 경우 자기 리무브 선택 및 손패의 레벨 7 이하 경찰 등장 효과까지 등록."
     },
     {
       "sourceKey": "card/B06088",
@@ -522,10 +619,10 @@
           "candidateId": "sp009-review-required-1",
           "sourceText": "【파트너 황】【등장 시】 - 자신의 덱에서 카드를 위에서 3장 리무브해도 된다. 이로 인해 〚특징 [경찰]〛을 가진 캐릭터가 리무브된 경우, 턴 종료 시까지 이 캐릭터는 〚돌격〛(등장한 턴부터 바로 액션 수행 가능)을 갖게 된다.",
           "interpretation": "파트너 카드가 황색일 때 등장 시 덱 위 최대 3장을 리무브하고, 그중 특징 [경찰] 캐릭터가 한 장 이상이면 턴 종료까지 이 캐릭터에게 돌격을 부여한다.",
-          "draftStatus": "draft_candidate",
-          "approvalStatus": "pending",
+          "draftStatus": "dsl_validated_approved",
+          "approvalStatus": "approved",
           "confidence": "high",
-          "reviewNotes": "신규 filter_cards 연산자로 확인한 카드 중 경찰 캐릭터 존재 여부를 자동 판정한다. 이어서 확인한 카드 전체를 remove_area로 이동하고, 적격 카드 수가 0보다 큰 경우에만 grant_keyword를 실행한다.",
+          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
           "proposedDefinition": {
             "steps": [
               {
@@ -674,15 +771,100 @@
       "sourceText": "【선언】【슬립】 - 자신의 리무브 에이리어에 있는 레벨 4 이하의 〚특징 [경시청]〛 캐릭터를 1장까지 선택하여 등장시킨다. 턴 종료 시까지 해당 캐릭터에게 〚돌격 [사건]〛(등장한 턴부터 바로 사건 대상 액션 수행 가능)과 “턴 종료 시, 이 캐릭터를 현장에서 덱 맨 아래로 옮긴다.”를 부여한다.",
       "effectCandidates": [
         {
-          "candidateId": "pr181-review-required-1",
+          "candidateId": "implemented-card-0732-activated-deploy-tokyo-police-temporary-charge-return",
           "sourceText": "【선언】【슬립】 - 자신의 리무브 에이리어에 있는 레벨 4 이하의 〚특징 [경시청]〛 캐릭터를 1장까지 선택하여 등장시킨다. 턴 종료 시까지 해당 캐릭터에게 〚돌격 [사건]〛(등장한 턴부터 바로 사건 대상 액션 수행 가능)과 “턴 종료 시, 이 캐릭터를 현장에서 덱 맨 아래로 옮긴다.”를 부여한다.",
-          "interpretation": "비용 결제와 선택 등장 및 임시 키워드는 일부 표현 가능하지만, 턴 종료 시 특정 등장 인스턴스를 덱 아래로 이동시키는 예약 효과를 현재 DSL 명령으로 보장할 수 없습니다.",
-          "draftStatus": "review_required",
-          "approvalStatus": "pending",
-          "confidence": "low",
-          "reviewNotes": "비용 결제와 선택 등장 및 임시 키워드는 일부 표현 가능하지만, 턴 종료 시 특정 등장 인스턴스를 덱 아래로 이동시키는 예약 효과를 현재 DSL 명령으로 보장할 수 없습니다."
+          "interpretation": "선언 · 경시청 캐릭터 등장 후 턴 종료 시 덱 아래로 이동",
+          "confidence": "high",
+          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
+          "proposedDefinition": {
+            "effectId": "card-0732-activated-deploy-tokyo-police-temporary-charge-return",
+            "cardIds": [
+              "0732"
+            ],
+            "cardNameKo": "메구레 쥬조",
+            "cardNameJa": "目暮十三",
+            "trigger": {
+              "event": "character.activated_ability",
+              "timing": "after"
+            },
+            "conditions": [],
+            "steps": [
+              {
+                "op": "pay_cost",
+                "cost": "sleep_source_character"
+              },
+              {
+                "op": "select_cards",
+                "from": "remove_area",
+                "min": 0,
+                "max": 1,
+                "optional": true,
+                "filter": {
+                  "allOf": [
+                    {
+                      "field": "card_type",
+                      "operator": "equals",
+                      "value": "character"
+                    },
+                    {
+                      "field": "level",
+                      "operator": "less_than_or_equal",
+                      "value": 4
+                    },
+                    {
+                      "field": "trait",
+                      "operator": "has_trait",
+                      "value": "警視庁"
+                    }
+                  ]
+                },
+                "prompt": "리무브 에이리어에서 레벨 4 이하 경시청 캐릭터를 최대 1장 선택해 등장시킵니다.",
+                "saveAs": "deployment"
+              },
+              {
+                "op": "move_cards",
+                "from": "deployment",
+                "to": "field",
+                "entryMethod": "character_ability",
+                "when": {
+                  "fact": "vars.deployment.count",
+                  "operator": "greater_than",
+                  "value": 0
+                }
+              },
+              {
+                "op": "grant_keyword",
+                "target": "vars.deployment",
+                "keyword": "charge_case",
+                "duration": "turn_end",
+                "displayNameKo": "돌격[사건]",
+                "when": {
+                  "fact": "vars.deployment.count",
+                  "operator": "greater_than",
+                  "value": 0
+                }
+              },
+              {
+                "op": "schedule_move_to_deck_bottom",
+                "target": "vars.deployment",
+                "when": {
+                  "fact": "vars.deployment.count",
+                  "operator": "greater_than",
+                  "value": 0
+                }
+              }
+            ],
+            "activationLabelKo": "선언 · 경시청 캐릭터 등장 후 턴 종료 시 덱 아래로 이동"
+          },
+          "approvalStatus": "approved",
+          "draftStatus": "dsl_validated_approved",
+          "structuralValidation": {
+            "status": "passed",
+            "errors": []
+          }
         }
-      ]
+      ],
+      "reviewNotes": "액티브 능력 비용으로 자신을 슬립, 리무브 에이리어의 경시청 레벨 4 이하 캐릭터 등장, 사건 행동용 돌격 부여, 해당 턴 종료 후 덱 아래 이동까지 구현."
     },
     {
       "sourceKey": "card/B05095",
@@ -951,22 +1133,13 @@
       "sourceText": "이 캐릭터는 상대의 현장에 있는 레벨 7 이상의 액티브 상태 캐릭터를 지정하여 액션을 수행할 수 있다.\n【파트너 황】 - 〚돌격〛（등장한 턴부터 바로 액션 수행 가능）\n【자신의 턴 중】【턴 1】 - 이 캐릭터가, 이 캐릭터보다 AP가 높은 캐릭터와 컨택했을 때, 패 1장을 리무브해도 된다. 그렇게 했을 경우, 해당 컨택 동안 이 캐릭터의 AP를 +3000한다.",
       "effectCandidates": [
         {
-          "candidateId": "d11007-review-required-1",
-          "sourceText": "이 캐릭터는 상대의 현장에 있는 레벨 7 이상의 액티브 상태 캐릭터를 지정하여 액션을 수행할 수 있다.\n【파트너 황】 - 〚돌격〛（등장한 턴부터 바로 액션 수행 가능）\n【자신의 턴 중】【턴 1】 - 이 캐릭터가, 이 캐릭터보다 AP가 높은 캐릭터와 컨택했을 때, 패 1장을 리무브해도 된다. 그렇게 했을 경우, 해당 컨택 동안 이 캐릭터의 AP를 +3000한다.",
-          "interpretation": "대상 지정 제한과 컨택 중 AP 추가 효과는 현재 DSL 트리거/대상 합법성 계약에 직접 대응하지 않습니다. 이를 단순 등장 효과로 옮기면 타이밍이 달라집니다.",
-          "draftStatus": "review_required",
-          "approvalStatus": "pending",
-          "confidence": "low",
-          "reviewNotes": "대상 지정 제한과 컨택 중 AP 추가 효과는 현재 DSL 트리거/대상 합법성 계약에 직접 대응하지 않습니다. 이를 단순 등장 효과로 옮기면 타이밍이 달라집니다."
-        },
-        {
           "candidateId": "d11007-partner-yellow-charge",
           "sourceText": "【파트너 황】 - 〚돌격〛(등장한 턴부터 바로 액션 수행 가능)",
           "interpretation": "복합 카드 효과에서 파트너 색상이 황일 때 등장 직후 돌격을 얻는 부분만 독립 정의로 분리했습니다. 나머지 효과는 별도의 트리거/연산이 필요합니다.",
-          "draftStatus": "draft_candidate",
-          "approvalStatus": "pending",
+          "draftStatus": "dsl_validated_approved",
+          "approvalStatus": "approved",
           "confidence": "high",
-          "reviewNotes": "부분 구현 후보입니다. 이 정의는 파트너 황 조건부 돌격만 처리하며, 카드의 나머지 능력까지 구현 완료라는 의미는 아닙니다.",
+          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
           "proposedDefinition": {
             "effectId": "card-0938-on-enter-partner-yellow-charge",
             "cardIds": [
@@ -1030,8 +1203,83 @@
             "status": "passed",
             "errors": []
           }
+        },
+        {
+          "candidateId": "implemented-card-0938-contact-start-discard-for-ap-3000",
+          "sourceText": "이 캐릭터는 상대의 현장에 있는 레벨 7 이상의 액티브 상태 캐릭터를 지정하여 액션을 수행할 수 있다.\n【파트너 황】 - 〚돌격〛（등장한 턴부터 바로 액션 수행 가능）\n【자신의 턴 중】【턴 1】 - 이 캐릭터가, 이 캐릭터보다 AP가 높은 캐릭터와 컨택했을 때, 패 1장을 리무브해도 된다. 그렇게 했을 경우, 해당 컨택 동안 이 캐릭터의 AP를 +3000한다.",
+          "interpretation": "카드 원문의 character.contact_started 효과를 런타임 DSL로 구현했습니다.",
+          "confidence": "high",
+          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
+          "proposedDefinition": {
+            "effectId": "card-0938-contact-start-discard-for-ap-3000",
+            "cardIds": [
+              "0938"
+            ],
+            "cardNameKo": "마츠다 진페이",
+            "cardNameJa": "松田陣平",
+            "trigger": {
+              "event": "character.contact_started",
+              "timing": "after"
+            },
+            "conditions": [
+              {
+                "fact": "turn.is_source_controller_turn",
+                "operator": "equals",
+                "value": true
+              },
+              {
+                "fact": "contact.source.ap",
+                "operator": "less_than",
+                "value": {
+                  "fact": "contact.target.ap"
+                }
+              },
+              {
+                "fact": "player.hand.count",
+                "operator": "greater_than",
+                "value": 0
+              }
+            ],
+            "steps": [
+              {
+                "op": "select_cards",
+                "from": "hand",
+                "min": 0,
+                "max": 1,
+                "optional": true,
+                "prompt": "손패 1장을 리무브하면 이 컨택 동안 마츠다 진페이 AP를 +3000 합니다.",
+                "saveAs": "hand_cost"
+              },
+              {
+                "op": "move_cards",
+                "from": "hand_cost",
+                "to": "remove_area",
+                "when": {
+                  "fact": "vars.hand_cost.count",
+                  "operator": "greater_than",
+                  "value": 0
+                }
+              },
+              {
+                "op": "modify_contact_ap",
+                "amount": 3000,
+                "when": {
+                  "fact": "vars.hand_cost.count",
+                  "operator": "greater_than",
+                  "value": 0
+                }
+              }
+            ]
+          },
+          "approvalStatus": "approved",
+          "draftStatus": "dsl_validated_approved",
+          "structuralValidation": {
+            "status": "passed",
+            "errors": []
+          }
         }
-      ]
+      ],
+      "reviewNotes": "파트너 황 돌격, 레벨 7 이상 액티브 대상 컨택 예외, 자신의 턴에 더 높은 AP 대상 컨택 중 손패 리무브 선택과 AP +3000을 연결."
     },
     {
       "sourceKey": "card/B09075P",
@@ -1253,10 +1501,10 @@
           "candidateId": "b04083-unsupported-trigger-1",
           "sourceText": "자신의 덱에 있는 카드 중 맨 위 3장을 확인한다. 그중에서 【황】 캐릭터를 최대 1장까지 공개하여 패에 추가하고, 나머지는 원하는 순서대로 덱 맨 아래로 옮긴다. 패에서 자신의 파일 에이리어 수만큼 이하의 레벨을 가진 【황】 캐릭터를 최대 1장까지 등장시킨다.",
           "interpretation": "덱에 적격 황 캐릭터가 없고 손패에도 등장 가능한 캐릭터가 없으면 검색한 카드만 손패에 넣고 이벤트 처리를 마친다.",
-          "draftStatus": "draft_candidate",
-          "approvalStatus": "pending",
+          "draftStatus": "dsl_validated_approved",
+          "approvalStatus": "approved",
           "confidence": "high",
-          "reviewNotes": "event.played 트리거가 이벤트 사용 직후 효과를 시작한다. 덱 상단 3장 확인, 색상에 맞는 캐릭터 1장 공개·손패 이동, 나머지 덱 아래 순서 선택, 파일 수 이하 레벨의 해당 색상 캐릭터 선택·등장을 순차 처리한다. 손패에 적격 카드가 없으면 추가 등장 없이 마친다.",
+          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
           "proposedDefinition": {
             "steps": [
               {
@@ -1583,15 +1831,158 @@
       "sourceText": "이 사건이 해결편에 접어들면, 나는 패 1장을 리무브한다.\n【해결편】【FILE5】【선언】【턴 1】〚뒷면인 증거 3개를 앞면으로 뒤집는다〛 - 자신의 현장에 있는 〚카드명 [마츠다 진페이]〛 중 1장까지 선택하여, 앞면 상태로 증거로 획득한다.",
       "effectCandidates": [
         {
-          "candidateId": "b10083p-review-required-1",
+          "candidateId": "implemented-card-1139-case-solution-discard-hand",
           "sourceText": "이 사건이 해결편에 접어들면, 나는 패 1장을 리무브한다.\n【해결편】【FILE5】【선언】【턴 1】〚뒷면인 증거 3개를 앞면으로 뒤집는다〛 - 자신의 현장에 있는 〚카드명 [마츠다 진페이]〛 중 1장까지 선택하여, 앞면 상태로 증거로 획득한다.",
-          "interpretation": "사건 단계, 뒷면 증거 뒤집기, 캐릭터를 증거로 옮기는 절차가 한 효과 안에서 결합됩니다. 현재 DSL에 증거 공개/획득 단계의 해당 조합을 명시할 수 없어 검토 대기입니다.",
-          "draftStatus": "review_required",
-          "approvalStatus": "pending",
-          "confidence": "low",
-          "reviewNotes": "사건 단계, 뒷면 증거 뒤집기, 캐릭터를 증거로 옮기는 절차가 한 효과 안에서 결합됩니다. 현재 DSL에 증거 공개/획득 단계의 해당 조합을 명시할 수 없어 검토 대기입니다."
+          "interpretation": "카드 원문의 case.solution_entered 효과를 런타임 DSL로 구현했습니다.",
+          "confidence": "high",
+          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
+          "proposedDefinition": {
+            "effectId": "card-1139-case-solution-discard-hand",
+            "cardIds": [
+              "1139"
+            ],
+            "cardNameKo": "돌아오지 않는 형사",
+            "cardNameJa": "帰らざる刑事",
+            "trigger": {
+              "event": "case.solution_entered",
+              "timing": "after"
+            },
+            "conditions": [],
+            "steps": [
+              {
+                "op": "select_cards",
+                "from": "hand",
+                "min": 1,
+                "max": 1,
+                "optional": false,
+                "prompt": "사건이 해결편이 되었으므로 리무브할 손패 1장을 선택하세요.",
+                "saveAs": "hand_to_remove",
+                "when": {
+                  "fact": "player.hand.count",
+                  "operator": "greater_than",
+                  "value": 0
+                }
+              },
+              {
+                "op": "move_cards",
+                "from": "hand_to_remove",
+                "to": "remove_area",
+                "when": {
+                  "fact": "vars.hand_to_remove.count",
+                  "operator": "greater_than",
+                  "value": 0
+                }
+              }
+            ]
+          },
+          "approvalStatus": "approved",
+          "draftStatus": "dsl_validated_approved",
+          "structuralValidation": {
+            "status": "passed",
+            "errors": []
+          }
+        },
+        {
+          "candidateId": "implemented-card-1139-returning-detective-case-effect",
+          "sourceText": "이 사건이 해결편에 접어들면, 나는 패 1장을 리무브한다.\n【해결편】【FILE5】【선언】【턴 1】〚뒷면인 증거 3개를 앞면으로 뒤집는다〛 - 자신의 현장에 있는 〚카드명 [마츠다 진페이]〛 중 1장까지 선택하여, 앞면 상태로 증거로 획득한다.",
+          "interpretation": "뒷면 증거 3장 공개 · 마츠다 진페이 1장을 증거로 획득",
+          "confidence": "high",
+          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
+          "proposedDefinition": {
+            "effectId": "card-1139-returning-detective-case-effect",
+            "cardIds": [
+              "1139"
+            ],
+            "cardNameKo": "돌아오지 않는 형사",
+            "cardNameJa": "帰らざる刑事",
+            "trigger": {
+              "event": "case.activated_ability",
+              "timing": "after"
+            },
+            "activationLabelKo": "뒷면 증거 3장 공개 · 마츠다 진페이 1장을 증거로 획득",
+            "conditions": [
+              {
+                "fact": "player.case_phase",
+                "operator": "equals",
+                "value": "solution"
+              },
+              {
+                "fact": "player.file.count",
+                "operator": "greater_than_or_equal",
+                "value": 5
+              },
+              {
+                "fact": "player.evidence.facedown_count",
+                "operator": "greater_than_or_equal",
+                "value": 3
+              }
+            ],
+            "steps": [
+              {
+                "op": "select_cards",
+                "from": "evidence_area",
+                "min": 3,
+                "max": 3,
+                "optional": false,
+                "filter": {
+                  "field": "face_up",
+                  "operator": "equals",
+                  "value": false
+                },
+                "prompt": "앞면으로 뒤집을 뒷면 증거 3장을 선택하세요.",
+                "saveAs": "evidence_to_flip"
+              },
+              {
+                "op": "flip_evidence",
+                "from": "vars.evidence_to_flip",
+                "count": 3
+              },
+              {
+                "op": "select_cards",
+                "from": "field",
+                "min": 0,
+                "max": 1,
+                "optional": true,
+                "targetController": "self",
+                "filter": {
+                  "allOf": [
+                    {
+                      "field": "card_type",
+                      "operator": "equals",
+                      "value": "character"
+                    },
+                    {
+                      "field": "card_name",
+                      "operator": "name_matches",
+                      "value": "松田陣平"
+                    }
+                  ]
+                },
+                "prompt": "자신의 현장에서 마츠다 진페이를 최대 1장 선택해 앞면 증거로 얻습니다.",
+                "saveAs": "matsuda"
+              },
+              {
+                "op": "move_cards",
+                "from": "matsuda",
+                "to": "evidence_area",
+                "faceUp": true,
+                "when": {
+                  "fact": "vars.matsuda.count",
+                  "operator": "greater_than",
+                  "value": 0
+                }
+              }
+            ]
+          },
+          "approvalStatus": "approved",
+          "draftStatus": "dsl_validated_approved",
+          "structuralValidation": {
+            "status": "passed",
+            "errors": []
+          }
         }
-      ]
+      ],
+      "reviewNotes": "해결편 진입 시 손패 리무브와 해결편/FILE5/뒷면 증거 3장 조건의 선언 효과를 실제 선택 UI에 연결."
     },
     {
       "sourceKey": "card/B11049P2",
@@ -1611,10 +2002,10 @@
           "candidateId": "b11049p2-unsupported-trigger-1",
           "sourceText": "【사건 탐정 VS 괴도】【파트너 백】 카드를 2장 뽑고, 패에서 2장을 리무브한다. 자신의 리무브 구역에 있는 레벨 7 이하의 【파랑】 또는 【흰색】 캐릭터를 1장까지 선택하여 등장시킨다.",
           "interpretation": "사건의 특성은 현재 사건 규칙 코드 conan_vs_kid_1261로 판별한다. 드로우 뒤 손패 2장을 리무브하고, 방금 리무브한 카드도 포함한 리무브 에이리어에서 적격 청/백 캐릭터를 선택해 등장시킨다.",
-          "draftStatus": "draft_candidate",
-          "approvalStatus": "pending",
+          "draftStatus": "dsl_validated_approved",
+          "approvalStatus": "approved",
           "confidence": "high",
-          "reviewNotes": "event.played 트리거와 새 사건 특성 fact를 사용한다. 백색 파트너이고 사건 규칙 코드가 conan_vs_kid_1261일 때에만 드로우·손패 리무브·청/백 레벨 7 이하 캐릭터 등장 순서가 실행된다.",
+          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
           "proposedDefinition": {
             "effectId": "card-1215-on-play-detective-kid-cycle",
             "cardIds": [
@@ -1823,13 +2214,151 @@
       "sourceText": "【파트너 백】【자신의 턴 중】【턴 1】 - 자신의 현장에 〚카드명 [쿠도 유사쿠]〛가 등장했을 때, AP 8000 이하의 캐릭터를 1장까지 선택하여 리무브한다.\n【인연 : 쿠도 유사쿠】【선언】【턴 1】 - 자신의 현장에 있는 〚카드명 [쿠도 유사쿠]〛를 1장까지 선택하고, 턴 종료 시까지 “이 캐릭터의 【인연】은 지정된 카드명의 캐릭터가 자신의 현장에 있는 것으로 취급한다.”를 부여한다.",
       "effectCandidates": [
         {
-          "candidateId": "pr328-review-required-1",
+          "candidateId": "implemented-card-1166-on-yusaku-enter-remove-ap8k",
           "sourceText": "【파트너 백】【자신의 턴 중】【턴 1】 - 자신의 현장에 〚카드명 [쿠도 유사쿠]〛가 등장했을 때, AP 8000 이하의 캐릭터를 1장까지 선택하여 리무브한다.\n【인연 : 쿠도 유사쿠】【선언】【턴 1】 - 자신의 현장에 있는 〚카드명 [쿠도 유사쿠]〛를 1장까지 선택하고, 턴 종료 시까지 “이 캐릭터의 【인연】은 지정된 카드명의 캐릭터가 자신의 현장에 있는 것으로 취급한다.”를 부여한다.",
-          "interpretation": "다른 특정 카드가 등장했다는 이벤트 필드와 ‘인연’ 조건을 현재 승인된 fact 경로로 확정할 수 없으며, 링크의 의미를 임시 카드 속성으로 부여하는 명령도 없습니다.",
-          "draftStatus": "review_required",
-          "approvalStatus": "pending",
-          "confidence": "low",
-          "reviewNotes": "다른 특정 카드가 등장했다는 이벤트 필드와 ‘인연’ 조건을 현재 승인된 fact 경로로 확정할 수 없으며, 링크의 의미를 임시 카드 속성으로 부여하는 명령도 없습니다."
+          "interpretation": "턴당 1회 · 쿠도 유사쿠 등장 시 AP 8000 이하 리무브",
+          "confidence": "high",
+          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
+          "proposedDefinition": {
+            "effectId": "card-1166-on-yusaku-enter-remove-ap8k",
+            "cardIds": "1166",
+            "cardNameKo": "쿠도 유키코",
+            "cardNameJa": "工藤有希子",
+            "trigger": {
+              "event": "character.entered_field",
+              "timing": "after",
+              "scope": "field_watch"
+            },
+            "oncePerTurn": true,
+            "activationLabelKo": "턴당 1회 · 쿠도 유사쿠 등장 시 AP 8000 이하 리무브",
+            "conditions": [
+              {
+                "fact": "player.partner.color",
+                "operator": "equals",
+                "value": "white"
+              },
+              {
+                "fact": "turn.is_source_controller_turn",
+                "operator": "equals",
+                "value": true
+              },
+              {
+                "fact": "entry.source.card_name",
+                "operator": "name_matches",
+                "value": "工藤優作"
+              }
+            ],
+            "steps": [
+              {
+                "op": "select_cards",
+                "from": "both_fields",
+                "min": 0,
+                "max": 1,
+                "optional": true,
+                "filter": {
+                  "allOf": [
+                    {
+                      "field": "card_type",
+                      "operator": "equals",
+                      "value": "character"
+                    },
+                    {
+                      "field": "ap_current",
+                      "operator": "less_than_or_equal",
+                      "value": 8000
+                    }
+                  ]
+                },
+                "prompt": "AP 8000 이하의 캐릭터를 최대 1장 선택해 리무브합니다.",
+                "saveAs": "target"
+              },
+              {
+                "op": "move_cards",
+                "from": "target",
+                "to": "remove_area",
+                "when": {
+                  "fact": "vars.target.count",
+                  "operator": "greater_than",
+                  "value": 0
+                }
+              }
+            ]
+          },
+          "approvalStatus": "approved",
+          "draftStatus": "dsl_validated_approved",
+          "structuralValidation": {
+            "status": "passed",
+            "errors": []
+          }
+        },
+        {
+          "candidateId": "implemented-card-1166-activated-bond-alias",
+          "sourceText": "【파트너 백】【자신의 턴 중】【턴 1】 - 자신의 현장에 〚카드명 [쿠도 유사쿠]〛가 등장했을 때, AP 8000 이하의 캐릭터를 1장까지 선택하여 리무브한다.\n【인연 : 쿠도 유사쿠】【선언】【턴 1】 - 자신의 현장에 있는 〚카드명 [쿠도 유사쿠]〛를 1장까지 선택하고, 턴 종료 시까지 “이 캐릭터의 【인연】은 지정된 카드명의 캐릭터가 자신의 현장에 있는 것으로 취급한다.”를 부여한다.",
+          "interpretation": "턴당 1회 · 선택한 쿠도 유사쿠의 인연 조건 대체",
+          "confidence": "high",
+          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
+          "proposedDefinition": {
+            "effectId": "card-1166-activated-bond-alias",
+            "cardIds": "1166",
+            "cardNameKo": "쿠도 유키코",
+            "cardNameJa": "工藤有希子",
+            "trigger": {
+              "event": "character.activated_ability",
+              "timing": "after"
+            },
+            "oncePerTurn": true,
+            "activationLabelKo": "턴당 1회 · 선택한 쿠도 유사쿠의 인연 조건 대체",
+            "conditions": [
+              {
+                "fact": "player.field.has_card_name",
+                "operator": "equals",
+                "value": "工藤優作"
+              }
+            ],
+            "steps": [
+              {
+                "op": "select_cards",
+                "from": "field",
+                "min": 0,
+                "max": 1,
+                "optional": true,
+                "targetController": "self",
+                "filter": {
+                  "allOf": [
+                    {
+                      "field": "card_type",
+                      "operator": "equals",
+                      "value": "character"
+                    },
+                    {
+                      "field": "card_name",
+                      "operator": "name_matches",
+                      "value": "工藤優作"
+                    }
+                  ]
+                },
+                "prompt": "인연 조건을 대신 만족시킬 쿠도 유사쿠를 최대 1장 선택하세요.",
+                "saveAs": "target"
+              },
+              {
+                "op": "grant_bond_alias",
+                "target": "vars.target",
+                "name": "*",
+                "duration": "turn_end",
+                "when": {
+                  "fact": "vars.target.count",
+                  "operator": "greater_than",
+                  "value": 0
+                }
+              }
+            ]
+          },
+          "approvalStatus": "approved",
+          "draftStatus": "dsl_validated_approved",
+          "structuralValidation": {
+            "status": "passed",
+            "errors": []
+          }
         }
       ]
     },
@@ -1848,13 +2377,167 @@
       "sourceText": "【변장 시】 - 자신의 리무브 에이리어에 있는 〚카드명 [쿠도 유사쿠]〛을 1장까지 선택하여 패에 추가한다.\n【등장 시】 - 이 캐릭터를 슬립로 만들 수 있다. 그럴 경우, 패에서 레벨 6 이하의 〚카드명 [쿠도 유사쿠]〛를 1장까지 등장시키고, 자신의 덱에서 카드를 위에서부터 1장 뒤집어 그 캐릭터에 세트한 뒤, 카드를 1장 뽑는다.",
       "effectCandidates": [
         {
-          "candidateId": "b09038p-review-required-1",
+          "candidateId": "implemented-card-0981-disguised-recover-yusaku",
           "sourceText": "【변장 시】 - 자신의 리무브 에이리어에 있는 〚카드명 [쿠도 유사쿠]〛을 1장까지 선택하여 패에 추가한다.\n【등장 시】 - 이 캐릭터를 슬립로 만들 수 있다. 그럴 경우, 패에서 레벨 6 이하의 〚카드명 [쿠도 유사쿠]〛를 1장까지 등장시키고, 자신의 덱에서 카드를 위에서부터 1장 뒤집어 그 캐릭터에 세트한 뒤, 카드를 1장 뽑는다.",
-          "interpretation": "변장 트리거가 허용 이벤트에 없고, 등장 효과의 선택적 비용·캐릭터 등장·덱 위 카드 세트·드로우를 한 번에 처리하는 의미 검증이 필요합니다.",
-          "draftStatus": "review_required",
-          "approvalStatus": "pending",
-          "confidence": "low",
-          "reviewNotes": "변장 트리거가 허용 이벤트에 없고, 등장 효과의 선택적 비용·캐릭터 등장·덱 위 카드 세트·드로우를 한 번에 처리하는 의미 검증이 필요합니다."
+          "interpretation": "카드 원문의 character.disguised 효과를 런타임 DSL로 구현했습니다.",
+          "confidence": "high",
+          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
+          "proposedDefinition": {
+            "effectId": "card-0981-disguised-recover-yusaku",
+            "cardIds": [
+              "0981"
+            ],
+            "cardNameKo": "쿠로바 도이치",
+            "cardNameJa": "黒羽盗一",
+            "trigger": {
+              "event": "character.disguised",
+              "timing": "after"
+            },
+            "conditions": [],
+            "steps": [
+              {
+                "op": "select_cards",
+                "from": "remove_area",
+                "min": 0,
+                "max": 1,
+                "optional": true,
+                "filter": {
+                  "field": "card_name",
+                  "operator": "name_matches",
+                  "value": "工藤優作"
+                },
+                "prompt": "리무브 에이리어에서 쿠도 유사쿠를 최대 1장 선택해 손패로 가져옵니다.",
+                "saveAs": "recovered"
+              },
+              {
+                "op": "move_cards",
+                "from": "recovered",
+                "to": "hand",
+                "when": {
+                  "fact": "vars.recovered.count",
+                  "operator": "greater_than",
+                  "value": 0
+                }
+              }
+            ]
+          },
+          "approvalStatus": "approved",
+          "draftStatus": "dsl_validated_approved",
+          "structuralValidation": {
+            "status": "passed",
+            "errors": []
+          }
+        },
+        {
+          "candidateId": "implemented-card-0981-enter-sleep-deploy-yusaku-stack-draw",
+          "sourceText": "【변장 시】 - 자신의 리무브 에이리어에 있는 〚카드명 [쿠도 유사쿠]〛을 1장까지 선택하여 패에 추가한다.\n【등장 시】 - 이 캐릭터를 슬립로 만들 수 있다. 그럴 경우, 패에서 레벨 6 이하의 〚카드명 [쿠도 유사쿠]〛를 1장까지 등장시키고, 자신의 덱에서 카드를 위에서부터 1장 뒤집어 그 캐릭터에 세트한 뒤, 카드를 1장 뽑는다.",
+          "interpretation": "카드 원문의 character.entered_field 효과를 런타임 DSL로 구현했습니다.",
+          "confidence": "high",
+          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
+          "proposedDefinition": {
+            "effectId": "card-0981-enter-sleep-deploy-yusaku-stack-draw",
+            "cardIds": [
+              "0981"
+            ],
+            "cardNameKo": "쿠로바 도이치",
+            "cardNameJa": "黒羽盗一",
+            "trigger": {
+              "event": "character.entered_field",
+              "timing": "after"
+            },
+            "conditions": [],
+            "steps": [
+              {
+                "op": "offer_reaction",
+                "reactionId": "b09038p-enter-deploy",
+                "actor": "controller",
+                "choices": [
+                  "yes",
+                  "no"
+                ],
+                "saveAs": "deploy_choice",
+                "prompt": "이 카드를 슬립시켜 레벨 6 이하 쿠도 유사쿠를 등장시킬까요? 등장시키면 덱 위 카드를 뒷면으로 세트하고 1장 드로우합니다."
+              },
+              {
+                "op": "pay_cost",
+                "cost": "sleep_source_character",
+                "when": {
+                  "fact": "vars.deploy_choice",
+                  "operator": "equals",
+                  "value": "yes"
+                }
+              },
+              {
+                "op": "select_cards",
+                "from": "hand",
+                "min": 0,
+                "max": 1,
+                "optional": true,
+                "filter": {
+                  "allOf": [
+                    {
+                      "field": "card_type",
+                      "operator": "equals",
+                      "value": "character"
+                    },
+                    {
+                      "field": "card_name",
+                      "operator": "name_matches",
+                      "value": "工藤優作"
+                    },
+                    {
+                      "field": "level",
+                      "operator": "less_than_or_equal",
+                      "value": 6
+                    }
+                  ]
+                },
+                "prompt": "손패에서 레벨 6 이하 쿠도 유사쿠를 최대 1장 선택해 등장시킵니다.",
+                "saveAs": "deployment",
+                "when": {
+                  "fact": "vars.deploy_choice",
+                  "operator": "equals",
+                  "value": "yes"
+                }
+              },
+              {
+                "op": "move_cards",
+                "from": "deployment",
+                "to": "field",
+                "entryMethod": "character_ability",
+                "when": {
+                  "fact": "vars.deployment.count",
+                  "operator": "greater_than",
+                  "value": 0
+                }
+              },
+              {
+                "op": "attach_top_card",
+                "target": "vars.deployment",
+                "when": {
+                  "fact": "vars.deployment.count",
+                  "operator": "greater_than",
+                  "value": 0
+                }
+              },
+              {
+                "op": "draw_cards",
+                "count": 1,
+                "destination": "hand",
+                "when": {
+                  "fact": "vars.deployment.count",
+                  "operator": "greater_than",
+                  "value": 0
+                }
+              }
+            ]
+          },
+          "approvalStatus": "approved",
+          "draftStatus": "dsl_validated_approved",
+          "structuralValidation": {
+            "status": "passed",
+            "errors": []
+          }
         }
       ]
     },
@@ -1873,13 +2556,129 @@
       "sourceText": "〚돌격 [캐릭터]〛(등장한 턴부터 바로 캐릭터 대상 액션 수행 가능)\n【인연 : 쿠로바 도이치】【자신의 턴 중】 - AP＋1000\n【인연 : 쿠도 유키코】【등장 시】 - 턴 종료 시까지 이 캐릭터는 〚돌격 [사건]〛(등장한 턴부터 바로 사건 대상 액션 수행 가능)을 가진다.",
       "effectCandidates": [
         {
-          "candidateId": "b09037p-review-required-1",
+          "candidateId": "implemented-card-0980-continuous-charge-character",
           "sourceText": "〚돌격 [캐릭터]〛(등장한 턴부터 바로 캐릭터 대상 액션 수행 가능)\n【인연 : 쿠로바 도이치】【자신의 턴 중】 - AP＋1000\n【인연 : 쿠도 유키코】【등장 시】 - 턴 종료 시까지 이 캐릭터는 〚돌격 [사건]〛(등장한 턴부터 바로 사건 대상 액션 수행 가능)을 가진다.",
-          "interpretation": "인연 보유 카드에 따른 조건부 지속 AP 보정과 사건 대상 돌격 부여를 정확히 표현할 fact와 키워드 스코프를 확인해야 합니다.",
-          "draftStatus": "review_required",
-          "approvalStatus": "pending",
-          "confidence": "low",
-          "reviewNotes": "인연 보유 카드에 따른 조건부 지속 AP 보정과 사건 대상 돌격 부여를 정확히 표현할 fact와 키워드 스코프를 확인해야 합니다."
+          "interpretation": "카드 원문의 continuous.recalculate 효과를 런타임 DSL로 구현했습니다.",
+          "confidence": "high",
+          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
+          "proposedDefinition": {
+            "effectId": "card-0980-continuous-charge-character",
+            "cardIds": [
+              "0980"
+            ],
+            "cardNameKo": "쿠도 유사쿠",
+            "cardNameJa": "工藤優作",
+            "trigger": {
+              "event": "continuous.recalculate",
+              "timing": "continuous"
+            },
+            "continuous": true,
+            "conditions": [],
+            "steps": [
+              {
+                "op": "set_continuous_keyword",
+                "target": "source_character",
+                "keyword": "charge_character",
+                "modifierId": "always-charge-character",
+                "duration": "while_condition_true"
+              }
+            ]
+          },
+          "approvalStatus": "approved",
+          "draftStatus": "dsl_validated_approved",
+          "structuralValidation": {
+            "status": "passed",
+            "errors": []
+          }
+        },
+        {
+          "candidateId": "implemented-card-0980-bond-toichi-continuous-ap",
+          "sourceText": "〚돌격 [캐릭터]〛(등장한 턴부터 바로 캐릭터 대상 액션 수행 가능)\n【인연 : 쿠로바 도이치】【자신의 턴 중】 - AP＋1000\n【인연 : 쿠도 유키코】【등장 시】 - 턴 종료 시까지 이 캐릭터는 〚돌격 [사건]〛(등장한 턴부터 바로 사건 대상 액션 수행 가능)을 가진다.",
+          "interpretation": "카드 원문의 continuous.recalculate 효과를 런타임 DSL로 구현했습니다.",
+          "confidence": "high",
+          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
+          "proposedDefinition": {
+            "effectId": "card-0980-bond-toichi-continuous-ap",
+            "cardIds": [
+              "0980"
+            ],
+            "cardNameKo": "쿠도 유사쿠",
+            "cardNameJa": "工藤優作",
+            "trigger": {
+              "event": "continuous.recalculate",
+              "timing": "continuous"
+            },
+            "continuous": true,
+            "conditions": [
+              {
+                "fact": "player.field.has_card_name",
+                "operator": "equals",
+                "value": "黒羽盗一"
+              },
+              {
+                "fact": "turn.is_source_controller_turn",
+                "operator": "equals",
+                "value": true
+              }
+            ],
+            "steps": [
+              {
+                "op": "set_continuous_stat",
+                "target": "source_character",
+                "stat": "ap",
+                "amount": 1000,
+                "modifierId": "bond-toichi-ap-1000",
+                "duration": "while_condition_true"
+              }
+            ]
+          },
+          "approvalStatus": "approved",
+          "draftStatus": "dsl_validated_approved",
+          "structuralValidation": {
+            "status": "passed",
+            "errors": []
+          }
+        },
+        {
+          "candidateId": "implemented-card-0980-enter-bond-yukiko-charge-case",
+          "sourceText": "〚돌격 [캐릭터]〛(등장한 턴부터 바로 캐릭터 대상 액션 수행 가능)\n【인연 : 쿠로바 도이치】【자신의 턴 중】 - AP＋1000\n【인연 : 쿠도 유키코】【등장 시】 - 턴 종료 시까지 이 캐릭터는 〚돌격 [사건]〛(등장한 턴부터 바로 사건 대상 액션 수행 가능)을 가진다.",
+          "interpretation": "카드 원문의 character.entered_field 효과를 런타임 DSL로 구현했습니다.",
+          "confidence": "high",
+          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
+          "proposedDefinition": {
+            "effectId": "card-0980-enter-bond-yukiko-charge-case",
+            "cardIds": [
+              "0980"
+            ],
+            "cardNameKo": "쿠도 유사쿠",
+            "cardNameJa": "工藤優作",
+            "trigger": {
+              "event": "character.entered_field",
+              "timing": "after"
+            },
+            "conditions": [
+              {
+                "fact": "player.field.has_card_name",
+                "operator": "equals",
+                "value": "工藤有希子"
+              }
+            ],
+            "steps": [
+              {
+                "op": "grant_keyword",
+                "target": "source_character",
+                "keyword": "charge_case",
+                "duration": "turn_end",
+                "displayNameKo": "돌격[사건]"
+              }
+            ]
+          },
+          "approvalStatus": "approved",
+          "draftStatus": "dsl_validated_approved",
+          "structuralValidation": {
+            "status": "passed",
+            "errors": []
+          }
         }
       ]
     },
@@ -1898,13 +2697,188 @@
       "sourceText": "【인연 : 쿠도 유키코】【자신의 턴 중】 - AP＋3000, 〚돌격〛(등장한 턴부터 바로 액션 수행 가능)\n【인연 : 쿠도 신이치】【선언】【턴 1】〚패 1장을 리무브하거나, 현장에 있는 캐릭터에 설정된 카드 1장을 리무브한다〛 - 자신의 리무브 에이리어에 있는 레벨 3 이하의 캐릭터를 1장까지 선택하여 등장시킨다.",
       "effectCandidates": [
         {
-          "candidateId": "b05052-review-required-1",
+          "candidateId": "implemented-card-0554-bond-yukiko-continuous-ap-charge",
           "sourceText": "【인연 : 쿠도 유키코】【자신의 턴 중】 - AP＋3000, 〚돌격〛(등장한 턴부터 바로 액션 수행 가능)\n【인연 : 쿠도 신이치】【선언】【턴 1】〚패 1장을 리무브하거나, 현장에 있는 캐릭터에 설정된 카드 1장을 리무브한다〛 - 자신의 리무브 에이리어에 있는 레벨 3 이하의 캐릭터를 1장까지 선택하여 등장시킨다.",
-          "interpretation": "인연 기반 지속 보정과 손패/세트 카드 중 택일하는 비용은 현재 `pay_cost`가 지원하는 sleep 비용과 다릅니다.",
-          "draftStatus": "review_required",
-          "approvalStatus": "pending",
-          "confidence": "low",
-          "reviewNotes": "인연 기반 지속 보정과 손패/세트 카드 중 택일하는 비용은 현재 `pay_cost`가 지원하는 sleep 비용과 다릅니다."
+          "interpretation": "카드 원문의 continuous.recalculate 효과를 런타임 DSL로 구현했습니다.",
+          "confidence": "high",
+          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
+          "proposedDefinition": {
+            "effectId": "card-0554-bond-yukiko-continuous-ap-charge",
+            "cardIds": [
+              "0554"
+            ],
+            "cardNameKo": "쿠도 유사쿠",
+            "cardNameJa": "工藤優作",
+            "trigger": {
+              "event": "continuous.recalculate",
+              "timing": "continuous"
+            },
+            "continuous": true,
+            "conditions": [
+              {
+                "fact": "player.field.has_card_name",
+                "operator": "equals",
+                "value": "工藤有希子"
+              },
+              {
+                "fact": "turn.is_source_controller_turn",
+                "operator": "equals",
+                "value": true
+              }
+            ],
+            "steps": [
+              {
+                "op": "set_continuous_stat",
+                "target": "source_character",
+                "stat": "ap",
+                "amount": 3000,
+                "modifierId": "bond-yukiko-ap-3000",
+                "duration": "while_condition_true"
+              },
+              {
+                "op": "set_continuous_keyword",
+                "target": "source_character",
+                "keyword": "charge",
+                "modifierId": "bond-yukiko-charge",
+                "duration": "while_condition_true"
+              }
+            ]
+          },
+          "approvalStatus": "approved",
+          "draftStatus": "dsl_validated_approved",
+          "structuralValidation": {
+            "status": "passed",
+            "errors": []
+          }
+        },
+        {
+          "candidateId": "implemented-card-0554-activated-bond-shinichi-recovers-level3",
+          "sourceText": "【인연 : 쿠도 유키코】【자신의 턴 중】 - AP＋3000, 〚돌격〛(등장한 턴부터 바로 액션 수행 가능)\n【인연 : 쿠도 신이치】【선언】【턴 1】〚패 1장을 리무브하거나, 현장에 있는 캐릭터에 설정된 카드 1장을 리무브한다〛 - 자신의 리무브 에이리어에 있는 레벨 3 이하의 캐릭터를 1장까지 선택하여 등장시킨다.",
+          "interpretation": "인연: 쿠도 신이치 · 비용을 지불하고 레벨 3 이하 캐릭터 등장",
+          "confidence": "high",
+          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
+          "proposedDefinition": {
+            "effectId": "card-0554-activated-bond-shinichi-recovers-level3",
+            "cardIds": [
+              "0554"
+            ],
+            "cardNameKo": "쿠도 유사쿠",
+            "cardNameJa": "工藤優作",
+            "trigger": {
+              "event": "character.activated_ability",
+              "timing": "after"
+            },
+            "oncePerTurn": true,
+            "activationLabelKo": "인연: 쿠도 신이치 · 비용을 지불하고 레벨 3 이하 캐릭터 등장",
+            "conditions": [
+              {
+                "fact": "player.field.has_card_name",
+                "operator": "equals",
+                "value": "工藤新一"
+              }
+            ],
+            "steps": [
+              {
+                "op": "offer_reaction",
+                "reactionId": "b05052-cost-zone",
+                "actor": "controller",
+                "choices": [
+                  "hand",
+                  "attachment"
+                ],
+                "saveAs": "cost_type",
+                "prompt": "비용으로 손패 1장 또는 현장 캐릭터에 세트된 카드 1장 중 무엇을 리무브할까요?"
+              },
+              {
+                "op": "select_cards",
+                "from": "hand",
+                "min": 1,
+                "max": 1,
+                "optional": false,
+                "prompt": "리무브할 손패 1장을 선택하세요.",
+                "saveAs": "hand_cost",
+                "when": {
+                  "fact": "vars.cost_type",
+                  "operator": "equals",
+                  "value": "hand"
+                }
+              },
+              {
+                "op": "move_cards",
+                "from": "hand_cost",
+                "to": "remove_area",
+                "when": {
+                  "fact": "vars.hand_cost.count",
+                  "operator": "greater_than",
+                  "value": 0
+                }
+              },
+              {
+                "op": "select_cards",
+                "from": "attached_cards",
+                "min": 1,
+                "max": 1,
+                "optional": false,
+                "prompt": "리무브할 세트 카드를 선택하세요.",
+                "saveAs": "attachment_cost",
+                "when": {
+                  "fact": "vars.cost_type",
+                  "operator": "equals",
+                  "value": "attachment"
+                }
+              },
+              {
+                "op": "move_cards",
+                "from": "attachment_cost",
+                "to": "remove_area",
+                "when": {
+                  "fact": "vars.attachment_cost.count",
+                  "operator": "greater_than",
+                  "value": 0
+                }
+              },
+              {
+                "op": "select_cards",
+                "from": "remove_area",
+                "min": 0,
+                "max": 1,
+                "optional": true,
+                "filter": {
+                  "allOf": [
+                    {
+                      "field": "card_type",
+                      "operator": "equals",
+                      "value": "character"
+                    },
+                    {
+                      "field": "level",
+                      "operator": "less_than_or_equal",
+                      "value": 3
+                    }
+                  ]
+                },
+                "prompt": "리무브 에이리어에서 레벨 3 이하 캐릭터를 최대 1장 선택해 등장시킵니다.",
+                "saveAs": "deployment"
+              },
+              {
+                "op": "move_cards",
+                "from": "deployment",
+                "to": "field",
+                "entryMethod": "character_ability",
+                "when": {
+                  "fact": "vars.deployment.count",
+                  "operator": "greater_than",
+                  "value": 0
+                }
+              }
+            ]
+          },
+          "approvalStatus": "approved",
+          "draftStatus": "dsl_validated_approved",
+          "structuralValidation": {
+            "status": "passed",
+            "errors": []
+          }
         }
       ]
     },
@@ -1923,13 +2897,321 @@
       "sourceText": "【사건 탐정 VS 괴도】 자신의 턴 종료 시, 자신의 증거가 9개 이상인 경우 게임에서 승리한다.\n【사건 탐정 VS 괴도】【선언】【턴 1】 캐릭터 카드를 1장까지 선택하여 덱 밑으로 옮긴다.\n【등장 시】 서로의 증거를 합쳐 5개 이상일 경우, 카드를 2장 뽑고, 패에서 2장을 리무브한다. 합쳐서 4개 이하일 경우, 패에서 1장을 리무브해도 된다. 그렇게 한 경우, 자신은 증거 1개를 얻는다.\n자신의 턴 종료 시, 카드를 1장 뽑는다. 자신의 패가 5장 이상인 경우, 패에서 카드를 1장 리무브한다. 이 능력은 파트너 구역에서도 발동한다.\n【컷인】AP＋2000",
       "effectCandidates": [
         {
-          "candidateId": "b11095p-review-required-1",
+          "candidateId": "implemented-card-1258-win-at-nine-evidence-turn-end",
           "sourceText": "【사건 탐정 VS 괴도】 자신의 턴 종료 시, 자신의 증거가 9개 이상인 경우 게임에서 승리한다.\n【사건 탐정 VS 괴도】【선언】【턴 1】 캐릭터 카드를 1장까지 선택하여 덱 밑으로 옮긴다.\n【등장 시】 서로의 증거를 합쳐 5개 이상일 경우, 카드를 2장 뽑고, 패에서 2장을 리무브한다. 합쳐서 4개 이하일 경우, 패에서 1장을 리무브해도 된다. 그렇게 한 경우, 자신은 증거 1개를 얻는다.\n자신의 턴 종료 시, 카드를 1장 뽑는다. 자신의 패가 5장 이상인 경우, 패에서 카드를 1장 리무브한다. 이 능력은 파트너 구역에서도 발동한다.\n【컷인】AP＋2000",
-          "interpretation": "사건 고유 승리 조건, 양측 증거 수 분기, 파트너 영역에서도 발동하는 턴 종료 효과가 결합되어 있어 일부 명령만 DSL로 옮기면 불완전한 정의가 됩니다.",
-          "draftStatus": "review_required",
-          "approvalStatus": "pending",
-          "confidence": "low",
-          "reviewNotes": "사건 고유 승리 조건, 양측 증거 수 분기, 파트너 영역에서도 발동하는 턴 종료 효과가 결합되어 있어 일부 명령만 DSL로 옮기면 불완전한 정의가 됩니다."
+          "interpretation": "카드 원문의 player.turn_ended 효과를 런타임 DSL로 구현했습니다.",
+          "confidence": "high",
+          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
+          "proposedDefinition": {
+            "effectId": "card-1258-win-at-nine-evidence-turn-end",
+            "cardIds": [
+              "1258"
+            ],
+            "cardNameKo": "에도가와 코난&괴도 키드",
+            "cardNameJa": "江戸川コナン＆怪盗キッド",
+            "trigger": {
+              "event": "player.turn_ended",
+              "timing": "after"
+            },
+            "conditions": [
+              {
+                "fact": "player.event.has_detective_vs_kid_trait",
+                "operator": "equals",
+                "value": true
+              },
+              {
+                "fact": "player.evidence.count",
+                "operator": "greater_than_or_equal",
+                "value": 9
+              }
+            ],
+            "steps": [
+              {
+                "op": "win_game"
+              }
+            ]
+          },
+          "approvalStatus": "approved",
+          "draftStatus": "dsl_validated_approved",
+          "structuralValidation": {
+            "status": "passed",
+            "errors": []
+          }
+        },
+        {
+          "candidateId": "implemented-card-1258-activated-return-character-to-deck-bottom",
+          "sourceText": "【사건 탐정 VS 괴도】 자신의 턴 종료 시, 자신의 증거가 9개 이상인 경우 게임에서 승리한다.\n【사건 탐정 VS 괴도】【선언】【턴 1】 캐릭터 카드를 1장까지 선택하여 덱 밑으로 옮긴다.\n【등장 시】 서로의 증거를 합쳐 5개 이상일 경우, 카드를 2장 뽑고, 패에서 2장을 리무브한다. 합쳐서 4개 이하일 경우, 패에서 1장을 리무브해도 된다. 그렇게 한 경우, 자신은 증거 1개를 얻는다.\n자신의 턴 종료 시, 카드를 1장 뽑는다. 자신의 패가 5장 이상인 경우, 패에서 카드를 1장 리무브한다. 이 능력은 파트너 구역에서도 발동한다.\n【컷인】AP＋2000",
+          "interpretation": "탐정 VS 괴도 · 캐릭터를 덱 아래로 이동",
+          "confidence": "high",
+          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
+          "proposedDefinition": {
+            "effectId": "card-1258-activated-return-character-to-deck-bottom",
+            "cardIds": [
+              "1258"
+            ],
+            "cardNameKo": "에도가와 코난&괴도 키드",
+            "cardNameJa": "江戸川コナン＆怪盗キッド",
+            "trigger": {
+              "event": "character.activated_ability",
+              "timing": "after"
+            },
+            "oncePerTurn": true,
+            "activationLabelKo": "탐정 VS 괴도 · 캐릭터를 덱 아래로 이동",
+            "conditions": [
+              {
+                "fact": "player.event.has_detective_vs_kid_trait",
+                "operator": "equals",
+                "value": true
+              }
+            ],
+            "steps": [
+              {
+                "op": "select_cards",
+                "from": "both_fields",
+                "min": 0,
+                "max": 1,
+                "optional": true,
+                "filter": {
+                  "field": "card_type",
+                  "operator": "equals",
+                  "value": "character"
+                },
+                "prompt": "덱 아래로 돌려보낼 캐릭터를 최대 1장 선택하세요.",
+                "saveAs": "target"
+              },
+              {
+                "op": "move_cards",
+                "from": "target",
+                "to": "deck_bottom",
+                "when": {
+                  "fact": "vars.target.count",
+                  "operator": "greater_than",
+                  "value": 0
+                }
+              }
+            ]
+          },
+          "approvalStatus": "approved",
+          "draftStatus": "dsl_validated_approved",
+          "structuralValidation": {
+            "status": "passed",
+            "errors": []
+          }
+        },
+        {
+          "candidateId": "implemented-card-1258-on-enter-total-evidence-five-draw-discard",
+          "sourceText": "【사건 탐정 VS 괴도】 자신의 턴 종료 시, 자신의 증거가 9개 이상인 경우 게임에서 승리한다.\n【사건 탐정 VS 괴도】【선언】【턴 1】 캐릭터 카드를 1장까지 선택하여 덱 밑으로 옮긴다.\n【등장 시】 서로의 증거를 합쳐 5개 이상일 경우, 카드를 2장 뽑고, 패에서 2장을 리무브한다. 합쳐서 4개 이하일 경우, 패에서 1장을 리무브해도 된다. 그렇게 한 경우, 자신은 증거 1개를 얻는다.\n자신의 턴 종료 시, 카드를 1장 뽑는다. 자신의 패가 5장 이상인 경우, 패에서 카드를 1장 리무브한다. 이 능력은 파트너 구역에서도 발동한다.\n【컷인】AP＋2000",
+          "interpretation": "카드 원문의 character.entered_field 효과를 런타임 DSL로 구현했습니다.",
+          "confidence": "high",
+          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
+          "proposedDefinition": {
+            "effectId": "card-1258-on-enter-total-evidence-five-draw-discard",
+            "cardIds": "1258",
+            "cardNameKo": "에도가와 코난&괴도 키드",
+            "cardNameJa": "江戸川コナン＆怪盗キッド",
+            "trigger": {
+              "event": "character.entered_field",
+              "timing": "after"
+            },
+            "conditions": [
+              {
+                "fact": "player.event.has_detective_vs_kid_trait",
+                "operator": "equals",
+                "value": true
+              },
+              {
+                "fact": "game.total_evidence_count",
+                "operator": "greater_than_or_equal",
+                "value": 5
+              }
+            ],
+            "steps": [
+              {
+                "op": "draw_cards",
+                "count": 2,
+                "destination": "hand"
+              },
+              {
+                "op": "select_cards",
+                "from": "hand",
+                "min": 2,
+                "max": 2,
+                "optional": false,
+                "prompt": "손패 2장을 리무브하세요.",
+                "saveAs": "discard_two"
+              },
+              {
+                "op": "move_cards",
+                "from": "discard_two",
+                "to": "remove_area"
+              }
+            ]
+          },
+          "approvalStatus": "approved",
+          "draftStatus": "dsl_validated_approved",
+          "structuralValidation": {
+            "status": "passed",
+            "errors": []
+          }
+        },
+        {
+          "candidateId": "implemented-card-1258-on-enter-total-evidence-four-or-less-may-discard-for-evidence",
+          "sourceText": "【사건 탐정 VS 괴도】 자신의 턴 종료 시, 자신의 증거가 9개 이상인 경우 게임에서 승리한다.\n【사건 탐정 VS 괴도】【선언】【턴 1】 캐릭터 카드를 1장까지 선택하여 덱 밑으로 옮긴다.\n【등장 시】 서로의 증거를 합쳐 5개 이상일 경우, 카드를 2장 뽑고, 패에서 2장을 리무브한다. 합쳐서 4개 이하일 경우, 패에서 1장을 리무브해도 된다. 그렇게 한 경우, 자신은 증거 1개를 얻는다.\n자신의 턴 종료 시, 카드를 1장 뽑는다. 자신의 패가 5장 이상인 경우, 패에서 카드를 1장 리무브한다. 이 능력은 파트너 구역에서도 발동한다.\n【컷인】AP＋2000",
+          "interpretation": "카드 원문의 character.entered_field 효과를 런타임 DSL로 구현했습니다.",
+          "confidence": "high",
+          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
+          "proposedDefinition": {
+            "effectId": "card-1258-on-enter-total-evidence-four-or-less-may-discard-for-evidence",
+            "cardIds": "1258",
+            "cardNameKo": "에도가와 코난&괴도 키드",
+            "cardNameJa": "江戸川コナン＆怪盗キッド",
+            "trigger": {
+              "event": "character.entered_field",
+              "timing": "after"
+            },
+            "conditions": [
+              {
+                "fact": "player.event.has_detective_vs_kid_trait",
+                "operator": "equals",
+                "value": true
+              },
+              {
+                "fact": "game.total_evidence_count",
+                "operator": "less_than_or_equal",
+                "value": 4
+              }
+            ],
+            "steps": [
+              {
+                "op": "offer_reaction",
+                "reactionId": "b11095p-low-evidence-draw",
+                "actor": "controller",
+                "choices": [
+                  "yes",
+                  "no"
+                ],
+                "saveAs": "gain_evidence_choice",
+                "prompt": "손패 1장을 리무브하고 증거 1장을 얻을까요?",
+                "when": {
+                  "fact": "player.hand.count",
+                  "operator": "greater_than",
+                  "value": 0
+                }
+              },
+              {
+                "op": "select_cards",
+                "from": "hand",
+                "min": 1,
+                "max": 1,
+                "optional": false,
+                "prompt": "리무브할 손패 1장을 선택하세요.",
+                "saveAs": "hand_cost",
+                "when": {
+                  "fact": "vars.gain_evidence_choice",
+                  "operator": "equals",
+                  "value": "yes"
+                }
+              },
+              {
+                "op": "move_cards",
+                "from": "hand_cost",
+                "to": "remove_area",
+                "when": {
+                  "fact": "vars.gain_evidence_choice",
+                  "operator": "equals",
+                  "value": "yes"
+                }
+              },
+              {
+                "op": "gain_evidence",
+                "count": 1,
+                "when": {
+                  "allOf": [
+                    {
+                      "fact": "vars.gain_evidence_choice",
+                      "operator": "equals",
+                      "value": "yes"
+                    },
+                    {
+                      "fact": "vars.hand_cost.count",
+                      "operator": "greater_than",
+                      "value": 0
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "approvalStatus": "approved",
+          "draftStatus": "dsl_validated_approved",
+          "structuralValidation": {
+            "status": "passed",
+            "errors": []
+          }
+        },
+        {
+          "candidateId": "implemented-card-1258-turn-end-draw-discard-if-five",
+          "sourceText": "【사건 탐정 VS 괴도】 자신의 턴 종료 시, 자신의 증거가 9개 이상인 경우 게임에서 승리한다.\n【사건 탐정 VS 괴도】【선언】【턴 1】 캐릭터 카드를 1장까지 선택하여 덱 밑으로 옮긴다.\n【등장 시】 서로의 증거를 합쳐 5개 이상일 경우, 카드를 2장 뽑고, 패에서 2장을 리무브한다. 합쳐서 4개 이하일 경우, 패에서 1장을 리무브해도 된다. 그렇게 한 경우, 자신은 증거 1개를 얻는다.\n자신의 턴 종료 시, 카드를 1장 뽑는다. 자신의 패가 5장 이상인 경우, 패에서 카드를 1장 리무브한다. 이 능력은 파트너 구역에서도 발동한다.\n【컷인】AP＋2000",
+          "interpretation": "카드 원문의 player.turn_ended 효과를 런타임 DSL로 구현했습니다.",
+          "confidence": "high",
+          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
+          "proposedDefinition": {
+            "effectId": "card-1258-turn-end-draw-discard-if-five",
+            "cardIds": "1258",
+            "cardNameKo": "에도가와 코난&괴도 키드",
+            "cardNameJa": "江戸川コナン＆怪盗キッド",
+            "trigger": {
+              "event": "player.turn_ended",
+              "timing": "after"
+            },
+            "conditions": [],
+            "steps": [
+              {
+                "op": "draw_cards",
+                "count": 1,
+                "destination": "hand"
+              },
+              {
+                "op": "select_cards",
+                "from": "hand",
+                "min": 1,
+                "max": 1,
+                "optional": false,
+                "prompt": "손패가 5장 이상이므로 리무브할 손패 1장을 선택하세요.",
+                "saveAs": "hand_cost",
+                "when": {
+                  "fact": "player.hand.count",
+                  "operator": "greater_than_or_equal",
+                  "value": 5
+                }
+              },
+              {
+                "op": "move_cards",
+                "from": "hand_cost",
+                "to": "remove_area",
+                "when": {
+                  "fact": "vars.hand_cost.count",
+                  "operator": "greater_than",
+                  "value": 0
+                }
+              }
+            ]
+          },
+          "approvalStatus": "approved",
+          "draftStatus": "dsl_validated_approved",
+          "structuralValidation": {
+            "status": "passed",
+            "errors": []
+          }
+        },
+        {
+          "candidateId": "b11095p-native-existing-cut-in-1",
+          "sourceText": "【컷인】AP＋2000",
+          "interpretation": "기본 컷인 AP 보너스는 기존 네이티브 컷인 처리 경로에서 실행합니다.",
+          "draftStatus": "native_existing_cut_in",
+          "approvalStatus": "not_required",
+          "confidence": "high",
+          "reviewNotes": "컷인 보너스는 공통 런타임에서 계산됩니다."
         }
       ]
     },
@@ -1948,13 +3230,142 @@
       "sourceText": "【사건 탐정 VS 괴도】【선언】【턴 1】〚패 1장을 리무브한다〛: 이 캐릭터를 활성 상태로 만들고, 턴 종료 시까지 이 캐릭터의 AP를 -2000으로 만든다. 캐릭터 1장까지 선택하여 슬립 상태로 만든다. 이 능력은 양쪽의 증거가 합쳐서 5개 이상일 때 선언할 수 있다.\n【선언】【슬립】：상대의 현장에 있는 슬립 상태의 캐릭터를 1장까지 선택하고, 이 캐릭터와의 컨택을 발생시킨다. (이 캐릭터는 액션을 수행한 쪽의 캐릭터가 된다)",
       "effectCandidates": [
         {
-          "candidateId": "b11031-review-required-1",
+          "candidateId": "implemented-card-1197-activated-ready-ap-minus2000-and-rest-character",
           "sourceText": "【사건 탐정 VS 괴도】【선언】【턴 1】〚패 1장을 리무브한다〛: 이 캐릭터를 활성 상태로 만들고, 턴 종료 시까지 이 캐릭터의 AP를 -2000으로 만든다. 캐릭터 1장까지 선택하여 슬립 상태로 만든다. 이 능력은 양쪽의 증거가 합쳐서 5개 이상일 때 선언할 수 있다.\n【선언】【슬립】：상대의 현장에 있는 슬립 상태의 캐릭터를 1장까지 선택하고, 이 캐릭터와의 컨택을 발생시킨다. (이 캐릭터는 액션을 수행한 쪽의 캐릭터가 된다)",
-          "interpretation": "활성화·손패 비용·임시 AP 감소·슬립 처리와 특수 컨택 생성이 복합되어 있습니다. 현재 DSL에 능동화 및 컨택 생성 명령이 없어 생성하지 않습니다.",
-          "draftStatus": "review_required",
-          "approvalStatus": "pending",
-          "confidence": "low",
-          "reviewNotes": "활성화·손패 비용·임시 AP 감소·슬립 처리와 특수 컨택 생성이 복합되어 있습니다. 현재 DSL에 능동화 및 컨택 생성 명령이 없어 생성하지 않습니다."
+          "interpretation": "턴당 1회 · 손패 1장 리무브 후 액티브, AP −2000 및 캐릭터 슬립",
+          "confidence": "high",
+          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
+          "proposedDefinition": {
+            "effectId": "card-1197-activated-ready-ap-minus2000-and-rest-character",
+            "cardIds": "1197",
+            "cardNameKo": "괴도 키드",
+            "cardNameJa": "怪盗キッド",
+            "trigger": {
+              "event": "character.activated_ability",
+              "timing": "after"
+            },
+            "oncePerTurn": true,
+            "activationLabelKo": "턴당 1회 · 손패 1장 리무브 후 액티브, AP −2000 및 캐릭터 슬립",
+            "conditions": [
+              {
+                "fact": "game.total_evidence_count",
+                "operator": "greater_than_or_equal",
+                "value": 5
+              }
+            ],
+            "steps": [
+              {
+                "op": "select_cards",
+                "from": "hand",
+                "min": 1,
+                "max": 1,
+                "optional": false,
+                "prompt": "비용으로 리무브할 손패 1장을 선택하세요.",
+                "saveAs": "hand_cost"
+              },
+              {
+                "op": "move_cards",
+                "from": "hand_cost",
+                "to": "remove_area"
+              },
+              {
+                "op": "ready_source_character"
+              },
+              {
+                "op": "modify_stat",
+                "target": "source_character",
+                "stat": "ap",
+                "amount": -2000,
+                "duration": "turn_end",
+                "stacking": "add"
+              },
+              {
+                "op": "select_cards",
+                "from": "both_fields",
+                "min": 0,
+                "max": 1,
+                "optional": true,
+                "filter": {
+                  "field": "card_type",
+                  "operator": "equals",
+                  "value": "character"
+                },
+                "prompt": "슬립시킬 캐릭터를 최대 1장 선택하세요.",
+                "saveAs": "rest_target"
+              },
+              {
+                "op": "rest_cards",
+                "target": "vars.rest_target",
+                "when": {
+                  "fact": "vars.rest_target.count",
+                  "operator": "greater_than",
+                  "value": 0
+                }
+              }
+            ]
+          },
+          "approvalStatus": "approved",
+          "draftStatus": "dsl_validated_approved",
+          "structuralValidation": {
+            "status": "passed",
+            "errors": []
+          }
+        },
+        {
+          "candidateId": "implemented-card-1197-activated-contact-opponent-rested",
+          "sourceText": "【사건 탐정 VS 괴도】【선언】【턴 1】〚패 1장을 리무브한다〛: 이 캐릭터를 활성 상태로 만들고, 턴 종료 시까지 이 캐릭터의 AP를 -2000으로 만든다. 캐릭터 1장까지 선택하여 슬립 상태로 만든다. 이 능력은 양쪽의 증거가 합쳐서 5개 이상일 때 선언할 수 있다.\n【선언】【슬립】：상대의 현장에 있는 슬립 상태의 캐릭터를 1장까지 선택하고, 이 캐릭터와의 컨택을 발생시킨다. (이 캐릭터는 액션을 수행한 쪽의 캐릭터가 된다)",
+          "interpretation": "상대 슬립 캐릭터에 컨택",
+          "confidence": "high",
+          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
+          "proposedDefinition": {
+            "effectId": "card-1197-activated-contact-opponent-rested",
+            "cardIds": "1197",
+            "cardNameKo": "괴도 키드",
+            "cardNameJa": "怪盗キッド",
+            "trigger": {
+              "event": "character.activated_ability",
+              "timing": "after"
+            },
+            "activationLabelKo": "상대 슬립 캐릭터에 컨택",
+            "conditions": [],
+            "steps": [
+              {
+                "op": "select_cards",
+                "from": "opponent_field",
+                "min": 1,
+                "max": 1,
+                "optional": false,
+                "filter": {
+                  "allOf": [
+                    {
+                      "field": "card_type",
+                      "operator": "equals",
+                      "value": "character"
+                    },
+                    {
+                      "field": "status",
+                      "operator": "equals",
+                      "value": "rested"
+                    }
+                  ]
+                },
+                "prompt": "컨택할 상대의 슬립 상태 캐릭터를 선택하세요.",
+                "saveAs": "contact_target"
+              },
+              {
+                "op": "start_contact",
+                "target": "vars.contact_target",
+                "allowActiveTarget": false,
+                "allowNewlyPlayed": false
+              }
+            ]
+          },
+          "approvalStatus": "approved",
+          "draftStatus": "dsl_validated_approved",
+          "structuralValidation": {
+            "status": "passed",
+            "errors": []
+          }
         }
       ]
     },
@@ -1976,32 +3387,23 @@
           "candidateId": "pr274-activated-remove-level9-1",
           "sourceText": "【자신의 턴 중】 - 자신의 사건이 【청】 이외의 색을 가질 경우, 자신의 현장에 있는 이 캐릭터를 제외한 다른 캐릭터의 AP를 +1000한다.\n【선언】【슬립】 - 레벨 9 이하의 캐릭터를 1장까지 선택하여 리무브한다.",
           "interpretation": "자신의 턴 중 원하는 타이밍에 이 카드를 슬립시키고, 상대 현장의 레벨 9 이하 캐릭터를 최대 1장 선택해 리무브한다. AI가 공격 전 등 적절한 시점을 판단한다.",
-          "draftStatus": "draft_candidate",
-          "approvalStatus": "pending",
+          "draftStatus": "dsl_validated_approved",
+          "approvalStatus": "approved",
           "confidence": "high",
-          "reviewNotes": "본인 턴 중 발동을 보장하도록 DSL 조건과 서버 발동 게이트를 반영했다.",
+          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
           "proposedDefinition": {
             "effectId": "card-1057-activated-remove-level9",
             "cardIds": [
               "1057"
             ],
             "cardNameKo": "쿠도 신이치",
+            "cardNameJa": "工藤新一",
             "trigger": {
               "event": "character.activated_ability",
-              "timing": "immediate"
+              "timing": "after"
             },
-            "conditions": [
-              {
-                "fact": "turn.is_source_controller_turn",
-                "operator": "equals",
-                "value": true
-              },
-              {
-                "fact": "source.is_active",
-                "operator": "equals",
-                "value": true
-              }
-            ],
+            "activationLabelKo": "레벨 9 이하 캐릭터 리무브",
+            "conditions": [],
             "steps": [
               {
                 "op": "pay_cost",
@@ -2009,7 +3411,7 @@
               },
               {
                 "op": "select_cards",
-                "from": "opponent_field",
+                "from": "both_fields",
                 "min": 0,
                 "max": 1,
                 "optional": true,
@@ -2027,46 +3429,44 @@
                     }
                   ]
                 },
-                "prompt": "리무브할 레벨 9 이하의 상대 캐릭터를 최대 1장 선택하세요.",
+                "prompt": "리무브할 레벨 9 이하 캐릭터를 최대 1장 선택하세요.",
                 "saveAs": "target"
               },
               {
                 "op": "move_cards",
                 "from": "target",
                 "to": "remove_area",
-                "targetOwner": "opponent",
                 "when": {
                   "fact": "vars.target.count",
                   "operator": "greater_than",
                   "value": 0
                 }
               }
-            ],
-            "reviewNotes": {
-              "sourceText": "【宣言】【スリープ】：レベル9以下のキャラを1枚まで選び、リムーブする。",
-              "rationale": "자신의 턴 중 원하는 타이밍에 이 카드를 슬립시키고, 상대 현장의 레벨 9 이하 캐릭터를 최대 1장 선택해 리무브한다. AI가 공격 전 등 적절한 시점을 판단한다.",
-              "confidence": "medium",
-              "targetOwnerAssumption": "opponent_confirmed_by_user"
-            }
+            ]
           },
           "sourceClause": "【선언】【슬립】 - 레벨 9 이하의 캐릭터를 1장까지 선택하여 리무브한다.",
           "manualInterpretationLocked": true,
-          "manualInterpretationLockReason": "사용자 피드백에 따라 수동 보완한 초안. OpenAI가 중복 재생성하지 않도록 보호하지만, 운영 승격 승인 상태는 아님."
+          "manualInterpretationLockReason": "사용자 피드백에 따라 수동 보완한 초안. OpenAI가 중복 재생성하지 않도록 보호하지만, 운영 승격 승인 상태는 아님.",
+          "structuralValidation": {
+            "status": "passed",
+            "errors": []
+          }
         },
         {
           "candidateId": "pr274-continuous-nonblue-case-other-field-ap-1000-2",
           "sourceText": "【自分ターン中】 - 自分の事件が【青】以外の色を持つ場合、自分の現場にいるこのキャラ以外のキャラのAPを＋1000する。",
           "interpretation": "자신의 턴 중 자신의 사건 색에 청 이외의 색이 포함되어 있으면, 자신을 제외한 자신의 현장 캐릭터 전원에게 AP +1000을 부여한다. 순수 백·황뿐 아니라 청백·청녹 같은 복수 색 사건도 해당한다.",
-          "draftStatus": "draft_candidate",
-          "approvalStatus": "pending",
+          "draftStatus": "dsl_validated_approved",
+          "approvalStatus": "approved",
           "confidence": "high",
-          "reviewNotes": "이 정의는 지속 효과이므로 continuous=true로 등록해야 지속 보정 계산기에 포함된다. 자신의 턴이고 사건에 청 이외의 색이 하나라도 포함되면, 원본 카드 자신을 제외한 자기 현장 캐릭터 각각에게 AP +1000을 적용한다. 복수 색 사건도 event_has_non_blue_color 메타데이터로 판정한다.",
+          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
           "proposedDefinition": {
             "effectId": "card-1057-continuous-nonblue-case-other-field-ap-1000",
             "cardIds": [
               "1057"
             ],
             "cardNameKo": "쿠도 신이치",
+            "cardNameJa": "工藤新一",
             "trigger": {
               "event": "continuous.recalculate",
               "timing": "continuous"
@@ -2074,12 +3474,12 @@
             "continuous": true,
             "conditions": [
               {
-                "fact": "turn.is_source_controller_turn",
+                "fact": "player.event.has_non_blue_color",
                 "operator": "equals",
                 "value": true
               },
               {
-                "fact": "player.event.has_non_blue_color",
+                "fact": "turn.is_source_controller_turn",
                 "operator": "equals",
                 "value": true
               }
@@ -2090,18 +3490,18 @@
                 "target": "own_field_characters_except_source",
                 "stat": "ap",
                 "amount": 1000,
-                "modifierId": "non-blue-case-other-field-ap",
+                "modifierId": "non-blue-case-other-field-ap-1000",
                 "duration": "while_condition_true"
               }
-            ],
-            "reviewNotes": {
-              "sourceText": "【自分ターン中】 - 自分の事件が【青】以外の色を持つ場合、自分の現場にいるこのキャラ以外のキャラのAPを＋1000する。",
-              "rationale": "자신의 턴 중, 자신의 사건 색상에 청 이외의 색이 하나라도 포함되어 있으면 자신을 제외한 자신의 현장 캐릭터 전원의 AP를 +1000한다. 사건 색상 정보는 덱 제출 시 저장되는 event_has_non_blue_color 값을 참조하고, 연속 보정 런타임은 원본 이외의 현장 캐릭터에 해당 보정을 반영한다."
-            }
+            ]
           },
           "sourceClause": "【자신의 턴 중】 - 자신의 사건이 【청】 이외의 색을 가질 경우, 자신의 현장에 있는 이 캐릭터를 제외한 다른 캐릭터의 AP를 +1000한다.",
           "manualInterpretationLocked": true,
-          "manualInterpretationLockReason": "사용자 피드백에 따라 수동 보완한 초안. OpenAI가 중복 재생성하지 않도록 보호하지만, 운영 승격 승인 상태는 아님."
+          "manualInterpretationLockReason": "사용자 피드백에 따라 수동 보완한 초안. OpenAI가 중복 재생성하지 않도록 보호하지만, 운영 승격 승인 상태는 아님.",
+          "structuralValidation": {
+            "status": "passed",
+            "errors": []
+          }
         }
       ]
     },
@@ -2123,10 +3523,10 @@
           "candidateId": "d03014-unsupported-trigger-1",
           "sourceText": "자신의 덱에 있는 카드 중 맨 위 3장을 확인한다. 그중에서 【백】 캐릭터를 최대 1장까지 공개하여 패에 추가하고, 나머지는 원하는 순서대로 덱 맨 아래로 옮긴다. 패에서 자신의 파일 에이리어 장 수 이하의 레벨인 【백】 캐릭터를 최대 1장까지 등장시킨다.",
           "interpretation": "프라이빗 아이와 같은 순서이며 대상 카드 색상만 백색으로 다르다.",
-          "draftStatus": "draft_candidate",
-          "approvalStatus": "pending",
+          "draftStatus": "dsl_validated_approved",
+          "approvalStatus": "approved",
           "confidence": "high",
-          "reviewNotes": "event.played 트리거가 이벤트 사용 직후 효과를 시작한다. 덱 상단 3장 확인, 색상에 맞는 캐릭터 1장 공개·손패 이동, 나머지 덱 아래 순서 선택, 파일 수 이하 레벨의 해당 색상 캐릭터 선택·등장을 순차 처리한다. 손패에 적격 카드가 없으면 추가 등장 없이 마친다.",
+          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
           "proposedDefinition": {
             "steps": [
               {
@@ -2403,13 +3803,99 @@
       "sourceText": "【인연 : 쿠도 유사쿠】【해결편】【등장 시】 - 카드를 1장 뽑는다.\n【히라메키】(증거에서 리무브될 때 발동한다) 캐릭터 1장을 선택하여 슬립시킨다.",
       "effectCandidates": [
         {
-          "candidateId": "b06070-review-required-1",
+          "candidateId": "implemented-card-0691-enter-solution-bond-yusaku-draw",
           "sourceText": "【인연 : 쿠도 유사쿠】【해결편】【등장 시】 - 카드를 1장 뽑는다.\n【히라메키】(증거에서 리무브될 때 발동한다) 캐릭터 1장을 선택하여 슬립시킨다.",
-          "interpretation": "인연/해결편 조건을 표현할 fact 경로와 증거 리무브 시 히라메키를 시작하는 DSL trigger를 확인해야 합니다.",
-          "draftStatus": "review_required",
-          "approvalStatus": "pending",
-          "confidence": "low",
-          "reviewNotes": "인연/해결편 조건을 표현할 fact 경로와 증거 리무브 시 히라메키를 시작하는 DSL trigger를 확인해야 합니다."
+          "interpretation": "카드 원문의 character.entered_field 효과를 런타임 DSL로 구현했습니다.",
+          "confidence": "high",
+          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
+          "proposedDefinition": {
+            "effectId": "card-0691-enter-solution-bond-yusaku-draw",
+            "cardIds": [
+              "0691"
+            ],
+            "cardNameKo": "쿠도 유키코",
+            "cardNameJa": "工藤有希子",
+            "trigger": {
+              "event": "character.entered_field",
+              "timing": "after"
+            },
+            "conditions": [
+              {
+                "fact": "player.field.has_card_name",
+                "operator": "equals",
+                "value": "工藤優作"
+              },
+              {
+                "fact": "player.case_phase",
+                "operator": "equals",
+                "value": "solution"
+              }
+            ],
+            "steps": [
+              {
+                "op": "draw_cards",
+                "count": 1,
+                "destination": "hand"
+              }
+            ]
+          },
+          "approvalStatus": "approved",
+          "draftStatus": "dsl_validated_approved",
+          "structuralValidation": {
+            "status": "passed",
+            "errors": []
+          }
+        },
+        {
+          "candidateId": "implemented-card-0691-hirameki-rest-character",
+          "sourceText": "【인연 : 쿠도 유사쿠】【해결편】【등장 시】 - 카드를 1장 뽑는다.\n【히라메키】(증거에서 리무브될 때 발동한다) 캐릭터 1장을 선택하여 슬립시킨다.",
+          "interpretation": "카드 원문의 evidence.card_removed 효과를 런타임 DSL로 구현했습니다.",
+          "confidence": "high",
+          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
+          "proposedDefinition": {
+            "effectId": "card-0691-hirameki-rest-character",
+            "cardIds": [
+              "0691"
+            ],
+            "cardNameKo": "쿠도 유키코",
+            "cardNameJa": "工藤有希子",
+            "trigger": {
+              "event": "evidence.card_removed",
+              "timing": "after"
+            },
+            "conditions": [],
+            "steps": [
+              {
+                "op": "select_cards",
+                "from": "both_fields",
+                "min": 0,
+                "max": 1,
+                "optional": true,
+                "filter": {
+                  "field": "card_type",
+                  "operator": "equals",
+                  "value": "character"
+                },
+                "prompt": "슬립시킬 캐릭터를 최대 1장 선택하세요.",
+                "saveAs": "hirameki_target"
+              },
+              {
+                "op": "rest_cards",
+                "target": "vars.hirameki_target",
+                "when": {
+                  "fact": "vars.hirameki_target.count",
+                  "operator": "greater_than",
+                  "value": 0
+                }
+              }
+            ]
+          },
+          "approvalStatus": "approved",
+          "draftStatus": "dsl_validated_approved",
+          "structuralValidation": {
+            "status": "passed",
+            "errors": []
+          }
         }
       ]
     },
@@ -2453,13 +3939,110 @@
       "sourceText": "【변장 시】 - 카드를 1장 뽑는다. 이 컨택 동안, 이 캐릭터의 AP를 +1000한다.\n【등장 시】 - 자신의 리무브 에이리어에 있는 레벨 4 이하의 【백】 캐릭터를 1장까지 선택하여, 슬립 상태로 등장시킨다.",
       "effectCandidates": [
         {
-          "candidateId": "b02038p-review-required-1",
+          "candidateId": "implemented-card-0205-disguised-draw-and-ap",
           "sourceText": "【변장 시】 - 카드를 1장 뽑는다. 이 컨택 동안, 이 캐릭터의 AP를 +1000한다.\n【등장 시】 - 자신의 리무브 에이리어에 있는 레벨 4 이하의 【백】 캐릭터를 1장까지 선택하여, 슬립 상태로 등장시킨다.",
-          "interpretation": "변장 컨택 단계의 트리거와 해당 컨택에 한정된 AP 변경 지속 시간을 현재 DSL 트리거·duration이 충분히 표현하지 못합니다.",
-          "draftStatus": "review_required",
-          "approvalStatus": "pending",
-          "confidence": "low",
-          "reviewNotes": "변장 컨택 단계의 트리거와 해당 컨택에 한정된 AP 변경 지속 시간을 현재 DSL 트리거·duration이 충분히 표현하지 못합니다."
+          "interpretation": "변장으로 등장한 이 캐릭터가 현재 컨택의 주체일 때 1장 드로우하고 해당 컨택에서 AP+1000.",
+          "confidence": "high",
+          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
+          "proposedDefinition": {
+            "effectId": "card-0205-disguised-draw-and-ap",
+            "cardIds": [
+              "0205"
+            ],
+            "cardNameKo": "괴도 키드",
+            "cardNameJa": "怪盗キッド",
+            "trigger": {
+              "event": "character.disguised",
+              "timing": "after"
+            },
+            "conditions": [],
+            "steps": [
+              {
+                "op": "draw_cards",
+                "count": 1,
+                "destination": "hand"
+              },
+              {
+                "op": "modify_contact_ap",
+                "amount": 1000
+              }
+            ],
+            "notes": "변장으로 등장한 이 캐릭터가 현재 컨택의 주체일 때 1장 드로우하고 해당 컨택에서 AP+1000."
+          },
+          "approvalStatus": "approved",
+          "draftStatus": "dsl_validated_approved",
+          "structuralValidation": {
+            "status": "passed",
+            "errors": []
+          }
+        },
+        {
+          "candidateId": "implemented-card-0205-on-enter-lowlevel-white-rested",
+          "sourceText": "【변장 시】 - 카드를 1장 뽑는다. 이 컨택 동안, 이 캐릭터의 AP를 +1000한다.\n【등장 시】 - 자신의 리무브 에이리어에 있는 레벨 4 이하의 【백】 캐릭터를 1장까지 선택하여, 슬립 상태로 등장시킨다.",
+          "interpretation": "카드 원문의 character.entered_field 효과를 런타임 DSL로 구현했습니다.",
+          "confidence": "high",
+          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
+          "proposedDefinition": {
+            "effectId": "card-0205-on-enter-lowlevel-white-rested",
+            "cardIds": [
+              "0205"
+            ],
+            "cardNameKo": "괴도 키드",
+            "cardNameJa": "怪盗キッド",
+            "trigger": {
+              "event": "character.entered_field",
+              "timing": "after"
+            },
+            "conditions": [],
+            "steps": [
+              {
+                "op": "select_cards",
+                "from": "remove_area",
+                "min": 0,
+                "max": 1,
+                "optional": true,
+                "filter": {
+                  "allOf": [
+                    {
+                      "field": "card_type",
+                      "operator": "equals",
+                      "value": "character"
+                    },
+                    {
+                      "field": "color",
+                      "operator": "equals",
+                      "value": "white"
+                    },
+                    {
+                      "field": "level",
+                      "operator": "less_than_or_equal",
+                      "value": 4
+                    }
+                  ]
+                },
+                "prompt": "리무브 에이리어에서 레벨 4 이하 백 캐릭터를 최대 1장 선택해 슬립 상태로 등장시킵니다.",
+                "saveAs": "deployment"
+              },
+              {
+                "op": "move_cards",
+                "from": "deployment",
+                "to": "field",
+                "entryMethod": "event_effect",
+                "rested": true,
+                "when": {
+                  "fact": "vars.deployment.count",
+                  "operator": "greater_than",
+                  "value": 0
+                }
+              }
+            ]
+          },
+          "approvalStatus": "approved",
+          "draftStatus": "dsl_validated_approved",
+          "structuralValidation": {
+            "status": "passed",
+            "errors": []
+          }
         }
       ]
     },
@@ -2478,13 +4061,110 @@
       "sourceText": "【변장 시】 - 캐릭터 카드를 1장까지 선택하고, 턴 종료 시까지 AP를 2000 감소시킨다.\n【히라메키】(증거에서 리무브될 때 발동한다) 캐릭터 1장을 선택하여 슬립시킨다.",
       "effectCandidates": [
         {
-          "candidateId": "b02045-review-required-1",
+          "candidateId": "implemented-card-0211-disguised-ap-minus-2000",
           "sourceText": "【변장 시】 - 캐릭터 카드를 1장까지 선택하고, 턴 종료 시까지 AP를 2000 감소시킨다.\n【히라메키】(증거에서 리무브될 때 발동한다) 캐릭터 1장을 선택하여 슬립시킨다.",
-          "interpretation": "변장 시점과 증거에서 리무브될 때의 히라메키가 현재 DSL trigger 목록에 없습니다.",
-          "draftStatus": "review_required",
-          "approvalStatus": "pending",
-          "confidence": "low",
-          "reviewNotes": "변장 시점과 증거에서 리무브될 때의 히라메키가 현재 DSL trigger 목록에 없습니다."
+          "interpretation": "카드 원문의 character.disguised 효과를 런타임 DSL로 구현했습니다.",
+          "confidence": "high",
+          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
+          "proposedDefinition": {
+            "effectId": "card-0211-disguised-ap-minus-2000",
+            "cardIds": [
+              "0211"
+            ],
+            "cardNameKo": "괴도 키드",
+            "cardNameJa": "怪盗キッド",
+            "trigger": {
+              "event": "character.disguised",
+              "timing": "after"
+            },
+            "conditions": [],
+            "steps": [
+              {
+                "op": "select_cards",
+                "from": "both_fields",
+                "min": 0,
+                "max": 1,
+                "optional": true,
+                "filter": {
+                  "field": "card_type",
+                  "operator": "equals",
+                  "value": "character"
+                },
+                "prompt": "AP를 턴 종료 시까지 2000 낮출 캐릭터를 최대 1장 선택하세요.",
+                "saveAs": "ap_target"
+              },
+              {
+                "op": "modify_stat",
+                "target": "vars.ap_target",
+                "stat": "ap",
+                "amount": -2000,
+                "duration": "turn_end",
+                "stacking": "add",
+                "when": {
+                  "fact": "vars.ap_target.count",
+                  "operator": "greater_than",
+                  "value": 0
+                }
+              }
+            ]
+          },
+          "approvalStatus": "approved",
+          "draftStatus": "dsl_validated_approved",
+          "structuralValidation": {
+            "status": "passed",
+            "errors": []
+          }
+        },
+        {
+          "candidateId": "implemented-card-0211-hirameki-rest-character",
+          "sourceText": "【변장 시】 - 캐릭터 카드를 1장까지 선택하고, 턴 종료 시까지 AP를 2000 감소시킨다.\n【히라메키】(증거에서 리무브될 때 발동한다) 캐릭터 1장을 선택하여 슬립시킨다.",
+          "interpretation": "카드 원문의 evidence.card_removed 효과를 런타임 DSL로 구현했습니다.",
+          "confidence": "high",
+          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
+          "proposedDefinition": {
+            "effectId": "card-0211-hirameki-rest-character",
+            "cardIds": [
+              "0211"
+            ],
+            "cardNameKo": "괴도 키드",
+            "cardNameJa": "怪盗キッド",
+            "trigger": {
+              "event": "evidence.card_removed",
+              "timing": "after"
+            },
+            "conditions": [],
+            "steps": [
+              {
+                "op": "select_cards",
+                "from": "both_fields",
+                "min": 0,
+                "max": 1,
+                "optional": true,
+                "filter": {
+                  "field": "card_type",
+                  "operator": "equals",
+                  "value": "character"
+                },
+                "prompt": "슬립시킬 캐릭터를 최대 1장 선택하세요.",
+                "saveAs": "hirameki_target"
+              },
+              {
+                "op": "rest_cards",
+                "target": "vars.hirameki_target",
+                "when": {
+                  "fact": "vars.hirameki_target.count",
+                  "operator": "greater_than",
+                  "value": 0
+                }
+              }
+            ]
+          },
+          "approvalStatus": "approved",
+          "draftStatus": "dsl_validated_approved",
+          "structuralValidation": {
+            "status": "passed",
+            "errors": []
+          }
         }
       ]
     },
@@ -2535,8 +4215,276 @@
           "approvalStatus": "not_required",
           "confidence": "low",
           "reviewNotes": "ID:1261의 증거 임계값·해결편 전용 처리는 기존 사건별 네이티브 매치 규칙에서 다룹니다. 이 DSL 카탈로그에 중복 정의하지 않습니다."
+        },
+        {
+          "candidateId": "implemented-card-1261-case-solution-discard-hand",
+          "sourceText": "이 사건이 해결편이 되었을 때, 나는 패 1장을 리무브한다.\n【파트너 청or백】【해결편】【선언】【턴 1】〚뒷면인 증거 2개를 앞면으로 뒤집는다〛: 자신의 현장에 있는 캐릭터 1장을 리무브해도 된다. 그렇게 했을 경우, 상대의 현장에 있는 레벨 7 이하의 MR이 아닌 슬립 상태의 캐릭터를 1장까지 선택하여 패로 옮기고, 상대는 패에서 카드 1장을 리무브한다. 선택한 캐릭터와 ID가 다른 카드를 패에서 리무브한 경우, 상대는 추가로 패에서 카드 1장을 리무브한다.",
+          "interpretation": "카드 원문의 case.solution_entered 효과를 런타임 DSL로 구현했습니다.",
+          "confidence": "high",
+          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
+          "proposedDefinition": {
+            "effectId": "card-1261-case-solution-discard-hand",
+            "cardIds": [
+              "1261"
+            ],
+            "cardNameKo": "코난 VS 괴도 키드",
+            "cardNameJa": "コナンVS怪盗キッド",
+            "trigger": {
+              "event": "case.solution_entered",
+              "timing": "after"
+            },
+            "conditions": [],
+            "steps": [
+              {
+                "op": "select_cards",
+                "from": "hand",
+                "min": 1,
+                "max": 1,
+                "optional": false,
+                "prompt": "사건이 해결편이 되었으므로 리무브할 손패 1장을 선택하세요.",
+                "saveAs": "hand_to_remove",
+                "when": {
+                  "fact": "player.hand.count",
+                  "operator": "greater_than",
+                  "value": 0
+                }
+              },
+              {
+                "op": "move_cards",
+                "from": "hand_to_remove",
+                "to": "remove_area",
+                "when": {
+                  "fact": "vars.hand_to_remove.count",
+                  "operator": "greater_than",
+                  "value": 0
+                }
+              }
+            ]
+          },
+          "approvalStatus": "approved",
+          "draftStatus": "dsl_validated_approved",
+          "structuralValidation": {
+            "status": "passed",
+            "errors": []
+          }
+        },
+        {
+          "candidateId": "implemented-card-1261-conan-vs-kid-case-effect",
+          "sourceText": "이 사건이 해결편이 되었을 때, 나는 패 1장을 리무브한다.\n【파트너 청or백】【해결편】【선언】【턴 1】〚뒷면인 증거 2개를 앞면으로 뒤집는다〛: 자신의 현장에 있는 캐릭터 1장을 리무브해도 된다. 그렇게 했을 경우, 상대의 현장에 있는 레벨 7 이하의 MR이 아닌 슬립 상태의 캐릭터를 1장까지 선택하여 패로 옮기고, 상대는 패에서 카드 1장을 리무브한다. 선택한 캐릭터와 ID가 다른 카드를 패에서 리무브한 경우, 상대는 추가로 패에서 카드 1장을 리무브한다.",
+          "interpretation": "뒷면 증거 2장 공개 · 캐릭터 리무브 및 상대 손패 리무브",
+          "confidence": "high",
+          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
+          "proposedDefinition": {
+            "effectId": "card-1261-conan-vs-kid-case-effect",
+            "cardIds": [
+              "1261"
+            ],
+            "cardNameKo": "코난 VS 괴도 키드",
+            "cardNameJa": "コナンVS怪盗キッド",
+            "trigger": {
+              "event": "case.activated_ability",
+              "timing": "after"
+            },
+            "activationLabelKo": "뒷면 증거 2장 공개 · 캐릭터 리무브 및 상대 손패 리무브",
+            "conditions": [
+              {
+                "fact": "player.case_phase",
+                "operator": "equals",
+                "value": "solution"
+              },
+              {
+                "fact": "player.event.has_detective_vs_kid_trait",
+                "operator": "equals",
+                "value": true
+              },
+              {
+                "fact": "player.partner.color",
+                "operator": "in",
+                "value": [
+                  "blue",
+                  "white"
+                ]
+              },
+              {
+                "fact": "player.evidence.facedown_count",
+                "operator": "greater_than_or_equal",
+                "value": 2
+              }
+            ],
+            "steps": [
+              {
+                "op": "select_cards",
+                "from": "evidence_area",
+                "min": 2,
+                "max": 2,
+                "optional": false,
+                "filter": {
+                  "field": "face_up",
+                  "operator": "equals",
+                  "value": false
+                },
+                "prompt": "앞면으로 뒤집을 뒷면 증거 2장을 선택하세요.",
+                "saveAs": "evidence_to_flip"
+              },
+              {
+                "op": "flip_evidence",
+                "from": "vars.evidence_to_flip",
+                "count": 2
+              },
+              {
+                "op": "select_cards",
+                "from": "field",
+                "min": 1,
+                "max": 1,
+                "optional": false,
+                "targetController": "self",
+                "filter": {
+                  "field": "card_type",
+                  "operator": "equals",
+                  "value": "character"
+                },
+                "prompt": "리무브할 자신의 현장 캐릭터 1장을 선택하세요.",
+                "saveAs": "own_character"
+              },
+              {
+                "op": "move_cards",
+                "from": "own_character",
+                "to": "remove_area"
+              },
+              {
+                "op": "select_cards",
+                "from": "opponent_field",
+                "min": 0,
+                "max": 1,
+                "optional": true,
+                "filter": {
+                  "allOf": [
+                    {
+                      "field": "card_type",
+                      "operator": "equals",
+                      "value": "character"
+                    },
+                    {
+                      "field": "status",
+                      "operator": "equals",
+                      "value": "rested"
+                    },
+                    {
+                      "field": "level",
+                      "operator": "less_than_or_equal",
+                      "value": 7
+                    },
+                    {
+                      "field": "rarity",
+                      "operator": "not_equals",
+                      "value": "MR"
+                    },
+                    {
+                      "field": "rarity",
+                      "operator": "not_equals",
+                      "value": "MRP"
+                    }
+                  ]
+                },
+                "prompt": "상대 현장에서 레벨 7 이하 슬립 상태의 MR/MRP가 아닌 캐릭터를 최대 1장 선택해 손패로 돌립니다.",
+                "saveAs": "returned"
+              },
+              {
+                "op": "move_cards",
+                "from": "returned",
+                "to": "hand",
+                "when": {
+                  "fact": "vars.returned.count",
+                  "operator": "greater_than",
+                  "value": 0
+                }
+              },
+              {
+                "op": "select_cards",
+                "from": "opponent_hand",
+                "min": 1,
+                "max": 1,
+                "optional": false,
+                "prompt": "상대는 손패 1장을 리무브해야 합니다.",
+                "saveAs": "opponent_first_discard",
+                "when": {
+                  "allOf": [
+                    {
+                      "fact": "vars.returned.count",
+                      "operator": "greater_than",
+                      "value": 0
+                    },
+                    {
+                      "fact": "opponent.hand.count",
+                      "operator": "greater_than",
+                      "value": 0
+                    }
+                  ]
+                },
+                "chooser": "opponent"
+              },
+              {
+                "op": "move_cards",
+                "from": "opponent_first_discard",
+                "to": "remove_area",
+                "when": {
+                  "fact": "vars.opponent_first_discard.count",
+                  "operator": "greater_than",
+                  "value": 0
+                }
+              },
+              {
+                "op": "select_cards",
+                "from": "opponent_hand",
+                "min": 1,
+                "max": 1,
+                "optional": false,
+                "prompt": "리무브한 카드의 ID가 되돌린 캐릭터와 달라 추가 손패 1장을 리무브합니다.",
+                "saveAs": "opponent_second_discard",
+                "when": {
+                  "allOf": [
+                    {
+                      "fact": "vars.returned.count",
+                      "operator": "greater_than",
+                      "value": 0
+                    },
+                    {
+                      "fact": "vars.opponent_first_discard.0.card.card_id",
+                      "operator": "not_equals",
+                      "value": {
+                        "fact": "vars.returned.0.card.card_id"
+                      }
+                    },
+                    {
+                      "fact": "opponent.hand.count",
+                      "operator": "greater_than",
+                      "value": 0
+                    }
+                  ]
+                },
+                "chooser": "opponent"
+              },
+              {
+                "op": "move_cards",
+                "from": "opponent_second_discard",
+                "to": "remove_area",
+                "when": {
+                  "fact": "vars.opponent_second_discard.count",
+                  "operator": "greater_than",
+                  "value": 0
+                }
+              }
+            ]
+          },
+          "approvalStatus": "approved",
+          "draftStatus": "dsl_validated_approved",
+          "structuralValidation": {
+            "status": "passed",
+            "errors": []
+          }
         }
-      ]
+      ],
+      "reviewNotes": "사건 해결편 진입 손패 리무브 및 파트너 청/백 조건 선언 능력을 선택된 증거 뒤집기·자신의 캐릭터 리무브·상대 손패 선택까지 연결."
     }
   ],
   "interpretationRules": [
@@ -2597,13 +4545,41 @@
     {
       "fact": "card_name_locale_matching",
       "meaning": "player.field.has_card_name의 name_matches 조건은 한국어·일본어·지원되는 로마자 카드명 별칭을 비교하되 실제 카드명 필드만 검사한다. 효과 텍스트에 이름이 언급된 것만으로는 일치하지 않는다."
+    },
+    {
+      "fact": "field_watch_trigger",
+      "meaning": "현장에 존재하는 카드가 다른 캐릭터의 등장 이벤트를 감시하는 트리거."
+    },
+    {
+      "fact": "case_activated_abilities",
+      "meaning": "사건 카드를 합성 소스로 사용해 선언 능력을 기존 발동 가능 목록과 사용자 선택 UI에 표시."
+    },
+    {
+      "fact": "selected_evidence_flip",
+      "meaning": "선택 UI에서 지정한 뒷면 증거 ID만 앞면으로 전환."
+    },
+    {
+      "fact": "scoped_charge",
+      "meaning": "일반 돌격, 캐릭터 행동용 돌격, 사건 행동용 돌격을 구분해 새로 등장한 카드의 행동 허용 조건에 반영."
+    },
+    {
+      "fact": "temporary_field_return",
+      "meaning": "효과로 등장한 캐릭터를 표시한 턴 종료 시점에 덱 아래로 이동."
+    },
+    {
+      "fact": "contact_ap_effect",
+      "meaning": "컨택 진행 중 선택/비용 처리를 마친 뒤에도 원래 컨택 대상을 복원하고 해당 컨택 AP 보너스를 유지."
+    },
+    {
+      "fact": "disguise_state_inheritance",
+      "meaning": "변장으로 대체된 카드의 AP 보너스·세트 카드·임시 키워드·인연 별명·턴 종료 이동 예약을 변장 캐릭터에 넘김."
     }
   ],
   "dataReadinessAudit": {
     "checkedAt": "2026-10-30",
     "source": "existing card data embedded in the review batch; no OpenAI API generation",
     "cardCount": 33,
-    "effectCandidateCount": 39,
+    "effectCandidateCount": 56,
     "requiredBasicFieldCount": 12,
     "requiredBasicFields": [
       "sourceKey",
@@ -2622,6 +4598,6 @@
     "allCardsHaveRequiredBasicFields": true,
     "sourceTextMatchesAbilityHiramekiCutIn": true,
     "emptyAbilitySectionsAllowed": true,
-    "note": "Empty abilityKo, hirameki, or cutIn is valid when the card has no text in that section. The fields themselves must exist. This audit is rechecked by validateDraftBatch."
+    "note": "백청덱 카드와 명시적으로 남겨 둔 구현 대상의 DSL 후보는 서버 카탈로그에 등록하고 런타임 동작을 연결했습니다. 자동 구조 검증 통과와 카드 해석/런타임 검증은 구분하여 관리합니다."
   }
 }
