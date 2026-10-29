@@ -42,7 +42,7 @@ function matchesInternalCardId(card: any, internalId: string): boolean {
   const wanted = String(internalId).replace(/^0+/u, "");
   return cardIdentifierValues(card).some((value) => {
     const normalized = value.toLocaleUpperCase();
-    const digits = value.replace(/\\D/gu, "").replace(/^0+/u, "");
+    const digits = value.replace(/\D/gu, "").replace(/^0+/u, "");
     return normalized === String(internalId).toLocaleUpperCase()
       || normalized === String(internalId).replace(/^0+/u, "").toLocaleUpperCase()
       || (wanted.length > 0 && digits === wanted);
@@ -67,7 +67,7 @@ function hasCharge(card: any): boolean {
 function isDetectiveVsKidCycleEvent(card: any): boolean {
   const aliases = ["1215", "B11049P2", "B11049P", "B11049"];
   return cardIdentifierValues(card).some((value) => aliases.includes(value.toLocaleUpperCase())
-    || value.replace(/\\D/gu, "").replace(/^0+/u, "") === "1215");
+    || value.replace(/\D/gu, "").replace(/^0+/u, "") === "1215");
 }
 function normalizedColor(value: unknown): string {
   const token = String(value ?? "").trim().toLocaleLowerCase();
