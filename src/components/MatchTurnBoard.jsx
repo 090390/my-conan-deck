@@ -281,7 +281,44 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
         || pendingAction.chooser_user_id === aiBoard.user_id
         || needsAiAcknowledgement
       ));
-      return state.current_turn_user_id === aiBoard.user_id || aiMustRespond;
+
+      // PR181 is an "any timing" ability: if the AI has an active copy and a legal
+      // level-4-or-lower Tokyo Metropolitan Police card in its remove area, let the
+      // server-side AI loop run even during the human's turn. The SQL activation
+      // endpoint still filters and authorizes the exact ability before it can be used.
+      const aiField = Array.isArray(aiBoard.field_cards) ? aiBoard.field_cards : [];
+      const aiRemove = Array.isArray(state.opponent_remove_cards) ? state.opponent_remove_cards : [];
+      const hasActivePr181 = aiField.some((card) => {
+        const values = [
+          card?.key, card?.card_id, card?.cardId, card?.database_id, card?.databaseId,
+          card?.card_num, card?.cardNum, card?.id,
+          card?.sourceData?.id, card?.sourceData?.databaseId, card?.sourceData?.database_id,
+        ].map((value) => String(value ?? "").trim().toLocaleUpperCase()).filter(Boolean);
+        const isPr181 = values.includes("PR181") || values.some((value) => {
+          const digits = value.replace(/\D/gu, "").replace(/^0+/u, "");
+          return digits === "732";
+        });
+        return isPr181 && !card?.rested && String(card?.status || "active") === "active";
+      });
+      const hasLegalTokyoPoliceTarget = aiRemove.some((card) => {
+        const rawTraits = [
+          card?.traits, card?.trait, card?.characteristics, card?.characteristic,
+          card?.category1, card?.category2, card?.category3,
+          card?.sourceData?.traits, card?.sourceData?.trait,
+          card?.sourceData?.category1, card?.sourceData?.category2, card?.sourceData?.category3,
+        ].flatMap((value) => Array.isArray(value) ? value : value == null ? [] : [value])
+          .map((value) => String(value)).join(" ");
+        const level = Number(card?.cost ?? card?.level ?? card?.level_number ?? card?.levelNumber);
+        return String(card?.card_type || card?.type || "").toLocaleLowerCase() === "character"
+          && Number.isFinite(level) && level <= 4
+          && /警視庁|警視廳|경시청/u.test(rawTraits);
+      });
+      const canUsePr181AnyTime = !pendingAction && !state.game_over
+        && String(state.phase || "playing") === "playing"
+        && state.current_turn_user_id !== aiBoard.user_id
+        && hasActivePr181 && hasLegalTokyoPoliceTarget;
+
+      return state.current_turn_user_id === aiBoard.user_id || aiMustRespond || canUsePr181AnyTime;
     };
     if (!needsAiAction(game)) return;
 
@@ -350,7 +387,8 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
     })();
   }, [
     isAIBattle, roomId, userId, game?.boards, game?.state_version, game?.current_turn_user_id,
-    game?.turn_number, game?.turn_step, game?.pending_action, game?.game_over, refresh,
+    game?.turn_number, game?.turn_step, game?.pending_action, game?.game_over,
+    game?.opponent_remove_cards, refresh,
   ]);
 
   const runAction = useCallback(async (action, payload = {}) => {
