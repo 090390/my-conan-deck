@@ -131,33 +131,42 @@ function matchesDslFilter(card: any, filter: any): boolean {
   if (!filter || typeof filter !== "object") return true;
   if (Array.isArray(filter.allOf)) return filter.allOf.every((part: any) => matchesDslFilter(card, part));
   if (Array.isArray(filter.anyOf)) return filter.anyOf.some((part: any) => matchesDslFilter(card, part));
+  if (filter.not) return !matchesDslFilter(card, filter.not);
   const field = String(filter.field || "");
   const op = String(filter.operator || "");
   const expected = filter.value;
   let actual: any;
   switch (field) {
-    case "card_type": actual = isCharacter(card) ? "character" : String(card?.card_type || "").toLowerCase(); break;
+    case "card_type": actual = isCharacter(card) ? "character" : String(card?.card_type || card?.type || "").toLowerCase(); break;
     case "level": actual = cardCost(card); break;
     case "ap_current": actual = cardAp(card); break;
     case "is_active": actual = isActive(card); break;
-    case "color": actual = String(card?.color || card?.color_key || card?.colorKo || "").toLowerCase(); break;
+    case "status": actual = String(card?.status || (card?.rested ? "rested" : "active")).toLowerCase(); break;
+    case "face_up": actual = Boolean(card?.face_up ?? card?.faceUp ?? card?.is_face_up ?? card?.isFaceUp ?? false); break;
+    case "rarity": actual = String(card?.rarity || card?.rare || card?.rarity_key || "").toUpperCase(); break;
+    case "color": actual = normalizedColor(card?.color || card?.color_key || card?.colorKo || card?.color_ja); break;
+    case "card_id":
+      if (op === "equals") return matchesInternalCardId(card, String(expected ?? ""));
+      if (op === "not_equals") return !matchesInternalCardId(card, String(expected ?? ""));
+      actual = cardIdentifierValues(card).map((value) => value.toLocaleUpperCase());
+      break;
     case "trait": return op === "has_trait" ? hasTrait(card, expected) : false;
     case "card_name": {
-      const haystack = cardNameText(card);
       if (op === "name_matches") return matchesCardName(card, expected);
       if (op === "in") return Array.isArray(expected) && expected.some((name) => matchesCardName(card, name));
       actual = String(card?.name || card?.card_name || "");
       break;
     }
     case "keyword": {
-      const haystack = JSON.stringify(card || {}).toLocaleLowerCase();
-      if (op === "has_keyword") return haystack.includes(String(expected ?? "").toLocaleLowerCase());
-      actual = haystack;
+      const values = dslKeywordValues(card);
+      if (op === "has_keyword") return values.includes(String(expected ?? "").toLocaleLowerCase());
+      actual = values;
       break;
     }
     default: actual = card?.[field];
   }
-  if (op === "equals") return actual === expected;
+  if (op === "equals") return Array.isArray(actual) ? actual.includes(String(expected).toLocaleUpperCase()) : actual === expected;
+  if (op === "not_equals") return Array.isArray(actual) ? !actual.includes(String(expected).toLocaleUpperCase()) : actual !== expected;
   if (op === "in") return Array.isArray(expected) && expected.includes(actual);
   if (op === "less_than") return Number(actual) < Number(expected);
   if (op === "less_than_or_equal") return Number(actual) <= Number(expected);
@@ -176,55 +185,100 @@ function chooseActivatedAbility(state: any, aiId: string) {
   const enemyField = Array.isArray(opponent.field_cards) ? opponent.field_cards : [];
   const hand = Array.isArray(state?.my_hand) ? state.my_hand : [];
   const removeArea = Array.isArray(state?.my_remove_cards) ? state.my_remove_cards : [];
+  const ownEvidenceCount = Math.max(0, Number(me.evidence_count || 0));
+
   for (const ability of activations) {
     const sourceId = String(ability?.source_instance_id || "");
     const definition = ability?.definition;
     if (!definition || !Array.isArray(definition.steps)) continue;
-    // 사건 카드는 현장 인스턴스가 아닌 합성 source로 전달된다. 서버 RPC가
-    // 사건 단계·증거·파트너 조건을 미리 검증했으므로 별도 액션으로 발동한다.
+    // Case abilities use a synthetic source. The server RPC has already checked the
+    // solution phase, partner colour, evidence count and per-turn use limit.
     if (sourceId.startsWith("case:")) {
       return { action: "activate_case_effect", payload: { effect_id: String(ability?.effect_id || "") } };
     }
     const source = ownField.find((card: any) => String(card?.instance_id || "") === sourceId);
     if (!source || !isActive(source)) continue;
+
     const selections: Array<{ step: any; targets: any[] }> = [];
+    const unresolvedVars = new Set<string>();
     let invalid = false;
-    for (const step of definition.steps.filter((candidate: any) => candidate?.op === "select_cards")) {
+    for (const step of definition.steps) {
+      if (step?.op === "offer_reaction" && step.saveAs) {
+        unresolvedVars.add(String(step.saveAs));
+        continue;
+      }
+      if (step?.op !== "select_cards") continue;
+      const whenText = JSON.stringify(step.when || {});
+      if ([...unresolvedVars].some((name) => whenText.includes(`vars.${name}`))) {
+        if (step.saveAs) unresolvedVars.add(String(step.saveAs));
+        continue;
+      }
+
       let candidates: any[] = [];
       const from = String(step.from || "");
       if (from === "opponent_field") candidates = enemyField;
-      else if (from === "field") candidates = ownField;
+      else if (from === "field" || from === "own_field" || from === "self_field") candidates = ownField;
+      else if (from === "both_fields") candidates = [...ownField, ...enemyField];
       else if (from === "remove_area") candidates = removeArea;
       else if (from === "hand") candidates = hand;
-      else if (from === "deck") candidates = [];
-      else if (/^vars\./u.test(from)) continue;
-      else continue;
-      let validTargets = candidates.filter((card: any) => matchesDslFilter(card, step.filter));
+      else if (from === "attached_cards") {
+        candidates = ownField.flatMap((parent: any) => {
+          const attached = parent?.stacked_cards || parent?.under_cards || parent?.attached_cards || [];
+          return Array.isArray(attached) ? attached.map((entry: any) => entry?.card || entry) : [];
+        });
+      } else if (from === "evidence_area") {
+        candidates = Array.from({ length: ownEvidenceCount }, (_, index) => ({
+          instance_id: `evidence:${index}`, card_type: "evidence", type: "evidence", face_up: false,
+        }));
+      } else if (from === "opponent_hand") {
+        const count = Math.max(0, Number(opponent.hand_count || opponent.hand_size || state?.opponent_hand_count || 0));
+        candidates = Array.from({ length: count }, (_, index) => ({
+          instance_id: `opponent-hand:${index}`, card_type: "unknown",
+        }));
+      } else if (from === "deck") candidates = [];
+      else if (/^vars\./u.test(from)) {
+        if (step.saveAs) unresolvedVars.add(String(step.saveAs));
+        continue;
+      } else {
+        if (step.saveAs) unresolvedVars.add(String(step.saveAs));
+        continue;
+      }
+
+      let validTargets = from === "evidence_area"
+        ? candidates
+        : candidates.filter((card: any) => matchesDslFilter(card, step.filter));
       const statStep = definition.steps.find((candidate: any) =>
-        candidate?.op === "modify_stat" && String(candidate.target || "").replace(/^vars\./u, "") === String(step.saveAs || ""));
-      if (statStep && from === "field") {
-        // A rested source is being slept, so favor a different active teammate for an AP buff.
+        candidate?.op === "modify_stat"
+        && String(candidate.target || "").replace(/^vars\./u, "") === String(step.saveAs || ""));
+      if (statStep && (from === "field" || from === "both_fields")) {
         const preferred = validTargets.filter((card: any) => isActive(card)
           && String(card.instance_id || "") !== sourceId);
         validTargets = preferred;
       }
       selections.push({ step, targets: validTargets });
       const min = Math.max(0, Number(step.min || 0));
-      if (validTargets.length < min) { invalid = true; break; }
+      if (validTargets.length < min) {
+        invalid = true;
+        break;
+      }
       if (validTargets.length === 0 && min === 0) {
-        // Don't spend a sleep cost for an ability whose meaningful target is absent.
-        if (definition.steps.some((candidate: any) => candidate?.op === "pay_cost")) {
-          invalid = true; break;
+        const feedsDeployment = definition.steps.some((candidate: any) =>
+          candidate?.op === "move_cards"
+          && String(candidate?.from || "") === `vars.${String(step.saveAs || "")}`
+          && String(candidate?.to || "") === "field");
+        if (definition.steps.some((candidate: any) => candidate?.op === "pay_cost") || feedsDeployment) {
+          invalid = true;
+          break;
         }
       }
+      if (step.saveAs) unresolvedVars.add(String(step.saveAs));
     }
     if (invalid) continue;
 
-    // If the ability selects an opponent target, spend the source sleep only when a real target exists.
-    const hasOpponentTarget = selections.some(({step, targets}) => step.from === "opponent_field" && targets.length > 0);
-    const hasOwnFieldTarget = selections.some(({step, targets}) => step.from === "field" && targets.length > 0);
+    // Avoid paying costs when no actual target exists; non-field zones (e.g. remove/evidence)
+    // are valid meaningful targets too, including PR181's remove-area deployment.
     if (definition.steps.some((step: any) => step?.op === "pay_cost")
-      && selections.length > 0 && !hasOpponentTarget && !hasOwnFieldTarget) continue;
+      && selections.length > 0 && !selections.some(({ targets }) => targets.length > 0)) continue;
 
     return { action: "activate_card_effect", payload: { source_instance_id: sourceId, effect_id: ability.effect_id } };
   }
@@ -456,7 +510,10 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
     // hand-cycling fallback even when no character can currently be deployed.
     const eventKey = String(me.event_key || me.eventKey || me.event_rule_code || me.eventRuleCode || "").toLocaleUpperCase();
     const partnerColor = normalizedColor(me.partner_color || me.partnerColor
-      || me.partner?.color || me.partner_card?.color || me.partnerCard?.color);
+      || me.partner?.color || me.partner_card?.color || me.partnerCard?.color
+      || me.partner_mr_card?.color || me.partnerMRCard?.color
+      || me.partner_non_mr_cards?.[0]?.color || me.partnerNonMrCards?.[0]?.color
+      || me.partner_non_mr_cards?.[0]?.card?.color || me.partnerNonMrCards?.[0]?.card?.color);
     const isDetectiveVsKidCase = ["B11098", "B11098P", "1261", "CONAN_VS_KID_1261"].includes(eventKey);
     const cycleEvent = hand.filter((card: any) => isEvent(card) && isDetectiveVsKidCycleEvent(card)
       && cardCost(card) <= level).sort((a: any, b: any) => cardCost(a) - cardCost(b))[0];
@@ -667,7 +724,14 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
         decision = { action: "card_effect_continue", payload: { decision: "acknowledge" } };
       } else if (pending.type === "card_effect_reaction") {
         const choices = Array.isArray(pending.choices) ? pending.choices : [];
-        const choice = choices.includes("pass") ? "pass" : choices[0];
+        const reactionId = String(pending.reaction_id || pending.reactionId || "");
+        let choice = choices.includes("pass") ? "pass" : choices[0];
+        // This bond ability offers hand or attachment as the cost. Prefer hand only
+        // when one is available; otherwise use an attached card if the effect offered it.
+        if (reactionId === "b05052-cost-zone") {
+          if (hand.length > 0 && choices.includes("hand")) choice = "hand";
+          else if (choices.includes("attachment")) choice = "attachment";
+        }
         if (choice) decision = { action: "card_effect_continue", payload: { choice } };
       }
     }
