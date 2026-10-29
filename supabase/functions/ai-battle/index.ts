@@ -815,7 +815,13 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
       }
     }
     if (!decision) {
-      decision = state.current_turn_user_id === battle.ai_user_id || pending
+      const canResolveCaseChargeNow = canUseAnyTiming
+        && state.current_turn_user_id !== battle.ai_user_id
+        && (Array.isArray(state?.boards) ? state.boards : [])
+          .filter((board: any) => board.user_id === battle.ai_user_id)
+          .some((board: any) => (Array.isArray(board.field_cards) ? board.field_cards : [])
+            .some((card: any) => isCharacter(card) && isActive(card) && hasCaseOnlyCharge(card)));
+      decision = state.current_turn_user_id === battle.ai_user_id || pending || canResolveCaseChargeNow
         ? chooseTurnAction(state, battle.ai_user_id, battle.last_next_hint_turn_number)
         : chooseActivatedAbility(state, battle.ai_user_id);
     }
