@@ -946,6 +946,13 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
           <button type="button" style={{ ...st.smallButton, opacity: cardStatus !== "active" || notReadyForCharacterAction ? .72 : 1, borderColor: selectedAttacker === instance.instance_id ? "#fb7185" : "rgba(255,255,255,.13)" }} disabled={loading} onClick={() => { if (cardStatus !== "active") { showBlockedReason("슬립/스턴 상태의 캐릭터는 공격자로 지정할 수 없습니다."); return; } if (notReadyForCharacterAction) { showBlockedReason("등장 후 1턴이 지나지 않아 캐릭터 컨택을 할 수 없습니다. 돌격[캐릭터] 또는 즉시 행동 옵션을 확인해 주세요."); return; } setSelectedAttacker((current) => current === instance.instance_id ? "" : instance.instance_id); }}>{selectedAttacker === instance.instance_id ? "공격자 선택 해제" : "공격자로 선택"}</button>
           <button type="button" style={{ ...st.smallButton, opacity: cardStatus !== "active" || notReadyForCaseAction ? .72 : 1 }} disabled={loading} onClick={() => { if (cardStatus !== "active") { showBlockedReason("슬립/스턴 상태의 캐릭터는 공격할 수 없습니다."); return; } if (notReadyForCaseAction) { showBlockedReason("등장 후 1턴이 지나지 않아 사건 행동을 할 수 없습니다. 돌격[사건] 또는 즉시 행동 옵션을 확인해 주세요."); return; } if (!opponentBoard?.evidence_count) { showBlockedReason("상대 증거 에이리어에 공격할 증거가 없습니다."); return; } void runAction("attack_evidence", { attacker_instance_id: instance.instance_id, target_user_id: opponentBoard?.user_id, allow_newly_played: canActOnFreshCharacter(instance, "case") }); }}>상대 증거 공격</button>
         </div>}
+        {mine && !isEvent && !isMyTurn && !game?.game_over && game?.turn_step === "main" && !pending
+          && cardStatus === "active" && cardHasDslKeyword(instance, ["charge_case"])
+          && <div style={{ display: "grid", gap: 4, marginTop: 5 }}>
+            <button type="button" style={{ ...st.smallButton, borderColor: "#fbbf24", color: "#fbbf24" }} disabled={loading}
+              title="돌격[사건]: 상대 턴에도 사건 추리를 즉시 수행할 수 있습니다."
+              onClick={() => invokeInvestigate(instance)}>추리 · 돌격[사건]</button>
+          </div>}
         {canManage && <>
           <details style={{ marginTop: 5 }}><summary style={{ cursor: "pointer", fontSize: 8, color: "#8796ac" }}>효과 처리</summary><div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 4, marginTop: 5 }}>
             {!isEvent && (cardStatus === "active" || cardStatus === "stunned") && <button type="button" style={st.smallButton} disabled={loading} onClick={() => { if (window.confirm(`${nameOf(instance)} 카드를 슬립 상태로 만들까요?`)) void restCharacterManually(instance, ownerId); }}>슬립</button>}
