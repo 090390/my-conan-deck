@@ -48,11 +48,11 @@
         {
           "candidateId": "b06088-on-enter-search-keishicho-1",
           "sourceText": "【등장 시】 - 자신의 덱에서 위쪽부터 3장의 카드를 확인한다. 그중에서 〚특징 [경시청]〛을 가진 캐릭터 카드를 최대 1장까지 공개하여 패에 추가하고, 나머지는 원하는 순서대로 덱 밑으로 옮긴다.",
-          "interpretation": "등장 시 덱 위 최대 3장을 확인한다. 그중 특징 [경시청]인 캐릭터를 최대 1장 선택해 공개한다. 상대가 공개된 카드를 실제로 확인하고 확인 완료를 누른 뒤 손패로 이동한다. 적격 카드가 없거나 선택하지 않으면 공개와 손패 이동 없이 확인한 카드들을 원하는 순서로 덱 아래에 둔다.",
+          "interpretation": "등장 시 덱 위 최대 3장을 확인한다. 그중 특징 [경시청]인 캐릭터를 최대 1장 선택해 공개한다. 상대는 공개된 카드를 실제로 확인하고 확인 완료를 눌러야 이후 손패 이동과 덱 아래 정리가 진행된다. 적격 카드가 없거나 선택하지 않으면 공개와 손패 이동 없이 확인한 카드들을 원하는 순서로 덱 아래에 둔다.",
           "draftStatus": "draft_candidate",
           "approvalStatus": "pending",
           "confidence": "high",
-          "reviewNotes": "reveal_cards.awaitAcknowledgement=true로 설정했다. 이제 상대에게 공개한 카드가 확인용 모달에 표시되고, 상대가 확인 완료를 눌러야 뒤이은 손패 이동과 덱 아래 정리가 진행된다. 확인한 3장 전체를 displayVariable로 표시해 적격 카드가 없는 경우에도 순서를 정할 수 있다.",
+          "reviewNotes": "reveal_cards의 수신 대상은 opponent이고 공개 확인을 기다리도록 awaitAcknowledgement=true로 설정했다. 상대에게 카드가 실제로 표시되고 확인 완료를 누른 뒤에만 손패 이동 단계가 진행된다. displayVariable=seen으로 확인한 3장도 선택 모달에서 보이게 해 적격 카드가 없는 경우 전체 순서를 정할 수 있다.",
           "proposedDefinition": {
             "effectId": "card-0707-on-enter-search-keishicho",
             "cardIds": [
@@ -170,7 +170,7 @@
                 "to": [
                   "opponent"
                 ],
-                "awaitAcknowledgement": false,
+                "awaitAcknowledgement": true,
                 "when": {
                   "fact": "vars.selected.count",
                   "operator": "greater_than",
@@ -194,10 +194,9 @@
                 "order": "player_choice"
               }
             ],
-            "runtimeBlockers": [
-              "awaitAcknowledgement=false 경로가 선택된 카드의 공개 정보를 양측에게 표시하지 않는다. 승인 대기 없이 공유 공개하는 런타임 동작이 필요하다."
-            ],
-            "emptyEligibleSetBehavior": "선택 대상이 없으면 reveal_cards와 move_cards를 건너뛰고 확인한 카드를 원하는 순서로 덱 아래에 둔다."
+            "runtimeBlockers": [],
+            "emptyEligibleSetBehavior": "선택 대상이 없으면 reveal_cards와 move_cards를 건너뛰고 확인한 카드를 원하는 순서로 덱 아래에 둔다.",
+            "confirmationSemantics": "상대 확인은 실제 공개 정보를 표시하기 위한 필수 절차이며, 확인 완료 전에는 다음 효과 단계가 진행되지 않는다."
           },
           "sourceClause": "【등장 시】 - 자신의 덱에서 위쪽부터 3장의 카드를 확인한다. 그중에서 〚특징 [경시청]〛을 가진 캐릭터 카드를 최대 1장까지 공개하여 패에 추가하고, 나머지는 원하는 순서대로 덱 밑으로 옮긴다.",
           "manualInterpretationLocked": true,
@@ -226,7 +225,7 @@
           "draftStatus": "draft_candidate",
           "approvalStatus": "pending",
           "confidence": "medium",
-          "reviewNotes": "대상은 상대 현장으로 확인됐다. 두 번째 능력(파트너 황·FILE5·슬립 비용)은 별도 후보로 분리했으며, 현재 런타임에는 FILE 수 조건 fact가 없어 검토 필요 상태로 남긴다.",
+          "reviewNotes": "등장 시 효과에는 FILE 조건이 없다. 별도 소유 위치 수식어 없이 캐릭터를 리무브하므로 상대 현장의 레벨 7 이하 캐릭터를 최대 1장 선택한다. FILE5는 두 번째 선언·슬립 능력에만 적용되며, 해당 후보는 player.file.count >= 5로 표현한다.",
           "proposedDefinition": {
             "effectId": "card-0808-on-enter-remove-level7",
             "cardIds": [
@@ -1352,7 +1351,7 @@
           "draftStatus": "draft_candidate",
           "approvalStatus": "pending",
           "confidence": "high",
-          "reviewNotes": "비청색 포함 조건 fact와 원본 캐릭터를 제외한 자신의 현장 캐릭터 전체를 대상으로 하는 연속 AP 보정 명령을 런타임에 추가했다.",
+          "reviewNotes": "이 정의는 지속 효과이므로 continuous=true로 등록해야 지속 보정 계산기에 포함된다. 자신의 턴이고 사건에 청 이외의 색이 하나라도 포함되면, 원본 카드 자신을 제외한 자기 현장 캐릭터 각각에게 AP +1000을 적용한다. 복수 색 사건도 event_has_non_blue_color 메타데이터로 판정한다.",
           "proposedDefinition": {
             "effectId": "card-1057-continuous-nonblue-case-other-field-ap-1000",
             "cardIds": [
@@ -1649,5 +1648,30 @@
       "fact": "own_turn_activated_abilities",
       "meaning": "[선언][슬립] 능력은 본인 턴의 begin/file/main 단계 중 진행 중인 선택이나 효과가 없을 때 발동할 수 있다. AI는 활성 정의와 유효 대상을 바탕으로 시점을 판단한다."
     }
-  ]
+  ],
+  "dataReadinessAudit": {
+    "checkedAt": "2026-10-30",
+    "source": "existing card data embedded in the review batch; no OpenAI API generation",
+    "cardCount": 33,
+    "effectCandidateCount": 37,
+    "requiredBasicFieldCount": 12,
+    "requiredBasicFields": [
+      "sourceKey",
+      "databaseId",
+      "cardKey",
+      "internalCardId",
+      "nameKo",
+      "typeKo",
+      "colorKo",
+      "rarityKo",
+      "abilityKo",
+      "hirameki",
+      "cutIn",
+      "sourceText"
+    ],
+    "allCardsHaveRequiredBasicFields": true,
+    "sourceTextMatchesAbilityHiramekiCutIn": true,
+    "emptyAbilitySectionsAllowed": true,
+    "note": "Empty abilityKo, hirameki, or cutIn is valid when the card has no text in that section. The fields themselves must exist. This audit is rechecked by validateDraftBatch."
+  }
 }
