@@ -2589,7 +2589,7 @@
     "checkedAt": "2026-10-30",
     "source": "existing card data embedded in the review batch; no OpenAI API generation",
     "cardCount": 33,
-    "effectCandidateCount": 37,
+    "effectCandidateCount": 39,
     "requiredBasicFieldCount": 12,
     "requiredBasicFields": [
       "sourceKey",
