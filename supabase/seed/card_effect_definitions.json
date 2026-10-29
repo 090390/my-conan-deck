@@ -1039,6 +1039,105 @@
           "includePartnerArea": true
         }
       ]
+    },
+    {
+      "steps": [
+        {
+          "op": "grant_keyword",
+          "target": "source_character",
+          "keyword": "charge",
+          "duration": "turn_end",
+          "displayNameKo": "돌격"
+        }
+      ],
+      "cardIds": [
+        "0706"
+      ],
+      "trigger": {
+        "event": "character.entered_field",
+        "timing": "after"
+      },
+      "effectId": "card-0706-on-enter-partner-yellow-charge",
+      "cardNameJa": "萩原千速",
+      "cardNameKo": "하기와라 치하야",
+      "conditions": [
+        {
+          "fact": "player.partner.color",
+          "value": "yellow",
+          "operator": "equals"
+        }
+      ],
+      "reviewNotes": {
+        "rationale": "파트너 색상이 황일 때 등장한 턴부터 액션할 수 있도록 턴 종료까지 돌격을 부여한다.",
+        "sourceText": "【パートナー黄】 - 〚突撃〛"
+      }
+    },
+    {
+      "steps": [
+        {
+          "op": "peek_top_cards",
+          "count": 3,
+          "saveAs": "seen",
+          "allowFewer": true
+        },
+        {
+          "op": "filter_cards",
+          "from": "seen",
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "value": "character",
+                "operator": "equals"
+              },
+              {
+                "field": "trait",
+                "value": "경찰",
+                "operator": "has_trait"
+              }
+            ]
+          },
+          "saveAs": "police_cards"
+        },
+        {
+          "op": "move_cards",
+          "to": "remove_area",
+          "from": "seen"
+        },
+        {
+          "op": "grant_keyword",
+          "when": {
+            "fact": "vars.police_cards.count",
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "target": "source_character",
+          "keyword": "charge",
+          "duration": "turn_end",
+          "displayNameKo": "돌격"
+        }
+      ],
+      "cardIds": [
+        "0619"
+      ],
+      "trigger": {
+        "event": "character.entered_field",
+        "timing": "after"
+      },
+      "effectId": "card-0619-on-enter-remove-top-three-police-charge",
+      "cardNameJa": "諸伏景光",
+      "cardNameKo": "모로후시 히로미츠",
+      "conditions": [
+        {
+          "fact": "player.partner.color",
+          "value": "yellow",
+          "operator": "equals"
+        }
+      ],
+      "reviewNotes": {
+        "rationale": "파트너가 황색일 때 등장하면서 덱 위 최대 3장을 실제 리무브 에이리어로 옮긴다. 그 카드 중 특징 [경찰]인 캐릭터가 한 장 이상 있으면 이 캐릭터에게 턴 종료까지 돌격을 부여한다.",
+        "sourceText": "【パートナー黄】【登場時】デッキの上から3枚をリムーブしてもよい。このことにより〚特徴［警察］〛を持つキャラがリムーブされた場合、このキャラはターン終了時まで〚突撃〛を得る。"
+      }
     }
   ]
 }
