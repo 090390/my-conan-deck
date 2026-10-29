@@ -31,6 +31,142 @@ function isActive(card: any) {
 function cardStrength(card: any) {
   return cardAp(card) * 2 + Math.max(0, 4 - cardCost(card)) * 250 + Number(card?.lp || 0) * 20;
 }
+function cardTraits(card: any): string[] {
+  const source = card?.sourceData && typeof card.sourceData === "object" ? card.sourceData
+    : card?.raw && typeof card.raw === "object" ? card.raw : {};
+  const values = [card?.traits, card?.category1, card?.category2, card?.category3,
+    source?.traits, source?.category1, source?.category2, source?.category3];
+  return values.flatMap((value) => Array.isArray(value) ? value.map(String)
+    : value == null ? [] : String(value).split(/[、,，;；|｜]/u))
+    .map((value) => value.trim().toLocaleLowerCase()).filter(Boolean);
+}
+function cardNameText(card: any): string {
+  const source = card?.sourceData && typeof card.sourceData === "object" ? card.sourceData
+    : card?.raw && typeof card.raw === "object" ? card.raw : {};
+  return [card?.name, card?.name_ja, card?.card_name, card?.card_id, card?.card_num,
+    source?.name, source?.name_ja, source?.card_name, source?.card_id, source?.card_num]
+    .map((value) => String(value ?? "")).join(" ").toLocaleLowerCase();
+}
+function normalizedRuleToken(value: unknown): string {
+  const token = String(value ?? "").trim().toLocaleLowerCase();
+  const aliases: Record<string, string[]> = {
+    "경찰": ["경찰", "警察", "police"],
+    "경시청": ["경시청", "警視庁", "警視廳", "tokyo metropolitan police"],
+    "후루야 레이": ["후루야 레이", "降谷零", "降谷 零", "furuya rei", "rei furuya"],
+    "모로후시 히로미츠": ["모로후시 히로미츠", "諸伏景光", "もろふし ひろみつ", "hiromitsu morofushi"],
+    "다테 와타루": ["다테 와타루", "伊達航", "wataru date"],
+    "하기와라 켄지": ["하기와라 켄지", "萩原研二", "kenji hagiwara"],
+    "마츠다 진페이": ["마츠다 진페이", "松田陣平", "jinpei matsuda"],
+  };
+  return (aliases[token] || [token])[0] || token;
+}
+function hasTrait(card: any, expected: unknown): boolean {
+  const token = String(expected ?? "").trim().toLocaleLowerCase();
+  const aliases: Record<string, string[]> = {
+    "경찰": ["경찰", "警察", "police"],
+    "경시청": ["경시청", "警視庁", "警視廳", "tokyo metropolitan police"],
+  };
+  const values = aliases[token] || [token];
+  const haystack = cardTraits(card).join(" ") + " " + cardNameText(card);
+  return values.some((value) => value && haystack.includes(value.toLocaleLowerCase()));
+}
+function matchesDslFilter(card: any, filter: any): boolean {
+  if (!filter || typeof filter !== "object") return true;
+  if (Array.isArray(filter.allOf)) return filter.allOf.every((part: any) => matchesDslFilter(card, part));
+  if (Array.isArray(filter.anyOf)) return filter.anyOf.some((part: any) => matchesDslFilter(card, part));
+  const field = String(filter.field || "");
+  const op = String(filter.operator || "");
+  const expected = filter.value;
+  let actual: any;
+  switch (field) {
+    case "card_type": actual = isCharacter(card) ? "character" : String(card?.card_type || "").toLowerCase(); break;
+    case "level": actual = cardCost(card); break;
+    case "ap_current": actual = cardAp(card); break;
+    case "is_active": actual = isActive(card); break;
+    case "color": actual = String(card?.color || card?.color_key || card?.colorKo || "").toLowerCase(); break;
+    case "trait": return op === "has_trait" ? hasTrait(card, expected) : false;
+    case "card_name": {
+      const haystack = cardNameText(card);
+      if (op === "name_matches") return haystack.includes(String(expected ?? "").toLocaleLowerCase());
+      if (op === "in") return Array.isArray(expected) && expected.some((name) => haystack.includes(String(name).toLocaleLowerCase()));
+      actual = String(card?.name || card?.card_name || "");
+      break;
+    }
+    case "keyword": {
+      const haystack = JSON.stringify(card || {}).toLocaleLowerCase();
+      if (op === "has_keyword") return haystack.includes(String(expected ?? "").toLocaleLowerCase());
+      actual = haystack;
+      break;
+    }
+    default: actual = card?.[field];
+  }
+  if (op === "equals") return actual === expected;
+  if (op === "in") return Array.isArray(expected) && expected.includes(actual);
+  if (op === "less_than") return Number(actual) < Number(expected);
+  if (op === "less_than_or_equal") return Number(actual) <= Number(expected);
+  if (op === "greater_than") return Number(actual) > Number(expected);
+  if (op === "greater_than_or_equal") return Number(actual) >= Number(expected);
+  return false;
+}
+function chooseActivatedAbility(state: any, aiId: string) {
+  const activations = Array.isArray(state?.ai_card_effect_activations) ? state.ai_card_effect_activations : [];
+  if (!activations.length) return null;
+  const boards = Array.isArray(state?.boards) ? state.boards : [];
+  const me = boards.find((board: any) => board.user_id === aiId);
+  const opponent = boards.find((board: any) => board.user_id !== aiId);
+  if (!me || !opponent) return null;
+  const ownField = Array.isArray(me.field_cards) ? me.field_cards : [];
+  const enemyField = Array.isArray(opponent.field_cards) ? opponent.field_cards : [];
+  const hand = Array.isArray(state?.my_hand) ? state.my_hand : [];
+  const removeArea = Array.isArray(state?.my_remove_cards) ? state.my_remove_cards : [];
+  for (const ability of activations) {
+    const sourceId = String(ability?.source_instance_id || "");
+    const source = ownField.find((card: any) => String(card?.instance_id || "") === sourceId);
+    const definition = ability?.definition;
+    if (!source || !isActive(source) || !definition || !Array.isArray(definition.steps)) continue;
+    const selections: Array<{ step: any; targets: any[] }> = [];
+    let invalid = false;
+    for (const step of definition.steps.filter((candidate: any) => candidate?.op === "select_cards")) {
+      let candidates: any[] = [];
+      const from = String(step.from || "");
+      if (from === "opponent_field") candidates = enemyField;
+      else if (from === "field") candidates = ownField;
+      else if (from === "remove_area") candidates = removeArea;
+      else if (from === "hand") candidates = hand;
+      else if (from === "deck") candidates = [];
+      else if (/^vars\./u.test(from)) continue;
+      else continue;
+      let validTargets = candidates.filter((card: any) => matchesDslFilter(card, step.filter));
+      const statStep = definition.steps.find((candidate: any) =>
+        candidate?.op === "modify_stat" && String(candidate.target || "").replace(/^vars\./u, "") === String(step.saveAs || ""));
+      if (statStep && from === "field") {
+        // A rested source is being slept, so favor a different active teammate for an AP buff.
+        const preferred = validTargets.filter((card: any) => isActive(card)
+          && String(card.instance_id || "") !== sourceId);
+        if (preferred.length) validTargets = preferred;
+      }
+      selections.push({ step, targets: validTargets });
+      const min = Math.max(0, Number(step.min || 0));
+      if (validTargets.length < min) { invalid = true; break; }
+      if (validTargets.length === 0 && min === 0) {
+        // Don't spend a sleep cost for an ability whose meaningful target is absent.
+        if (definition.steps.some((candidate: any) => candidate?.op === "pay_cost")) {
+          invalid = true; break;
+        }
+      }
+    }
+    if (invalid) continue;
+
+    // If the ability selects an opponent target, spend the source sleep only when a real target exists.
+    const hasOpponentTarget = selections.some(({step, targets}) => step.from === "opponent_field" && targets.length > 0);
+    const hasOwnFieldTarget = selections.some(({step, targets}) => step.from === "field" && targets.length > 0);
+    if (definition.steps.some((step: any) => step?.op === "pay_cost")
+      && selections.length > 0 && !hasOpponentTarget && !hasOwnFieldTarget) continue;
+
+    return { action: "activate_card_effect", payload: { source_instance_id: sourceId, effect_id: ability.effect_id } };
+  }
+  return null;
+}
 function chooseMulligan(hand: any[]) {
   const cheapCharacters = hand.filter((card) => isCharacter(card) && cardCost(card) <= 3).length;
   if (cheapCharacters >= 2) {
@@ -68,6 +204,12 @@ function describeAction(decision: any, state: any, aiId: string) {
       return "AI 탐정: 파트너를 어시스트해 이번 턴의 레벨 상한을 1 올렸습니다.";
     case "partner_deduce":
       return "AI 탐정: 파트너 추리로 증거 1장을 확보했습니다.";
+    case "activate_card_effect": {
+      const source = (Array.isArray(state?.boards) ? state.boards : [])
+        .find((board: any) => board.user_id === aiId)?.field_cards
+        ?.find((entry: any) => String(entry.instance_id || "") === String(decision?.payload?.source_instance_id || ""));
+      return `AI 탐정: ${cardName(source)}의 능력을 발동했습니다.`;
+    }
     case "declare_contact":
       return `AI 탐정: ${cardName(attacker)}으로 ${cardName(target)}에게 컨택을 선언했습니다.`;
     case "attack_evidence":
@@ -228,6 +370,11 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
     if (play) return { action: "play_character", payload: { instance_id: play.instance_id } };
   }
 
+  // Activated abilities are evaluated only after the basic character play has been considered.
+  // The server supplies only cards whose partner/file/case/source conditions currently pass.
+  const activatedAbility = chooseActivatedAbility(state, aiId);
+  if (activatedAbility) return activatedAbility;
+
   if (!me.partner_rested && !me.partner_deduction_used && me.partner_key && Number(me.evidence_count || 0) < 2) {
     return { action: "partner_deduce", payload: { evidence_count: 1 } };
   }
@@ -362,6 +509,15 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
     ));
     if (state.current_turn_user_id !== battle.ai_user_id && !aiMustRespond) return { is_ai: true, actions: [] };
 
+    if (!pending && state.current_turn_user_id === battle.ai_user_id && state.turn_step === "main") {
+      const { data: activationData, error: activationError } = await service.rpc("get_private_ai_card_effect_activations_v1", {
+        p_room_id: roomId,
+        p_ai_user_id: battle.ai_user_id,
+      });
+      if (activationError) throw activationError;
+      state.ai_card_effect_activations = Array.isArray(activationData?.activations) ? activationData.activations : [];
+    }
+
     let decision: any = null;
     if (pending?.chooser_user_id === battle.ai_user_id && String(pending?.type || "").startsWith("card_effect_")) {
       if (pending.type === "card_effect_selection" || pending.type === "card_effect_order") {
@@ -480,6 +636,11 @@ Deno.serve(async (req: Request) => {
         p_event_rule_code: String(body.event_rule_code || ""),
       });
       if (deckError) throw deckError;
+      const { error: humanEventColorError } = await userClient.rpc("set_private_room_event_has_non_blue_color_v1", {
+        p_room_id: room.out_room_id,
+        p_has_non_blue_color: Boolean(body.event_has_non_blue_color),
+      });
+      if (humanEventColorError) throw humanEventColorError;
 
       const botId = await ensureBotAccount(service);
       const { error: battleError } = await service.rpc("create_private_ai_battle_v1", {
@@ -492,6 +653,11 @@ Deno.serve(async (req: Request) => {
         p_ai_event_rule_code: String(aiDeck.event_rule_code || ""),
       });
       if (battleError) throw battleError;
+      const { error: aiEventColorError } = await service.from("room_player_decks")
+        .update({ event_has_non_blue_color: Boolean(aiDeck.event_has_non_blue_color) })
+        .eq("room_id", room.out_room_id)
+        .eq("user_id", botId);
+      if (aiEventColorError) throw aiEventColorError;
 
       const initial = await driveAiTurns(service, room.out_room_id, user.id);
       return json({ room_id: room.out_room_id, invite_code: room.out_invite_code, initial_ai: initial });
