@@ -1634,7 +1634,7 @@
     },
     {
       "fact": "public_reveal_acknowledgement",
-      "meaning": "reveal_cards.awaitAcknowledgement=true일 때 카드 정보를 양쪽에 표시하고, 상대가 확인 완료를 눌러야 다음 단계로 진행한다."
+      "meaning": "공개 대상에 opponent 또는 all이 포함되면 awaitAcknowledgement 설정과 무관하게 공개 정보를 양측에 표시하고 상대가 확인 완료를 눌러야 다음 단계로 진행한다."
     },
     {
       "fact": "own_turn_activated_abilities",
