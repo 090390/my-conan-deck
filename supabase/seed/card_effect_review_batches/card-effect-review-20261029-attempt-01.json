@@ -1607,6 +1607,10 @@
       "rule": "【인연: ○○】는 효과 발동 시 자신의 현장에 카드명이 ○○인 카드가 함께 있어야 하는 조건으로 해석한다. 지정 이름을 포함하는 복합 카드명도 인정한다."
     },
     {
+      "ruleId": "card-name-locale-matching",
+      "rule": "카드명 조건은 카드의 실제 이름 필드만 비교한다. 한국어·일본어·지원되는 로마자 이름 별칭은 같은 카드명으로 인식하지만, 효과 문장이나 검색 대상 목록에 그 이름이 언급된 것만으로 인연 조건을 충족한 것으로 보지 않는다."
+    },
+    {
       "ruleId": "file-threshold",
       "rule": "【FILEn】은 효과를 발동하는 플레이어 자신의 파일 수가 n장 이상일 때 충족한다."
     },
@@ -1647,6 +1651,10 @@
     {
       "fact": "own_turn_activated_abilities",
       "meaning": "[선언][슬립] 능력은 본인 턴의 begin/file/main 단계 중 진행 중인 선택이나 효과가 없을 때 발동할 수 있다. AI는 활성 정의와 유효 대상을 바탕으로 시점을 판단한다."
+    },
+    {
+      "fact": "card_name_locale_matching",
+      "meaning": "player.field.has_card_name의 name_matches 조건은 한국어·일본어·지원되는 로마자 카드명 별칭을 비교하되 실제 카드명 필드만 검사한다. 효과 텍스트에 이름이 언급된 것만으로는 일치하지 않는다."
     }
   ],
   "dataReadinessAudit": {
