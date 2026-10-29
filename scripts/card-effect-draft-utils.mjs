@@ -10,7 +10,7 @@ export const ALLOWED_OPERATORS = new Set([
 ]);
 export const ALLOWED_OPS = new Set([
   "refill_deck_from_remove_area", "peek_top_cards", "select_cards", "reveal_cards",
-  "move_cards", "move_unselected_to_deck_bottom", "move_unselected_to_zone",
+  "move_cards", "move_unselected_to_deck_bottom", "move_unselected_to_zone", "filter_cards",
   "reveal_until_match", "attach_cards", "grant_keyword", "modify_stat", "offer_reaction",
   "pay_cost", "set_mislead_value", "draw_cards", "gain_evidence", "ready_cards_that_used_keyword",
   "mark_keyword_activated", "shuffle_deck", "set_continuous_stat", "set_continuous_keyword"
@@ -21,6 +21,7 @@ export const REQUIRED_FIELDS = {
   select_cards: ["from", "min", "max", "optional", "saveAs"],
   reveal_cards: ["from", "to", "awaitAcknowledgement"],
   move_cards: ["from", "to"],
+  filter_cards: ["from", "filter", "saveAs"],
   move_unselected_to_deck_bottom: ["from", "selectedVariable", "order"],
   move_unselected_to_zone: ["from", "selectedVariable", "to", "order"],
   reveal_until_match: ["from", "saveAs", "match", "includeMatchingCard", "publicReveal", "oneByOne"],
@@ -109,7 +110,7 @@ export function validateDslDefinition(def, expectedCardId, knownFacts = new Set(
       need(Number.isInteger(s.min) && s.min >= 0, `${at}: min은 0 이상의 정수여야 합니다.`);
       need(Number.isInteger(s.max) && s.max >= s.min && s.max <= 30, `${at}: max가 유효하지 않습니다.`);
     }
-    if (["move_cards", "reveal_cards", "move_unselected_to_deck_bottom", "move_unselected_to_zone", "attach_cards", "modify_stat"].includes(s.op)) {
+    if (["move_cards", "reveal_cards", "move_unselected_to_deck_bottom", "move_unselected_to_zone", "attach_cards", "modify_stat", "filter_cards"].includes(s.op)) {
       if (typeof s.from === "string" && !ZONES.has(s.from)) need(vars.has(variableRoot(s.from)), `${at}: from 변수 '${s.from}'가 앞 단계에서 정의되지 않았습니다.`);
     }
     if (["move_unselected_to_deck_bottom", "move_unselected_to_zone"].includes(s.op)) need(vars.has(variableRoot(s.selectedVariable)), `${at}: selectedVariable가 앞 단계에서 정의되지 않았습니다.`);
