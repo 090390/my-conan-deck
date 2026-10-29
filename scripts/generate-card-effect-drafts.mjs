@@ -193,7 +193,7 @@ function normalizeGeneratedCard(sourceCard, generatedCard) {
     if (!clause) return protectedSourceTexts.length === 0;
     return !protectedSourceTexts.some((source) => source.includes(clause) || clause.includes(source));
   });
-  const candidates = generatedCandidates.length ? generatedCandidates : (rawCandidates.length ? [] : [{
+  const candidates = generatedCandidates.length ? generatedCandidates : (rawCandidates.length || protectedCandidates.length ? [] : [{
     sourceClause: "",
     interpretation: "",
     unsupportedReasons: ["모델이 후보 효과를 반환하지 않았습니다. 직접 검토해야 합니다."],
