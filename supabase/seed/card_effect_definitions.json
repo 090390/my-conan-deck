@@ -1374,6 +1374,103 @@
         "rationale": "프라이빗 아이와 같은 순서이며 대상 카드 색상만 백색으로 다르다.",
         "sourceText": "덱 위 3장을 확인하고 백 캐릭터를 최대 1장 공개해 패에 추가한다. 나머지는 원하는 순서로 덱 아래에 둔 뒤 파일 수 이하 레벨의 백 캐릭터를 최대 1장 등장시킨다."
       }
+    },
+    {
+      "effectId": "card-1215-on-play-detective-kid-cycle",
+      "cardIds": [
+        "1215"
+      ],
+      "cardNameKo": "탐정은 그 흔적을 보고 이래저래 트집을 잡는…… 단순한 비평가에 지나지 않는다고?",
+      "cardNameJa": "探偵はその痕跡を見てあれこれ難癖をつける……単なる批評家にすぎないと？",
+      "trigger": {
+        "event": "event.played",
+        "timing": "after"
+      },
+      "conditions": [
+        {
+          "fact": "player.event.has_detective_vs_kid_trait",
+          "operator": "equals",
+          "value": true
+        },
+        {
+          "fact": "player.partner.color",
+          "operator": "equals",
+          "value": "white"
+        }
+      ],
+      "steps": [
+        {
+          "op": "draw_cards",
+          "count": 2,
+          "destination": "hand"
+        },
+        {
+          "op": "select_cards",
+          "from": "hand",
+          "min": 2,
+          "max": 2,
+          "optional": false,
+          "prompt": "리무브할 손패 2장을 선택하세요.",
+          "saveAs": "hand_to_remove"
+        },
+        {
+          "op": "move_cards",
+          "from": "hand_to_remove",
+          "to": "remove_area"
+        },
+        {
+          "op": "select_cards",
+          "from": "remove_area",
+          "min": 0,
+          "max": 1,
+          "optional": true,
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "operator": "equals",
+                "value": "character"
+              },
+              {
+                "field": "level",
+                "operator": "less_than_or_equal",
+                "value": 7
+              },
+              {
+                "anyOf": [
+                  {
+                    "field": "color",
+                    "operator": "equals",
+                    "value": "blue"
+                  },
+                  {
+                    "field": "color",
+                    "operator": "equals",
+                    "value": "white"
+                  }
+                ]
+              }
+            ]
+          },
+          "prompt": "리무브 에이리어에서 등장시킬 레벨 7 이하 청/백 캐릭터를 최대 1장 선택하세요.",
+          "saveAs": "character_to_field"
+        },
+        {
+          "op": "move_cards",
+          "from": "character_to_field",
+          "to": "field",
+          "entryMethod": "event_effect",
+          "when": {
+            "fact": "vars.character_to_field.count",
+            "operator": "greater_than",
+            "value": 0
+          }
+        }
+      ],
+      "reviewNotes": {
+        "sourceText": "사건의 특징에 [탐정 VS 괴도]가 있고 파트너 카드의 색상이 백일 경우, 덱에서 카드 2장을 뽑고 손패에서 카드 2장을 리무브한다. 이어서 리무브 에이리어의 레벨 7 이하 청/백 캐릭터를 최대 1장 선택해 등장시킬 수 있다.",
+        "rationale": "사건의 특성은 현재 사건 규칙 코드 conan_vs_kid_1261로 판별한다. 드로우 뒤 손패 2장을 리무브하고, 방금 리무브한 카드도 포함한 리무브 에이리어에서 적격 청/백 캐릭터를 선택해 등장시킨다."
+      }
     }
   ]
 }
