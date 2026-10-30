@@ -1681,7 +1681,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
               : isB10078PoliceCutIn ? (canUseB10078PoliceCutIn ? 2000 : 0)
               : isB11015CutIn ? (isKudoShinichiSubject ? 3000 : 1000)
               : isB10011CutIn ? 2000
-              : n(card.cut_in_bonus) + (isB07003BlueCutIn ? 1000 : 0);
+              : (isB07003BlueCutIn ? Math.max(n(card.cut_in_bonus), 1000) : n(card.cut_in_bonus));
             return <button key={card.instance_id} type="button" style={{ ...st.button, background: "#164e63", textAlign: "left", opacity: canUseCutIn ? 1 : .45 }} disabled={loading || !canUseCutIn} title={!canUseCutIn ? (isB10078PoliceCutIn ? "B10078: 자신의 턴 중 특징 [경찰] 캐릭터에 컷인할 때만 사용할 수 있습니다." : isB11015CutIn && !ownTurn ? "B11015: 자신의 턴에만 사용할 수 있습니다." : "B10011: 쿠도 신이치 또는 모리 란에만 사용할 수 있습니다.") : ""} onClick={() => void runAction("contact_use_cutin", { instance_id: card.instance_id })}>
               <strong style={{ display: "block", marginBottom: 4 }}>{nameOf(card)} · {bonus > 0 ? `AP +${bonus}` : "조건 미충족"}</strong>
               <span style={{ display: "block", whiteSpace: "pre-wrap", overflowWrap: "anywhere", fontSize: 10, lineHeight: 1.5 }}>{effectText || (isB07003BlueCutIn ? "B07003P 효과: 청색 카드 컷인 AP +1000" : "컷인 효과 문구를 확인할 수 없습니다.")}</span>
