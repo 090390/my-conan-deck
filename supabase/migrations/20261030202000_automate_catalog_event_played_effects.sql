@@ -14,14 +14,12 @@ DECLARE
   v_context jsonb;
   v_queue jsonb;
 BEGIN
-  IF p_event_card IS NULL OR NOT public.private_card_effect_is_character_v1(p_event_card)
-     AND lower(coalesce(p_event_card->>'card_type',p_event_card->>'type','')) NOT IN ('event','이벤트','イベント') THEN
+  IF p_event_card IS NULL
+     OR lower(coalesce(p_event_card->>'card_type',p_event_card->>'type','')) NOT IN ('event','이벤트','イベント') THEN
     RAISE EXCEPTION '이벤트 카드 정보가 올바르지 않습니다.';
   END IF;
 
-  IF EXISTS (
-    SELECT 1 FROM public.private_card_effect_runs_v1 WHERE room_id=p_room_id
-  ) THEN
+  IF EXISTS (SELECT 1 FROM public.private_card_effect_runs_v1 WHERE room_id=p_room_id) THEN
     RAISE EXCEPTION '다른 카드 효과가 처리 중입니다.';
   END IF;
 
@@ -84,7 +82,7 @@ BEGIN
     v_label := '이벤트를 현장에 놓았습니다. 카드 효과를 확인한 뒤 [효과 처리 완료 → 리무브]를 누르세요.';
     update public.room_match_states m set state_version = state_version + 1, last_action_label = v_label where m.room_id = p_room_id;
     return public.get_private_turn_state_v2(p_room_id);
-$new$;
+$old$;
   v_replacement := $new$
     v_label := '이벤트를 현장에 놓았습니다. 카드 효과를 처리합니다.';
     update public.room_match_states m set state_version = state_version + 1, last_action_label = v_label where m.room_id = p_room_id;
