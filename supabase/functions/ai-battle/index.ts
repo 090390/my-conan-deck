@@ -42,6 +42,16 @@ function cardCutInBonus(card: any): number {
   const bonus = Number(digits);
   return Number.isFinite(bonus) && bonus > 0 ? bonus : 0;
 }
+function cardCutInBonusForSubject(card: any, subject: any, isOwnerTurn: boolean): number {
+  // B10078 / internal 1134: AP+2000 only when its owner cuts in during their
+  // own turn on a character with the Police trait.
+  if (matchesInternalCardId(card, "1134")) {
+    return isOwnerTurn && subject && hasTrait(subject, "경찰")
+      ? Math.max(2000, cardCutInBonus(card))
+      : 0;
+  }
+  return cardCutInBonus(card);
+}
 function isCharacter(card: any) {
   return String(card?.card_type || "").toLowerCase() === "character";
 }
@@ -513,9 +523,17 @@ function chooseResponse(state: any, aiId: string) {
       ? Number(pending.target_ap || 0) + Number(pending.target_bonus || 0)
       : Number(pending.attacker_ap || 0) + Number(pending.attacker_bonus || 0);
     const needed = Math.max(0, opponentAp - myAp + 1);
-    const cutin = hand.filter((card: any) => cardCutInBonus(card) >= needed
-      && cardCutInBonus(card) > 0)
-      .sort((a: any, b: any) => cardCutInBonus(a) - cardCutInBonus(b))[0];
+    const contactSubjectId = pending.attacker_user_id === aiId
+      ? String(pending.attacker_instance_id || "")
+      : String(pending.target_instance_id || "");
+    const contactSubject = field.find((card: any) => String(card.instance_id || "") === contactSubjectId);
+    const isAiOwnerTurn = state.current_turn_user_id === aiId;
+    const cutin = hand.filter((card: any) => {
+      const bonus = cardCutInBonusForSubject(card, contactSubject, isAiOwnerTurn);
+      return bonus >= needed && bonus > 0;
+    }).sort((a: any, b: any) =>
+      cardCutInBonusForSubject(a, contactSubject, isAiOwnerTurn)
+      - cardCutInBonusForSubject(b, contactSubject, isAiOwnerTurn))[0];
     if (cutin && needed > 0) {
       return { action: "contact_use_cutin", payload: { instance_id: cutin.instance_id } };
     }
@@ -691,8 +709,10 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
     const targetAp = cardAp(activeHighLevelTarget);
     const canWinWithoutCost = attackerAp > targetAp;
     const canWinByD11007 = hand.length > 0 && attackerAp < targetAp && attackerAp + 3000 > targetAp;
-    const canWinByCutin = hand.some((card: any) => cardCutInBonus(card) > 0
-      && attackerAp + cardCutInBonus(card) > targetAp);
+    const canWinByCutin = hand.some((card: any) => {
+      const bonus = cardCutInBonusForSubject(card, specialTargetAttacker, true);
+      return bonus > 0 && attackerAp + bonus > targetAp;
+    });
     if (canWinWithoutCost || canWinByD11007 || canWinByCutin) {
       return {
         action: "declare_contact",
@@ -716,7 +736,7 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
       const attackerAp = cardAp(candidate);
       const targetAp = cardAp(restedTarget);
       return attackerAp > targetAp || hand.some((card: any) => {
-        const bonus = cardCutInBonus(card);
+        const bonus = cardCutInBonusForSubject(card, candidate, true);
         return bonus > 0 && attackerAp + bonus > targetAp;
       });
     });
