@@ -27,8 +27,11 @@ IF p_from='opponent_evidence' THEN
      WHEN 'remove_area' THEN coalesce(v_game.remove_cards,'[]'::jsonb) ELSE coalesce(v_game.evidence_cards,'[]'::jsonb) END;
    v_owner:=p_actor; v_zone:=p_from;
 $new$;
-  IF position(v_anchor IN v_definition)=0 THEN RAISE EXCEPTION 'candidate-zone insertion anchor missing'; END IF;
-  v_definition:=replace(v_definition,v_anchor,v_replacement);
+  IF position(v_anchor IN v_definition)=0 THEN
+    IF position(v_replacement IN v_definition)=0 THEN RAISE EXCEPTION 'candidate-zone insertion anchor missing'; END IF;
+  ELSE
+    v_definition:=replace(v_definition,v_anchor,v_replacement);
+  END IF;
   EXECUTE v_definition;
 
   -- Resolve derived facts used by the Matsuda MR effect and investigate effect.
@@ -55,8 +58,11 @@ $new$;
      ));
    END IF;
    RETURN coalesce(p_vars #> v_path,'null'::jsonb);$new$;
-  IF position(v_anchor IN v_definition)=0 THEN RAISE EXCEPTION 'vars-fact insertion anchor missing'; END IF;
-  v_definition:=replace(v_definition,v_anchor,v_replacement);
+  IF position(v_anchor IN v_definition)=0 THEN
+    IF position(v_replacement IN v_definition)=0 THEN RAISE EXCEPTION 'vars-fact insertion anchor missing'; END IF;
+  ELSE
+    v_definition:=replace(v_definition,v_anchor,v_replacement);
+  END IF;
   EXECUTE v_definition;
 
   -- Add custom operations for a private opponent-hand reveal and an opponent-deck investigate.
@@ -68,8 +74,11 @@ $new$;
  v_investigate_owner uuid; v_investigate_deck jsonb; v_investigate_cards jsonb;
  v_investigate_remaining jsonb; v_investigate_count integer; v_investigate_low boolean;
  v_drawn_card jsonb;$new$;
-  IF position(v_anchor IN v_definition)=0 THEN RAISE EXCEPTION 'effect runner declaration anchor missing'; END IF;
-  v_definition:=replace(v_definition,v_anchor,v_replacement);
+  IF position(v_anchor IN v_definition)=0 THEN
+    IF position(v_replacement IN v_definition)=0 THEN RAISE EXCEPTION 'effect runner declaration anchor missing'; END IF;
+  ELSE
+    v_definition:=replace(v_definition,v_anchor,v_replacement);
+  END IF;
 
   v_anchor := $old$   ELSIF v_op='peek_top_cards' THEN$old$;
   v_replacement := $new$
@@ -127,8 +136,11 @@ $new$;
      CONTINUE;
 
    ELSIF v_op='peek_top_cards' THEN$new$;
-  IF position(v_anchor IN v_definition)=0 THEN RAISE EXCEPTION 'effect runner custom-op insertion anchor missing'; END IF;
-  v_definition:=replace(v_definition,v_anchor,v_replacement);
+  IF position(v_anchor IN v_definition)=0 THEN
+    IF position(v_replacement IN v_definition)=0 THEN RAISE EXCEPTION 'effect runner custom-op insertion anchor missing'; END IF;
+  ELSE
+    v_definition:=replace(v_definition,v_anchor,v_replacement);
+  END IF;
 
   -- Let gain_evidence target the opponent and optionally expose the acquired evidence.
   v_anchor := $old$
@@ -159,8 +171,11 @@ $old$;
        END IF;
      END LOOP;
 $new$;
-  IF position(v_anchor IN v_definition)=0 THEN RAISE EXCEPTION 'gain_evidence patch anchor missing'; END IF;
-  v_definition:=replace(v_definition,v_anchor,v_replacement);
+  IF position(v_anchor IN v_definition)=0 THEN
+    IF position(v_replacement IN v_definition)=0 THEN RAISE EXCEPTION 'gain_evidence patch anchor missing'; END IF;
+  ELSE
+    v_definition:=replace(v_definition,v_anchor,v_replacement);
+  END IF;
 
   -- Ensure evidence-card removal triggers only run when the card actually enters the remove area.
   SELECT pg_get_functiondef('public.perform_private_turn_action_v2(uuid,text,jsonb)'::regprocedure)
@@ -179,8 +194,11 @@ $old$;
              AND removed.value->>'instance_id'=v_old_evidence_card->>'instance_id'
          ) THEN
 $new$;
-  IF position(v_anchor IN v_definition)=0 THEN RAISE EXCEPTION 'evidence-trigger filter anchor missing'; END IF;
-  v_definition:=replace(v_definition,v_anchor,v_replacement);
+  IF position(v_anchor IN v_definition)=0 THEN
+    IF position(v_replacement IN v_definition)=0 THEN RAISE EXCEPTION 'evidence-trigger filter anchor missing'; END IF;
+  ELSE
+    v_definition:=replace(v_definition,v_anchor,v_replacement);
+  END IF;
   EXECUTE v_definition;
 
   -- Fire evidence.card_removed triggers from effect-run moves into the remove area too.
@@ -234,8 +252,11 @@ $old$;
 
        ELSIF v_to='field' AND public.private_card_effect_is_character_v1(v_card) THEN
 $new$;
-  IF position(v_anchor IN v_definition)=0 THEN RAISE EXCEPTION 'effect-runner evidence trigger anchor missing'; END IF;
-  v_definition:=replace(v_definition,v_anchor,v_replacement);
+  IF position(v_anchor IN v_definition)=0 THEN
+    IF position(v_replacement IN v_definition)=0 THEN RAISE EXCEPTION 'effect-runner evidence trigger anchor missing'; END IF;
+  ELSE
+    v_definition:=replace(v_definition,v_anchor,v_replacement);
+  END IF;
   EXECUTE v_definition;
 
   -- MR characters acquired as evidence transfer to the MR partner area.
@@ -273,8 +294,11 @@ $old$;
        WHERE room_id=p_room_id AND user_id=v_target_user;
    END IF;
 $new$;
-  IF position(v_anchor IN v_definition)=0 THEN RAISE EXCEPTION 'MR evidence-move anchor missing'; END IF;
-  v_definition:=replace(v_definition,v_anchor,v_replacement);
+  IF position(v_anchor IN v_definition)=0 THEN
+    IF position(v_replacement IN v_definition)=0 THEN RAISE EXCEPTION 'MR evidence-move anchor missing'; END IF;
+  ELSE
+    v_definition:=replace(v_definition,v_anchor,v_replacement);
+  END IF;
   EXECUTE v_definition;
 
   -- Partner-area activated abilities are only exposed when explicitly declared for that area.
@@ -319,8 +343,11 @@ $new$;
    END LOOP;
  END IF;
  -- Event-card abilities are synthetic sources rather than field cards.$new$;
-  IF position(v_anchor IN v_definition)=0 THEN RAISE EXCEPTION 'user partner activation insertion anchor missing'; END IF;
-  v_definition:=replace(v_definition,v_anchor,v_replacement);
+  IF position(v_anchor IN v_definition)=0 THEN
+    IF position(v_replacement IN v_definition)=0 THEN RAISE EXCEPTION 'user partner activation insertion anchor missing'; END IF;
+  ELSE
+    v_definition:=replace(v_definition,v_anchor,v_replacement);
+  END IF;
   EXECUTE v_definition;
 
   SELECT pg_get_functiondef('public.get_private_ai_card_effect_activations_v1(uuid,uuid)'::regprocedure)
@@ -357,8 +384,11 @@ $new$;
    END LOOP;
  END IF;
  IF coalesce(v_is_own_turn,false)$new$;
-  IF position(v_anchor IN v_definition)=0 THEN RAISE EXCEPTION 'AI partner activation insertion anchor missing'; END IF;
-  v_definition:=replace(v_definition,v_anchor,v_replacement);
+  IF position(v_anchor IN v_definition)=0 THEN
+    IF position(v_replacement IN v_definition)=0 THEN RAISE EXCEPTION 'AI partner activation insertion anchor missing'; END IF;
+  ELSE
+    v_definition:=replace(v_definition,v_anchor,v_replacement);
+  END IF;
   EXECUTE v_definition;
 
   -- Make activate_card_effect source lookup accept a specifically authorized MR partner-area source.
@@ -385,8 +415,11 @@ $old$;
    IF v_source_card IS NULL THEN RAISE EXCEPTION '효과를 발동할 자신의 현장 또는 MR 파트너 카드를 찾을 수 없습니다.'; END IF;
    SELECT d.value INTO v_effect_definition
 $new$;
-  IF position(v_anchor IN v_definition)=0 THEN RAISE EXCEPTION 'user activation source lookup anchor missing'; END IF;
-  v_definition:=replace(v_definition,v_anchor,v_replacement);
+  IF position(v_anchor IN v_definition)=0 THEN
+    IF position(v_replacement IN v_definition)=0 THEN RAISE EXCEPTION 'user activation source lookup anchor missing'; END IF;
+  ELSE
+    v_definition:=replace(v_definition,v_anchor,v_replacement);
+  END IF;
   v_anchor := $old$
    IF v_effect_definition IS NULL THEN RAISE EXCEPTION '이 캐릭터에 등록된 효과를 찾을 수 없습니다.'; END IF;
  
@@ -401,8 +434,11 @@ $old$;
  
 IF NOT public.private_card_effect_is_active_v1(v_source_card) THEN
 $new$;
-  IF position(v_anchor IN v_definition)=0 THEN RAISE EXCEPTION 'user activation partner guard anchor missing'; END IF;
-  v_definition:=replace(v_definition,v_anchor,v_replacement);
+  IF position(v_anchor IN v_definition)=0 THEN
+    IF position(v_replacement IN v_definition)=0 THEN RAISE EXCEPTION 'user activation partner guard anchor missing'; END IF;
+  ELSE
+    v_definition:=replace(v_definition,v_anchor,v_replacement);
+  END IF;
   EXECUTE v_definition;
 END
 $migration$;
