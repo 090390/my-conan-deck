@@ -9,7 +9,7 @@ BEGIN
   SELECT pg_get_functiondef('public.private_card_effect_get_candidates_v1(uuid,uuid,uuid,text,jsonb,text,text,jsonb)'::regprocedure)
     INTO v_definition;
   v_anchor := $old$
-IF p_from IN ('deck','hand','remove_area','evidence_area') THEN
+ IF p_from IN ('deck','hand','remove_area','evidence_area') THEN
    SELECT * INTO v_game FROM public.room_player_game_states WHERE room_id=p_room_id AND user_id=p_actor;
    v_data:=CASE p_from WHEN 'deck' THEN coalesce(v_game.deck_order,'[]'::jsonb) WHEN 'hand' THEN coalesce(v_game.hand,'[]'::jsonb)
      WHEN 'remove_area' THEN coalesce(v_game.remove_cards,'[]'::jsonb) ELSE coalesce(v_game.evidence_cards,'[]'::jsonb) END;
