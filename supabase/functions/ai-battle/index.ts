@@ -85,7 +85,7 @@ function hasCaseOnlyCharge(card: any): boolean {
 }
 function hasCharacterOnlyCharge(card: any): boolean {
   return dslKeywordValues(card).some((value) =>
-    ["charge_character", "돌격[캐릭터]", "돌격［キャラ］", "突撃[キャラ]", "突撃［キャラ］"].includes(value));
+    ["charge_character", "돌격[캐릭터]", "돌격［캐릭터］", "突撃[キャラ]", "突撃［キャラ］"].includes(value));
 }
 function hasCharge(card: any): boolean {
   return hasCaseOnlyCharge(card) || hasCharacterOnlyCharge(card)
@@ -624,7 +624,8 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
       .sort((a: any, b: any) => b.score - a.score || cardCost(a.card) - cardCost(b.card))[0];
     const bestCharacter = playableCharacters[0];
     const characterPriority = bestCharacter ? cardStrength(bestCharacter) / 250 : -1;
-    if (effectEvent && effectEvent.score >= Math.max(5, characterPriority)) {
+    const requiredEventPriority = bestCharacter ? Math.max(5, characterPriority) : 1.5;
+    if (effectEvent && effectEvent.score >= requiredEventPriority) {
       return { action: "play_event", payload: { instance_id: effectEvent.card.instance_id } };
     }
     if (bestCharacter) {
