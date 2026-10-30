@@ -283,7 +283,10 @@ function chooseActivatedAbility(state: any, aiId: string) {
       return { action: "activate_case_effect", payload: { effect_id: String(ability?.effect_id || "") } };
     }
     const source = ownField.find((card: any) => String(card?.instance_id || "") === sourceId)
-      || (String(me.partner_mr_card?.instance_id || "") === sourceId ? me.partner_mr_card : null);
+      || (String(me.partner_mr_card?.instance_id || "") === sourceId ? me.partner_mr_card : null)
+      || (Array.isArray(me.partner_non_mr_cards) ? me.partner_non_mr_cards : [])
+        .find((card: any) => String(card?.instance_id || "") === sourceId)
+      || null;
     if (!source || !isActive(source)) continue;
 
     // Preflight follow-up contacts before opening an effect chooser. The SQL
