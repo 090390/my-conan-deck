@@ -95,6 +95,8 @@ function cardPayload(card, key, count) {
     card_id: String(card?.cardId || card?.sourceData?.card_id || ""),
     card_num: String(card?.cardNum || card?.sourceData?.card_num || ""),
     database_id: String(card?.databaseId || card?.sourceData?.database_id || key),
+    name_ja: String(card?.originalName || card?.original_name || card?.name_ja || card?.nameJa || card?.sourceData?.name_ja || card?.sourceData?.nameJa || ""),
+    color: getCardColorLabel(card),
     traits: getTraits(card),
     category1: String(card?.category1 || ""),
     category2: String(card?.category2 || ""),
