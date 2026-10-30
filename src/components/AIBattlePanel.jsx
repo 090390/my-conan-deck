@@ -11,7 +11,10 @@ function normalizedId(card, fallback = "") {
     card?.sourceData?.cardId, card?.sourceData?.card_id, card?.sourceData?.cardNum, card?.sourceData?.card_num];
   return values.map((value) => String(value ?? "").trim().toLocaleUpperCase());
 }
-const REVIEWED_AI_DECK_IDS = new Set(["71767296-f20a-4c5d-bb9f-94ce58234b12"]);
+const REVIEWED_AI_DECK_IDS = new Set([
+  "71767296-f20a-4c5d-bb9f-94ce58234b12", // 백청덱
+  "570f0ac3-05ec-457d-b921-1d0d08a3730d", // 마츠다 경시청덱
+]);
 
 function exemptionId(card, fallback = "") {
   const ids = normalizedId(card, fallback).map((value) => /^\d+$/.test(value) ? String(Number(value)) : value);
@@ -199,6 +202,20 @@ function getCardColorLabel(card) {
   return "";
 }
 
+function sortAiDecks(items) {
+  return [...(Array.isArray(items) ? items : [])].sort((a, b) => {
+    const aReviewed = REVIEWED_AI_DECK_IDS.has(String(a?.id)) ? 1 : 0;
+    const bReviewed = REVIEWED_AI_DECK_IDS.has(String(b?.id)) ? 1 : 0;
+    if (aReviewed !== bReviewed) return bReviewed - aReviewed;
+    const nameOrder = String(a?.deck_name || "이름 없는 덱").localeCompare(
+      String(b?.deck_name || "이름 없는 덱"),
+      "ko-KR",
+      { sensitivity: "base", numeric: true },
+    );
+    return nameOrder || String(a?.id || "").localeCompare(String(b?.id || ""));
+  });
+}
+
 function publicDeckLabels(cards, item) {
   const source = item?.deck_json && typeof item.deck_json === "object" ? item.deck_json : {};
   const partnerEntry = source.partner ?? source.partnerId ?? source.partner_id;
@@ -367,10 +384,10 @@ export default function AIBattlePanel({ deck, partnerId, eventId, cards = [], en
             {deckListError && <p role="alert" style={{ margin: 0, padding: 12, color: "#fda4af", fontSize: 12 }}>{deckListError}</p>}
             {!deckListLoading && !deckListError && publicDecks.length === 0 && <p style={{ margin: 0, padding: 12, color: "#fda4af", fontSize: 12 }}>공개 덱 저장소에 등록된 덱이 없습니다.</p>}
             <p style={{ margin: "10px 12px 0", color: "#94a3b8", fontSize: 10, lineHeight: 1.65 }}>
-              '검토 완료' 표시는 카드별 효과 검토와 대전 동작 구현을 마친 덱입니다. 해당 덱으로 실제 대전을 플레이하다가 오류나 아직 동작하지 않는 효과를 발견하면 제보해 주시면 감사하겠습니다. 현재는 백청덱만 표시되어 있습니다.
+              '검토 완료' 표시는 카드별 효과 검토와 대전 동작 구현을 마친 덱입니다. 해당 덱으로 실제 대전을 플레이하다가 오류나 아직 동작하지 않는 효과를 발견하면 제보해 주시면 감사하겠습니다.
             </p>
             <div style={{ maxHeight: 340, overflowY: "auto" }}>
-              {publicDecks.map((item) => {
+              {sortAiDecks(publicDecks).map((item) => {
                 const id = String(item.id);
                 const checked = selectedDeckIds.includes(id);
                 const details = publicDeckLabels(cards, item);
