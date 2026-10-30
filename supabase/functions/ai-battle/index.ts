@@ -1018,8 +1018,8 @@ Deno.serve(async (req: Request) => {
     if (body.action === "create") {
       const humanDeck = Array.isArray(body.main_deck) ? body.main_deck : [];
       const aiDeck = body.ai_deck || {};
-      if (!humanDeck.length || !body.partner_key || !body.event_key
-        || !Array.isArray(aiDeck.main_deck) || !aiDeck.partner_key || !aiDeck.event_key) {
+      if (!humanDeck.length || !body.partner_key || !body.event_key || !body.partner_color
+        || !Array.isArray(aiDeck.main_deck) || !aiDeck.partner_key || !aiDeck.event_key || !aiDeck.partner_color) {
         return json({ error: "AI 대전에 필요한 덱, 파트너, 사건 카드가 충분하지 않습니다." }, 400);
       }
       const { data: newRoom, error: roomError } = await userClient.rpc("create_private_room");
@@ -1035,6 +1035,11 @@ Deno.serve(async (req: Request) => {
         p_event_rule_code: String(body.event_rule_code || ""),
       });
       if (deckError) throw deckError;
+      const { error: humanPartnerColorError } = await userClient.rpc("set_private_room_partner_color_v1", {
+        p_room_id: room.out_room_id,
+        p_partner_color: String(body.partner_color),
+      });
+      if (humanPartnerColorError) throw humanPartnerColorError;
       const { error: humanEventColorError } = await userClient.rpc("set_private_room_event_has_non_blue_color_v1", {
         p_room_id: room.out_room_id,
         p_has_non_blue_color: Boolean(body.event_has_non_blue_color),
@@ -1053,6 +1058,11 @@ Deno.serve(async (req: Request) => {
         p_ai_event_rule_code: String(aiDeck.event_rule_code || ""),
       });
       if (battleError) throw battleError;
+      const { error: aiPartnerColorError } = await service.from("room_player_decks")
+        .update({ partner_color: String(aiDeck.partner_color) })
+        .eq("room_id", room.out_room_id)
+        .eq("user_id", botId);
+      if (aiPartnerColorError) throw aiPartnerColorError;
 
       let initial;
       try {
