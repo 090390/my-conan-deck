@@ -87,11 +87,19 @@ BEGIN
     RAISE EXCEPTION 'anyOf filter must preserve p_vars';
   END IF;
 
-  IF public.private_card_effect_filter_matches_with_vars_v1(
+  IF NOT public.private_card_effect_filter_matches_with_vars_v1(
     NULL,'{"instance_id":"top-1","card_type":"character"}'::jsonb,NULL,NULL,
     '{"not":{"field":"instance_id","value":{"fact":"vars.to_hand.0.card.instance_id"},"operator":"not_equals"}}'::jsonb,
     v_vars
   ) THEN
     RAISE EXCEPTION 'not filter must preserve p_vars';
+  END IF;
+
+  IF public.private_card_effect_filter_matches_with_vars_v1(
+    NULL,'{"instance_id":"top-2","card_type":"character"}'::jsonb,NULL,NULL,
+    '{"not":{"field":"instance_id","value":{"fact":"vars.to_hand.0.card.instance_id"},"operator":"not_equals"}}'::jsonb,
+    v_vars
+  ) THEN
+    RAISE EXCEPTION 'not filter must exclude a different card';
   END IF;
 END $$;
