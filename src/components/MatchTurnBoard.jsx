@@ -1734,8 +1734,15 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
         type="button"
         aria-label="AI 대전을 강제 종료하고 로비로 돌아가기"
         title="어떤 모달이 열려 있어도 AI 대전을 종료하고 로비로 돌아갑니다."
-        onClick={() => {
+        onClick={async () => {
           aiMountedRef.current = false;
+          const { error: cleanupError } = await supabase.rpc("force_end_private_ai_battle_v1", {
+            p_room_id: roomId,
+          });
+          if (cleanupError) {
+            window.alert(`AI 대전 기록을 정리하지 못했습니다: ${cleanupError.message}`);
+            return;
+          }
           onReturnToLobby();
         }}
         style={{
