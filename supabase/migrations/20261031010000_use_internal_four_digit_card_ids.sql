@@ -12,11 +12,13 @@ AS $function$
   FROM unnest(ARRAY[
     p_card ->> 'internal_card_id', p_card ->> 'internalCardId',
     p_card ->> 'id_code', p_card ->> 'idCode', p_card ->> 'cardId',
+    p_card ->> 'card_id', p_card ->> 'card_num', p_card ->> 'cardNum',
     p_card #>> '{sourceData,internal_card_id}', p_card #>> '{sourceData,internalCardId}',
     p_card #>> '{sourceData,id_code}', p_card #>> '{sourceData,idCode}',
     p_card #>> '{sourceData,card_id}', p_card #>> '{sourceData,cardId}',
     p_card #>> '{raw,internal_card_id}', p_card #>> '{raw,internalCardId}',
     p_card #>> '{raw,id_code}', p_card #>> '{raw,idCode}', p_card #>> '{raw,cardId}',
+    p_card #>> '{raw,card_id}', p_card #>> '{raw,card_num}', p_card #>> '{raw,cardNum}',
     p_card #>> '{raw,sourceData,internal_card_id}', p_card #>> '{raw,sourceData,internalCardId}',
     p_card #>> '{raw,sourceData,card_id}', p_card #>> '{raw,sourceData,cardId}'
   ]) WITH ORDINALITY AS candidate(value, ordinality)
