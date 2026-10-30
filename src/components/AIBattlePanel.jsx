@@ -168,6 +168,7 @@ function preparePublicDeck(cards, item) {
   return {
     main_deck: mainDeck,
     partner_key: String(partner.key),
+    partner_color: getCardColorLabel(partner),
     event_key: String(event.key),
     event_rule_code: getEventRuleCode(event, event.key),
     event_has_non_blue_color: eventHasNonBlueColor(event),
@@ -273,7 +274,10 @@ export default function AIBattlePanel({ deck, partnerId, eventId, cards = [], en
     try {
       const session = await ensureSignedIn();
       const event = cards.find((card) => String(card.key) === String(eventId));
+      const partner = cards.find((card) => String(card.key) === String(partnerId));
       if (!event || !isEvent(event)) throw new Error("선택한 사건 카드를 확인할 수 없습니다.");
+      const partnerColor = getCardColorLabel(partner);
+      if (!partner || !partnerColor) throw new Error("선택한 파트너 카드의 색상 정보를 확인할 수 없습니다.");
       if (deckListLoading) throw new Error("AI 덱 후보 목록을 불러오는 중입니다. 잠시 후 다시 시도해 주세요.");
       if (deckListError) throw new Error(deckListError);
       const candidates = publicDecks.filter((item) => selectedDeckIds.includes(String(item.id)));
@@ -286,6 +290,7 @@ export default function AIBattlePanel({ deck, partnerId, eventId, cards = [], en
           action: "create",
           main_deck: humanDeck,
           partner_key: String(partnerId),
+          partner_color: partnerColor,
           event_key: String(eventId),
           event_rule_code: getEventRuleCode(event, eventId),
           event_has_non_blue_color: eventHasNonBlueColor(event),
