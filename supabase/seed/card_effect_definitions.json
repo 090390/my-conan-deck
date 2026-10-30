@@ -3,243 +3,229 @@
   "language": "conan-card-effect-dsl",
   "definitions": [
     {
-      "effectId": "card-0062-on-enter",
-      "cardIds": [
-        "0062"
-      ],
-      "cardNameKo": "조디 스털링",
-      "cardNameJa": "ジョディ・スターリング",
-      "trigger": {
-        "event": "character.entered_field",
-        "timing": "after"
-      },
-      "conditions": [],
       "steps": [
         {
           "op": "refill_deck_from_remove_area",
           "when": {
             "fact": "player.deck.count",
-            "operator": "less_than",
-            "value": 4
+            "value": 4,
+            "operator": "less_than"
           },
-          "includeRemainingDeck": true,
+          "shuffle": true,
           "includeRemoveArea": true,
-          "shuffle": true
+          "includeRemainingDeck": true
         },
         {
           "op": "peek_top_cards",
           "count": 4,
-          "allowFewer": true,
-          "saveAs": "seen"
+          "saveAs": "seen",
+          "allowFewer": true
         },
         {
           "op": "select_cards",
-          "from": "seen",
-          "min": 0,
           "max": 1,
-          "optional": true,
+          "min": 0,
+          "from": "seen",
           "filter": {
             "field": "color",
-            "operator": "equals",
-            "value": "red"
+            "value": "red",
+            "operator": "equals"
           },
           "prompt": "공개하여 패에 넣을 적 카드를 최대 1장 선택하세요.",
           "saveAs": "selected_red",
+          "optional": true,
           "displayVariable": "seen"
         },
         {
           "op": "reveal_cards",
-          "from": "selected_red",
           "to": [
             "opponent"
           ],
-          "awaitAcknowledgement": true,
+          "from": "selected_red",
           "when": {
             "fact": "vars.selected_red.count",
-            "operator": "greater_than",
-            "value": 0
-          }
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "awaitAcknowledgement": true
         },
         {
           "op": "move_cards",
-          "from": "selected_red",
           "to": "hand",
+          "from": "selected_red",
           "when": {
             "fact": "vars.selected_red.count",
-            "operator": "greater_than",
-            "value": 0
+            "value": 0,
+            "operator": "greater_than"
           }
         },
         {
           "op": "move_unselected_to_deck_bottom",
           "from": "seen",
-          "selectedVariable": "selected_red",
-          "order": "player_choice"
+          "order": "player_choice",
+          "selectedVariable": "selected_red"
         },
         {
           "op": "select_cards",
-          "from": "hand",
-          "min": 1,
           "max": 1,
-          "optional": false,
-          "prompt": "패에 추가한 경우, 리무브할 손패 1장을 선택하세요.",
-          "saveAs": "hand_to_remove",
+          "min": 1,
+          "from": "hand",
           "when": {
             "fact": "vars.selected_red.count",
-            "operator": "greater_than",
-            "value": 0
-          }
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "prompt": "패에 추가한 경우, 리무브할 손패 1장을 선택하세요.",
+          "saveAs": "hand_to_remove",
+          "optional": false
         },
         {
           "op": "move_cards",
-          "from": "hand_to_remove",
           "to": "remove_area",
+          "from": "hand_to_remove",
           "when": {
             "fact": "vars.selected_red.count",
-            "operator": "greater_than",
-            "value": 0
+            "value": 0,
+            "operator": "greater_than"
           }
         }
-      ]
-    },
-    {
-      "effectId": "card-0110-on-enter-partner-green",
-      "cardIds": [
-        "0110"
       ],
-      "cardNameKo": "오키타 소지",
-      "cardNameJa": "沖田総司",
+      "cardIds": [
+        "0062"
+      ],
       "trigger": {
         "event": "character.entered_field",
         "timing": "after"
       },
-      "conditions": [
-        {
-          "fact": "player.partner.color",
-          "operator": "equals",
-          "value": "green"
-        }
-      ],
+      "effectId": "card-0062-on-enter",
+      "cardNameJa": "ジョディ・スターリング",
+      "cardNameKo": "조디 스털링",
+      "conditions": []
+    },
+    {
       "steps": [
         {
           "op": "grant_keyword",
           "target": "source_character",
           "keyword": "charge",
-          "displayNameKo": "돌격",
-          "duration": "turn_end"
+          "duration": "turn_end",
+          "displayNameKo": "돌격"
+        }
+      ],
+      "cardIds": [
+        "0110"
+      ],
+      "trigger": {
+        "event": "character.entered_field",
+        "timing": "after"
+      },
+      "effectId": "card-0110-on-enter-partner-green",
+      "cardNameJa": "沖田総司",
+      "cardNameKo": "오키타 소지",
+      "conditions": [
+        {
+          "fact": "player.partner.color",
+          "value": "green",
+          "operator": "equals"
         }
       ]
     },
     {
-      "effectId": "card-0011-on-enter-from-level3-effect",
+      "steps": [
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 0,
+          "from": "field",
+          "filter": {
+            "field": "card_type",
+            "value": "character",
+            "operator": "equals"
+          },
+          "prompt": "턴 종료 시까지 AP를 2000 올릴 캐릭터를 최대 1장 선택하세요.",
+          "saveAs": "ap_target",
+          "optional": true,
+          "targetController": "any"
+        },
+        {
+          "op": "modify_stat",
+          "stat": "ap",
+          "when": {
+            "fact": "vars.ap_target.count",
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "amount": 2000,
+          "target": "ap_target",
+          "duration": "turn_end",
+          "stacking": "additive"
+        }
+      ],
       "cardIds": [
         "0011"
       ],
-      "cardNameKo": "츠부라야 미츠히코",
-      "cardNameJa": "円谷光彦",
       "trigger": {
         "event": "character.entered_field",
         "timing": "after"
       },
+      "effectId": "card-0011-on-enter-from-level3-effect",
+      "cardNameJa": "円谷光彦",
+      "cardNameKo": "츠부라야 미츠히코",
       "conditions": [
         {
           "fact": "entry.method",
-          "operator": "in",
           "value": [
             "character_ability",
             "event_effect"
-          ]
+          ],
+          "operator": "in"
         },
         {
           "fact": "entry.source.card_type",
-          "operator": "in",
           "value": [
             "character",
             "event"
-          ]
+          ],
+          "operator": "in"
         },
         {
           "fact": "entry.source.level",
-          "operator": "greater_than_or_equal",
-          "value": 3
-        }
-      ],
-      "steps": [
-        {
-          "op": "select_cards",
-          "from": "field",
-          "min": 0,
-          "max": 1,
-          "optional": true,
-          "filter": {
-            "field": "card_type",
-            "operator": "equals",
-            "value": "character"
-          },
-          "targetController": "any",
-          "prompt": "턴 종료 시까지 AP를 2000 올릴 캐릭터를 최대 1장 선택하세요.",
-          "saveAs": "ap_target"
-        },
-        {
-          "op": "modify_stat",
-          "target": "ap_target",
-          "stat": "ap",
-          "amount": 2000,
-          "duration": "turn_end",
-          "stacking": "additive",
-          "when": {
-            "fact": "vars.ap_target.count",
-            "operator": "greater_than",
-            "value": 0
-          }
+          "value": 3,
+          "operator": "greater_than_or_equal"
         }
       ]
     },
     {
-      "effectId": "card-0223-on-enter-ap-minus-1000",
-      "cardIds": [
-        "0223"
-      ],
-      "cardNameKo": "조디 스털링",
-      "cardNameJa": "ジョディ・スターリング",
-      "trigger": {
-        "event": "character.entered_field",
-        "timing": "after"
-      },
-      "conditions": [],
       "steps": [
         {
           "op": "select_cards",
-          "from": "field",
-          "min": 0,
           "max": 1,
-          "optional": true,
+          "min": 0,
+          "from": "field",
           "filter": {
             "field": "card_type",
-            "operator": "equals",
-            "value": "character"
+            "value": "character",
+            "operator": "equals"
           },
-          "targetController": "any",
           "prompt": "턴 종료 시까지 AP를 1000 낮출 캐릭터를 최대 1장 선택하세요.",
-          "saveAs": "ap_target"
+          "saveAs": "ap_target",
+          "optional": true,
+          "targetController": "any"
         },
         {
           "op": "modify_stat",
-          "target": "ap_target",
           "stat": "ap",
-          "amount": -1000,
-          "duration": "turn_end",
-          "stacking": "additive",
           "when": {
             "fact": "vars.ap_target.count",
-            "operator": "greater_than",
-            "value": 0
-          }
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "amount": -1000,
+          "target": "ap_target",
+          "duration": "turn_end",
+          "stacking": "additive"
         }
-      ]
-    },
-    {
-      "effectId": "card-0223-mislead-passive",
+      ],
       "cardIds": [
         "0223"
       ],
@@ -247,46 +233,33 @@
         "event": "character.entered_field",
         "timing": "after"
       },
-      "conditions": [],
+      "effectId": "card-0223-on-enter-ap-minus-1000",
+      "cardNameJa": "ジョディ・スターリング",
+      "cardNameKo": "조디 스털링",
+      "conditions": []
+    },
+    {
       "steps": [
         {
           "op": "set_mislead_value",
-          "target": "source_character",
           "value": 1,
+          "target": "source_character",
           "duration": "while_in_field"
         }
       ],
+      "cardIds": [
+        "0223"
+      ],
+      "trigger": {
+        "event": "character.entered_field",
+        "timing": "after"
+      },
+      "effectId": "card-0223-mislead-passive",
+      "cardNameJa": "ジョディ・スターリング",
       "cardNameKo": "조디 스털링",
-      "cardNameJa": "ジョディ・スターリング"
+      "conditions": []
     },
     {
-      "effectId": "card-1013-activated-remove-low-ap",
-      "cardIds": [
-        "1013"
-      ],
-      "cardNameKo": "하기와라 켄지",
-      "cardNameJa": "萩原研二",
-      "trigger": {
-        "event": "character.activated_ability",
-        "timing": "immediate"
-      },
-      "conditions": [
-        {
-          "fact": "turn.is_source_controller_turn",
-          "operator": "equals",
-          "value": true
-        },
-        {
-          "fact": "source.is_active",
-          "operator": "equals",
-          "value": true
-        },
-        {
-          "fact": "player.field.has_keyword.haya",
-          "operator": "equals",
-          "value": true
-        }
-      ],
       "steps": [
         {
           "op": "pay_cost",
@@ -294,137 +267,164 @@
         },
         {
           "op": "select_cards",
-          "from": "opponent_field",
-          "min": 0,
           "max": 1,
-          "optional": true,
+          "min": 0,
+          "from": "opponent_field",
           "filter": {
             "allOf": [
               {
                 "field": "card_type",
-                "operator": "equals",
-                "value": "character"
+                "value": "character",
+                "operator": "equals"
               },
               {
                 "field": "ap_current",
-                "operator": "less_than_or_equal",
-                "value": 8000
+                "value": 8000,
+                "operator": "less_than_or_equal"
               }
             ]
           },
           "prompt": "리무브할 상대 캐릭터(AP 8000 이하)를 최대 1장 선택하세요.",
-          "saveAs": "target"
+          "saveAs": "target",
+          "optional": true
         },
         {
           "op": "move_cards",
-          "from": "target",
           "to": "remove_area",
-          "targetOwner": "opponent",
+          "from": "target",
           "when": {
             "fact": "vars.target.count",
-            "operator": "greater_than",
-            "value": 0
-          }
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "targetOwner": "opponent"
+        }
+      ],
+      "cardIds": [
+        "1013"
+      ],
+      "trigger": {
+        "event": "character.activated_ability",
+        "timing": "immediate"
+      },
+      "effectId": "card-1013-activated-remove-low-ap",
+      "cardNameJa": "萩原研二",
+      "cardNameKo": "하기와라 켄지",
+      "conditions": [
+        {
+          "fact": "turn.is_source_controller_turn",
+          "value": true,
+          "operator": "equals"
+        },
+        {
+          "fact": "source.is_active",
+          "value": true,
+          "operator": "equals"
+        },
+        {
+          "fact": "player.field.has_keyword.haya",
+          "value": true,
+          "operator": "equals"
         }
       ],
       "activationLabelKo": "질풍 조건부 슬립·리무브"
     },
     {
-      "effectId": "card-1013-opponent-turn-field-remove",
-      "cardIds": [
-        "1013"
-      ],
-      "cardNameKo": "하기와라 켄지",
-      "cardNameJa": "萩原研二",
-      "trigger": {
-        "event": "character.removed_from_field",
-        "timing": "after"
-      },
-      "conditions": [
-        {
-          "fact": "turn.is_opponent_turn",
-          "operator": "equals",
-          "value": true
-        }
-      ],
       "steps": [
         {
           "op": "peek_top_cards",
           "count": 3,
-          "allowFewer": true,
-          "saveAs": "seen"
+          "saveAs": "seen",
+          "allowFewer": true
         },
         {
           "op": "reveal_cards",
-          "from": "seen",
           "to": [
             "all"
           ],
+          "from": "seen",
           "awaitAcknowledgement": true
         },
         {
           "op": "select_cards",
-          "from": "seen",
-          "min": 0,
           "max": 1,
-          "optional": true,
+          "min": 0,
+          "from": "seen",
           "filter": {
             "allOf": [
               {
                 "field": "card_type",
-                "operator": "equals",
-                "value": "character"
+                "value": "character",
+                "operator": "equals"
               },
               {
                 "field": "keyword",
-                "operator": "has_keyword",
-                "value": "haya"
+                "value": "haya",
+                "operator": "has_keyword"
               }
             ]
           },
           "prompt": "공개해 패에 넣을 질풍/돌격 보유 캐릭터를 최대 1장 선택하세요.",
-          "saveAs": "chosen"
+          "saveAs": "chosen",
+          "optional": true
         },
         {
           "op": "move_cards",
-          "from": "chosen",
           "to": "hand",
+          "from": "chosen",
           "when": {
             "fact": "vars.chosen.count",
-            "operator": "greater_than",
-            "value": 0
+            "value": 0,
+            "operator": "greater_than"
           }
         },
         {
           "op": "move_unselected_to_zone",
-          "from": "seen",
-          "selectedVariable": "chosen",
           "to": "remove_area",
-          "order": "preserve"
+          "from": "seen",
+          "order": "preserve",
+          "selectedVariable": "chosen"
         },
         {
           "op": "select_cards",
-          "from": "hand",
-          "min": 1,
           "max": 1,
-          "optional": false,
-          "prompt": "레벨 8 이상 카드를 패에 추가했다면, 리무브할 손패 1장을 선택하세요.",
-          "saveAs": "hand_to_remove",
+          "min": 1,
+          "from": "hand",
           "when": {
             "fact": "vars.chosen.has_level_at_least_8",
-            "operator": "equals",
-            "value": true
-          }
+            "value": true,
+            "operator": "equals"
+          },
+          "prompt": "레벨 8 이상 카드를 패에 추가했다면, 리무브할 손패 1장을 선택하세요.",
+          "saveAs": "hand_to_remove",
+          "optional": false
         },
         {
           "op": "move_cards",
-          "from": "hand_to_remove",
           "to": "remove_area",
+          "from": "hand_to_remove",
           "when": {
             "fact": "vars.chosen.has_level_at_least_8",
-            "operator": "equals",
-            "value": true
+            "value": true,
+            "operator": "equals"
           }
+        }
+      ],
+      "cardIds": [
+        "1013"
+      ],
+      "trigger": {
+        "event": "character.removed_from_field",
+        "timing": "after"
+      },
+      "effectId": "card-1013-opponent-turn-field-remove",
+      "cardNameJa": "萩原研二",
+      "cardNameKo": "하기와라 켄지",
+      "conditions": [
+        {
+          "fact": "turn.is_opponent_turn",
+          "value": true,
+          "operator": "equals"
         }
       ],
       "afterResolve": {
@@ -434,203 +434,172 @@
       "activationLabelKo": "상대 턴 현장 리무브 효과"
     },
     {
-      "effectId": "card-0636-on-enter-search-shinichi",
-      "cardIds": [
-        "0636"
-      ],
-      "cardNameKo": "모리 란",
-      "cardNameJa": "毛利蘭",
-      "trigger": {
-        "event": "character.entered_field",
-        "timing": "after"
-      },
-      "conditions": [
-        {
-          "fact": "player.partner.color",
-          "operator": "equals",
-          "value": "blue"
-        }
-      ],
       "steps": [
         {
           "op": "reveal_until_match",
           "from": "deck",
-          "saveAs": "search_result",
           "match": {
             "allOf": [
               {
                 "field": "level",
-                "operator": "greater_than_or_equal",
-                "value": 7
+                "value": 7,
+                "operator": "greater_than_or_equal"
               },
               {
                 "field": "card_name",
-                "operator": "name_matches",
-                "value": "工藤新一"
+                "value": "工藤新一",
+                "operator": "name_matches"
               }
             ]
           },
-          "includeMatchingCard": true,
-          "publicReveal": true,
+          "saveAs": "search_result",
           "oneByOne": true,
-          "awaitActorAcknowledgement": true,
-          "whenNoMatch": "shuffle_all_back"
+          "whenNoMatch": "shuffle_all_back",
+          "publicReveal": true,
+          "includeMatchingCard": true,
+          "awaitActorAcknowledgement": true
         },
         {
           "op": "move_cards",
-          "from": "search_result.matched",
           "to": "hand",
+          "from": "search_result.matched",
           "when": {
             "fact": "vars.search_result.matched_count",
-            "operator": "greater_than",
-            "value": 0
+            "value": 0,
+            "operator": "greater_than"
           }
         },
         {
           "op": "move_unselected_to_zone",
-          "from": "search_result.revealed",
-          "selectedVariable": "search_result.matched",
           "to": "deck_bottom",
-          "order": "preserve"
+          "from": "search_result.revealed",
+          "order": "preserve",
+          "selectedVariable": "search_result.matched"
         },
         {
           "op": "shuffle_deck"
         }
-      ]
-    },
-    {
-      "effectId": "card-0796-on-enter-partner-red-hand-check",
-      "cardIds": [
-        "0796"
       ],
-      "cardNameKo": "오키야 스바루",
-      "cardNameJa": "沖矢昴",
+      "cardIds": [
+        "0636"
+      ],
       "trigger": {
         "event": "character.entered_field",
         "timing": "after"
       },
+      "effectId": "card-0636-on-enter-search-shinichi",
+      "cardNameJa": "毛利蘭",
+      "cardNameKo": "모리 란",
       "conditions": [
         {
           "fact": "player.partner.color",
-          "operator": "equals",
-          "value": "red"
-        },
-        {
-          "fact": "opponent.hand.count",
-          "operator": "greater_than_or_equal",
-          "value": {
-            "fact": "player.hand.count"
-          }
+          "value": "blue",
+          "operator": "equals"
         }
-      ],
+      ]
+    },
+    {
       "steps": [
         {
           "op": "select_cards",
-          "from": "opponent_field",
-          "min": 0,
           "max": 1,
-          "optional": true,
+          "min": 0,
+          "from": "opponent_field",
           "filter": {
             "allOf": [
               {
                 "field": "card_type",
-                "operator": "equals",
-                "value": "character"
+                "value": "character",
+                "operator": "equals"
               },
               {
                 "field": "level",
-                "operator": "less_than_or_equal",
-                "value": 8
+                "value": 8,
+                "operator": "less_than_or_equal"
               }
             ]
           },
           "prompt": "리무브할 상대 레벨 8 이하 캐릭터를 최대 1장 선택하세요.",
-          "saveAs": "target"
+          "saveAs": "target",
+          "optional": true
         },
         {
           "op": "move_cards",
-          "from": "target",
           "to": "remove_area",
-          "targetOwner": "opponent",
+          "from": "target",
           "when": {
             "fact": "vars.target.count",
-            "operator": "greater_than",
-            "value": 0
-          }
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "targetOwner": "opponent"
+        }
+      ],
+      "cardIds": [
+        "0796"
+      ],
+      "trigger": {
+        "event": "character.entered_field",
+        "timing": "after"
+      },
+      "effectId": "card-0796-on-enter-partner-red-hand-check",
+      "cardNameJa": "沖矢昴",
+      "cardNameKo": "오키야 스바루",
+      "conditions": [
+        {
+          "fact": "player.partner.color",
+          "value": "red",
+          "operator": "equals"
+        },
+        {
+          "fact": "opponent.hand.count",
+          "value": {
+            "fact": "player.hand.count"
+          },
+          "operator": "greater_than_or_equal"
         }
       ],
       "ruleTextNote": "일본어 원문은 상대 손패 수가 자신의 손패 수 이상(>=)이라고 되어 있어 원문을 우선했습니다."
     },
     {
-      "effectId": "card-0796-activated-remove-level7",
-      "cardIds": [
-        "0796"
-      ],
-      "cardNameKo": "오키야 스바루",
-      "cardNameJa": "沖矢昴",
-      "trigger": {
-        "event": "character.activated_ability",
-        "timing": "immediate"
-      },
-      "oncePerTurn": true,
-      "conditions": [
-        {
-          "fact": "turn.is_source_controller_turn",
-          "operator": "equals",
-          "value": true
-        },
-        {
-          "fact": "player.hand.count",
-          "operator": "less_than_or_equal",
-          "value": 2
-        },
-        {
-          "fact": "source.status",
-          "operator": "in",
-          "value": [
-            "rested",
-            "stunned"
-          ]
-        }
-      ],
       "steps": [
         {
           "op": "select_cards",
-          "from": "field",
-          "min": 1,
           "max": 1,
-          "optional": false,
+          "min": 1,
+          "from": "field",
           "filter": {
             "allOf": [
               {
                 "field": "controller",
-                "operator": "equals",
-                "value": "self"
+                "value": "self",
+                "operator": "equals"
               },
               {
                 "field": "card_type",
-                "operator": "equals",
-                "value": "character"
+                "value": "character",
+                "operator": "equals"
               },
               {
                 "field": "level",
-                "operator": "greater_than_or_equal",
-                "value": 6
+                "value": 6,
+                "operator": "greater_than_or_equal"
               },
               {
                 "field": "color",
-                "operator": "equals",
-                "value": "red"
+                "value": "red",
+                "operator": "equals"
               },
               {
                 "field": "is_active",
-                "operator": "equals",
-                "value": true
+                "value": true,
+                "operator": "equals"
               }
             ]
           },
           "prompt": "비용으로 슬립시킬 레벨 6 이상 적 캐릭터 1장을 선택하세요. 효과 발동 캐릭터 자신도 선택할 수 있습니다.",
-          "saveAs": "cost_target"
+          "saveAs": "cost_target",
+          "optional": false
         },
         {
           "op": "pay_cost",
@@ -639,274 +608,287 @@
         },
         {
           "op": "select_cards",
-          "from": "opponent_field",
-          "min": 0,
           "max": 1,
-          "optional": true,
+          "min": 0,
+          "from": "opponent_field",
           "filter": {
             "allOf": [
               {
                 "field": "card_type",
-                "operator": "equals",
-                "value": "character"
+                "value": "character",
+                "operator": "equals"
               },
               {
                 "field": "level",
-                "operator": "less_than_or_equal",
-                "value": 7
+                "value": 7,
+                "operator": "less_than_or_equal"
               }
             ]
           },
           "prompt": "리무브할 상대 레벨 7 이하 캐릭터를 최대 1장 선택하세요.",
-          "saveAs": "target"
+          "saveAs": "target",
+          "optional": true
         },
         {
           "op": "move_cards",
-          "from": "target",
           "to": "remove_area",
-          "targetOwner": "opponent",
+          "from": "target",
           "when": {
             "fact": "vars.target.count",
-            "operator": "greater_than",
-            "value": 0
-          }
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "targetOwner": "opponent"
         }
       ],
-      "activationLabelKo": "레벨 7 이하 캐릭터 리무브"
-    },
-    {
-      "effectId": "card-0501-continuous-bond-yamato-ap",
       "cardIds": [
-        "0501"
+        "0796"
       ],
-      "cardNameKo": "모로후시 타카아키",
-      "cardNameJa": "諸伏高明",
       "trigger": {
-        "event": "continuous.recalculate",
-        "timing": "continuous"
+        "event": "character.activated_ability",
+        "timing": "immediate"
       },
-      "continuous": true,
+      "effectId": "card-0796-activated-remove-level7",
+      "cardNameJa": "沖矢昴",
+      "cardNameKo": "오키야 스바루",
       "conditions": [
         {
           "fact": "turn.is_source_controller_turn",
-          "operator": "equals",
-          "value": true
+          "value": true,
+          "operator": "equals"
         },
         {
-          "fact": "player.field.has_card_name",
-          "operator": "equals",
-          "value": "大和敢助"
+          "fact": "player.hand.count",
+          "value": 2,
+          "operator": "less_than_or_equal"
+        },
+        {
+          "fact": "source.status",
+          "value": [
+            "rested",
+            "stunned"
+          ],
+          "operator": "in"
         }
       ],
+      "oncePerTurn": true,
+      "activationLabelKo": "레벨 7 이하 캐릭터 리무브"
+    },
+    {
       "steps": [
         {
           "op": "set_continuous_stat",
-          "target": "source_character",
           "stat": "ap",
           "amount": 2000,
-          "modifierId": "bond-yamato-ap",
-          "duration": "while_condition_true"
+          "target": "source_character",
+          "duration": "while_condition_true",
+          "modifierId": "bond-yamato-ap"
         }
-      ]
-    },
-    {
-      "effectId": "card-0501-continuous-nagano-police-charge",
+      ],
       "cardIds": [
         "0501"
       ],
-      "cardNameKo": "모로후시 타카아키",
-      "cardNameJa": "諸伏高明",
       "trigger": {
         "event": "continuous.recalculate",
         "timing": "continuous"
       },
-      "continuous": true,
+      "effectId": "card-0501-continuous-bond-yamato-ap",
+      "cardNameJa": "諸伏高明",
+      "cardNameKo": "모로후시 타카아키",
       "conditions": [
         {
-          "fact": "player.remove_area.count_matching_trait",
-          "operator": "greater_than_or_equal",
-          "value": 2,
-          "trait": "長野県警",
-          "cardType": "character"
+          "fact": "turn.is_source_controller_turn",
+          "value": true,
+          "operator": "equals"
+        },
+        {
+          "fact": "player.field.has_card_name",
+          "value": "大和敢助",
+          "operator": "equals"
         }
       ],
+      "continuous": true
+    },
+    {
       "steps": [
         {
           "op": "set_continuous_keyword",
           "target": "source_character",
           "keyword": "charge",
-          "modifierId": "nagano-police-charge",
-          "duration": "while_condition_true"
+          "duration": "while_condition_true",
+          "modifierId": "nagano-police-charge"
         }
-      ]
+      ],
+      "cardIds": [
+        "0501"
+      ],
+      "trigger": {
+        "event": "continuous.recalculate",
+        "timing": "continuous"
+      },
+      "effectId": "card-0501-continuous-nagano-police-charge",
+      "cardNameJa": "諸伏高明",
+      "cardNameKo": "모로후시 타카아키",
+      "conditions": [
+        {
+          "fact": "player.remove_area.count_matching_trait",
+          "trait": "長野県警",
+          "value": 2,
+          "cardType": "character",
+          "operator": "greater_than_or_equal"
+        }
+      ],
+      "continuous": true
     },
     {
-      "effectId": "card-0264-on-enter-attach-detective-boys",
-      "cardIds": [
-        "0264"
-      ],
-      "cardNameKo": "결성 소년탐정단",
-      "cardNameJa": "結成 少年探偵団",
-      "trigger": {
-        "event": "character.entered_field",
-        "timing": "after"
-      },
-      "conditions": [],
       "steps": [
         {
           "op": "select_cards",
-          "from": "remove_area",
-          "min": 0,
           "max": 5,
-          "optional": true,
-          "uniqueBy": "card_name",
+          "min": 0,
+          "from": "remove_area",
           "filter": {
             "allOf": [
               {
                 "field": "card_type",
-                "operator": "equals",
-                "value": "character"
+                "value": "character",
+                "operator": "equals"
               },
               {
                 "field": "trait",
-                "operator": "has_trait",
-                "value": "少年探偵団"
+                "value": "少年探偵団",
+                "operator": "has_trait"
               }
             ]
           },
           "prompt": "이 카드 아래에 겹칠, 카드명이 서로 다른 소년탐정단 캐릭터를 최대 5장 선택하세요.",
-          "saveAs": "attachments"
+          "saveAs": "attachments",
+          "optional": true,
+          "uniqueBy": "card_name"
         },
         {
           "op": "attach_cards",
-          "from": "attachments",
-          "to": "source_character"
+          "to": "source_character",
+          "from": "attachments"
         }
-      ]
-    },
-    {
-      "effectId": "card-0264-continuous-charge-from-attachments",
+      ],
       "cardIds": [
         "0264"
       ],
-      "cardNameKo": "결성 소년탐정단",
-      "cardNameJa": "結成 少年探偵団",
       "trigger": {
-        "event": "continuous.recalculate",
-        "timing": "continuous"
+        "event": "character.entered_field",
+        "timing": "after"
       },
-      "continuous": true,
-      "conditions": [
-        {
-          "fact": "source.under_cards.count",
-          "operator": "greater_than_or_equal",
-          "value": 1
-        }
-      ],
+      "effectId": "card-0264-on-enter-attach-detective-boys",
+      "cardNameJa": "結成 少年探偵団",
+      "cardNameKo": "결성 소년탐정단",
+      "conditions": []
+    },
+    {
       "steps": [
         {
           "op": "set_continuous_keyword",
           "target": "source_character",
           "keyword": "charge",
-          "modifierId": "detective-boys-charge",
-          "duration": "while_condition_true"
+          "duration": "while_condition_true",
+          "modifierId": "detective-boys-charge"
         }
-      ]
-    },
-    {
-      "effectId": "card-0264-action-draw-at-three",
+      ],
       "cardIds": [
         "0264"
       ],
-      "cardNameKo": "결성 소년탐정단",
-      "cardNameJa": "結成 少年探偵団",
       "trigger": {
-        "event": "character.acted",
-        "timing": "after"
+        "event": "continuous.recalculate",
+        "timing": "continuous"
       },
+      "effectId": "card-0264-continuous-charge-from-attachments",
+      "cardNameJa": "結成 少年探偵団",
+      "cardNameKo": "결성 소년탐정단",
       "conditions": [
         {
           "fact": "source.under_cards.count",
-          "operator": "greater_than_or_equal",
-          "value": 3
+          "value": 1,
+          "operator": "greater_than_or_equal"
         }
       ],
+      "continuous": true
+    },
+    {
       "steps": [
         {
           "op": "draw_cards",
-          "destination": "hand",
-          "count": 1
+          "count": 1,
+          "destination": "hand"
         }
-      ]
-    },
-    {
-      "effectId": "card-0264-action-evidence-at-five",
+      ],
       "cardIds": [
         "0264"
       ],
-      "cardNameKo": "결성 소년탐정단",
-      "cardNameJa": "結成 少年探偵団",
       "trigger": {
         "event": "character.acted",
         "timing": "after"
       },
+      "effectId": "card-0264-action-draw-at-three",
+      "cardNameJa": "結成 少年探偵団",
+      "cardNameKo": "결성 소년탐정단",
       "conditions": [
         {
           "fact": "source.under_cards.count",
-          "operator": "greater_than_or_equal",
-          "value": 5
+          "value": 3,
+          "operator": "greater_than_or_equal"
         }
-      ],
+      ]
+    },
+    {
       "steps": [
         {
           "op": "gain_evidence",
           "count": 1
         }
+      ],
+      "cardIds": [
+        "0264"
+      ],
+      "trigger": {
+        "event": "character.acted",
+        "timing": "after"
+      },
+      "effectId": "card-0264-action-evidence-at-five",
+      "cardNameJa": "結成 少年探偵団",
+      "cardNameKo": "결성 소년탐정단",
+      "conditions": [
+        {
+          "fact": "source.under_cards.count",
+          "value": 5,
+          "operator": "greater_than_or_equal"
+        }
       ]
     },
     {
-      "effectId": "card-1010-first-entry-haya-recover",
-      "cardIds": [
-        "1010"
-      ],
-      "cardNameKo": "하기와라 치하야&하기와라 켄지",
-      "cardNameJa": "萩原千速&萩原研二",
-      "trigger": {
-        "event": "character.entered_field",
-        "timing": "after"
-      },
-      "conditions": [
-        {
-          "fact": "entry.is_first_character_this_turn",
-          "operator": "equals",
-          "value": true
-        }
-      ],
       "steps": [
         {
           "op": "select_cards",
-          "from": "remove_area",
-          "min": 0,
           "max": 1,
-          "optional": true,
+          "min": 0,
+          "from": "remove_area",
           "filter": {
             "anyOf": [
               {
                 "allOf": [
                   {
                     "field": "card_type",
-                    "operator": "equals",
-                    "value": "character"
+                    "value": "character",
+                    "operator": "equals"
                   },
                   {
                     "field": "level",
-                    "operator": "less_than_or_equal",
-                    "value": 6
+                    "value": 6,
+                    "operator": "less_than_or_equal"
                   },
                   {
                     "field": "trait",
-                    "operator": "has_trait",
-                    "value": "神奈川県警"
+                    "value": "神奈川県警",
+                    "operator": "has_trait"
                   }
                 ]
               },
@@ -914,70 +896,61 @@
                 "allOf": [
                   {
                     "field": "card_type",
-                    "operator": "equals",
-                    "value": "character"
+                    "value": "character",
+                    "operator": "equals"
                   },
                   {
                     "field": "level",
-                    "operator": "less_than_or_equal",
-                    "value": 6
+                    "value": 6,
+                    "operator": "less_than_or_equal"
                   },
                   {
                     "field": "keyword",
-                    "operator": "has_keyword",
-                    "value": "haya"
+                    "value": "haya",
+                    "operator": "has_keyword"
                   }
                 ]
               }
             ]
           },
           "prompt": "패에 추가할 레벨 6 이하 가나가와현 경찰 또는 질풍 보유 캐릭터를 최대 1장 선택하세요.",
-          "saveAs": "recovered"
+          "saveAs": "recovered",
+          "optional": true
         },
         {
           "op": "move_cards",
-          "from": "recovered",
           "to": "hand",
+          "from": "recovered",
           "when": {
             "fact": "vars.recovered.count",
-            "operator": "greater_than",
-            "value": 0
+            "value": 0,
+            "operator": "greater_than"
           }
         },
         {
           "op": "mark_keyword_activated",
           "keyword": "haya"
         }
-      ]
-    },
-    {
-      "effectId": "card-1010-partner-yellow-activated-remove",
+      ],
       "cardIds": [
         "1010"
       ],
-      "cardNameKo": "하기와라 치하야&하기와라 켄지",
-      "cardNameJa": "萩原千速&萩原研二",
       "trigger": {
-        "event": "character.activated_ability",
-        "timing": "immediate"
+        "event": "character.entered_field",
+        "timing": "after"
       },
+      "effectId": "card-1010-first-entry-haya-recover",
+      "cardNameJa": "萩原千速&萩原研二",
+      "cardNameKo": "하기와라 치하야&하기와라 켄지",
       "conditions": [
         {
-          "fact": "player.partner.color",
-          "operator": "equals",
-          "value": "yellow"
-        },
-        {
-          "fact": "turn.is_source_controller_turn",
-          "operator": "equals",
-          "value": true
-        },
-        {
-          "fact": "source.is_active",
-          "operator": "equals",
-          "value": true
+          "fact": "entry.is_first_character_this_turn",
+          "value": true,
+          "operator": "equals"
         }
-      ],
+      ]
+    },
+    {
       "steps": [
         {
           "op": "pay_cost",
@@ -985,60 +958,87 @@
         },
         {
           "op": "select_cards",
-          "from": "opponent_field",
-          "min": 0,
           "max": 1,
-          "optional": true,
+          "min": 0,
+          "from": "opponent_field",
           "filter": {
             "allOf": [
               {
                 "field": "card_type",
-                "operator": "equals",
-                "value": "character"
+                "value": "character",
+                "operator": "equals"
               },
               {
                 "field": "level",
-                "operator": "less_than_or_equal",
-                "value": 9
+                "value": 9,
+                "operator": "less_than_or_equal"
               }
             ]
           },
           "prompt": "리무브할 상대 레벨 9 이하 캐릭터를 최대 1장 선택하세요.",
-          "saveAs": "target"
+          "saveAs": "target",
+          "optional": true
         },
         {
           "op": "move_cards",
-          "from": "target",
           "to": "remove_area",
-          "targetOwner": "opponent",
+          "from": "target",
           "when": {
             "fact": "vars.target.count",
-            "operator": "greater_than",
-            "value": 0
-          }
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "targetOwner": "opponent"
+        }
+      ],
+      "cardIds": [
+        "1010"
+      ],
+      "trigger": {
+        "event": "character.activated_ability",
+        "timing": "immediate"
+      },
+      "effectId": "card-1010-partner-yellow-activated-remove",
+      "cardNameJa": "萩原千速&萩原研二",
+      "cardNameKo": "하기와라 치하야&하기와라 켄지",
+      "conditions": [
+        {
+          "fact": "player.partner.color",
+          "value": "yellow",
+          "operator": "equals"
+        },
+        {
+          "fact": "turn.is_source_controller_turn",
+          "value": true,
+          "operator": "equals"
+        },
+        {
+          "fact": "source.is_active",
+          "value": true,
+          "operator": "equals"
         }
       ],
       "activationLabelKo": "파트너 황 · 슬립 리무브"
     },
     {
-      "effectId": "card-1010-end-turn-ready-haya-users",
+      "steps": [
+        {
+          "op": "ready_cards_that_used_keyword",
+          "turn": "ending_turn",
+          "keyword": "haya",
+          "includePartnerArea": true
+        }
+      ],
       "cardIds": [
         "1010"
       ],
-      "cardNameKo": "하기와라 치하야&하기와라 켄지",
-      "cardNameJa": "萩原千速&萩原研二",
       "trigger": {
         "event": "player.turn_ended",
         "timing": "after"
       },
-      "steps": [
-        {
-          "op": "ready_cards_that_used_keyword",
-          "keyword": "haya",
-          "turn": "ending_turn",
-          "includePartnerArea": true
-        }
-      ]
+      "effectId": "card-1010-end-turn-ready-haya-users",
+      "cardNameJa": "萩原千速&萩原研二",
+      "cardNameKo": "하기와라 치하야&하기와라 켄지"
     },
     {
       "steps": [
@@ -1075,7 +1075,21 @@
     {
       "steps": [
         {
+          "op": "offer_reaction",
+          "prompt": "덱 위 3장을 리무브할까요? 리무브한 카드 중 경찰 캐릭터가 있으면 턴 종료 시까지 돌격을 얻습니다.",
+          "saveAs": "remove_top_three",
+          "choices": [
+            "yes",
+            "no"
+          ]
+        },
+        {
           "op": "peek_top_cards",
+          "when": {
+            "fact": "vars.remove_top_three",
+            "value": "yes",
+            "operator": "equals"
+          },
           "count": 3,
           "saveAs": "seen",
           "allowFewer": true
@@ -1083,6 +1097,11 @@
         {
           "op": "filter_cards",
           "from": "seen",
+          "when": {
+            "fact": "vars.remove_top_three",
+            "value": "yes",
+            "operator": "equals"
+          },
           "filter": {
             "allOf": [
               {
@@ -1102,7 +1121,12 @@
         {
           "op": "move_cards",
           "to": "remove_area",
-          "from": "seen"
+          "from": "seen",
+          "when": {
+            "fact": "vars.remove_top_three",
+            "value": "yes",
+            "operator": "equals"
+          }
         },
         {
           "op": "grant_keyword",
@@ -1378,146 +1402,137 @@
       }
     },
     {
-      "effectId": "card-1215-on-play-detective-kid-cycle",
-      "cardIds": [
-        "1215"
-      ],
-      "cardNameKo": "탐정은 그 흔적을 보고 이래저래 트집을 잡는…… 단순한 비평가에 지나지 않는다고?",
-      "cardNameJa": "探偵はその痕跡を見てあれこれ難癖をつける……単なる批評家にすぎないと？",
-      "trigger": {
-        "event": "event.played",
-        "timing": "after"
-      },
-      "conditions": [
-        {
-          "fact": "player.event.has_detective_vs_kid_trait",
-          "operator": "equals",
-          "value": true
-        },
-        {
-          "fact": "player.partner.color",
-          "operator": "equals",
-          "value": "white"
-        }
-      ],
       "steps": [
         {
           "op": "draw_cards",
           "count": 2,
+          "amount": 2,
           "destination": "hand"
         },
         {
           "op": "select_cards",
-          "from": "hand",
-          "min": 2,
           "max": 2,
-          "optional": false,
+          "min": 2,
+          "from": "hand",
           "prompt": "리무브할 손패 2장을 선택하세요.",
-          "saveAs": "hand_to_remove"
+          "saveAs": "hand_to_remove",
+          "optional": false
         },
         {
           "op": "move_cards",
-          "from": "hand_to_remove",
-          "to": "remove_area"
+          "to": "remove_area",
+          "from": "hand_to_remove"
         },
         {
           "op": "select_cards",
-          "from": "remove_area",
-          "min": 0,
           "max": 1,
-          "optional": true,
+          "min": 0,
+          "from": "remove_area",
           "filter": {
             "allOf": [
               {
                 "field": "card_type",
-                "operator": "equals",
-                "value": "character"
+                "value": "character",
+                "operator": "equals"
               },
               {
                 "field": "level",
-                "operator": "less_than_or_equal",
-                "value": 7
+                "value": 7,
+                "operator": "less_than_or_equal"
               },
               {
                 "anyOf": [
                   {
                     "field": "color",
-                    "operator": "equals",
-                    "value": "blue"
+                    "value": "blue",
+                    "operator": "equals"
                   },
                   {
                     "field": "color",
-                    "operator": "equals",
-                    "value": "white"
+                    "value": "white",
+                    "operator": "equals"
                   }
                 ]
               }
             ]
           },
           "prompt": "리무브 에이리어에서 등장시킬 레벨 7 이하 청/백 캐릭터를 최대 1장 선택하세요.",
-          "saveAs": "character_to_field"
+          "saveAs": "character_to_field",
+          "optional": true
         },
         {
           "op": "move_cards",
-          "from": "character_to_field",
           "to": "field",
-          "entryMethod": "event_effect",
+          "from": "character_to_field",
           "when": {
             "fact": "vars.character_to_field.count",
-            "operator": "greater_than",
-            "value": 0
-          }
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "entryMethod": "event_effect"
+        }
+      ],
+      "cardIds": [
+        "1215"
+      ],
+      "trigger": {
+        "event": "event.played",
+        "timing": "after"
+      },
+      "effectId": "card-1215-on-play-detective-kid-cycle",
+      "cardNameJa": "探偵はその痕跡を見てあれこれ難癖をつける……単なる批評家にすぎないと？",
+      "cardNameKo": "탐정은 그 흔적을 보고 이래저래 트집을 잡는…… 단순한 비평가에 지나지 않는다고?",
+      "conditions": [
+        {
+          "fact": "player.event.has_detective_vs_kid_trait",
+          "value": true,
+          "operator": "equals"
+        },
+        {
+          "fact": "player.partner.color",
+          "value": "white",
+          "operator": "equals"
         }
       ],
       "reviewNotes": {
-        "sourceText": "사건의 특징에 [탐정 VS 괴도]가 있고 파트너 카드의 색상이 백일 경우, 덱에서 카드 2장을 뽑고 손패에서 카드 2장을 리무브한다. 이어서 리무브 에이리어의 레벨 7 이하 청/백 캐릭터를 최대 1장 선택해 등장시킬 수 있다.",
-        "rationale": "사건의 특성은 현재 사건 규칙 코드 conan_vs_kid_1261로 판별한다. 드로우 뒤 손패 2장을 리무브하고, 방금 리무브한 카드도 포함한 리무브 에이리어에서 적격 청/백 캐릭터를 선택해 등장시킨다."
+        "rationale": "사건의 특성은 현재 사건 규칙 코드 conan_vs_kid_1261로 판별한다. 드로우 뒤 손패 2장을 리무브하고, 방금 리무브한 카드도 포함한 리무브 에이리어에서 적격 청/백 캐릭터를 선택해 등장시킨다.",
+        "sourceText": "사건의 특징에 [탐정 VS 괴도]가 있고 파트너 카드의 색상이 백일 경우, 덱에서 카드 2장을 뽑고 손패에서 카드 2장을 리무브한다. 이어서 리무브 에이리어의 레벨 7 이하 청/백 캐릭터를 최대 1장 선택해 등장시킬 수 있다."
       }
     },
     {
-      "effectId": "card-0938-on-enter-partner-yellow-charge",
-      "cardIds": [
-        "0938"
-      ],
-      "cardNameKo": "마츠다 진페이",
-      "cardNameJa": "松田陣平",
-      "trigger": {
-        "event": "character.entered_field",
-        "timing": "after"
-      },
-      "conditions": [
-        {
-          "fact": "player.partner.color",
-          "operator": "equals",
-          "value": "yellow"
-        }
-      ],
       "steps": [
         {
           "op": "grant_keyword",
           "target": "source_character",
           "keyword": "charge",
-          "displayNameKo": "돌격",
-          "duration": "turn_end"
+          "duration": "turn_end",
+          "displayNameKo": "돌격"
+        }
+      ],
+      "cardIds": [
+        "0938"
+      ],
+      "trigger": {
+        "event": "character.entered_field",
+        "timing": "after"
+      },
+      "effectId": "card-0938-on-enter-partner-yellow-charge",
+      "cardNameJa": "松田陣平",
+      "cardNameKo": "마츠다 진페이",
+      "conditions": [
+        {
+          "fact": "player.partner.color",
+          "value": "yellow",
+          "operator": "equals"
         }
       ],
       "reviewNotes": {
-        "sourceText": "【파트너 황】 - 〚돌격〛（등장한 턴부터 바로 액션 수행 가능）",
-        "rationale": "전체 카드 효과 중 파트너 황 조건부 돌격 부분만 독립 정의한다. 대상 지정 제한과 턴당 1회 컨택 중 손패 리무브/AP +3000은 별도 런타임 기능이 필요해 미구현으로 남긴다."
+        "rationale": "전체 카드 효과 중 파트너 황 조건부 돌격 부분만 독립 정의한다. 대상 지정 제한과 턴당 1회 컨택 중 손패 리무브/AP +3000은 별도 런타임 기능이 필요해 미구현으로 남긴다.",
+        "sourceText": "【파트너 황】 - 〚돌격〛（등장한 턴부터 바로 액션 수행 가능）"
       }
     },
     {
-      "effectId": "card-0205-disguised-draw-and-ap",
-      "cardIds": [
-        "0205"
-      ],
-      "cardNameKo": "괴도 키드",
-      "cardNameJa": "怪盗キッド",
-      "trigger": {
-        "event": "character.disguised",
-        "timing": "after"
-      },
-      "conditions": [],
+      "notes": "변장으로 등장한 이 캐릭터가 현재 컨택의 주체일 때 1장 드로우하고 해당 컨택에서 AP+1000.",
       "steps": [
         {
           "op": "draw_cards",
@@ -1529,446 +1544,439 @@
           "amount": 1000
         }
       ],
-      "notes": "변장으로 등장한 이 캐릭터가 현재 컨택의 주체일 때 1장 드로우하고 해당 컨택에서 AP+1000."
-    },
-    {
-      "effectId": "card-0205-on-enter-lowlevel-white-rested",
       "cardIds": [
         "0205"
       ],
-      "cardNameKo": "괴도 키드",
-      "cardNameJa": "怪盗キッド",
-      "trigger": {
-        "event": "character.entered_field",
-        "timing": "after"
-      },
-      "conditions": [],
-      "steps": [
-        {
-          "op": "select_cards",
-          "from": "remove_area",
-          "min": 0,
-          "max": 1,
-          "optional": true,
-          "filter": {
-            "allOf": [
-              {
-                "field": "card_type",
-                "operator": "equals",
-                "value": "character"
-              },
-              {
-                "field": "color",
-                "operator": "equals",
-                "value": "white"
-              },
-              {
-                "field": "level",
-                "operator": "less_than_or_equal",
-                "value": 4
-              }
-            ]
-          },
-          "prompt": "리무브 에이리어에서 레벨 4 이하 백 캐릭터를 최대 1장 선택해 슬립 상태로 등장시킵니다.",
-          "saveAs": "deployment"
-        },
-        {
-          "op": "move_cards",
-          "from": "deployment",
-          "to": "field",
-          "entryMethod": "event_effect",
-          "rested": true,
-          "when": {
-            "fact": "vars.deployment.count",
-            "operator": "greater_than",
-            "value": 0
-          }
-        }
-      ]
-    },
-    {
-      "effectId": "card-0211-disguised-ap-minus-2000",
-      "cardIds": [
-        "0211"
-      ],
-      "cardNameKo": "괴도 키드",
-      "cardNameJa": "怪盗キッド",
       "trigger": {
         "event": "character.disguised",
         "timing": "after"
       },
-      "conditions": [],
+      "effectId": "card-0205-disguised-draw-and-ap",
+      "cardNameJa": "怪盗キッド",
+      "cardNameKo": "괴도 키드",
+      "conditions": []
+    },
+    {
       "steps": [
         {
           "op": "select_cards",
-          "from": "both_fields",
-          "min": 0,
           "max": 1,
-          "optional": true,
+          "min": 0,
+          "from": "remove_area",
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "value": "character",
+                "operator": "equals"
+              },
+              {
+                "field": "color",
+                "value": "white",
+                "operator": "equals"
+              },
+              {
+                "field": "level",
+                "value": 4,
+                "operator": "less_than_or_equal"
+              }
+            ]
+          },
+          "prompt": "리무브 에이리어에서 레벨 4 이하 백 캐릭터를 최대 1장 선택해 슬립 상태로 등장시킵니다.",
+          "saveAs": "deployment",
+          "optional": true
+        },
+        {
+          "op": "move_cards",
+          "to": "field",
+          "from": "deployment",
+          "when": {
+            "fact": "vars.deployment.count",
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "rested": true,
+          "entryMethod": "event_effect"
+        }
+      ],
+      "cardIds": [
+        "0205"
+      ],
+      "trigger": {
+        "event": "character.entered_field",
+        "timing": "after"
+      },
+      "effectId": "card-0205-on-enter-lowlevel-white-rested",
+      "cardNameJa": "怪盗キッド",
+      "cardNameKo": "괴도 키드",
+      "conditions": []
+    },
+    {
+      "steps": [
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 0,
+          "from": "both_fields",
           "filter": {
             "field": "card_type",
-            "operator": "equals",
-            "value": "character"
+            "value": "character",
+            "operator": "equals"
           },
           "prompt": "AP를 턴 종료 시까지 2000 낮출 캐릭터를 최대 1장 선택하세요.",
-          "saveAs": "ap_target"
+          "saveAs": "ap_target",
+          "optional": true
         },
         {
           "op": "modify_stat",
-          "target": "vars.ap_target",
           "stat": "ap",
-          "amount": -2000,
-          "duration": "turn_end",
-          "stacking": "add",
           "when": {
             "fact": "vars.ap_target.count",
-            "operator": "greater_than",
-            "value": 0
-          }
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "amount": -2000,
+          "target": "vars.ap_target",
+          "duration": "turn_end",
+          "stacking": "add"
         }
-      ]
-    },
-    {
-      "effectId": "card-0211-hirameki-rest-character",
+      ],
       "cardIds": [
         "0211"
       ],
-      "cardNameKo": "괴도 키드",
+      "trigger": {
+        "event": "character.disguised",
+        "timing": "after"
+      },
+      "effectId": "card-0211-disguised-ap-minus-2000",
       "cardNameJa": "怪盗キッド",
+      "cardNameKo": "괴도 키드",
+      "conditions": []
+    },
+    {
+      "steps": [
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 0,
+          "from": "both_fields",
+          "filter": {
+            "field": "card_type",
+            "value": "character",
+            "operator": "equals"
+          },
+          "prompt": "슬립시킬 캐릭터를 최대 1장 선택하세요.",
+          "saveAs": "hirameki_target",
+          "optional": true
+        },
+        {
+          "op": "rest_cards",
+          "when": {
+            "fact": "vars.hirameki_target.count",
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "target": "vars.hirameki_target"
+        }
+      ],
+      "cardIds": [
+        "0211"
+      ],
       "trigger": {
         "event": "evidence.card_removed",
         "timing": "after"
       },
-      "conditions": [],
-      "steps": [
-        {
-          "op": "select_cards",
-          "from": "both_fields",
-          "min": 0,
-          "max": 1,
-          "optional": true,
-          "filter": {
-            "field": "card_type",
-            "operator": "equals",
-            "value": "character"
-          },
-          "prompt": "슬립시킬 캐릭터를 최대 1장 선택하세요.",
-          "saveAs": "hirameki_target"
-        },
-        {
-          "op": "rest_cards",
-          "target": "vars.hirameki_target",
-          "when": {
-            "fact": "vars.hirameki_target.count",
-            "operator": "greater_than",
-            "value": 0
-          }
-        }
-      ]
+      "effectId": "card-0211-hirameki-rest-character",
+      "cardNameJa": "怪盗キッド",
+      "cardNameKo": "괴도 키드",
+      "conditions": []
     },
     {
-      "effectId": "card-0554-bond-yukiko-continuous-ap-charge",
-      "cardIds": [
-        "0554"
-      ],
-      "cardNameKo": "쿠도 유사쿠",
-      "cardNameJa": "工藤優作",
-      "trigger": {
-        "event": "continuous.recalculate",
-        "timing": "continuous"
-      },
-      "continuous": true,
-      "conditions": [
-        {
-          "fact": "player.field.has_card_name",
-          "operator": "equals",
-          "value": "工藤有希子"
-        },
-        {
-          "fact": "turn.is_source_controller_turn",
-          "operator": "equals",
-          "value": true
-        }
-      ],
       "steps": [
         {
           "op": "set_continuous_stat",
-          "target": "source_character",
           "stat": "ap",
           "amount": 3000,
-          "modifierId": "bond-yukiko-ap-3000",
-          "duration": "while_condition_true"
+          "target": "source_character",
+          "duration": "while_condition_true",
+          "modifierId": "bond-yukiko-ap-3000"
         },
         {
           "op": "set_continuous_keyword",
           "target": "source_character",
           "keyword": "charge",
-          "modifierId": "bond-yukiko-charge",
-          "duration": "while_condition_true"
+          "duration": "while_condition_true",
+          "modifierId": "bond-yukiko-charge"
         }
-      ]
-    },
-    {
-      "effectId": "card-0554-activated-bond-shinichi-recovers-level3",
+      ],
       "cardIds": [
         "0554"
       ],
-      "cardNameKo": "쿠도 유사쿠",
-      "cardNameJa": "工藤優作",
       "trigger": {
-        "event": "character.activated_ability",
-        "timing": "after"
+        "event": "continuous.recalculate",
+        "timing": "continuous"
       },
-      "oncePerTurn": true,
-      "activationLabelKo": "인연: 쿠도 신이치 · 비용을 지불하고 레벨 3 이하 캐릭터 등장",
+      "effectId": "card-0554-bond-yukiko-continuous-ap-charge",
+      "cardNameJa": "工藤優作",
+      "cardNameKo": "쿠도 유사쿠",
       "conditions": [
         {
           "fact": "player.field.has_card_name",
-          "operator": "equals",
-          "value": "工藤新一"
+          "value": "工藤有希子",
+          "operator": "equals"
+        },
+        {
+          "fact": "turn.is_source_controller_turn",
+          "value": true,
+          "operator": "equals"
         }
       ],
+      "continuous": true
+    },
+    {
       "steps": [
         {
           "op": "offer_reaction",
-          "reactionId": "b05052-cost-zone",
           "actor": "controller",
+          "prompt": "비용으로 손패 1장 또는 현장 캐릭터에 세트된 카드 1장 중 무엇을 리무브할까요?",
+          "saveAs": "cost_type",
           "choices": [
             "hand",
             "attachment"
           ],
-          "saveAs": "cost_type",
-          "prompt": "비용으로 손패 1장 또는 현장 캐릭터에 세트된 카드 1장 중 무엇을 리무브할까요?"
+          "reactionId": "b05052-cost-zone"
         },
         {
           "op": "select_cards",
-          "from": "hand",
-          "min": 1,
           "max": 1,
-          "optional": false,
+          "min": 1,
+          "from": "hand",
+          "when": {
+            "fact": "vars.cost_type",
+            "value": "hand",
+            "operator": "equals"
+          },
           "prompt": "리무브할 손패 1장을 선택하세요.",
           "saveAs": "hand_cost",
-          "when": {
-            "fact": "vars.cost_type",
-            "operator": "equals",
-            "value": "hand"
-          }
+          "optional": false
         },
         {
           "op": "move_cards",
-          "from": "hand_cost",
           "to": "remove_area",
+          "from": "hand_cost",
           "when": {
             "fact": "vars.hand_cost.count",
-            "operator": "greater_than",
-            "value": 0
+            "value": 0,
+            "operator": "greater_than"
           }
         },
         {
           "op": "select_cards",
-          "from": "attached_cards",
-          "min": 1,
           "max": 1,
-          "optional": false,
-          "prompt": "리무브할 세트 카드를 선택하세요.",
-          "saveAs": "attachment_cost",
+          "min": 1,
+          "from": "attached_cards",
           "when": {
             "fact": "vars.cost_type",
-            "operator": "equals",
-            "value": "attachment"
-          }
+            "value": "attachment",
+            "operator": "equals"
+          },
+          "prompt": "리무브할 세트 카드를 선택하세요.",
+          "saveAs": "attachment_cost",
+          "optional": false
         },
         {
           "op": "move_cards",
-          "from": "attachment_cost",
           "to": "remove_area",
+          "from": "attachment_cost",
           "when": {
             "fact": "vars.attachment_cost.count",
-            "operator": "greater_than",
-            "value": 0
+            "value": 0,
+            "operator": "greater_than"
           }
         },
         {
           "op": "select_cards",
-          "from": "remove_area",
-          "min": 0,
           "max": 1,
-          "optional": true,
+          "min": 0,
+          "from": "remove_area",
           "filter": {
             "allOf": [
               {
                 "field": "card_type",
-                "operator": "equals",
-                "value": "character"
+                "value": "character",
+                "operator": "equals"
               },
               {
                 "field": "level",
-                "operator": "less_than_or_equal",
-                "value": 3
+                "value": 3,
+                "operator": "less_than_or_equal"
               }
             ]
           },
           "prompt": "리무브 에이리어에서 레벨 3 이하 캐릭터를 최대 1장 선택해 등장시킵니다.",
-          "saveAs": "deployment"
+          "saveAs": "deployment",
+          "optional": true
         },
         {
           "op": "move_cards",
-          "from": "deployment",
           "to": "field",
-          "entryMethod": "character_ability",
+          "from": "deployment",
           "when": {
             "fact": "vars.deployment.count",
-            "operator": "greater_than",
-            "value": 0
-          }
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "entryMethod": "character_ability"
         }
-      ]
-    },
-    {
-      "effectId": "card-0691-enter-solution-bond-yusaku-draw",
-      "cardIds": [
-        "0691"
       ],
-      "cardNameKo": "쿠도 유키코",
-      "cardNameJa": "工藤有希子",
+      "cardIds": [
+        "0554"
+      ],
       "trigger": {
-        "event": "character.entered_field",
+        "event": "character.activated_ability",
         "timing": "after"
       },
+      "effectId": "card-0554-activated-bond-shinichi-recovers-level3",
+      "cardNameJa": "工藤優作",
+      "cardNameKo": "쿠도 유사쿠",
       "conditions": [
         {
           "fact": "player.field.has_card_name",
-          "operator": "equals",
-          "value": "工藤優作"
-        },
-        {
-          "fact": "player.case_phase",
-          "operator": "equals",
-          "value": "solution"
+          "value": "工藤新一",
+          "operator": "equals"
         }
       ],
+      "oncePerTurn": true,
+      "activationLabelKo": "인연: 쿠도 신이치 · 비용을 지불하고 레벨 3 이하 캐릭터 등장"
+    },
+    {
       "steps": [
         {
           "op": "draw_cards",
           "count": 1,
           "destination": "hand"
         }
-      ]
-    },
-    {
-      "effectId": "card-0691-hirameki-rest-character",
+      ],
       "cardIds": [
         "0691"
       ],
-      "cardNameKo": "쿠도 유키코",
-      "cardNameJa": "工藤有希子",
       "trigger": {
-        "event": "evidence.card_removed",
+        "event": "character.entered_field",
         "timing": "after"
       },
-      "conditions": [],
-      "steps": [
+      "effectId": "card-0691-enter-solution-bond-yusaku-draw",
+      "cardNameJa": "工藤有希子",
+      "cardNameKo": "쿠도 유키코",
+      "conditions": [
         {
-          "op": "select_cards",
-          "from": "both_fields",
-          "min": 0,
-          "max": 1,
-          "optional": true,
-          "filter": {
-            "field": "card_type",
-            "operator": "equals",
-            "value": "character"
-          },
-          "prompt": "슬립시킬 캐릭터를 최대 1장 선택하세요.",
-          "saveAs": "hirameki_target"
+          "fact": "player.field.has_card_name",
+          "value": "工藤優作",
+          "operator": "equals"
         },
         {
-          "op": "rest_cards",
-          "target": "vars.hirameki_target",
-          "when": {
-            "fact": "vars.hirameki_target.count",
-            "operator": "greater_than",
-            "value": 0
-          }
+          "fact": "player.case_phase",
+          "value": "solution",
+          "operator": "equals"
         }
       ]
     },
     {
-      "effectId": "card-0980-continuous-charge-character",
-      "cardIds": [
-        "0980"
+      "steps": [
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 0,
+          "from": "both_fields",
+          "filter": {
+            "field": "card_type",
+            "value": "character",
+            "operator": "equals"
+          },
+          "prompt": "슬립시킬 캐릭터를 최대 1장 선택하세요.",
+          "saveAs": "hirameki_target",
+          "optional": true
+        },
+        {
+          "op": "rest_cards",
+          "when": {
+            "fact": "vars.hirameki_target.count",
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "target": "vars.hirameki_target"
+        }
       ],
-      "cardNameKo": "쿠도 유사쿠",
-      "cardNameJa": "工藤優作",
+      "cardIds": [
+        "0691"
+      ],
       "trigger": {
-        "event": "continuous.recalculate",
-        "timing": "continuous"
+        "event": "evidence.card_removed",
+        "timing": "after"
       },
-      "continuous": true,
-      "conditions": [],
+      "effectId": "card-0691-hirameki-rest-character",
+      "cardNameJa": "工藤有希子",
+      "cardNameKo": "쿠도 유키코",
+      "conditions": []
+    },
+    {
       "steps": [
         {
           "op": "set_continuous_keyword",
           "target": "source_character",
           "keyword": "charge_character",
-          "modifierId": "always-charge-character",
-          "duration": "while_condition_true"
+          "duration": "while_condition_true",
+          "modifierId": "always-charge-character"
         }
-      ]
-    },
-    {
-      "effectId": "card-0980-bond-toichi-continuous-ap",
+      ],
       "cardIds": [
         "0980"
       ],
-      "cardNameKo": "쿠도 유사쿠",
-      "cardNameJa": "工藤優作",
       "trigger": {
         "event": "continuous.recalculate",
         "timing": "continuous"
       },
-      "continuous": true,
-      "conditions": [
-        {
-          "fact": "player.field.has_card_name",
-          "operator": "equals",
-          "value": "黒羽盗一"
-        },
-        {
-          "fact": "turn.is_source_controller_turn",
-          "operator": "equals",
-          "value": true
-        }
-      ],
+      "effectId": "card-0980-continuous-charge-character",
+      "cardNameJa": "工藤優作",
+      "cardNameKo": "쿠도 유사쿠",
+      "conditions": [],
+      "continuous": true
+    },
+    {
       "steps": [
         {
           "op": "set_continuous_stat",
-          "target": "source_character",
           "stat": "ap",
           "amount": 1000,
-          "modifierId": "bond-toichi-ap-1000",
-          "duration": "while_condition_true"
+          "target": "source_character",
+          "duration": "while_condition_true",
+          "modifierId": "bond-toichi-ap-1000"
         }
-      ]
-    },
-    {
-      "effectId": "card-0980-enter-bond-yukiko-charge-case",
+      ],
       "cardIds": [
         "0980"
       ],
-      "cardNameKo": "쿠도 유사쿠",
-      "cardNameJa": "工藤優作",
       "trigger": {
-        "event": "character.entered_field",
-        "timing": "after"
+        "event": "continuous.recalculate",
+        "timing": "continuous"
       },
+      "effectId": "card-0980-bond-toichi-continuous-ap",
+      "cardNameJa": "工藤優作",
+      "cardNameKo": "쿠도 유사쿠",
       "conditions": [
         {
           "fact": "player.field.has_card_name",
-          "operator": "equals",
-          "value": "工藤有希子"
+          "value": "黒羽盗一",
+          "operator": "equals"
+        },
+        {
+          "fact": "turn.is_source_controller_turn",
+          "value": true,
+          "operator": "equals"
         }
       ],
+      "continuous": true
+    },
+    {
       "steps": [
         {
           "op": "grant_keyword",
@@ -1977,227 +1985,216 @@
           "duration": "turn_end",
           "displayNameKo": "돌격[사건]"
         }
-      ]
-    },
-    {
-      "effectId": "card-0981-disguised-recover-yusaku",
-      "cardIds": [
-        "0981"
       ],
-      "cardNameKo": "쿠로바 도이치",
-      "cardNameJa": "黒羽盗一",
-      "trigger": {
-        "event": "character.disguised",
-        "timing": "after"
-      },
-      "conditions": [],
-      "steps": [
-        {
-          "op": "select_cards",
-          "from": "remove_area",
-          "min": 0,
-          "max": 1,
-          "optional": true,
-          "filter": {
-            "field": "card_name",
-            "operator": "name_matches",
-            "value": "工藤優作"
-          },
-          "prompt": "리무브 에이리어에서 쿠도 유사쿠를 최대 1장 선택해 손패로 가져옵니다.",
-          "saveAs": "recovered"
-        },
-        {
-          "op": "move_cards",
-          "from": "recovered",
-          "to": "hand",
-          "when": {
-            "fact": "vars.recovered.count",
-            "operator": "greater_than",
-            "value": 0
-          }
-        }
-      ]
-    },
-    {
-      "effectId": "card-0981-enter-sleep-deploy-yusaku-stack-draw",
       "cardIds": [
-        "0981"
+        "0980"
       ],
-      "cardNameKo": "쿠로바 도이치",
-      "cardNameJa": "黒羽盗一",
       "trigger": {
         "event": "character.entered_field",
         "timing": "after"
       },
-      "conditions": [],
+      "effectId": "card-0980-enter-bond-yukiko-charge-case",
+      "cardNameJa": "工藤優作",
+      "cardNameKo": "쿠도 유사쿠",
+      "conditions": [
+        {
+          "fact": "player.field.has_card_name",
+          "value": "工藤有希子",
+          "operator": "equals"
+        }
+      ]
+    },
+    {
+      "steps": [
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 0,
+          "from": "remove_area",
+          "filter": {
+            "field": "card_name",
+            "value": "工藤優作",
+            "operator": "name_matches"
+          },
+          "prompt": "리무브 에이리어에서 쿠도 유사쿠를 최대 1장 선택해 손패로 가져옵니다.",
+          "saveAs": "recovered",
+          "optional": true
+        },
+        {
+          "op": "move_cards",
+          "to": "hand",
+          "from": "recovered",
+          "when": {
+            "fact": "vars.recovered.count",
+            "value": 0,
+            "operator": "greater_than"
+          }
+        }
+      ],
+      "cardIds": [
+        "0981"
+      ],
+      "trigger": {
+        "event": "character.disguised",
+        "timing": "after"
+      },
+      "effectId": "card-0981-disguised-recover-yusaku",
+      "cardNameJa": "黒羽盗一",
+      "cardNameKo": "쿠로바 도이치",
+      "conditions": []
+    },
+    {
       "steps": [
         {
           "op": "offer_reaction",
-          "reactionId": "b09038p-enter-deploy",
           "actor": "controller",
+          "prompt": "이 카드를 슬립시켜 레벨 6 이하 쿠도 유사쿠를 등장시킬까요? 등장시키면 덱 위 카드를 뒷면으로 세트하고 1장 드로우합니다.",
+          "saveAs": "deploy_choice",
           "choices": [
             "yes",
             "no"
           ],
-          "saveAs": "deploy_choice",
-          "prompt": "이 카드를 슬립시켜 레벨 6 이하 쿠도 유사쿠를 등장시킬까요? 등장시키면 덱 위 카드를 뒷면으로 세트하고 1장 드로우합니다."
+          "reactionId": "b09038p-enter-deploy"
         },
         {
           "op": "pay_cost",
           "cost": "sleep_source_character",
           "when": {
             "fact": "vars.deploy_choice",
-            "operator": "equals",
-            "value": "yes"
+            "value": "yes",
+            "operator": "equals"
           }
         },
         {
           "op": "select_cards",
-          "from": "hand",
-          "min": 0,
           "max": 1,
-          "optional": true,
+          "min": 0,
+          "from": "hand",
+          "when": {
+            "fact": "vars.deploy_choice",
+            "value": "yes",
+            "operator": "equals"
+          },
           "filter": {
             "allOf": [
               {
                 "field": "card_type",
-                "operator": "equals",
-                "value": "character"
+                "value": "character",
+                "operator": "equals"
               },
               {
                 "field": "card_name",
-                "operator": "name_matches",
-                "value": "工藤優作"
+                "value": "工藤優作",
+                "operator": "name_matches"
               },
               {
                 "field": "level",
-                "operator": "less_than_or_equal",
-                "value": 6
+                "value": 6,
+                "operator": "less_than_or_equal"
               }
             ]
           },
           "prompt": "손패에서 레벨 6 이하 쿠도 유사쿠를 최대 1장 선택해 등장시킵니다.",
           "saveAs": "deployment",
-          "when": {
-            "fact": "vars.deploy_choice",
-            "operator": "equals",
-            "value": "yes"
-          }
+          "optional": true
         },
         {
           "op": "move_cards",
-          "from": "deployment",
           "to": "field",
-          "entryMethod": "character_ability",
+          "from": "deployment",
           "when": {
             "fact": "vars.deployment.count",
-            "operator": "greater_than",
-            "value": 0
-          }
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "entryMethod": "character_ability"
         },
         {
           "op": "attach_top_card",
-          "target": "vars.deployment",
           "when": {
             "fact": "vars.deployment.count",
-            "operator": "greater_than",
-            "value": 0
-          }
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "target": "vars.deployment"
         },
         {
           "op": "draw_cards",
-          "count": 1,
-          "destination": "hand",
           "when": {
             "fact": "vars.deployment.count",
-            "operator": "greater_than",
-            "value": 0
-          }
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "count": 1,
+          "destination": "hand"
         }
-      ]
+      ],
+      "cardIds": [
+        "0981"
+      ],
+      "trigger": {
+        "event": "character.entered_field",
+        "timing": "after"
+      },
+      "effectId": "card-0981-enter-sleep-deploy-yusaku-stack-draw",
+      "cardNameJa": "黒羽盗一",
+      "cardNameKo": "쿠로바 도이치",
+      "conditions": []
     },
     {
-      "effectId": "card-1139-case-solution-discard-hand",
+      "steps": [
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 0,
+          "from": "hand",
+          "when": {
+            "fact": "player.hand.count",
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "prompt": "사건이 해결편이 되었으므로 리무브할 손패 1장을 선택하세요.",
+          "saveAs": "hand_to_remove",
+          "optional": true
+        },
+        {
+          "op": "move_cards",
+          "to": "remove_area",
+          "from": "hand_to_remove",
+          "when": {
+            "fact": "vars.hand_to_remove.count",
+            "value": 0,
+            "operator": "greater_than"
+          }
+        }
+      ],
       "cardIds": [
         "1139"
       ],
-      "cardNameKo": "돌아오지 않는 형사",
-      "cardNameJa": "帰らざる刑事",
       "trigger": {
         "event": "case.solution_entered",
         "timing": "after"
       },
-      "conditions": [],
-      "steps": [
-        {
-          "op": "select_cards",
-          "from": "hand",
-          "min": 1,
-          "max": 1,
-          "optional": false,
-          "prompt": "사건이 해결편이 되었으므로 리무브할 손패 1장을 선택하세요.",
-          "saveAs": "hand_to_remove",
-          "when": {
-            "fact": "player.hand.count",
-            "operator": "greater_than",
-            "value": 0
-          }
-        },
-        {
-          "op": "move_cards",
-          "from": "hand_to_remove",
-          "to": "remove_area",
-          "when": {
-            "fact": "vars.hand_to_remove.count",
-            "operator": "greater_than",
-            "value": 0
-          }
-        }
-      ]
+      "effectId": "card-1139-case-solution-discard-hand",
+      "cardNameJa": "帰らざる刑事",
+      "cardNameKo": "돌아오지 않는 형사",
+      "conditions": []
     },
     {
-      "effectId": "card-1139-returning-detective-case-effect",
-      "cardIds": [
-        "1139"
-      ],
-      "cardNameKo": "돌아오지 않는 형사",
-      "cardNameJa": "帰らざる刑事",
-      "trigger": {
-        "event": "case.activated_ability",
-        "timing": "after"
-      },
-      "activationLabelKo": "뒷면 증거 3장 공개 · 마츠다 진페이 1장을 증거로 획득",
-      "conditions": [
-        {
-          "fact": "player.case_phase",
-          "operator": "equals",
-          "value": "solution"
-        },
-        {
-          "fact": "player.file.count",
-          "operator": "greater_than_or_equal",
-          "value": 5
-        },
-        {
-          "fact": "player.evidence.facedown_count",
-          "operator": "greater_than_or_equal",
-          "value": 3
-        }
-      ],
       "steps": [
         {
           "op": "select_cards",
-          "from": "evidence_area",
-          "min": 3,
           "max": 3,
-          "optional": false,
+          "min": 3,
+          "from": "evidence_area",
           "filter": {
             "field": "face_up",
-            "operator": "equals",
-            "value": false
+            "value": false,
+            "operator": "equals"
           },
           "prompt": "앞면으로 뒤집을 뒷면 증거 3장을 선택하세요.",
-          "saveAs": "evidence_to_flip"
+          "saveAs": "evidence_to_flip",
+          "optional": false
         },
         {
           "op": "flip_evidence",
@@ -2206,131 +2203,128 @@
         },
         {
           "op": "select_cards",
-          "from": "field",
-          "min": 0,
           "max": 1,
-          "optional": true,
-          "targetController": "self",
+          "min": 0,
+          "from": "field",
           "filter": {
             "allOf": [
               {
                 "field": "card_type",
-                "operator": "equals",
-                "value": "character"
+                "value": "character",
+                "operator": "equals"
               },
               {
                 "field": "card_name",
-                "operator": "name_matches",
-                "value": "松田陣平"
+                "value": "松田陣平",
+                "operator": "name_matches"
               }
             ]
           },
           "prompt": "자신의 현장에서 마츠다 진페이를 최대 1장 선택해 앞면 증거로 얻습니다.",
-          "saveAs": "matsuda"
+          "saveAs": "matsuda",
+          "optional": true,
+          "targetController": "self"
         },
         {
           "op": "move_cards",
-          "from": "matsuda",
           "to": "evidence_area",
-          "faceUp": true,
+          "from": "matsuda",
           "when": {
             "fact": "vars.matsuda.count",
-            "operator": "greater_than",
-            "value": 0
-          }
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "faceUp": true
         }
-      ]
-    },
-    {
-      "effectId": "card-1261-case-solution-discard-hand",
-      "cardIds": [
-        "1261"
       ],
-      "cardNameKo": "코난 VS 괴도 키드",
-      "cardNameJa": "コナンVS怪盗キッド",
-      "trigger": {
-        "event": "case.solution_entered",
-        "timing": "after"
-      },
-      "conditions": [],
-      "steps": [
-        {
-          "op": "select_cards",
-          "from": "hand",
-          "min": 1,
-          "max": 1,
-          "optional": false,
-          "prompt": "사건이 해결편이 되었으므로 리무브할 손패 1장을 선택하세요.",
-          "saveAs": "hand_to_remove",
-          "when": {
-            "fact": "player.hand.count",
-            "operator": "greater_than",
-            "value": 0
-          }
-        },
-        {
-          "op": "move_cards",
-          "from": "hand_to_remove",
-          "to": "remove_area",
-          "when": {
-            "fact": "vars.hand_to_remove.count",
-            "operator": "greater_than",
-            "value": 0
-          }
-        }
-      ]
-    },
-    {
-      "effectId": "card-1261-conan-vs-kid-case-effect",
       "cardIds": [
-        "1261"
+        "1139"
       ],
-      "cardNameKo": "코난 VS 괴도 키드",
-      "cardNameJa": "コナンVS怪盗キッド",
       "trigger": {
         "event": "case.activated_ability",
         "timing": "after"
       },
-      "activationLabelKo": "뒷면 증거 2장 공개 · 캐릭터 리무브 및 상대 손패 리무브",
+      "effectId": "card-1139-returning-detective-case-effect",
+      "cardNameJa": "帰らざる刑事",
+      "cardNameKo": "돌아오지 않는 형사",
       "conditions": [
         {
           "fact": "player.case_phase",
-          "operator": "equals",
-          "value": "solution"
+          "value": "solution",
+          "operator": "equals"
         },
         {
-          "fact": "player.event.has_detective_vs_kid_trait",
-          "operator": "equals",
-          "value": true
-        },
-        {
-          "fact": "player.partner.color",
-          "operator": "in",
-          "value": [
-            "blue",
-            "white"
-          ]
+          "fact": "player.file.count",
+          "value": 5,
+          "operator": "greater_than_or_equal"
         },
         {
           "fact": "player.evidence.facedown_count",
-          "operator": "greater_than_or_equal",
-          "value": 2
+          "value": 3,
+          "operator": "greater_than_or_equal"
+        },
+        {
+          "fact": "player.field.has_card_name",
+          "value": "松田陣平",
+          "operator": "equals"
         }
       ],
+      "activationLabelKo": "뒷면 증거 3장 공개 · 마츠다 진페이 1장을 증거로 획득"
+    },
+    {
       "steps": [
         {
           "op": "select_cards",
-          "from": "evidence_area",
-          "min": 2,
+          "max": 1,
+          "min": 0,
+          "from": "hand",
+          "when": {
+            "fact": "player.hand.count",
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "prompt": "사건이 해결편이 되었으므로 리무브할 손패 1장을 선택하세요.",
+          "saveAs": "hand_to_remove",
+          "optional": true
+        },
+        {
+          "op": "move_cards",
+          "to": "remove_area",
+          "from": "hand_to_remove",
+          "when": {
+            "fact": "vars.hand_to_remove.count",
+            "value": 0,
+            "operator": "greater_than"
+          }
+        }
+      ],
+      "cardIds": [
+        "1261"
+      ],
+      "trigger": {
+        "event": "case.solution_entered",
+        "timing": "after"
+      },
+      "effectId": "card-1261-case-solution-discard-hand",
+      "cardNameJa": "コナンVS怪盗キッド",
+      "cardNameKo": "코난 VS 괴도 키드",
+      "conditions": []
+    },
+    {
+      "steps": [
+        {
+          "op": "select_cards",
           "max": 2,
-          "optional": false,
+          "min": 2,
+          "from": "evidence_area",
           "filter": {
             "field": "face_up",
-            "operator": "equals",
-            "value": false
+            "value": false,
+            "operator": "equals"
           },
           "prompt": "앞면으로 뒤집을 뒷면 증거 2장을 선택하세요.",
-          "saveAs": "evidence_to_flip"
+          "saveAs": "evidence_to_flip",
+          "optional": false
         },
         {
           "op": "flip_evidence",
@@ -2339,197 +2333,221 @@
         },
         {
           "op": "select_cards",
-          "from": "field",
-          "min": 1,
           "max": 1,
-          "optional": false,
-          "targetController": "self",
+          "min": 1,
+          "from": "field",
           "filter": {
             "field": "card_type",
-            "operator": "equals",
-            "value": "character"
+            "value": "character",
+            "operator": "equals"
           },
           "prompt": "리무브할 자신의 현장 캐릭터 1장을 선택하세요.",
-          "saveAs": "own_character"
+          "saveAs": "own_character",
+          "optional": false,
+          "targetController": "self"
         },
         {
           "op": "move_cards",
-          "from": "own_character",
-          "to": "remove_area"
+          "to": "remove_area",
+          "from": "own_character"
         },
         {
           "op": "select_cards",
-          "from": "opponent_field",
-          "min": 0,
           "max": 1,
-          "optional": true,
+          "min": 0,
+          "from": "opponent_field",
           "filter": {
             "allOf": [
               {
                 "field": "card_type",
-                "operator": "equals",
-                "value": "character"
+                "value": "character",
+                "operator": "equals"
               },
               {
                 "field": "status",
-                "operator": "equals",
-                "value": "rested"
+                "value": "rested",
+                "operator": "equals"
               },
               {
                 "field": "level",
-                "operator": "less_than_or_equal",
-                "value": 7
+                "value": 7,
+                "operator": "less_than_or_equal"
               },
               {
                 "field": "rarity",
-                "operator": "not_equals",
-                "value": "MR"
+                "value": "MR",
+                "operator": "not_equals"
               },
               {
                 "field": "rarity",
-                "operator": "not_equals",
-                "value": "MRP"
+                "value": "MRP",
+                "operator": "not_equals"
               }
             ]
           },
           "prompt": "상대 현장에서 레벨 7 이하 슬립 상태의 MR/MRP가 아닌 캐릭터를 최대 1장 선택해 손패로 돌립니다.",
-          "saveAs": "returned"
+          "saveAs": "returned",
+          "optional": true
         },
         {
           "op": "move_cards",
-          "from": "returned",
           "to": "hand",
+          "from": "returned",
           "when": {
             "fact": "vars.returned.count",
-            "operator": "greater_than",
-            "value": 0
+            "value": 0,
+            "operator": "greater_than"
           }
         },
         {
           "op": "select_cards",
-          "from": "opponent_hand",
-          "min": 1,
           "max": 1,
-          "optional": false,
-          "prompt": "상대는 손패 1장을 리무브해야 합니다.",
-          "saveAs": "opponent_first_discard",
+          "min": 1,
+          "from": "opponent_hand",
           "when": {
             "allOf": [
               {
-                "fact": "vars.returned.count",
-                "operator": "greater_than",
-                "value": 0
-              },
-              {
                 "fact": "opponent.hand.count",
-                "operator": "greater_than",
-                "value": 0
+                "value": 0,
+                "operator": "greater_than"
               }
             ]
           },
-          "chooser": "opponent"
+          "prompt": "상대는 손패 1장을 리무브해야 합니다.",
+          "saveAs": "opponent_first_discard",
+          "chooser": "opponent",
+          "optional": false
         },
         {
           "op": "move_cards",
-          "from": "opponent_first_discard",
           "to": "remove_area",
+          "from": "opponent_first_discard",
           "when": {
             "fact": "vars.opponent_first_discard.count",
-            "operator": "greater_than",
-            "value": 0
+            "value": 0,
+            "operator": "greater_than"
           }
         },
         {
           "op": "select_cards",
-          "from": "opponent_hand",
-          "min": 1,
           "max": 1,
-          "optional": false,
-          "prompt": "리무브한 카드의 ID가 되돌린 캐릭터와 달라 추가 손패 1장을 리무브합니다.",
-          "saveAs": "opponent_second_discard",
+          "min": 1,
+          "from": "opponent_hand",
           "when": {
             "allOf": [
               {
                 "fact": "vars.returned.count",
-                "operator": "greater_than",
-                "value": 0
+                "value": 0,
+                "operator": "greater_than"
               },
               {
                 "fact": "vars.opponent_first_discard.0.card.card_id",
-                "operator": "not_equals",
                 "value": {
                   "fact": "vars.returned.0.card.card_id"
-                }
+                },
+                "operator": "not_equals"
               },
               {
                 "fact": "opponent.hand.count",
-                "operator": "greater_than",
-                "value": 0
+                "value": 0,
+                "operator": "greater_than"
               }
             ]
           },
-          "chooser": "opponent"
+          "prompt": "리무브한 카드의 ID가 되돌린 캐릭터와 달라 추가 손패 1장을 리무브합니다.",
+          "saveAs": "opponent_second_discard",
+          "chooser": "opponent",
+          "optional": false
         },
         {
           "op": "move_cards",
-          "from": "opponent_second_discard",
           "to": "remove_area",
+          "from": "opponent_second_discard",
           "when": {
             "fact": "vars.opponent_second_discard.count",
-            "operator": "greater_than",
-            "value": 0
+            "value": 0,
+            "operator": "greater_than"
           }
         }
-      ]
+      ],
+      "cardIds": [
+        "1261"
+      ],
+      "trigger": {
+        "event": "case.activated_ability",
+        "timing": "after"
+      },
+      "effectId": "card-1261-conan-vs-kid-case-effect",
+      "cardNameJa": "コナンVS怪盗キッド",
+      "cardNameKo": "코난 VS 괴도 키드",
+      "conditions": [
+        {
+          "fact": "player.case_phase",
+          "value": "solution",
+          "operator": "equals"
+        },
+        {
+          "fact": "player.event.has_detective_vs_kid_trait",
+          "value": true,
+          "operator": "equals"
+        },
+        {
+          "fact": "player.partner.color",
+          "value": [
+            "blue",
+            "white"
+          ],
+          "operator": "in"
+        },
+        {
+          "fact": "player.evidence.facedown_count",
+          "value": 2,
+          "operator": "greater_than_or_equal"
+        },
+        {
+          "fact": "player.field.character_count",
+          "value": 1,
+          "operator": "greater_than_or_equal"
+        }
+      ],
+      "activationLabelKo": "뒷면 증거 2장 공개 · 캐릭터 리무브 및 상대 손패 리무브"
     },
     {
-      "effectId": "card-1057-continuous-nonblue-case-other-field-ap-1000",
+      "steps": [
+        {
+          "op": "set_continuous_stat",
+          "stat": "ap",
+          "amount": 1000,
+          "target": "own_field_characters_except_source",
+          "duration": "while_condition_true",
+          "modifierId": "non-blue-case-other-field-ap-1000"
+        }
+      ],
       "cardIds": [
         "1057"
       ],
-      "cardNameKo": "쿠도 신이치",
-      "cardNameJa": "工藤新一",
       "trigger": {
         "event": "continuous.recalculate",
         "timing": "continuous"
       },
-      "continuous": true,
+      "effectId": "card-1057-continuous-nonblue-case-other-field-ap-1000",
+      "cardNameJa": "工藤新一",
+      "cardNameKo": "쿠도 신이치",
       "conditions": [
         {
           "fact": "player.event.has_non_blue_color",
-          "operator": "equals",
-          "value": true
+          "value": true,
+          "operator": "equals"
         },
         {
           "fact": "turn.is_source_controller_turn",
-          "operator": "equals",
-          "value": true
+          "value": true,
+          "operator": "equals"
         }
       ],
-      "steps": [
-        {
-          "op": "set_continuous_stat",
-          "target": "own_field_characters_except_source",
-          "stat": "ap",
-          "amount": 1000,
-          "modifierId": "non-blue-case-other-field-ap-1000",
-          "duration": "while_condition_true"
-        }
-      ]
+      "continuous": true
     },
     {
-      "effectId": "card-1057-activated-remove-level9",
-      "cardIds": [
-        "1057"
-      ],
-      "cardNameKo": "쿠도 신이치",
-      "cardNameJa": "工藤新一",
-      "trigger": {
-        "event": "character.activated_ability",
-        "timing": "after"
-      },
-      "activationLabelKo": "레벨 9 이하 캐릭터 리무브",
-      "conditions": [],
       "steps": [
         {
           "op": "pay_cost",
@@ -2537,379 +2555,374 @@
         },
         {
           "op": "select_cards",
-          "from": "both_fields",
-          "min": 0,
           "max": 1,
-          "optional": true,
+          "min": 0,
+          "from": "both_fields",
           "filter": {
             "allOf": [
               {
                 "field": "card_type",
-                "operator": "equals",
-                "value": "character"
+                "value": "character",
+                "operator": "equals"
               },
               {
                 "field": "level",
-                "operator": "less_than_or_equal",
-                "value": 9
+                "value": 9,
+                "operator": "less_than_or_equal"
               }
             ]
           },
           "prompt": "리무브할 레벨 9 이하 캐릭터를 최대 1장 선택하세요.",
-          "saveAs": "target"
+          "saveAs": "target",
+          "optional": true
         },
         {
           "op": "move_cards",
-          "from": "target",
           "to": "remove_area",
+          "from": "target",
           "when": {
             "fact": "vars.target.count",
-            "operator": "greater_than",
-            "value": 0
+            "value": 0,
+            "operator": "greater_than"
           }
         }
-      ]
+      ],
+      "cardIds": [
+        "1057"
+      ],
+      "trigger": {
+        "event": "character.activated_ability",
+        "timing": "after"
+      },
+      "effectId": "card-1057-activated-remove-level9",
+      "cardNameJa": "工藤新一",
+      "cardNameKo": "쿠도 신이치",
+      "conditions": [],
+      "activationLabelKo": "레벨 9 이하 캐릭터 리무브"
     },
     {
-      "effectId": "card-1166-on-yusaku-enter-remove-ap8k",
-      "cardIds": [
-        "1166"
-      ],
-      "cardNameKo": "쿠도 유키코",
-      "cardNameJa": "工藤有希子",
-      "trigger": {
-        "event": "character.entered_field",
-        "timing": "after",
-        "scope": "field_watch"
-      },
-      "oncePerTurn": true,
-      "activationLabelKo": "턴당 1회 · 쿠도 유사쿠 등장 시 AP 8000 이하 리무브",
-      "conditions": [
-        {
-          "fact": "player.partner.color",
-          "operator": "equals",
-          "value": "white"
-        },
-        {
-          "fact": "turn.is_source_controller_turn",
-          "operator": "equals",
-          "value": true
-        },
-        {
-          "fact": "entry.source.card_name",
-          "operator": "name_matches",
-          "value": "工藤優作"
-        }
-      ],
       "steps": [
         {
           "op": "select_cards",
-          "from": "both_fields",
-          "min": 0,
           "max": 1,
-          "optional": true,
+          "min": 0,
+          "from": "both_fields",
           "filter": {
             "allOf": [
               {
                 "field": "card_type",
-                "operator": "equals",
-                "value": "character"
+                "value": "character",
+                "operator": "equals"
               },
               {
                 "field": "ap_current",
-                "operator": "less_than_or_equal",
-                "value": 8000
+                "value": 8000,
+                "operator": "less_than_or_equal"
               }
             ]
           },
           "prompt": "AP 8000 이하의 캐릭터를 최대 1장 선택해 리무브합니다.",
-          "saveAs": "target"
+          "saveAs": "target",
+          "optional": true
         },
         {
           "op": "move_cards",
-          "from": "target",
           "to": "remove_area",
+          "from": "target",
           "when": {
             "fact": "vars.target.count",
-            "operator": "greater_than",
-            "value": 0
+            "value": 0,
+            "operator": "greater_than"
           }
         }
-      ]
-    },
-    {
-      "effectId": "card-1166-activated-bond-alias",
+      ],
       "cardIds": [
         "1166"
       ],
-      "cardNameKo": "쿠도 유키코",
-      "cardNameJa": "工藤有希子",
       "trigger": {
-        "event": "character.activated_ability",
+        "event": "character.entered_field",
+        "scope": "field_watch",
         "timing": "after"
       },
-      "oncePerTurn": true,
-      "activationLabelKo": "턴당 1회 · 선택한 쿠도 유사쿠의 인연 조건 대체",
+      "effectId": "card-1166-on-yusaku-enter-remove-ap8k",
+      "cardNameJa": "工藤有希子",
+      "cardNameKo": "쿠도 유키코",
       "conditions": [
         {
-          "fact": "player.field.has_card_name",
-          "operator": "equals",
-          "value": "工藤優作"
+          "fact": "player.partner.color",
+          "value": "white",
+          "operator": "equals"
+        },
+        {
+          "fact": "turn.is_source_controller_turn",
+          "value": true,
+          "operator": "equals"
+        },
+        {
+          "fact": "entry.source.card_name",
+          "value": "工藤優作",
+          "operator": "name_matches"
         }
       ],
+      "oncePerTurn": true,
+      "activationLabelKo": "턴당 1회 · 쿠도 유사쿠 등장 시 AP 8000 이하 리무브"
+    },
+    {
       "steps": [
         {
           "op": "select_cards",
-          "from": "field",
-          "min": 0,
           "max": 1,
-          "optional": true,
-          "targetController": "self",
+          "min": 0,
+          "from": "field",
           "filter": {
             "allOf": [
               {
                 "field": "card_type",
-                "operator": "equals",
-                "value": "character"
+                "value": "character",
+                "operator": "equals"
               },
               {
                 "field": "card_name",
-                "operator": "name_matches",
-                "value": "工藤優作"
+                "value": "工藤優作",
+                "operator": "name_matches"
               }
             ]
           },
           "prompt": "인연 조건을 대신 만족시킬 쿠도 유사쿠를 최대 1장 선택하세요.",
-          "saveAs": "target"
+          "saveAs": "target",
+          "optional": true,
+          "targetController": "self"
         },
         {
           "op": "grant_bond_alias",
-          "target": "vars.target",
           "name": "*",
-          "duration": "turn_end",
           "when": {
             "fact": "vars.target.count",
-            "operator": "greater_than",
-            "value": 0
-          }
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "target": "vars.target",
+          "duration": "turn_end"
         }
-      ]
-    },
-    {
-      "effectId": "card-1197-activated-ready-ap-minus2000-and-rest-character",
-      "cardIds": [
-        "1197"
       ],
-      "cardNameKo": "괴도 키드",
-      "cardNameJa": "怪盗キッド",
+      "cardIds": [
+        "1166"
+      ],
       "trigger": {
         "event": "character.activated_ability",
         "timing": "after"
       },
-      "oncePerTurn": true,
-      "activationLabelKo": "턴당 1회 · 손패 1장 리무브 후 액티브, AP −2000 및 캐릭터 슬립",
+      "effectId": "card-1166-activated-bond-alias",
+      "cardNameJa": "工藤有希子",
+      "cardNameKo": "쿠도 유키코",
       "conditions": [
         {
-          "fact": "game.total_evidence_count",
-          "operator": "greater_than_or_equal",
-          "value": 5
+          "fact": "player.field.has_card_name",
+          "value": "工藤優作",
+          "operator": "equals"
         }
       ],
+      "oncePerTurn": true,
+      "activationLabelKo": "턴당 1회 · 선택한 쿠도 유사쿠의 인연 조건 대체"
+    },
+    {
       "steps": [
         {
           "op": "select_cards",
-          "from": "hand",
-          "min": 1,
           "max": 1,
-          "optional": false,
+          "min": 1,
+          "from": "hand",
           "prompt": "비용으로 리무브할 손패 1장을 선택하세요.",
-          "saveAs": "hand_cost"
+          "saveAs": "hand_cost",
+          "optional": false
         },
         {
           "op": "move_cards",
-          "from": "hand_cost",
-          "to": "remove_area"
+          "to": "remove_area",
+          "from": "hand_cost"
         },
         {
           "op": "ready_source_character"
         },
         {
           "op": "modify_stat",
-          "target": "source_character",
           "stat": "ap",
           "amount": -2000,
+          "target": "source_character",
           "duration": "turn_end",
           "stacking": "add"
         },
         {
           "op": "select_cards",
-          "from": "both_fields",
-          "min": 0,
           "max": 1,
-          "optional": true,
+          "min": 0,
+          "from": "both_fields",
           "filter": {
             "field": "card_type",
-            "operator": "equals",
-            "value": "character"
+            "value": "character",
+            "operator": "equals"
           },
           "prompt": "슬립시킬 캐릭터를 최대 1장 선택하세요.",
-          "saveAs": "rest_target"
+          "saveAs": "rest_target",
+          "optional": true
         },
         {
           "op": "rest_cards",
-          "target": "vars.rest_target",
           "when": {
             "fact": "vars.rest_target.count",
-            "operator": "greater_than",
-            "value": 0
-          }
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "target": "vars.rest_target"
         }
-      ]
-    },
-    {
-      "effectId": "card-1197-activated-contact-opponent-rested",
+      ],
       "cardIds": [
         "1197"
       ],
-      "cardNameKo": "괴도 키드",
-      "cardNameJa": "怪盗キッド",
       "trigger": {
         "event": "character.activated_ability",
         "timing": "after"
       },
-      "activationLabelKo": "상대 슬립 캐릭터에 컨택",
-      "conditions": [],
+      "effectId": "card-1197-activated-ready-ap-minus2000-and-rest-character",
+      "cardNameJa": "怪盗キッド",
+      "cardNameKo": "괴도 키드",
+      "conditions": [
+        {
+          "fact": "game.total_evidence_count",
+          "value": 5,
+          "operator": "greater_than_or_equal"
+        },
+        {
+          "fact": "player.event.has_detective_vs_kid_trait",
+          "value": true,
+          "operator": "equals"
+        }
+      ],
+      "oncePerTurn": true,
+      "activationLabelKo": "턴당 1회 · 손패 1장 리무브 후 액티브, AP −2000 및 캐릭터 슬립"
+    },
+    {
       "steps": [
         {
           "op": "select_cards",
-          "from": "opponent_field",
-          "min": 1,
           "max": 1,
-          "optional": false,
+          "min": 1,
+          "from": "opponent_field",
           "filter": {
             "allOf": [
               {
                 "field": "card_type",
-                "operator": "equals",
-                "value": "character"
+                "value": "character",
+                "operator": "equals"
               },
               {
                 "field": "status",
-                "operator": "equals",
-                "value": "rested"
+                "value": "rested",
+                "operator": "equals"
               }
             ]
           },
           "prompt": "컨택할 상대의 슬립 상태 캐릭터를 선택하세요.",
-          "saveAs": "contact_target"
+          "saveAs": "contact_target",
+          "optional": false
         },
         {
           "op": "start_contact",
           "target": "vars.contact_target",
-          "allowActiveTarget": false,
-          "allowNewlyPlayed": false
+          "allowNewlyPlayed": false,
+          "allowActiveTarget": false
         }
-      ]
-    },
-    {
-      "effectId": "card-1258-win-at-nine-evidence-turn-end",
+      ],
       "cardIds": [
-        "1258"
+        "1197"
       ],
-      "cardNameKo": "에도가와 코난&괴도 키드",
-      "cardNameJa": "江戸川コナン＆怪盗キッド",
-      "trigger": {
-        "event": "player.turn_ended",
-        "timing": "after"
-      },
-      "conditions": [
-        {
-          "fact": "player.event.has_detective_vs_kid_trait",
-          "operator": "equals",
-          "value": true
-        },
-        {
-          "fact": "player.evidence.count",
-          "operator": "greater_than_or_equal",
-          "value": 9
-        }
-      ],
-      "steps": [
-        {
-          "op": "win_game"
-        }
-      ]
-    },
-    {
-      "effectId": "card-1258-activated-return-character-to-deck-bottom",
-      "cardIds": [
-        "1258"
-      ],
-      "cardNameKo": "에도가와 코난&괴도 키드",
-      "cardNameJa": "江戸川コナン＆怪盗キッド",
       "trigger": {
         "event": "character.activated_ability",
         "timing": "after"
       },
-      "oncePerTurn": true,
-      "activationLabelKo": "탐정 VS 괴도 · 캐릭터를 덱 아래로 이동",
+      "effectId": "card-1197-activated-contact-opponent-rested",
+      "cardNameJa": "怪盗キッド",
+      "cardNameKo": "괴도 키드",
+      "conditions": [],
+      "activationLabelKo": "상대 슬립 캐릭터에 컨택"
+    },
+    {
+      "steps": [
+        {
+          "op": "win_game"
+        }
+      ],
+      "cardIds": [
+        "1258"
+      ],
+      "trigger": {
+        "event": "player.turn_ended",
+        "timing": "after"
+      },
+      "effectId": "card-1258-win-at-nine-evidence-turn-end",
+      "cardNameJa": "江戸川コナン＆怪盗キッド",
+      "cardNameKo": "에도가와 코난&괴도 키드",
       "conditions": [
         {
           "fact": "player.event.has_detective_vs_kid_trait",
-          "operator": "equals",
-          "value": true
-        }
-      ],
-      "steps": [
-        {
-          "op": "select_cards",
-          "from": "both_fields",
-          "min": 0,
-          "max": 1,
-          "optional": true,
-          "filter": {
-            "field": "card_type",
-            "operator": "equals",
-            "value": "character"
-          },
-          "prompt": "덱 아래로 돌려보낼 캐릭터를 최대 1장 선택하세요.",
-          "saveAs": "target"
+          "value": true,
+          "operator": "equals"
         },
         {
-          "op": "move_cards",
-          "from": "target",
-          "to": "deck_bottom",
-          "when": {
-            "fact": "vars.target.count",
-            "operator": "greater_than",
-            "value": 0
-          }
+          "fact": "player.evidence.count",
+          "value": 9,
+          "operator": "greater_than_or_equal"
         }
       ]
     },
     {
-      "effectId": "card-1258-on-enter-total-evidence-five-draw-discard",
+      "steps": [
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 0,
+          "from": "both_fields",
+          "filter": {
+            "field": "card_type",
+            "value": "character",
+            "operator": "equals"
+          },
+          "prompt": "덱 아래로 돌려보낼 캐릭터를 최대 1장 선택하세요.",
+          "saveAs": "target",
+          "optional": true
+        },
+        {
+          "op": "move_cards",
+          "to": "deck_bottom",
+          "from": "target",
+          "when": {
+            "fact": "vars.target.count",
+            "value": 0,
+            "operator": "greater_than"
+          }
+        }
+      ],
       "cardIds": [
         "1258"
       ],
-      "cardNameKo": "에도가와 코난&괴도 키드",
-      "cardNameJa": "江戸川コナン＆怪盗キッド",
       "trigger": {
-        "event": "character.entered_field",
+        "event": "character.activated_ability",
         "timing": "after"
       },
+      "effectId": "card-1258-activated-return-character-to-deck-bottom",
+      "cardNameJa": "江戸川コナン＆怪盗キッド",
+      "cardNameKo": "에도가와 코난&괴도 키드",
       "conditions": [
         {
           "fact": "player.event.has_detective_vs_kid_trait",
-          "operator": "equals",
-          "value": true
-        },
-        {
-          "fact": "game.total_evidence_count",
-          "operator": "greater_than_or_equal",
-          "value": 5
+          "value": true,
+          "operator": "equals"
         }
       ],
+      "oncePerTurn": true,
+      "activationLabelKo": "탐정 VS 괴도 · 캐릭터를 덱 아래로 이동"
+    },
+    {
       "steps": [
         {
           "op": "draw_cards",
@@ -2918,116 +2931,127 @@
         },
         {
           "op": "select_cards",
-          "from": "hand",
-          "min": 2,
           "max": 2,
-          "optional": false,
+          "min": 2,
+          "from": "hand",
           "prompt": "손패 2장을 리무브하세요.",
-          "saveAs": "discard_two"
+          "saveAs": "discard_two",
+          "optional": false
         },
         {
           "op": "move_cards",
-          "from": "discard_two",
-          "to": "remove_area"
+          "to": "remove_area",
+          "from": "discard_two"
         }
-      ]
-    },
-    {
-      "effectId": "card-1258-on-enter-total-evidence-four-or-less-may-discard-for-evidence",
+      ],
       "cardIds": [
         "1258"
       ],
-      "cardNameKo": "에도가와 코난&괴도 키드",
-      "cardNameJa": "江戸川コナン＆怪盗キッド",
       "trigger": {
         "event": "character.entered_field",
         "timing": "after"
       },
+      "effectId": "card-1258-on-enter-total-evidence-five-draw-discard",
+      "cardNameJa": "江戸川コナン＆怪盗キッド",
+      "cardNameKo": "에도가와 코난&괴도 키드",
       "conditions": [
         {
           "fact": "player.event.has_detective_vs_kid_trait",
-          "operator": "equals",
-          "value": true
+          "value": true,
+          "operator": "equals"
         },
         {
           "fact": "game.total_evidence_count",
-          "operator": "less_than_or_equal",
-          "value": 4
-        }
-      ],
-      "steps": [
-        {
-          "op": "offer_reaction",
-          "reactionId": "b11095p-low-evidence-draw",
-          "actor": "controller",
-          "choices": [
-            "yes",
-            "no"
-          ],
-          "saveAs": "gain_evidence_choice",
-          "prompt": "손패 1장을 리무브하고 증거 1장을 얻을까요?",
-          "when": {
-            "fact": "player.hand.count",
-            "operator": "greater_than",
-            "value": 0
-          }
-        },
-        {
-          "op": "select_cards",
-          "from": "hand",
-          "min": 1,
-          "max": 1,
-          "optional": false,
-          "prompt": "리무브할 손패 1장을 선택하세요.",
-          "saveAs": "hand_cost",
-          "when": {
-            "fact": "vars.gain_evidence_choice",
-            "operator": "equals",
-            "value": "yes"
-          }
-        },
-        {
-          "op": "move_cards",
-          "from": "hand_cost",
-          "to": "remove_area",
-          "when": {
-            "fact": "vars.gain_evidence_choice",
-            "operator": "equals",
-            "value": "yes"
-          }
-        },
-        {
-          "op": "gain_evidence",
-          "count": 1,
-          "when": {
-            "allOf": [
-              {
-                "fact": "vars.gain_evidence_choice",
-                "operator": "equals",
-                "value": "yes"
-              },
-              {
-                "fact": "vars.hand_cost.count",
-                "operator": "greater_than",
-                "value": 0
-              }
-            ]
-          }
+          "value": 5,
+          "operator": "greater_than_or_equal"
         }
       ]
     },
     {
-      "effectId": "card-1258-turn-end-draw-discard-if-five",
+      "steps": [
+        {
+          "op": "offer_reaction",
+          "when": {
+            "fact": "player.hand.count",
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "actor": "controller",
+          "prompt": "손패 1장을 리무브하고 증거 1장을 얻을까요?",
+          "saveAs": "gain_evidence_choice",
+          "choices": [
+            "yes",
+            "no"
+          ],
+          "reactionId": "b11095p-low-evidence-draw"
+        },
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 1,
+          "from": "hand",
+          "when": {
+            "fact": "vars.gain_evidence_choice",
+            "value": "yes",
+            "operator": "equals"
+          },
+          "prompt": "리무브할 손패 1장을 선택하세요.",
+          "saveAs": "hand_cost",
+          "optional": false
+        },
+        {
+          "op": "move_cards",
+          "to": "remove_area",
+          "from": "hand_cost",
+          "when": {
+            "fact": "vars.gain_evidence_choice",
+            "value": "yes",
+            "operator": "equals"
+          }
+        },
+        {
+          "op": "gain_evidence",
+          "when": {
+            "allOf": [
+              {
+                "fact": "vars.gain_evidence_choice",
+                "value": "yes",
+                "operator": "equals"
+              },
+              {
+                "fact": "vars.hand_cost.count",
+                "value": 0,
+                "operator": "greater_than"
+              }
+            ]
+          },
+          "count": 1
+        }
+      ],
       "cardIds": [
         "1258"
       ],
-      "cardNameKo": "에도가와 코난&괴도 키드",
-      "cardNameJa": "江戸川コナン＆怪盗キッド",
       "trigger": {
-        "event": "player.turn_ended",
+        "event": "character.entered_field",
         "timing": "after"
       },
-      "conditions": [],
+      "effectId": "card-1258-on-enter-total-evidence-four-or-less-may-discard-for-evidence",
+      "cardNameJa": "江戸川コナン＆怪盗キッド",
+      "cardNameKo": "에도가와 코난&괴도 키드",
+      "conditions": [
+        {
+          "fact": "player.event.has_detective_vs_kid_trait",
+          "value": true,
+          "operator": "equals"
+        },
+        {
+          "fact": "game.total_evidence_count",
+          "value": 4,
+          "operator": "less_than_or_equal"
+        }
+      ]
+    },
+    {
       "steps": [
         {
           "op": "draw_cards",
@@ -3036,196 +3060,205 @@
         },
         {
           "op": "select_cards",
-          "from": "hand",
-          "min": 1,
           "max": 1,
-          "optional": false,
-          "prompt": "손패가 5장 이상이므로 리무브할 손패 1장을 선택하세요.",
-          "saveAs": "hand_cost",
+          "min": 1,
+          "from": "hand",
           "when": {
             "fact": "player.hand.count",
-            "operator": "greater_than_or_equal",
-            "value": 5
-          }
+            "value": 5,
+            "operator": "greater_than_or_equal"
+          },
+          "prompt": "손패가 5장 이상이므로 리무브할 손패 1장을 선택하세요.",
+          "saveAs": "hand_cost",
+          "optional": false
         },
         {
           "op": "move_cards",
-          "from": "hand_cost",
           "to": "remove_area",
+          "from": "hand_cost",
           "when": {
             "fact": "vars.hand_cost.count",
-            "operator": "greater_than",
-            "value": 0
+            "value": 0,
+            "operator": "greater_than"
           }
         }
-      ]
-    },
-    {
-      "effectId": "card-0938-contact-start-discard-for-ap-3000",
-      "cardIds": [
-        "0938"
       ],
-      "cardNameKo": "마츠다 진페이",
-      "cardNameJa": "松田陣平",
+      "cardIds": [
+        "1258"
+      ],
       "trigger": {
-        "event": "character.contact_started",
+        "event": "player.turn_ended",
         "timing": "after"
       },
-      "conditions": [
-        {
-          "fact": "turn.is_source_controller_turn",
-          "operator": "equals",
-          "value": true
-        },
-        {
-          "fact": "contact.source.ap",
-          "operator": "less_than",
-          "value": {
-            "fact": "contact.target.ap"
-          }
-        },
-        {
-          "fact": "player.hand.count",
-          "operator": "greater_than",
-          "value": 0
-        }
-      ],
+      "effectId": "card-1258-turn-end-draw-discard-if-five",
+      "cardNameJa": "江戸川コナン＆怪盗キッド",
+      "cardNameKo": "에도가와 코난&괴도 키드",
+      "conditions": []
+    },
+    {
       "steps": [
         {
           "op": "select_cards",
-          "from": "hand",
-          "min": 0,
           "max": 1,
-          "optional": true,
+          "min": 0,
+          "from": "hand",
           "prompt": "손패 1장을 리무브하면 이 컨택 동안 마츠다 진페이 AP를 +3000 합니다.",
-          "saveAs": "hand_cost"
+          "saveAs": "hand_cost",
+          "optional": true
         },
         {
           "op": "move_cards",
-          "from": "hand_cost",
           "to": "remove_area",
+          "from": "hand_cost",
           "when": {
             "fact": "vars.hand_cost.count",
-            "operator": "greater_than",
-            "value": 0
+            "value": 0,
+            "operator": "greater_than"
           }
         },
         {
           "op": "modify_contact_ap",
-          "amount": 3000,
           "when": {
             "fact": "vars.hand_cost.count",
-            "operator": "greater_than",
-            "value": 0
-          }
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "amount": 3000
+        }
+      ],
+      "cardIds": [
+        "0938"
+      ],
+      "trigger": {
+        "event": "character.contact_started",
+        "timing": "after"
+      },
+      "effectId": "card-0938-contact-start-discard-for-ap-3000",
+      "cardNameJa": "松田陣平",
+      "cardNameKo": "마츠다 진페이",
+      "conditions": [
+        {
+          "fact": "turn.is_source_controller_turn",
+          "value": true,
+          "operator": "equals"
+        },
+        {
+          "fact": "contact.source.ap",
+          "value": {
+            "fact": "contact.target.ap"
+          },
+          "operator": "less_than"
+        },
+        {
+          "fact": "player.hand.count",
+          "value": 0,
+          "operator": "greater_than"
         }
       ],
       "oncePerTurn": true
     },
     {
-      "effectId": "card-0706-contact-remove-opponent-police-deploy",
-      "cardIds": [
-        "0706"
-      ],
-      "cardNameKo": "하기와라 치하야",
-      "cardNameJa": "萩原千速",
-      "trigger": {
-        "event": "character.contact_removed_opponent",
-        "timing": "after"
-      },
-      "conditions": [
-        {
-          "fact": "player.file.count",
-          "operator": "greater_than_or_equal",
-          "value": 6
-        }
-      ],
+      "notes": "자신의 FILE 6장 이상, 해당 캐릭터와의 컨택으로 상대 캐릭터가 실제 리무브되었을 때만 선택지 제공.",
       "steps": [
         {
           "op": "offer_reaction",
-          "reactionId": "b06087p-contact-removed-opponent",
           "actor": "controller",
+          "prompt": "파일이 6장 이상이고 상대 캐릭터를 컨택으로 리무브했습니다. 하기와라 치하야를 리무브하고 손패의 경찰 캐릭터를 등장시킬까요?",
+          "saveAs": "remove_self",
           "choices": [
             "yes",
             "no"
           ],
-          "saveAs": "remove_self",
-          "prompt": "파일이 6장 이상이고 상대 캐릭터를 컨택으로 리무브했습니다. 하기와라 치하야를 리무브하고 손패의 경찰 캐릭터를 등장시킬까요?"
+          "reactionId": "b06087p-contact-removed-opponent"
         },
         {
           "op": "move_cards",
-          "from": "source_character",
           "to": "remove_area",
+          "from": "source_character",
           "when": {
             "fact": "vars.remove_self",
-            "operator": "equals",
-            "value": "yes"
+            "value": "yes",
+            "operator": "equals"
           }
         },
         {
           "op": "select_cards",
-          "from": "hand",
-          "min": 0,
           "max": 1,
-          "optional": true,
+          "min": 0,
+          "from": "hand",
+          "when": {
+            "fact": "vars.remove_self",
+            "value": "yes",
+            "operator": "equals"
+          },
           "filter": {
             "allOf": [
               {
                 "field": "card_type",
-                "operator": "equals",
-                "value": "character"
+                "value": "character",
+                "operator": "equals"
               },
               {
                 "field": "level",
-                "operator": "less_than_or_equal",
-                "value": 7
+                "value": 7,
+                "operator": "less_than_or_equal"
               },
               {
                 "field": "trait",
-                "operator": "has_trait",
-                "value": "警察"
+                "value": "警察",
+                "operator": "has_trait"
               },
               {
                 "field": "card_id",
-                "operator": "not_equals",
-                "value": "0706"
+                "value": "0706",
+                "operator": "not_equals"
               }
             ]
           },
           "prompt": "손패에서 하기와라 치하야 이외의 레벨 7 이하 경찰 캐릭터를 최대 1장 선택해 등장시킵니다.",
           "saveAs": "police_deployment",
-          "when": {
-            "fact": "vars.remove_self",
-            "operator": "equals",
-            "value": "yes"
-          }
+          "optional": true
         },
         {
           "op": "move_cards",
-          "from": "police_deployment",
           "to": "field",
-          "entryMethod": "character_ability",
+          "from": "police_deployment",
           "when": {
             "fact": "vars.police_deployment.count",
-            "operator": "greater_than",
-            "value": 0
-          }
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "entryMethod": "character_ability"
         }
       ],
-      "notes": "자신의 FILE 6장 이상, 해당 캐릭터와의 컨택으로 상대 캐릭터가 실제 리무브되었을 때만 선택지 제공."
-    },
-    {
-      "effectId": "card-0732-activated-deploy-tokyo-police-temporary-charge-return",
       "cardIds": [
-        "0732"
+        "0706"
       ],
-      "cardNameKo": "메구레 쥬조",
-      "cardNameJa": "目暮十三",
       "trigger": {
-        "event": "character.activated_ability",
+        "event": "character.contact_removed_opponent",
         "timing": "after"
       },
-      "conditions": [],
+      "effectId": "card-0706-contact-remove-opponent-police-deploy",
+      "cardNameJa": "萩原千速",
+      "cardNameKo": "하기와라 치하야",
+      "conditions": [
+        {
+          "fact": "player.file.count",
+          "value": 6,
+          "operator": "greater_than_or_equal"
+        },
+        {
+          "fact": "player.hand.count_matching_trait",
+          "trait": "警察",
+          "value": 1,
+          "cardType": "character",
+          "levelMax": 7,
+          "operator": "greater_than_or_equal",
+          "excludeCardId": "0706"
+        }
+      ]
+    },
+    {
       "steps": [
         {
           "op": "pay_cost",
@@ -3233,65 +3266,77 @@
         },
         {
           "op": "select_cards",
-          "from": "remove_area",
-          "min": 0,
           "max": 1,
-          "optional": true,
+          "min": 0,
+          "from": "remove_area",
           "filter": {
             "allOf": [
               {
                 "field": "card_type",
-                "operator": "equals",
-                "value": "character"
+                "value": "character",
+                "operator": "equals"
               },
               {
                 "field": "level",
-                "operator": "less_than_or_equal",
-                "value": 4
+                "value": 4,
+                "operator": "less_than_or_equal"
               },
               {
                 "field": "trait",
-                "operator": "has_trait",
-                "value": "警視庁"
+                "value": "警視庁",
+                "operator": "has_trait"
               }
             ]
           },
           "prompt": "리무브 에이리어에서 레벨 4 이하 경시청 캐릭터를 최대 1장 선택해 등장시킵니다.",
-          "saveAs": "deployment"
+          "saveAs": "deployment",
+          "optional": true
         },
         {
           "op": "move_cards",
-          "from": "deployment",
           "to": "field",
-          "entryMethod": "character_ability",
+          "from": "deployment",
           "when": {
             "fact": "vars.deployment.count",
-            "operator": "greater_than",
-            "value": 0
-          }
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "entryMethod": "character_ability"
         },
         {
           "op": "grant_keyword",
+          "when": {
+            "fact": "vars.deployment.count",
+            "value": 0,
+            "operator": "greater_than"
+          },
           "target": "vars.deployment",
           "keyword": "charge_case",
           "duration": "turn_end",
-          "displayNameKo": "돌격[사건]",
-          "when": {
-            "fact": "vars.deployment.count",
-            "operator": "greater_than",
-            "value": 0
-          }
+          "displayNameKo": "돌격[사건]"
         },
         {
           "op": "schedule_move_to_deck_bottom",
-          "target": "vars.deployment",
           "when": {
             "fact": "vars.deployment.count",
-            "operator": "greater_than",
-            "value": 0
-          }
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "target": "vars.deployment"
         }
       ],
+      "cardIds": [
+        "0732"
+      ],
+      "trigger": {
+        "event": "character.activated_ability",
+        "timing": "after"
+      },
+      "effectId": "card-0732-activated-deploy-tokyo-police-temporary-charge-return",
+      "cardNameJa": "目暮十三",
+      "cardNameKo": "메구레 쥬조",
+      "conditions": [],
+      "activationTiming": "turn",
       "activationLabelKo": "선언 · 경시청 캐릭터 등장 후 턴 종료 시 덱 아래로 이동"
     },
     {
@@ -3409,8 +3454,8 @@
       "cardNameKo": "수수께끼의 승객",
       "conditions": [],
       "reviewNotes": {
-        "rationale": "덱 위 3장 중 적 캐릭터를 최대 1장 공개해 손패에 넣고, 나머지를 원하는 순서로 덱 아래에 둔 뒤 파일 수 이하 레벨의 적 캐릭터를 최대 1장 등장시킵니다.",
-        "sourceText": "自分のデッキのカードを上から3枚見る。その中から〖red〗のキャラを1枚まで公開して手札に加え、残りを好きな順番でデッキの下に移す。手札から自分のFILEエリアの枚数以下のレベルの〖red〗のキャラを1枚まで登場させる。"
+        "rationale": "덱 위 3장 중 red 캐릭터를 최대 1장 공개해 손패에 넣고, 나머지를 원하는 순서로 덱 아래에 둔 뒤 파일 수 이하 레벨의 red 캐릭터를 최대 1장 등장시킵니다.",
+        "sourceText": "자신의 덱の上から3枚を確認し、その中から【red】キャラを1枚まで公開して手札に加え、残りを好きな順番でデッキの下に移す。手札からFILEエリアの枚数以下のレベルの【red】キャラを1枚まで登場させる。"
       }
     },
     {
@@ -3528,8 +3573,8 @@
       "cardNameKo": "작아진 명탐정",
       "conditions": [],
       "reviewNotes": {
-        "rationale": "덱 위 3장 중 청 캐릭터를 최대 1장 공개해 손패에 넣고, 나머지를 원하는 순서로 덱 아래에 둔 뒤 파일 수 이하 레벨의 청 캐릭터를 최대 1장 등장시킵니다.",
-        "sourceText": "自分のデッキのカードを上から3枚見る。その中から〖blue〗のキャラを1枚まで公開して手札に加え、残りを好きな順番でデッキの下に移す。手札から自分のFILEエリアの枚数以下のレベルの〖blue〗のキャラを1枚まで登場させる。"
+        "rationale": "덱 위 3장 중 blue 캐릭터를 최대 1장 공개해 손패에 넣고, 나머지를 원하는 순서로 덱 아래에 둔 뒤 파일 수 이하 레벨의 blue 캐릭터를 최대 1장 등장시킵니다.",
+        "sourceText": "자신의 덱の上から3枚を確認し、その中から【blue】キャラを1枚まで公開して手札に加え、残りを好きな順番でデッキの下に移す。手札からFILEエリアの枚数以下のレベルの【blue】キャラを1枚まで登場させる。"
       }
     },
     {
@@ -3647,8 +3692,8 @@
       "cardNameKo": "부적",
       "conditions": [],
       "reviewNotes": {
-        "rationale": "덱 위 3장 중 녹 캐릭터를 최대 1장 공개해 손패에 넣고, 나머지를 원하는 순서로 덱 아래에 둔 뒤 파일 수 이하 레벨의 녹 캐릭터를 최대 1장 등장시킵니다.",
-        "sourceText": "自分のデッキのカードを上から3枚見る。その中から〖green〗のキャラを1枚まで公開して手札に加え、残りを好きな順番でデッキの下に移す。手札から自分のFILEエリアの枚数以下のレベルの〖green〗のキャラを1枚まで登場させる。"
+        "rationale": "덱 위 3장 중 green 캐릭터를 최대 1장 공개해 손패에 넣고, 나머지를 원하는 순서로 덱 아래에 둔 뒤 파일 수 이하 레벨의 green 캐릭터를 최대 1장 등장시킵니다.",
+        "sourceText": "자신의 덱の上から3枚を確認し、その中から【green】キャラを1枚まで公開して手札に加え、残りを好きな順番でデッキの下に移す。手札からFILEエリアの枚数以下のレベルの【green】キャラを1枚まで登場させる。"
       }
     },
     {
@@ -3766,8 +3811,8 @@
       "cardNameKo": "카라스마 렌야의 그림자",
       "conditions": [],
       "reviewNotes": {
-        "rationale": "덱 위 3장 중 흑 캐릭터를 최대 1장 공개해 손패에 넣고, 나머지를 원하는 순서로 덱 아래에 둔 뒤 파일 수 이하 레벨의 흑 캐릭터를 최대 1장 등장시킵니다.",
-        "sourceText": "自分のデッキのカードを上から3枚見る。その中から〖black〗のキャラを1枚まで公開して手札に加え、残りを好きな順番でデッキの下に移す。手札から自分のFILEエリアの枚数以下のレベルの〖black〗のキャラを1枚まで登場させる。"
+        "rationale": "덱 위 3장 중 black 캐릭터를 최대 1장 공개해 손패에 넣고, 나머지를 원하는 순서로 덱 아래에 둔 뒤 파일 수 이하 레벨의 black 캐릭터를 최대 1장 등장시킵니다.",
+        "sourceText": "자신의 덱の上から3枚を確認し、その中から【black】キャラを1枚まで公開して手札に加え、残りを好きな順番でデッキの下に移す。手札からFILEエリアの枚数以下のレベルの【black】キャラを1枚まで登場させる。"
       }
     },
     {
@@ -4171,7 +4216,7 @@
           "op": "select_cards",
           "max": 1,
           "min": 0,
-          "from": "both_fields",
+          "from": "opponent_field",
           "filter": {
             "field": "card_type",
             "value": "character",
@@ -4577,6 +4622,1207 @@
       "cardNameJa": "松田陣平",
       "cardNameKo": "마츠다 진페이",
       "conditions": []
+    },
+    {
+      "steps": [
+        {
+          "op": "pay_cost",
+          "cost": "sleep_source_character"
+        },
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 1,
+          "from": "hand",
+          "filter": {
+            "field": "card_name",
+            "value": "毛利蘭",
+            "operator": "name_matches"
+          },
+          "prompt": "비용으로 공개할 모리 란 1장을 손패에서 선택하세요.",
+          "saveAs": "mouri_ran",
+          "optional": false
+        },
+        {
+          "op": "reveal_cards",
+          "to": [
+            "opponent"
+          ],
+          "from": "mouri_ran",
+          "awaitAcknowledgement": true
+        },
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 0,
+          "from": "both_fields",
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "value": "character",
+                "operator": "equals"
+              },
+              {
+                "field": "ap_current",
+                "value": 8000,
+                "operator": "less_than_or_equal"
+              }
+            ]
+          },
+          "prompt": "덱 아래로 이동시킬 AP 8000 이하 캐릭터를 최대 1장 선택하세요.",
+          "saveAs": "target",
+          "optional": true
+        },
+        {
+          "op": "move_cards",
+          "to": "deck_bottom",
+          "from": "target",
+          "when": {
+            "fact": "vars.target.count",
+            "value": 0,
+            "operator": "greater_than"
+          }
+        }
+      ],
+      "cardIds": [
+        "0408"
+      ],
+      "trigger": {
+        "event": "character.activated_ability",
+        "timing": "after"
+      },
+      "effectId": "card-0408-activated-reveal-mouri-ran-return-character",
+      "cardNameJa": "工藤新一",
+      "cardNameKo": "쿠도 신이치",
+      "conditions": [
+        {
+          "fact": "turn.is_source_controller_turn",
+          "value": true,
+          "operator": "equals"
+        }
+      ],
+      "oncePerTurn": true,
+      "activationLabelKo": "턴당 1회 · 모리 란 공개 비용으로 AP 8000 이하 캐릭터 덱 아래 이동"
+    },
+    {
+      "steps": [
+        {
+          "op": "offer_reaction",
+          "actor": "controller",
+          "prompt": "키사키 에리를 슬립시켜 손패의 레벨 6 이하 쿠도 신이치 또는 모리 탐정 사무소 캐릭터를 등장시키고 1장 드로우할까요?",
+          "saveAs": "deploy_choice",
+          "choices": [
+            "yes",
+            "no"
+          ],
+          "reactionId": "b05007p-on-enter-sleep-deploy"
+        },
+        {
+          "op": "pay_cost",
+          "cost": "sleep_source_character",
+          "when": {
+            "fact": "vars.deploy_choice",
+            "value": "yes",
+            "operator": "equals"
+          }
+        },
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 0,
+          "from": "hand",
+          "when": {
+            "fact": "vars.deploy_choice",
+            "value": "yes",
+            "operator": "equals"
+          },
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "value": "character",
+                "operator": "equals"
+              },
+              {
+                "field": "level",
+                "value": 6,
+                "operator": "less_than_or_equal"
+              },
+              {
+                "anyOf": [
+                  {
+                    "field": "card_name",
+                    "value": "工藤新一",
+                    "operator": "name_matches"
+                  },
+                  {
+                    "field": "trait",
+                    "value": "毛利探偵事務所",
+                    "operator": "has_trait"
+                  }
+                ]
+              }
+            ]
+          },
+          "prompt": "손패에서 레벨 6 이하 쿠도 신이치 또는 모리 탐정 사무소 캐릭터를 최대 1장 선택하세요.",
+          "saveAs": "deployment",
+          "optional": true
+        },
+        {
+          "op": "move_cards",
+          "to": "field",
+          "from": "deployment",
+          "when": {
+            "allOf": [
+              {
+                "fact": "vars.deploy_choice",
+                "value": "yes",
+                "operator": "equals"
+              },
+              {
+                "fact": "vars.deployment.count",
+                "value": 0,
+                "operator": "greater_than"
+              }
+            ]
+          },
+          "entryMethod": "character_ability"
+        },
+        {
+          "op": "draw_cards",
+          "when": {
+            "fact": "vars.deploy_choice",
+            "value": "yes",
+            "operator": "equals"
+          },
+          "count": 1,
+          "destination": "hand"
+        }
+      ],
+      "cardIds": [
+        "0513"
+      ],
+      "trigger": {
+        "event": "character.entered_field",
+        "timing": "after"
+      },
+      "effectId": "card-0513-on-enter-sleep-deploy-and-draw",
+      "cardNameJa": "妃英理",
+      "cardNameKo": "키사키 에리",
+      "conditions": []
+    },
+    {
+      "steps": [
+        {
+          "op": "set_continuous_keyword",
+          "target": "source_character",
+          "keyword": "charge",
+          "displayNameKo": "돌격"
+        }
+      ],
+      "cardIds": [
+        "0631"
+      ],
+      "trigger": {
+        "event": "continuous.recalculate",
+        "timing": "continuous"
+      },
+      "effectId": "card-0631-solution-charge",
+      "cardNameJa": "江戸川コナン",
+      "cardNameKo": "에도가와 코난",
+      "conditions": [
+        {
+          "fact": "player.case_phase",
+          "value": "solution",
+          "operator": "equals"
+        }
+      ],
+      "continuous": true
+    },
+    {
+      "steps": [
+        {
+          "op": "set_continuous_stat",
+          "stat": "ap",
+          "amount": 1000,
+          "target": "source_character",
+          "duration": "while_condition_true",
+          "modifierId": "conan-0631-ap-per-under-card",
+          "amountPerUnderCard": true
+        }
+      ],
+      "cardIds": [
+        "0631"
+      ],
+      "trigger": {
+        "event": "continuous.recalculate",
+        "timing": "continuous"
+      },
+      "effectId": "card-0631-own-turn-ap-per-under-card",
+      "cardNameJa": "江戸川コナン",
+      "cardNameKo": "에도가와 코난",
+      "conditions": [
+        {
+          "fact": "turn.is_source_controller_turn",
+          "value": true,
+          "operator": "equals"
+        }
+      ],
+      "continuous": true
+    },
+    {
+      "steps": [
+        {
+          "op": "peek_top_cards",
+          "count": 1,
+          "saveAs": "top",
+          "allowFewer": true
+        },
+        {
+          "op": "move_cards",
+          "to": "remove_area",
+          "from": "top",
+          "when": {
+            "fact": "vars.top.count",
+            "value": 0,
+            "operator": "greater_than"
+          }
+        },
+        {
+          "op": "select_cards",
+          "max": 2,
+          "min": 0,
+          "from": "remove_area",
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "value": "character",
+                "operator": "equals"
+              }
+            ],
+            "anyOf": [
+              {
+                "field": "trait",
+                "value": "探偵",
+                "operator": "has_trait"
+              },
+              {
+                "field": "trait",
+                "value": "少年探偵団",
+                "operator": "has_trait"
+              }
+            ]
+          },
+          "prompt": "리무브 에이리어에서 특징 [탐정] 또는 [소년탐정단] 캐릭터를 최대 2장 선택해 이 카드 아래에 겹칩니다.",
+          "saveAs": "attached",
+          "optional": true
+        },
+        {
+          "op": "attach_cards",
+          "from": "attached"
+        }
+      ],
+      "cardIds": [
+        "0631"
+      ],
+      "trigger": {
+        "event": "character.entered_field",
+        "timing": "after"
+      },
+      "effectId": "card-0631-on-enter-remove-top-and-attach-detective",
+      "cardNameJa": "江戸川コナン",
+      "cardNameKo": "에도가와 코난",
+      "conditions": []
+    },
+    {
+      "steps": [
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 0,
+          "from": "opponent_field",
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "value": "character",
+                "operator": "equals"
+              },
+              {
+                "field": "level",
+                "value": 8,
+                "operator": "less_than_or_equal"
+              }
+            ]
+          },
+          "prompt": "상대 현장에서 레벨 8 이하 캐릭터를 최대 1장 선택하세요.",
+          "saveAs": "field_target",
+          "optional": true
+        },
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 0,
+          "from": "opponent_remove_area",
+          "when": {
+            "fact": "vars.field_target.count",
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "filter": {
+            "field": "card_name",
+            "value": {
+              "fact": "vars.field_target.0.card.name"
+            },
+            "operator": "name_matches"
+          },
+          "prompt": "상대 리무브 에이리어에서 선택한 캐릭터와 카드명이 같은 카드를 최대 1장 선택하세요.",
+          "saveAs": "remove_target",
+          "optional": true
+        },
+        {
+          "op": "move_unselected_to_deck_bottom",
+          "from": "vars.field_target",
+          "order": "player_choice",
+          "chooser": "opponent",
+          "orderPrompt": "상대가 선택한 두 카드를 원하는 순서로 덱 아래에 놓습니다.",
+          "selectedOnly": true,
+          "selectedVariables": [
+            "field_target",
+            "remove_target"
+          ]
+        }
+      ],
+      "cardIds": [
+        "0735"
+      ],
+      "trigger": {
+        "event": "character.entered_field",
+        "timing": "after"
+      },
+      "effectId": "card-0735-on-enter-opponent-field-and-same-name-remove-return",
+      "cardNameJa": "工藤新一",
+      "cardNameKo": "쿠도 신이치",
+      "conditions": [
+        {
+          "fact": "player.partner.color",
+          "value": "blue",
+          "operator": "equals"
+        }
+      ]
+    },
+    {
+      "steps": [
+        {
+          "op": "set_continuous_keyword",
+          "target": "source_character",
+          "keyword": "charge",
+          "displayNameKo": "돌격"
+        }
+      ],
+      "cardIds": [
+        "0949"
+      ],
+      "trigger": {
+        "event": "continuous.recalculate",
+        "timing": "continuous"
+      },
+      "effectId": "card-0949-continuous-charge",
+      "cardNameJa": "毛利蘭",
+      "cardNameKo": "모리 란",
+      "conditions": [],
+      "continuous": true
+    },
+    {
+      "steps": [
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 0,
+          "from": "hand",
+          "filter": {
+            "field": "card_name",
+            "value": "毛利蘭",
+            "operator": "name_matches"
+          },
+          "prompt": "패에서 모리 란을 최대 1장 공개해 쿠도 신이치에게 돌격을 부여할 수 있습니다.",
+          "saveAs": "mouri_ran",
+          "optional": true
+        },
+        {
+          "op": "reveal_cards",
+          "to": [
+            "opponent"
+          ],
+          "from": "mouri_ran",
+          "when": {
+            "fact": "vars.mouri_ran.count",
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "awaitAcknowledgement": true
+        },
+        {
+          "op": "grant_keyword",
+          "when": {
+            "fact": "vars.mouri_ran.count",
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "target": "source_character",
+          "keyword": "charge",
+          "duration": "turn_end",
+          "displayNameKo": "돌격"
+        }
+      ],
+      "cardIds": [
+        "1071"
+      ],
+      "trigger": {
+        "event": "character.entered_field",
+        "timing": "after"
+      },
+      "effectId": "card-1071-on-enter-reveal-mouri-ran-for-charge",
+      "cardNameJa": "工藤新一",
+      "cardNameKo": "쿠도 신이치",
+      "conditions": [
+        {
+          "fact": "player.partner.color",
+          "value": "blue",
+          "operator": "equals"
+        }
+      ]
+    },
+    {
+      "steps": [
+        {
+          "op": "modify_stat",
+          "stat": "ap",
+          "amount": 1000,
+          "target": "source_character",
+          "duration": "turn_end",
+          "stacking": "add"
+        }
+      ],
+      "cardIds": [
+        "1071"
+      ],
+      "trigger": {
+        "event": "character.entered_field",
+        "timing": "after"
+      },
+      "effectId": "card-1071-on-enter-character-ability-ap-plus-1000",
+      "cardNameJa": "工藤新一",
+      "cardNameKo": "쿠도 신이치",
+      "conditions": [
+        {
+          "fact": "entry.method",
+          "value": [
+            "character_ability",
+            "event_effect"
+          ],
+          "operator": "in"
+        }
+      ]
+    },
+    {
+      "steps": [
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 0,
+          "from": "both_fields",
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "value": "character",
+                "operator": "equals"
+              },
+              {
+                "field": "ap_current",
+                "value": 8000,
+                "operator": "less_than_or_equal"
+              }
+            ]
+          },
+          "prompt": "AP 8000 이하 캐릭터를 최대 1장 선택해 리무브합니다.",
+          "saveAs": "target",
+          "optional": true
+        },
+        {
+          "op": "move_cards",
+          "to": "remove_area",
+          "from": "target",
+          "when": {
+            "fact": "vars.target.count",
+            "value": 0,
+            "operator": "greater_than"
+          }
+        }
+      ],
+      "cardIds": [
+        "1170"
+      ],
+      "trigger": {
+        "event": "character.entered_field",
+        "scope": "field_watch",
+        "timing": "after"
+      },
+      "effectId": "card-1170-on-enter-level5-blue-white-remove-ap8000",
+      "cardNameJa": "江戸川コナン",
+      "cardNameKo": "에도가와 코난",
+      "conditions": [
+        {
+          "fact": "player.event.has_detective_vs_kid_trait",
+          "value": true,
+          "operator": "equals"
+        },
+        {
+          "fact": "turn.is_source_controller_turn",
+          "value": true,
+          "operator": "equals"
+        },
+        {
+          "fact": "entry.source.level",
+          "value": 5,
+          "operator": "greater_than_or_equal"
+        },
+        {
+          "fact": "entry.source.color",
+          "value": [
+            "blue",
+            "white"
+          ],
+          "operator": "in"
+        },
+        {
+          "fact": "entry.source.card_id",
+          "value": "1170",
+          "operator": "not_equals"
+        }
+      ],
+      "oncePerTurn": true
+    },
+    {
+      "steps": [
+        {
+          "op": "offer_reaction",
+          "actor": "controller",
+          "prompt": "코난이 자신의 효과로 리무브되었습니다. 뒷면 증거 1장을 앞면으로 뒤집고 레벨 2 이하 청/백 캐릭터를 슬립 상태로 등장시킬까요?",
+          "saveAs": "flip_choice",
+          "choices": [
+            "yes",
+            "no"
+          ],
+          "reactionId": "b11002p-flip-and-deploy"
+        },
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 1,
+          "from": "evidence_area",
+          "when": {
+            "fact": "vars.flip_choice",
+            "value": "yes",
+            "operator": "equals"
+          },
+          "filter": {
+            "field": "face_up",
+            "value": false,
+            "operator": "equals"
+          },
+          "prompt": "앞면으로 뒤집을 뒷면 증거 1장을 선택하세요.",
+          "saveAs": "evidence",
+          "optional": false
+        },
+        {
+          "op": "flip_evidence",
+          "from": "vars.evidence",
+          "when": {
+            "fact": "vars.flip_choice",
+            "value": "yes",
+            "operator": "equals"
+          },
+          "count": 1
+        },
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 0,
+          "from": "remove_area",
+          "when": {
+            "fact": "vars.flip_choice",
+            "value": "yes",
+            "operator": "equals"
+          },
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "value": "character",
+                "operator": "equals"
+              },
+              {
+                "field": "level",
+                "value": 2,
+                "operator": "less_than_or_equal"
+              },
+              {
+                "anyOf": [
+                  {
+                    "field": "color",
+                    "value": "blue",
+                    "operator": "equals"
+                  },
+                  {
+                    "field": "color",
+                    "value": "white",
+                    "operator": "equals"
+                  }
+                ]
+              }
+            ]
+          },
+          "prompt": "리무브 에이리어에서 레벨 2 이하 청/백 캐릭터를 최대 1장 선택하세요.",
+          "saveAs": "deployment",
+          "optional": true
+        },
+        {
+          "op": "move_cards",
+          "to": "field",
+          "from": "deployment",
+          "when": {
+            "fact": "vars.deployment.count",
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "rested": true,
+          "entryMethod": "character_ability"
+        }
+      ],
+      "cardIds": [
+        "1170"
+      ],
+      "trigger": {
+        "event": "character.removed_from_field",
+        "timing": "after"
+      },
+      "effectId": "card-1170-removed-by-own-effect-flip-and-deploy",
+      "cardNameJa": "江戸川コナン",
+      "cardNameKo": "에도가와 코난",
+      "conditions": [
+        {
+          "fact": "turn.is_source_controller_turn",
+          "value": true,
+          "operator": "equals"
+        },
+        {
+          "fact": "player.event.has_detective_vs_kid_trait",
+          "value": true,
+          "operator": "equals"
+        },
+        {
+          "fact": "game.total_evidence_count",
+          "value": 5,
+          "operator": "greater_than_or_equal"
+        },
+        {
+          "fact": "event.removed_by_controller",
+          "value": true,
+          "operator": "equals"
+        },
+        {
+          "fact": "player.evidence.facedown_count",
+          "value": 1,
+          "operator": "greater_than_or_equal"
+        }
+      ]
+    },
+    {
+      "steps": [
+        {
+          "op": "set_continuous_keyword",
+          "target": "source_character",
+          "keyword": "charge",
+          "displayNameKo": "돌격"
+        }
+      ],
+      "cardIds": [
+        "1172"
+      ],
+      "trigger": {
+        "event": "continuous.recalculate",
+        "timing": "continuous"
+      },
+      "effectId": "card-1172-continuous-partner-blue-charge",
+      "cardNameJa": "工藤新一",
+      "cardNameKo": "쿠도 신이치",
+      "conditions": [
+        {
+          "fact": "player.event.has_detective_vs_kid_trait",
+          "value": true,
+          "operator": "equals"
+        },
+        {
+          "fact": "player.partner.color",
+          "value": "blue",
+          "operator": "equals"
+        }
+      ],
+      "continuous": true
+    },
+    {
+      "steps": [
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 0,
+          "from": "remove_area",
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "value": "character",
+                "operator": "equals"
+              },
+              {
+                "field": "level",
+                "value": 2,
+                "operator": "less_than_or_equal"
+              },
+              {
+                "field": "card_name",
+                "value": "毛利蘭",
+                "operator": "name_matches"
+              }
+            ]
+          },
+          "prompt": "리무브 에이리어에서 레벨 2 이하 모리 란을 최대 1장 선택해 슬립 상태로 등장시킵니다.",
+          "saveAs": "deployment",
+          "optional": true
+        },
+        {
+          "op": "move_cards",
+          "to": "field",
+          "from": "deployment",
+          "when": {
+            "fact": "vars.deployment.count",
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "rested": true,
+          "entryMethod": "character_ability"
+        },
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 0,
+          "from": "hand",
+          "when": {
+            "allOf": [
+              {
+                "fact": "vars.deployment.count",
+                "value": 0,
+                "operator": "greater_than"
+              },
+              {
+                "fact": "game.total_evidence_count",
+                "value": 4,
+                "operator": "less_than_or_equal"
+              }
+            ]
+          },
+          "prompt": "양쪽의 증거 합계가 4 이하이므로 손패 1장을 리무브합니다.",
+          "saveAs": "hand_cost",
+          "optional": true
+        },
+        {
+          "op": "move_cards",
+          "to": "remove_area",
+          "from": "hand_cost",
+          "when": {
+            "fact": "vars.hand_cost.count",
+            "value": 0,
+            "operator": "greater_than"
+          }
+        }
+      ],
+      "cardIds": [
+        "1172"
+      ],
+      "trigger": {
+        "event": "character.entered_field",
+        "timing": "after"
+      },
+      "effectId": "card-1172-on-enter-deploy-mouri-ran",
+      "cardNameJa": "工藤新一",
+      "cardNameKo": "쿠도 신이치",
+      "conditions": [
+        {
+          "fact": "player.field.count_matching_trait",
+          "trait": "探偵",
+          "value": 1,
+          "operator": "greater_than_or_equal",
+          "excludeSource": true
+        }
+      ]
+    },
+    {
+      "steps": [
+        {
+          "op": "set_continuous_keyword",
+          "target": "source_character",
+          "keyword": "charge",
+          "displayNameKo": "돌격"
+        }
+      ],
+      "cardIds": [
+        "1173"
+      ],
+      "trigger": {
+        "event": "continuous.recalculate",
+        "timing": "continuous"
+      },
+      "effectId": "card-1173-continuous-partner-blue-charge",
+      "cardNameJa": "毛利蘭",
+      "cardNameKo": "모리 란",
+      "conditions": [
+        {
+          "fact": "player.partner.color",
+          "value": "blue",
+          "operator": "equals"
+        }
+      ],
+      "continuous": true
+    },
+    {
+      "steps": [
+        {
+          "op": "set_continuous_stat",
+          "stat": "ap",
+          "amount": 3000,
+          "target": "source_character",
+          "duration": "while_condition_true",
+          "modifierId": "b11005p-case-evidence-ap"
+        }
+      ],
+      "cardIds": [
+        "1173"
+      ],
+      "trigger": {
+        "event": "continuous.recalculate",
+        "timing": "continuous"
+      },
+      "effectId": "card-1173-continuous-case-evidence-ap-plus-3000",
+      "cardNameJa": "毛利蘭",
+      "cardNameKo": "모리 란",
+      "conditions": [
+        {
+          "fact": "player.event.has_detective_vs_kid_trait",
+          "value": true,
+          "operator": "equals"
+        },
+        {
+          "fact": "turn.is_source_controller_turn",
+          "value": true,
+          "operator": "equals"
+        },
+        {
+          "fact": "game.total_evidence_count",
+          "value": 5,
+          "operator": "greater_than_or_equal"
+        }
+      ],
+      "continuous": true
+    },
+    {
+      "steps": [
+        {
+          "op": "draw_cards",
+          "count": 1,
+          "destination": "hand"
+        }
+      ],
+      "cardIds": [
+        "1173"
+      ],
+      "trigger": {
+        "event": "evidence.card_removed",
+        "scope": "field_watch"
+      },
+      "effectId": "card-1173-hirameki-draw-on-opponent-evidence-removed",
+      "cardNameJa": "毛利蘭",
+      "cardNameKo": "모리 란",
+      "conditions": []
+    },
+    {
+      "steps": [
+        {
+          "op": "draw_cards",
+          "count": 1,
+          "destination": "hand"
+        },
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 1,
+          "from": "hand",
+          "prompt": "손패에서 리무브할 카드 1장을 선택하세요.",
+          "saveAs": "hand_cost",
+          "optional": false
+        },
+        {
+          "op": "move_cards",
+          "to": "remove_area",
+          "from": "hand_cost"
+        }
+      ],
+      "cardIds": [
+        "1183"
+      ],
+      "trigger": {
+        "event": "character.entered_field",
+        "timing": "after"
+      },
+      "effectId": "card-1183-on-enter-draw-and-discard",
+      "cardNameJa": "毛利蘭",
+      "cardNameKo": "모리 란",
+      "conditions": [
+        {
+          "fact": "player.field.has_card_name",
+          "value": "工藤新一",
+          "operator": "name_matches"
+        }
+      ]
+    },
+    {
+      "steps": [
+        {
+          "op": "draw_cards",
+          "count": 2,
+          "destination": "hand"
+        },
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 1,
+          "from": "hand",
+          "prompt": "리무브할 손패 1장을 선택하세요.",
+          "saveAs": "hand_cost",
+          "optional": false
+        },
+        {
+          "op": "move_cards",
+          "to": "remove_area",
+          "from": "hand_cost"
+        },
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 0,
+          "from": "hand",
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "value": "character",
+                "operator": "equals"
+              },
+              {
+                "field": "level",
+                "value": {
+                  "fact": "player.file.count"
+                },
+                "operator": "less_than_or_equal"
+              },
+              {
+                "anyOf": [
+                  {
+                    "field": "color",
+                    "value": "blue",
+                    "operator": "equals"
+                  },
+                  {
+                    "field": "color",
+                    "value": "white",
+                    "operator": "equals"
+                  }
+                ]
+              }
+            ]
+          },
+          "prompt": "손패에서 파일 수 이하 레벨의 청/백 캐릭터를 최대 1장 선택해 등장시킬 수 있습니다.",
+          "saveAs": "deployment",
+          "optional": true
+        },
+        {
+          "op": "move_cards",
+          "to": "field",
+          "from": "deployment",
+          "when": {
+            "fact": "vars.deployment.count",
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "entryMethod": "event_effect"
+        }
+      ],
+      "cardIds": [
+        "1184"
+      ],
+      "trigger": {
+        "event": "event.played",
+        "timing": "after"
+      },
+      "effectId": "card-1184-event-draw-discard-deploy-blue-white",
+      "cardNameJa": "「お前を巨匠にしてやるよ怪盗キッド…監獄という墓場に入れてな…」",
+      "cardNameKo": "“너를 거장으로 만들어 주마, 괴도 키드… 감옥이라는 무덤에 처넣어서 말이야…”",
+      "conditions": [
+        {
+          "fact": "player.event.has_detective_vs_kid_trait",
+          "value": true,
+          "operator": "equals"
+        },
+        {
+          "fact": "player.partner.color",
+          "value": "blue",
+          "operator": "equals"
+        }
+      ]
+    },
+    {
+      "steps": [
+        {
+          "op": "peek_top_cards",
+          "count": 3,
+          "saveAs": "seen",
+          "allowFewer": true
+        },
+        {
+          "op": "reveal_cards",
+          "to": [
+            "opponent"
+          ],
+          "from": "seen",
+          "awaitAcknowledgement": true
+        },
+        {
+          "op": "filter_cards",
+          "from": "seen",
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "value": "character",
+                "operator": "equals"
+              },
+              {
+                "anyOf": [
+                  {
+                    "field": "trait",
+                    "value": "高校生",
+                    "operator": "has_trait"
+                  },
+                  {
+                    "field": "trait",
+                    "value": "怪盗",
+                    "operator": "has_trait"
+                  }
+                ]
+              }
+            ]
+          },
+          "saveAs": "eligible_trait"
+        },
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 1,
+          "from": "seen",
+          "prompt": "공개한 카드 중 손패에 넣을 카드 1장을 선택하세요.",
+          "saveAs": "to_hand",
+          "optional": false
+        },
+        {
+          "op": "move_cards",
+          "to": "hand",
+          "from": "to_hand"
+        },
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 1,
+          "from": "seen",
+          "filter": {
+            "field": "instance_id",
+            "value": {
+              "fact": "vars.to_hand.0.card.instance_id"
+            },
+            "operator": "not_equals"
+          },
+          "prompt": "공개한 카드 중 리무브 에이리어로 보낼 카드 1장을 선택하세요.",
+          "saveAs": "to_remove",
+          "optional": false
+        },
+        {
+          "op": "move_cards",
+          "to": "remove_area",
+          "from": "to_remove"
+        },
+        {
+          "op": "move_unselected_to_deck_bottom",
+          "from": "seen",
+          "order": "player_choice",
+          "selectedVariables": [
+            "to_hand",
+            "to_remove"
+          ]
+        },
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 0,
+          "from": "hand",
+          "when": {
+            "fact": "vars.eligible_trait.count",
+            "value": 0,
+            "operator": "equals"
+          },
+          "prompt": "공개된 카드 중 [고등학생] 또는 [괴도] 캐릭터가 없으므로 손패 1장을 리무브할 수 있습니다.",
+          "saveAs": "hand_cost",
+          "optional": true
+        },
+        {
+          "op": "move_cards",
+          "to": "remove_area",
+          "from": "hand_cost",
+          "when": {
+            "fact": "vars.eligible_trait.count",
+            "value": 0,
+            "operator": "equals"
+          }
+        }
+      ],
+      "cardIds": [
+        "1209"
+      ],
+      "trigger": {
+        "event": "character.entered_field",
+        "timing": "after"
+      },
+      "effectId": "card-1209-on-enter-reveal-three-hand-remove",
+      "cardNameJa": "鈴木園子",
+      "cardNameKo": "스즈키 소노코",
+      "conditions": [
+        {
+          "fact": "player.event.has_detective_vs_kid_trait",
+          "value": true,
+          "operator": "equals"
+        }
+      ]
     }
   ]
 }
