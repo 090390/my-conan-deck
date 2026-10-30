@@ -84,16 +84,18 @@ function isActive(card: any) {
   return !card?.rested && String(card?.status || "active") === "active";
 }
 function cardIdentifierValues(card: any): string[] {
-  const source = card?.sourceData && typeof card.sourceData === "object" ? card.sourceData
-    : card?.raw && typeof card.raw === "object" ? card.raw : {};
+  const sourceData = card?.sourceData && typeof card.sourceData === "object" ? card.sourceData : {};
+  const raw = card?.raw && typeof card.raw === "object" ? card.raw : {};
   const candidates = [
-    card?.internal_card_id, card?.internalCardId, card?.id_code, card?.idCode,
-    card?.card_id, card?.cardId, card?.card_num, card?.cardNum,
-    source?.internal_card_id, source?.internalCardId, source?.id_code, source?.idCode,
-    source?.card_id, source?.cardId, source?.card_num, source?.cardNum,
+    card?.internal_card_id, card?.internalCardId, card?.id_code, card?.idCode, card?.cardId,
+    sourceData?.internal_card_id, sourceData?.internalCardId, sourceData?.id_code,
+    sourceData?.idCode, sourceData?.card_id, sourceData?.cardId,
+    raw?.internal_card_id, raw?.internalCardId, raw?.id_code, raw?.idCode, raw?.cardId,
+    raw?.sourceData?.internal_card_id, raw?.sourceData?.internalCardId,
+    raw?.sourceData?.card_id, raw?.sourceData?.cardId,
   ];
-  // A canonical Conan card ID is exactly four digits. Never derive it by
-  // stripping digits from a printing/database code such as B06084 or PR237.
+  // Only explicit canonical ID fields are accepted. Printing codes, database row
+  // IDs, card numbers, and UUID/key fields are never parsed as card identities.
   return candidates.map((value) => String(value ?? "").trim().toLocaleUpperCase())
     .map((value) => value.replace(/^ID\\s*:\\s*/u, ""))
     .filter((value) => /^\\d{4}$/u.test(value));
