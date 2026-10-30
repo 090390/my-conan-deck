@@ -3093,7 +3093,8 @@
       "effectId": "card-1258-turn-end-draw-discard-if-five",
       "cardNameJa": "江戸川コナン＆怪盗キッド",
       "cardNameKo": "에도가와 코난&괴도 키드",
-      "conditions": []
+      "conditions": [],
+      "allowPartnerArea": true
     },
     {
       "steps": [
@@ -5419,25 +5420,30 @@
         {
           "op": "select_cards",
           "max": 1,
-          "min": 0,
+          "min": 1,
           "from": "hand",
           "when": {
             "allOf": [
               {
                 "fact": "vars.deployment.count",
-                "value": 0,
-                "operator": "greater_than"
+                "operator": "greater_than",
+                "value": 0
               },
               {
                 "fact": "game.total_evidence_count",
-                "value": 4,
-                "operator": "less_than_or_equal"
+                "operator": "less_than_or_equal",
+                "value": 4
+              },
+              {
+                "fact": "player.hand.count",
+                "operator": "greater_than",
+                "value": 0
               }
             ]
           },
           "prompt": "양쪽의 증거 합계가 4 이하이므로 손패 1장을 리무브합니다.",
           "saveAs": "hand_cost",
-          "optional": true
+          "optional": false
         },
         {
           "op": "move_cards",
@@ -5551,12 +5557,18 @@
       ],
       "trigger": {
         "event": "evidence.card_removed",
-        "scope": "field_watch"
+        "timing": "after"
       },
       "effectId": "card-1173-hirameki-draw-on-opponent-evidence-removed",
       "cardNameJa": "毛利蘭",
       "cardNameKo": "모리 란",
-      "conditions": []
+      "conditions": [
+        {
+          "fact": "event.removed_by_controller",
+          "operator": "equals",
+          "value": false
+        }
+      ]
     },
     {
       "steps": [
@@ -5570,6 +5582,11 @@
           "max": 1,
           "min": 1,
           "from": "hand",
+          "when": {
+            "fact": "player.hand.count",
+            "value": 0,
+            "operator": "greater_than"
+          },
           "prompt": "손패에서 리무브할 카드 1장을 선택하세요.",
           "saveAs": "hand_cost",
           "optional": false
@@ -5610,6 +5627,11 @@
           "max": 1,
           "min": 1,
           "from": "hand",
+          "when": {
+            "fact": "player.hand.count",
+            "value": 0,
+            "operator": "greater_than"
+          },
           "prompt": "리무브할 손패 1장을 선택하세요.",
           "saveAs": "hand_cost",
           "optional": false
@@ -5742,6 +5764,11 @@
           "max": 1,
           "min": 1,
           "from": "seen",
+          "when": {
+            "fact": "vars.seen.count",
+            "value": 0,
+            "operator": "greater_than"
+          },
           "prompt": "공개한 카드 중 손패에 넣을 카드 1장을 선택하세요.",
           "saveAs": "to_hand",
           "optional": false
@@ -5756,6 +5783,20 @@
           "max": 1,
           "min": 1,
           "from": "seen",
+          "when": {
+            "allOf": [
+              {
+                "fact": "vars.seen.count",
+                "value": 1,
+                "operator": "greater_than"
+              },
+              {
+                "fact": "vars.to_hand.count",
+                "value": 0,
+                "operator": "greater_than"
+              }
+            ]
+          },
           "filter": {
             "field": "instance_id",
             "value": {
@@ -5823,6 +5864,47 @@
           "operator": "equals"
         }
       ]
+    },
+    {
+      "steps": [
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 1,
+          "from": "hand",
+          "prompt": "비용으로 리무브할 손패 1장을 선택하세요.",
+          "saveAs": "hand_cost",
+          "optional": false
+        },
+        {
+          "op": "move_cards",
+          "to": "remove_area",
+          "from": "hand_cost"
+        },
+        {
+          "op": "set_turn_flag",
+          "key": "mouri_detective_cut_in_lock"
+        }
+      ],
+      "cardIds": [
+        "0513"
+      ],
+      "trigger": {
+        "event": "character.activated_ability",
+        "timing": "after"
+      },
+      "effectId": "card-0513-activated-discard-to-lock-mouri-agency-cutin",
+      "cardNameJa": "妃英理",
+      "cardNameKo": "키사키 에리",
+      "conditions": [
+        {
+          "fact": "player.field.has_card_name",
+          "value": "毛利小五郎",
+          "operator": "name_matches"
+        }
+      ],
+      "oncePerTurn": true,
+      "activationLabelKo": "턴당 1회 · 손패 1장 리무브, 모리 탐정 사무소 캐릭터 행동 컷인 봉쇄"
     }
   ]
 }
