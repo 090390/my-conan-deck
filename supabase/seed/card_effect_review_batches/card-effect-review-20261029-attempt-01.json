@@ -1759,11 +1759,59 @@
         {
           "candidateId": "b06084-review-required-1",
           "sourceText": "【파트너 황】【등장 시】 - 상대는 패를 공개한다. (그 후, 원래대로 되돌린다) 레벨 9 이하의 캐릭터를 1장까지 선택하여 리무브한다.\n【선언】【턴 1】 - 카드 1장을 뽑고, 〚수사 1〛(상대는 덱의 카드를 위에서부터 지정한 수만큼 공개하고, 원하는 순서대로 덱 아래로 옮긴다)을 수행한다. 레벨 7 이하의 카드가 발견된 경우, 자신은 패 1장을 리무브한다. 이 능력은 파트너 에이리어에서도 선언할 수 있다.\n【컷인】AP＋2000",
-          "interpretation": "상대 손패를 공개·확인한 뒤 상대 현장의 레벨 9 이하 캐릭터를 최대 1장 리무브하는 것으로 우선 해석했다. 선언 효과는 1장 드로우 후 상대 덱 위 1장을 공개하고 덱 아래로 옮기며, 레벨 7 이하가 발견되면 손패 1장을 리무브한다. 선언은 파트너 에이리어에서도 가능하다.",
+          "interpretation": "사용자 확정: 상대 손패 전체 공개 후 상대 현장에 있는 레벨 9 이하 캐릭터 1장을 리무브한다. 손패는 확인 후 원래대로 되돌린다. 별도의 선언 효과는 드로우 1장, 상대 덱 조사 1장, 레벨 7 이하가 발견되면 손패 1장 리무브이며 파트너 에이리어에서도 선언 가능.",
           "draftStatus": "dsl_validated_approved",
           "approvalStatus": "approved",
-          "confidence": "medium",
-          "reviewNotes": "상대 손패 공개, 공개 확인, 조사 카드 공개 및 상대 확인 대기, 덱 아래 이동, 조건부 손패 리무브, 파트너 에이리어 발동을 구현했다. 다만 등장 효과의 레벨 9 이하 캐릭터 대상은 원문에 소유자 표기가 없어 상대 현장으로 우선 해석했으므로 이 부분은 사용자 확인이 필요하다."
+          "confidence": "high",
+          "reviewNotes": "사용자가 대상 영역을 명확히 확정함. 등장 효과의 대상은 상대 현장 레벨 9 이하 캐릭터이며, 상대 손패는 전체 공개 후 확인 절차를 거쳐 원상 복귀한다. 운영 카탈로그도 opponent_field 선택 및 targetOwner=opponent로 실행하도록 구성되어 있음.",
+          "reviewedSemantics": {
+            "trigger": {
+              "event": "character.entered_field",
+              "timing": "after"
+            },
+            "steps": [
+              {
+                "op": "reveal_opponent_hand",
+                "prompt": "상대 손패 전체를 공개하고 상대의 확인을 기다린 뒤 원래 상태로 되돌립니다."
+              },
+              {
+                "op": "select_cards",
+                "from": "opponent_field",
+                "min": 0,
+                "max": 1,
+                "optional": true,
+                "filter": {
+                  "allOf": [
+                    {
+                      "field": "card_type",
+                      "operator": "equals",
+                      "value": "character"
+                    },
+                    {
+                      "field": "level",
+                      "operator": "less_than_or_equal",
+                      "value": 9
+                    }
+                  ]
+                },
+                "prompt": "상대 현장에서 리무브할 레벨 9 이하 캐릭터를 최대 1장 선택하세요.",
+                "saveAs": "target"
+              },
+              {
+                "op": "move_cards",
+                "from": "target",
+                "to": "remove_area",
+                "targetOwner": "opponent",
+                "when": {
+                  "fact": "vars.target.count",
+                  "operator": "greater_than",
+                  "value": 0
+                }
+              }
+            ],
+            "runtimeBlockers": [],
+            "userConfirmed": true
+          }
         }
       ]
     },
