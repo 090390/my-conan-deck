@@ -6,29 +6,67 @@
     <meta name="theme-color" content="#080d18" />
     <meta name="description" content="명탐정 코난 TCG 카드 검색, 한국어 메모, 40장 덱 구성 도구" />
     <style>
-      html, body, #root {
-        width: 100%;
-        height: 100%;
-        min-height: 100vh;
-        margin: 0;
-        background-color: #080d18;
+      html, body, #root { width: 100%; min-height: 100%; margin: 0; background: #080d18; }
+      body { width: 100%; min-width: 320px; min-height: 100vh; }
+      #root { min-height: 100vh; }
+      #boot-fallback {
+        box-sizing: border-box; min-height: 100vh; display: flex; align-items: center;
+        justify-content: center; padding: 28px 20px; color: #e9edf6;
+        font-family: Inter, Pretendard, "Noto Sans KR", sans-serif; text-align: center;
       }
-      body {
-        width: 100%;
-        min-width: 320px;
-        min-height: 100vh;
-        background-color: #080d18;
+      #boot-fallback-panel {
+        width: min(560px, 100%); padding: 28px; border: 1px solid #334155;
+        border-radius: 16px; background: #111a2b; box-shadow: 0 18px 60px rgba(0,0,0,.3);
       }
-      #root {
-        width: 100%;
-        min-height: 100vh;
-        background-color: #080d18;
+      #boot-fallback h1 { margin: 0; color: #f8fafc; font-size: 21px; font-weight: 850; }
+      #boot-fallback-message { margin: 12px 0 0; color: #cbd5e1; font-size: 14px; line-height: 1.7; overflow-wrap: anywhere; }
+      #boot-fallback-help { margin: 8px 0 0; color: #94a3b8; font-size: 12px; line-height: 1.6; }
+      #boot-fallback button {
+        margin-top: 18px; min-height: 40px; padding: 8px 16px; border: 1px solid #9f3449;
+        border-radius: 9px; color: white; background: #be123c; font: inherit; font-size: 13px;
+        font-weight: 750; cursor: pointer;
       }
     </style>
     <title>CONAN CARD LAB — 카드 검색 & 덱 빌더</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <main id="boot-fallback" role="status" aria-live="polite">
+        <section id="boot-fallback-panel">
+          <h1>명탐정 코난 TCG 도감</h1>
+          <p id="boot-fallback-message">사이트를 시작하는 중이에요…</p>
+          <p id="boot-fallback-help">이 화면은 앱 스크립트가 실행되기 전에도 표시됩니다.</p>
+          <button type="button" onclick="window.location.reload()">새로고침</button>
+        </section>
+      </main>
+    </div>
+    <script>
+      (function () {
+        var fallback = document.getElementById('boot-fallback');
+        var message = document.getElementById('boot-fallback-message');
+        if (!fallback || !message) return;
+        function showBootError(text) {
+          if (!fallback.isConnected) return;
+          fallback.setAttribute('role', 'alert');
+          message.textContent = text;
+        }
+        window.addEventListener('error', function (event) {
+          if (event.target && event.target !== window) {
+            var resource = event.target.src || event.target.href || '앱 리소스';
+            showBootError('앱 파일을 불러오지 못했어요: ' + resource);
+            return;
+          }
+          showBootError('앱 실행 중 오류가 발생했어요: ' + (event.message || '자세한 오류 내용을 확인할 수 없습니다.'));
+        }, true);
+        window.addEventListener('unhandledrejection', function (event) {
+          var reason = event.reason && (event.reason.message || String(event.reason));
+          showBootError('앱 초기화 중 오류가 발생했어요: ' + (reason || '원인을 확인할 수 없습니다.'));
+        });
+        window.setTimeout(function () {
+          if (fallback.isConnected) showBootError('앱이 시작되지 않고 있어요. 스크립트 파일이 차단되었거나 네트워크 요청이 실패했을 수 있습니다.');
+        }, 12000);
+      })();
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
