@@ -11,6 +11,8 @@ function normalizedId(card, fallback = "") {
     card?.sourceData?.cardId, card?.sourceData?.card_id, card?.sourceData?.cardNum, card?.sourceData?.card_num];
   return values.map((value) => String(value ?? "").trim().toLocaleUpperCase());
 }
+const REVIEWED_AI_DECK_IDS = new Set(["71767296-f20a-4c5d-bb9f-94ce58234b12"]);
+
 function exemptionId(card, fallback = "") {
   const ids = normalizedId(card, fallback).map((value) => /^\d+$/.test(value) ? String(Number(value)) : value);
   if (ids.includes("627")) return "0627";
@@ -359,6 +361,9 @@ export default function AIBattlePanel({ deck, partnerId, eventId, cards = [], en
             </div>
             {deckListError && <p role="alert" style={{ margin: 0, padding: 12, color: "#fda4af", fontSize: 12 }}>{deckListError}</p>}
             {!deckListLoading && !deckListError && publicDecks.length === 0 && <p style={{ margin: 0, padding: 12, color: "#fda4af", fontSize: 12 }}>공개 덱 저장소에 등록된 덱이 없습니다.</p>}
+            <p style={{ margin: "10px 12px 0", color: "#94a3b8", fontSize: 10, lineHeight: 1.65 }}>
+              '검토 완료' 표시는 카드별 효과 검토와 대전 동작 구현을 마친 덱입니다. 해당 덱으로 실제 대전을 플레이하다가 오류나 아직 동작하지 않는 효과를 발견하면 제보해 주시면 감사하겠습니다. 현재는 백청덱만 표시되어 있습니다.
+            </p>
             <div style={{ maxHeight: 340, overflowY: "auto" }}>
               {publicDecks.map((item) => {
                 const id = String(item.id);
@@ -376,7 +381,10 @@ export default function AIBattlePanel({ deck, partnerId, eventId, cards = [], en
                       style={{ marginTop: 3, accentColor: "#38bdf8" }}
                     />
                     <span style={{ minWidth: 0, flex: 1 }}>
-                      <span style={{ display: "block", color: "#e2e8f0", fontSize: 12, fontWeight: 800, overflowWrap: "anywhere" }}>{item.deck_name || "이름 없는 덱"}</span>
+                      <span style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6, color: "#e2e8f0", fontSize: 12, fontWeight: 800, overflowWrap: "anywhere" }}>
+                        <span>{item.deck_name || "이름 없는 덱"}</span>
+                        {REVIEWED_AI_DECK_IDS.has(id) && <span style={{ padding: "2px 6px", border: "1px solid rgba(74,222,128,.45)", borderRadius: 999, color: "#86efac", fontSize: 9, fontWeight: 900, whiteSpace: "nowrap" }}>검토 완료</span>}
+                      </span>
                       <span style={{ display: "block", marginTop: 3, color: "#94a3b8", fontSize: 10, lineHeight: 1.6 }}>
                         제작자: {item.composer_name || "미상"}
                         {" · "}파트너: {details.partnerColor ? `[${details.partnerColor}] ` : ""}{details.partnerName}
