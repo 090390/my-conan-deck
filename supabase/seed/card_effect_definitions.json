@@ -2804,6 +2804,10 @@
     {
       "steps": [
         {
+          "op": "pay_cost",
+          "cost": "sleep_source_character"
+        },
+        {
           "op": "select_cards",
           "max": 1,
           "min": 1,
@@ -2857,6 +2861,7 @@
       ],
       "trigger": {
         "event": "player.turn_ended",
+        "scope": "field_watch",
         "timing": "after"
       },
       "effectId": "card-1258-win-at-nine-evidence-turn-end",
@@ -3088,6 +3093,7 @@
       ],
       "trigger": {
         "event": "player.turn_ended",
+        "scope": "field_watch",
         "timing": "after"
       },
       "effectId": "card-1258-turn-end-draw-discard-if-five",
@@ -4650,6 +4656,7 @@
             "opponent"
           ],
           "from": "mouri_ran",
+          "triggerHandReveal": true,
           "awaitAcknowledgement": true
         },
         {
@@ -5121,8 +5128,7 @@
         {
           "fact": "entry.method",
           "value": [
-            "character_ability",
-            "event_effect"
+            "character_ability"
           ],
           "operator": "in"
         }
@@ -5426,18 +5432,18 @@
             "allOf": [
               {
                 "fact": "vars.deployment.count",
-                "operator": "greater_than",
-                "value": 0
+                "value": 0,
+                "operator": "greater_than"
               },
               {
                 "fact": "game.total_evidence_count",
-                "operator": "less_than_or_equal",
-                "value": 4
+                "value": 4,
+                "operator": "less_than_or_equal"
               },
               {
                 "fact": "player.hand.count",
-                "operator": "greater_than",
-                "value": 0
+                "value": 0,
+                "operator": "greater_than"
               }
             ]
           },
@@ -5557,18 +5563,13 @@
       ],
       "trigger": {
         "event": "evidence.card_removed",
+        "scope": "field_watch",
         "timing": "after"
       },
       "effectId": "card-1173-hirameki-draw-on-opponent-evidence-removed",
       "cardNameJa": "毛利蘭",
       "cardNameKo": "모리 란",
-      "conditions": [
-        {
-          "fact": "event.removed_by_controller",
-          "operator": "equals",
-          "value": false
-        }
-      ]
+      "conditions": []
     },
     {
       "steps": [
@@ -5762,7 +5763,7 @@
         {
           "op": "select_cards",
           "max": 1,
-          "min": 1,
+          "min": 0,
           "from": "seen",
           "when": {
             "fact": "vars.seen.count",
@@ -5771,7 +5772,7 @@
           },
           "prompt": "공개한 카드 중 손패에 넣을 카드 1장을 선택하세요.",
           "saveAs": "to_hand",
-          "optional": false
+          "optional": true
         },
         {
           "op": "move_cards",
@@ -5781,7 +5782,7 @@
         {
           "op": "select_cards",
           "max": 1,
-          "min": 1,
+          "min": 0,
           "from": "seen",
           "when": {
             "allOf": [
@@ -5806,7 +5807,7 @@
           },
           "prompt": "공개한 카드 중 리무브 에이리어로 보낼 카드 1장을 선택하세요.",
           "saveAs": "to_remove",
-          "optional": false
+          "optional": true
         },
         {
           "op": "move_cards",
@@ -5905,6 +5906,121 @@
       ],
       "oncePerTurn": true,
       "activationLabelKo": "턴당 1회 · 손패 1장 리무브, 모리 탐정 사무소 캐릭터 행동 컷인 봉쇄"
+    },
+    {
+      "steps": [
+        {
+          "op": "offer_reaction",
+          "actor": "controller",
+          "prompt": "쿠도 신이치 또는 모리 란이 능력 비용으로 공개되었습니다. 손패 1장을 리무브하고 레벨 7 이하 캐릭터를 리무브할까요?",
+          "saveAs": "trigger_choice",
+          "choices": [
+            "yes",
+            "no"
+          ]
+        },
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 1,
+          "from": "hand",
+          "when": {
+            "fact": "vars.trigger_choice",
+            "value": "yes",
+            "operator": "equals"
+          },
+          "prompt": "리무브할 손패 1장을 선택하세요.",
+          "saveAs": "hand_cost",
+          "optional": false
+        },
+        {
+          "op": "move_cards",
+          "to": "remove_area",
+          "from": "hand_cost",
+          "when": {
+            "fact": "vars.trigger_choice",
+            "value": "yes",
+            "operator": "equals"
+          }
+        },
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 0,
+          "from": "both_fields",
+          "when": {
+            "allOf": [
+              {
+                "fact": "vars.trigger_choice",
+                "value": "yes",
+                "operator": "equals"
+              },
+              {
+                "fact": "vars.hand_cost.count",
+                "value": 0,
+                "operator": "greater_than"
+              }
+            ]
+          },
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "value": "character",
+                "operator": "equals"
+              },
+              {
+                "field": "level",
+                "value": 7,
+                "operator": "less_than_or_equal"
+              }
+            ]
+          },
+          "prompt": "리무브할 레벨 7 이하 캐릭터를 최대 1장 선택하세요.",
+          "saveAs": "target",
+          "optional": true
+        },
+        {
+          "op": "move_cards",
+          "to": "remove_area",
+          "from": "target",
+          "when": {
+            "fact": "vars.target.count",
+            "value": 0,
+            "operator": "greater_than"
+          }
+        }
+      ],
+      "cardIds": [
+        "0949"
+      ],
+      "trigger": {
+        "event": "hand.card_revealed_for_cost",
+        "scope": "field_watch",
+        "timing": "after"
+      },
+      "effectId": "card-0949-reveal-kudo-or-mouri-discard-and-remove-level7",
+      "cardNameJa": "毛利蘭",
+      "cardNameKo": "모리 란",
+      "conditions": [
+        {
+          "fact": "turn.is_source_controller_turn",
+          "value": true,
+          "operator": "equals"
+        },
+        {
+          "fact": "player.hand.count",
+          "value": 0,
+          "operator": "greater_than"
+        },
+        {
+          "fact": "event.revealed_kudo_or_ran",
+          "value": true,
+          "operator": "equals"
+        }
+      ],
+      "oncePerTurn": true,
+      "activationLabelKo": "턴당 1회 · 쿠도 신이치/모리 란 공개 비용 후 손패 리무브 및 레벨 7 이하 리무브"
     }
   ]
 }
