@@ -3119,7 +3119,8 @@
             "value": 0
           }
         }
-      ]
+      ],
+      "oncePerTurn": true
     },
     {
       "effectId": "card-0706-contact-remove-opponent-police-deploy",
