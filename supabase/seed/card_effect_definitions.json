@@ -5758,16 +5758,16 @@
         {
           "op": "select_cards",
           "max": 1,
-          "min": 0,
+          "min": 1,
           "from": "seen",
           "when": {
             "fact": "vars.seen.count",
             "value": 0,
             "operator": "greater_than"
           },
-          "prompt": "공개한 카드 중 손패에 넣을 카드 1장을 선택하세요.",
+          "prompt": "공개한 카드 3장 중 손패에 넣을 카드 1장을 반드시 선택하세요.",
           "saveAs": "to_hand",
-          "optional": true
+          "optional": false
         },
         {
           "op": "move_cards",
@@ -5777,7 +5777,7 @@
         {
           "op": "select_cards",
           "max": 1,
-          "min": 0,
+          "min": 1,
           "from": "seen",
           "when": {
             "allOf": [
@@ -5800,9 +5800,9 @@
             },
             "operator": "not_equals"
           },
-          "prompt": "공개한 카드 중 리무브 에이리어로 보낼 카드 1장을 선택하세요.",
+          "prompt": "손패에 넣은 카드와 다른 카드 1장을 리무브 에이리어로 반드시 선택하세요.",
           "saveAs": "to_remove",
-          "optional": true
+          "optional": false
         },
         {
           "op": "move_cards",
