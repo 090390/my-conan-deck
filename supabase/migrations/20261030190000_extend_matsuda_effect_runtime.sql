@@ -71,7 +71,7 @@ $new$;
   IF position(v_anchor IN v_definition)=0 THEN RAISE EXCEPTION 'effect runner declaration anchor missing'; END IF;
   v_definition:=replace(v_definition,v_anchor,v_replacement);
 
-  v_anchor := $old$   ELSIF v_op='peek_top_cards' THEN$new$;
+  v_anchor := $old$   ELSIF v_op='peek_top_cards' THEN$old$;
   v_replacement := $new$
    ELSIF v_op='reveal_opponent_hand' THEN
      SELECT user_id INTO v_hand_owner FROM public.room_players
@@ -126,7 +126,7 @@ $new$;
        WHERE room_id=p_room_id;
      CONTINUE;
 
-   ELSIF v_op='peek_top_cards' THEN$old$;
+   ELSIF v_op='peek_top_cards' THEN$new$;
   IF position(v_anchor IN v_definition)=0 THEN RAISE EXCEPTION 'effect runner custom-op insertion anchor missing'; END IF;
   v_definition:=replace(v_definition,v_anchor,v_replacement);
 
