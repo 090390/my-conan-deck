@@ -2272,10 +2272,29 @@ export default function App() {
   }
 
   if (loading) {
-    return <main className="flex min-h-screen items-center justify-center bg-slate-950 p-8 text-slate-100"><div className="text-center"><div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-2 border-slate-700 border-t-rose-500" /><h1 className="text-xl font-black tracking-tight">명탐정 코난 TCG 도감</h1><p className="mt-2 text-sm text-slate-400">카드 데이터를 불러오는 중이에요…</p></div></main>;
+    return (
+      <main role="status" aria-live="polite" style={{ minHeight: '100vh', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px 20px', boxSizing: 'border-box', background: '#080d18', color: '#e9edf6', fontFamily: 'Inter, Pretendard, "Noto Sans KR", sans-serif', textAlign: 'center' }}>
+        <style>{'@keyframes conan-loader-spin { to { transform: rotate(360deg); } }'}</style>
+        <div>
+          <div aria-hidden="true" style={{ width: 42, height: 42, margin: '0 auto 18px', border: '3px solid #334155', borderTopColor: '#e14e62', borderRadius: '50%', animation: 'conan-loader-spin 1s linear infinite' }} />
+          <h1 style={{ margin: 0, color: '#f8fafc', fontSize: 22, fontWeight: 850, lineHeight: 1.4 }}>명탐정 코난 TCG 도감</h1>
+          <p style={{ margin: '10px 0 0', color: '#a7b4c8', fontSize: 14, lineHeight: 1.7 }}>카드 데이터를 불러오는 중이에요…</p>
+          <p style={{ margin: '7px 0 0', color: '#71819b', fontSize: 12 }}>카드 목록 준비가 끝나면 화면이 자동으로 열립니다.</p>
+        </div>
+      </main>
+    );
   }
   if (loadError) {
-    return <main className="min-h-screen bg-slate-950 p-8 text-slate-100"><h1 className="text-2xl font-bold">카드 데이터를 불러오지 못했어요.</h1><p className="mt-4 text-rose-300">{loadError}</p><p className="mt-3 text-sm text-slate-400">프로젝트의 public/cards.json 파일이 실제로 존재하는지 확인해 주세요.</p></main>;
+    return (
+      <main role="alert" style={{ minHeight: '100vh', width: '100%', padding: 'clamp(24px, 6vw, 64px)', boxSizing: 'border-box', background: '#080d18', color: '#e9edf6', fontFamily: 'Inter, Pretendard, "Noto Sans KR", sans-serif' }}>
+        <div style={{ width: 'min(720px, 100%)', margin: '8vh auto 0', padding: 24, border: '1px solid #543344', borderRadius: 16, background: '#111a2b', boxShadow: '0 18px 60px rgba(0,0,0,.3)' }}>
+          <h1 style={{ margin: 0, color: '#fff', fontSize: 22, fontWeight: 850 }}>카드 데이터를 불러오지 못했어요.</h1>
+          <p style={{ margin: '16px 0 0', padding: 14, borderRadius: 9, background: '#080d18', color: '#ff9aaa', fontSize: 13, lineHeight: 1.7, overflowWrap: 'anywhere' }}>{loadError}</p>
+          <p style={{ margin: '14px 0 0', color: '#a7b4c8', fontSize: 13, lineHeight: 1.7 }}>네트워크 또는 배포된 카드 데이터 파일을 확인해야 합니다. 이 화면은 오류를 숨기지 않고 표시하기 위한 안내 화면입니다.</p>
+          <button type="button" onClick={() => window.location.reload()} style={{ marginTop: 20, minHeight: 40, border: '1px solid #9f3449', borderRadius: 9, padding: '8px 16px', color: '#fff', background: '#be123c', fontSize: 13, fontWeight: 750, cursor: 'pointer' }}>다시 불러오기</button>
+        </div>
+      </main>
+    );
   }
 
   return (
