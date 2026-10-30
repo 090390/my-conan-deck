@@ -86,22 +86,21 @@ function isActive(card: any) {
 function cardIdentifierValues(card: any): string[] {
   const source = card?.sourceData && typeof card.sourceData === "object" ? card.sourceData
     : card?.raw && typeof card.raw === "object" ? card.raw : {};
-  return [
-    card?.card_id, card?.cardId, card?.database_id, card?.databaseId,
-    card?.card_num, card?.cardNum, card?.key, card?.id,
-    source?.card_id, source?.cardId, source?.database_id, source?.databaseId,
-    source?.card_num, source?.cardNum, source?.key, source?.id,
-  ].map((value) => String(value ?? "").trim()).filter(Boolean);
+  const candidates = [
+    card?.internal_card_id, card?.internalCardId, card?.id_code, card?.idCode,
+    card?.card_id, card?.cardId, card?.card_num, card?.cardNum,
+    source?.internal_card_id, source?.internalCardId, source?.id_code, source?.idCode,
+    source?.card_id, source?.cardId, source?.card_num, source?.cardNum,
+  ];
+  // A canonical Conan card ID is exactly four digits. Never derive it by
+  // stripping digits from a printing/database code such as B06084 or PR237.
+  return candidates.map((value) => String(value ?? "").trim().toLocaleUpperCase())
+    .map((value) => value.replace(/^ID\\s*:\\s*/u, ""))
+    .filter((value) => /^\\d{4}$/u.test(value));
 }
 function matchesInternalCardId(card: any, internalId: string): boolean {
-  const wanted = String(internalId).replace(/^0+/u, "");
-  return cardIdentifierValues(card).some((value) => {
-    const normalized = value.toLocaleUpperCase();
-    const digits = value.replace(/\D/gu, "").replace(/^0+/u, "");
-    return normalized === String(internalId).toLocaleUpperCase()
-      || normalized === String(internalId).replace(/^0+/u, "").toLocaleUpperCase()
-      || (wanted.length > 0 && digits === wanted);
-  });
+  const wanted = String(internalId ?? "").trim().replace(/^ID\\s*:\\s*/iu, "");
+  return /^\\d{4}$/u.test(wanted) && cardIdentifierValues(card).includes(wanted);
 }
 function dslKeywordValues(card: any): string[] {
   const fields = [card?.dsl_keywords, card?.dsl_continuous_keywords, card?.keywords, card?.keyword_tags, card?.keyword];
@@ -128,9 +127,7 @@ function hasSwift(card: any): boolean {
     ["haya", "swift", "신속", "疾風", "질풍"].includes(value));
 }
 function isDetectiveVsKidCycleEvent(card: any): boolean {
-  const aliases = ["1215", "B11049P2", "B11049P", "B11049"];
-  return cardIdentifierValues(card).some((value) => aliases.includes(value.toLocaleUpperCase())
-    || value.replace(/\D/gu, "").replace(/^0+/u, "") === "1215");
+  return matchesInternalCardId(card, "1215");
 }
 function normalizedColor(value: unknown): string {
   const token = String(value ?? "").trim().toLocaleLowerCase();
@@ -143,14 +140,9 @@ function normalizedColor(value: unknown): string {
   return token;
 }
 function isBasicSearchEvent(card: any) {
-  const ids = [card?.key, card?.database_id, card?.databaseId, card?.card_id, card?.card_num]
-    .map((value) => String(value ?? "").trim().toLocaleUpperCase());
-  // All six same-pattern level-1 search events should be available to the AI
-  // fallback when it has no character it can currently deploy.
-  return ids.some((id) => [
-    "0144", "0158", "0102", "0116", "0130", "0381",
-    "B04083", "D03014",
-  ].includes(id));
+  // All six same-pattern level-1 search events are keyed by their four-digit ID.
+  return ["0144", "0158", "0102", "0116", "0130", "0381"]
+    .some((id) => matchesInternalCardId(card, id));
 }
 function cardStrength(card: any) {
   return cardAp(card) * 2 + Math.max(0, 4 - cardCost(card)) * 250 + Number(card?.lp || 0) * 20;
