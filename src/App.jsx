@@ -2298,7 +2298,7 @@ export default function App() {
   }
 
   return (
-    <main className="app-shell min-h-screen bg-[#080d17] text-slate-100">
+    <main className={`app-shell min-h-screen bg-[#080d17] text-slate-100${gameFieldOnly ? ' app-shell-game' : ''}`}>
       {/* Tailwind 미적용 환경에서도 카드 그리드와 상세 모달의 핵심 레이아웃이 유지되도록 하는 안전장치 */}
       <style>{`
         .conan-card-grid {
@@ -2335,7 +2335,7 @@ export default function App() {
 
         /* Standalone visual fallback: keeps the intended UI polished even without Tailwind CSS. */
         .app-shell {
-          box-sizing: border-box; min-height: 100vh; padding: 0 !important; margin: 0 !important;
+          box-sizing: border-box; min-height: 100vh; padding: clamp(16px, 2vw, 22px) !important; margin: 0 !important;
           color: #e8edf7 !important; background: #080d17 !important;
           font-family: Inter, Pretendard, "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
           font-size: 14px; line-height: 1.5;
@@ -2603,7 +2603,7 @@ export default function App() {
           .conan-card-grid { grid-template-columns: repeat(9, minmax(0, 1fr)) !important; }
         }
         @media (max-width: 800px) {
-          .app-shell { padding: 0 !important; margin: 0 !important; }
+          .app-shell { padding: 14px !important; margin: 0 !important; }
           .conan-card-grid { grid-template-columns: repeat(7, minmax(0, 1fr)) !important; }
           .card-detail-header h2 { font-size: 18px; }
           .card-detail-layout { grid-template-columns: minmax(0, 1fr) !important; }
@@ -2630,6 +2630,8 @@ export default function App() {
           .card-detail-layout { grid-template-columns: 220px minmax(0, 1fr) !important; }
           .card-meta-grid { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
         }
+        /* Keep the live match field edge-to-edge while catalog/deck views retain outer spacing. */
+        .app-shell.app-shell-game { padding: 0 !important; margin: 0 !important; }
       `}</style>
       <header className="app-header mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4" style={gameFieldOnly ? { position: "sticky", top: 0, zIndex: 1000, background: "#080d17", paddingTop: 6 } : undefined}>
         <h1 className="text-xl font-black tracking-tight md:text-2xl">명탐정 코난 TCG 도감</h1>
