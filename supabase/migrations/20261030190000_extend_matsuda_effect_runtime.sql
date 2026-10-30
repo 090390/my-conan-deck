@@ -177,6 +177,9 @@ $new$;
     v_definition:=replace(v_definition,v_anchor,v_replacement);
   END IF;
 
+  -- Persist the custom operations and opponent-targeted gain_evidence changes on the effect runner.
+  EXECUTE v_definition;
+
   -- Ensure evidence-card removal triggers only run when the card actually enters the remove area.
   SELECT pg_get_functiondef('public.perform_private_turn_action_v2(uuid,text,jsonb)'::regprocedure)
     INTO v_definition;
