@@ -71,7 +71,7 @@ $new$;
   IF position(v_anchor IN v_definition)=0 THEN RAISE EXCEPTION 'effect runner declaration anchor missing'; END IF;
   v_definition:=replace(v_definition,v_anchor,v_replacement);
 
-  v_anchor := $old$   ELSIF v_op='peek_top_cards' THEN$old$;
+  v_anchor := $old$   ELSIF v_op='peek_top_cards' THEN$new$;
   v_replacement := $new$
    ELSIF v_op='reveal_opponent_hand' THEN
      SELECT user_id INTO v_hand_owner FROM public.room_players
@@ -158,7 +158,7 @@ $old$;
          WHERE gs.room_id=p_room_id AND gs.user_id=v_target_owner;
        END IF;
      END LOOP;
-$old$;
+$new$;
   IF position(v_anchor IN v_definition)=0 THEN RAISE EXCEPTION 'gain_evidence patch anchor missing'; END IF;
   v_definition:=replace(v_definition,v_anchor,v_replacement);
 
@@ -178,7 +178,7 @@ $old$;
            WHERE gs.room_id=p_room_id AND gs.user_id=v_evidence_owner
              AND removed.value->>'instance_id'=v_old_evidence_card->>'instance_id'
          ) THEN
-$old$;
+$new$;
   IF position(v_anchor IN v_definition)=0 THEN RAISE EXCEPTION 'evidence-trigger filter anchor missing'; END IF;
   v_definition:=replace(v_definition,v_anchor,v_replacement);
   EXECUTE v_definition;
@@ -233,7 +233,7 @@ $old$;
          END IF;
 
        ELSIF v_to='field' AND public.private_card_effect_is_character_v1(v_card) THEN
-$old$;
+$new$;
   IF position(v_anchor IN v_definition)=0 THEN RAISE EXCEPTION 'effect-runner evidence trigger anchor missing'; END IF;
   v_definition:=replace(v_definition,v_anchor,v_replacement);
   EXECUTE v_definition;
@@ -272,7 +272,7 @@ $old$;
      UPDATE public.room_player_turn_boards SET evidence_count=evidence_count+1,updated_at=now()
        WHERE room_id=p_room_id AND user_id=v_target_user;
    END IF;
-$old$;
+$new$;
   IF position(v_anchor IN v_definition)=0 THEN RAISE EXCEPTION 'MR evidence-move anchor missing'; END IF;
   v_definition:=replace(v_definition,v_anchor,v_replacement);
   EXECUTE v_definition;
@@ -318,7 +318,7 @@ $old$;
      END IF;
    END LOOP;
  END IF;
- -- Event-card abilities are synthetic sources rather than field cards.$old$;
+ -- Event-card abilities are synthetic sources rather than field cards.$new$;
   IF position(v_anchor IN v_definition)=0 THEN RAISE EXCEPTION 'user partner activation insertion anchor missing'; END IF;
   v_definition:=replace(v_definition,v_anchor,v_replacement);
   EXECUTE v_definition;
@@ -365,7 +365,7 @@ $old$;
    END LOOP;
  END IF;
 
- IF coalesce(v_is_own_turn,false)$old$;
+ IF coalesce(v_is_own_turn,false)$new$;
   IF position(v_anchor IN v_definition)=0 THEN RAISE EXCEPTION 'AI partner activation insertion anchor missing'; END IF;
   v_definition:=replace(v_definition,v_anchor,v_replacement);
   EXECUTE v_definition;
