@@ -267,8 +267,10 @@ function chooseActivatedAbility(state: any, aiId: string) {
   const me = boards.find((board: any) => board.user_id === aiId);
   const opponent = boards.find((board: any) => board.user_id !== aiId);
   if (!me || !opponent) return null;
-  const ownField = Array.isArray(me.field_cards) ? me.field_cards : [];
-  const enemyField = Array.isArray(opponent.field_cards) ? opponent.field_cards : [];
+  const ownField = (Array.isArray(me.field_cards) ? me.field_cards : [])
+    .map((card: any) => ({ ...card, controller: "self" }));
+  const enemyField = (Array.isArray(opponent.field_cards) ? opponent.field_cards : [])
+    .map((card: any) => ({ ...card, controller: "opponent" }));
   const hand = Array.isArray(state?.my_hand) ? state.my_hand : [];
   const removeArea = Array.isArray(state?.my_remove_cards) ? state.my_remove_cards : [];
   const ownEvidenceCount = Math.max(0, Number(me.evidence_count || 0));
