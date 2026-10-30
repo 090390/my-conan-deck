@@ -383,7 +383,7 @@ export default function AIBattlePanel({ deck, partnerId, eventId, cards = [], en
                     <span style={{ minWidth: 0, flex: 1 }}>
                       <span style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6, color: "#e2e8f0", fontSize: 12, fontWeight: 800, overflowWrap: "anywhere" }}>
                         <span>{item.deck_name || "이름 없는 덱"}</span>
-                        {REVIEWED_AI_DECK_IDS.has(id) && <span style={{ padding: "2px 6px", border: "1px solid rgba(74,222,128,.45)", borderRadius: 999, color: "#86efac", fontSize: 9, fontWeight: 900, whiteSpace: "nowrap" }}>검토 완료</span>}
+                        {REVIEWED_AI_DECK_IDS.has(id) && <span style={{ padding: "2px 6px", border: "1px solid rgba(74,222,128,.45)", borderRadius: 999, color: "#86efac", fontSize: 9, fontWeight: 900, whiteSpace: "nowrap" }}>카드 검토 완료</span>}
                       </span>
                       <span style={{ display: "block", marginTop: 3, color: "#94a3b8", fontSize: 10, lineHeight: 1.6 }}>
                         제작자: {item.composer_name || "미상"}
