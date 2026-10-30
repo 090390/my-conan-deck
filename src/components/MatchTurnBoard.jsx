@@ -951,7 +951,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
         </button>
         <div style={{ marginTop: 4, fontSize: 9, fontWeight: 800, lineHeight: 1.3, overflowWrap: "anywhere" }}>{nameOf(instance)}</div>
         <div style={{ marginTop: 2, color: C.muted, fontSize: 8 }}>AP {n(instance.ap) + n(instance.ap_bonus)} · 레벨 {instance.cost ?? "-"}</div>
-        {eventResolving && mine && <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 5, background: "#075985" }} disabled={loading} onClick={() => void runAction("finish_event", { instance_id: instance.instance_id })}>효과 처리 완료 → 리무브</button>}
+        {eventResolving && mine && <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 5, background: "#075985" }} disabled={loading || Boolean(pending)} title={pending?.type?.startsWith("card_effect_") ? "카드 효과 처리가 끝난 뒤 리무브할 수 있습니다." : ""} onClick={() => void runAction("finish_event", { instance_id: instance.instance_id })}>효과 처리 완료 → 리무브</button>}
         {canOfferContact && <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 5, borderColor: "#fb7185", color: C.red }} disabled={loading} onClick={() => {
           const hasD11007ActiveTargetRule = cardHasRuleId(selectedAttackerCard, "0938");
           if (cardStatus === "active" && !allowActiveTargetsByCard[selectedAttacker] && !hasD11007ActiveTargetRule) { showBlockedReason("액티브 상태의 캐릭터는 기본적으로 공격 대상으로 지정할 수 없습니다. 공격자로 선택한 카드의 파란 체크박스를 활성화해 주세요."); return; }
