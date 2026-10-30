@@ -91,6 +91,10 @@ function hasCharge(card: any): boolean {
   return hasCaseOnlyCharge(card) || hasCharacterOnlyCharge(card)
     || dslKeywordValues(card).some((value) => ["charge", "돌격", "突撃"].includes(value));
 }
+function hasSwift(card: any): boolean {
+  return dslKeywordValues(card).some((value) =>
+    ["haya", "swift", "신속", "疾風", "질풍"].includes(value));
+}
 function isDetectiveVsKidCycleEvent(card: any): boolean {
   const aliases = ["1215", "B11049P2", "B11049P", "B11049"];
   return cardIdentifierValues(card).some((value) => aliases.includes(value.toLocaleUpperCase())
@@ -556,6 +560,21 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
     return { action: "place_files" };
   }
   if (state.turn_step !== "main") return null;
+
+  // [신속] alone grants an immediate investigation after entering the field.
+  // [돌격] variants are handled only by the character/evidence attack branches below.
+  const newlyPlayedSwift = field.find((card: any) =>
+    isCharacter(card) && isActive(card) && card.summoned_this_turn && hasSwift(card));
+  if (newlyPlayedSwift) {
+    return {
+      action: "investigate",
+      payload: {
+        instance_id: newlyPlayedSwift.instance_id,
+        evidence_count: Math.max(0, Math.min(3, Number(newlyPlayedSwift.lp || 1))),
+        allow_newly_played: true,
+      },
+    };
+  }
 
   const solutionFileThreshold = state.first_player_user_id === aiId ? 7 : 6;
   const canTransitionSolution = !isSolution
