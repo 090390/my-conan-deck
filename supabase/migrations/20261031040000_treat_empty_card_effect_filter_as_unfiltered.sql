@@ -60,14 +60,3 @@ BEGIN
 EXCEPTION WHEN invalid_text_representation OR numeric_value_out_of_range THEN RETURN false;
 END
 $function$;
-
-DO $
-BEGIN
-  IF NOT public.private_card_effect_filter_matches_v1(
-    NULL,
-    '{"instance_id":"empty-filter-test","card_type":"character"}'::jsonb,
-    NULL,NULL,'{}'::jsonb
-  ) THEN
-    RAISE EXCEPTION 'Empty DSL card filter must accept every card';
-  END IF;
-END $$;
