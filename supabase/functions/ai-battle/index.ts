@@ -586,6 +586,7 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
   const hand = Array.isArray(state?.my_hand) ? state.my_hand : [];
   const field = Array.isArray(me.field_cards) ? me.field_cards : [];
   const enemyField = Array.isArray(opponent.field_cards) ? opponent.field_cards : [];
+  const partnerColor = normalizedColor(state.ai_partner_color || me.partner_color || "");
   const activeAttackers = field.filter((card: any) => isCharacter(card) && isActive(card)
     && (!card.summoned_this_turn || hasCharge(card)))
     .sort((a: any, b: any) => cardAp(b) - cardAp(a));
@@ -736,7 +737,7 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
     const canWinWithoutCost = attackerAp > targetAp;
     const canWinByD11007 = hand.length > 0 && attackerAp < targetAp && attackerAp + 3000 > targetAp;
     const canWinByCutin = hand.some((card: any) => {
-      const bonus = cardCutInBonusForSubject(card, specialTargetAttacker, true);
+      const bonus = cardCutInBonusForSubject(card, specialTargetAttacker, true, partnerColor, field);
       return bonus > 0 && attackerAp + bonus > targetAp;
     });
     if (canWinWithoutCost || canWinByD11007 || canWinByCutin) {
@@ -762,7 +763,7 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
       const attackerAp = cardAp(candidate);
       const targetAp = cardAp(restedTarget);
       return attackerAp > targetAp || hand.some((card: any) => {
-        const bonus = cardCutInBonusForSubject(card, candidate, true);
+        const bonus = cardCutInBonusForSubject(card, candidate, true, partnerColor, field);
         return bonus > 0 && attackerAp + bonus > targetAp;
       });
     });
