@@ -42,15 +42,37 @@ function cardCutInBonus(card: any): number {
   const bonus = Number(digits);
   return Number.isFinite(bonus) && bonus > 0 ? bonus : 0;
 }
-function cardCutInBonusForSubject(card: any, subject: any, isOwnerTurn: boolean): number {
+function cardCutInBonusForSubject(
+  card: any,
+  subject: any,
+  isOwnerTurn: boolean,
+  partnerColor = "",
+  ownField: any[] = [],
+): number {
+  let bonus = cardCutInBonus(card);
+
+  // PR278 / internal 0940: partner-yellow adds 1000 AP; the server separately
+  // draws when the supported character has Police.
+  if (matchesInternalCardId(card, "0940") && partnerColor === "yellow") {
+    bonus += 1000;
+  }
+
+  // B05095 / internal 0593: during its owner's turn, each Police character
+  // currently on that owner's field adds 1000 AP.
+  if (matchesInternalCardId(card, "0593") && isOwnerTurn) {
+    const policeCount = ownField.filter((entry: any) =>
+      isCharacter(entry) && hasTrait(entry, "경찰")).length;
+    bonus += policeCount * 1000;
+  }
+
   // B10078 / internal 1134: AP+2000 only when its owner cuts in during their
   // own turn on a character with the Police trait.
   if (matchesInternalCardId(card, "1134")) {
     return isOwnerTurn && subject && hasTrait(subject, "경찰")
-      ? Math.max(2000, cardCutInBonus(card))
+      ? Math.max(2000, bonus)
       : 0;
   }
-  return cardCutInBonus(card);
+  return bonus;
 }
 function isCharacter(card: any) {
   return String(card?.card_type || "").toLowerCase() === "character";
@@ -436,8 +458,18 @@ function describeAction(decision: any, state: any, aiId: string) {
     case "decline_contact_guard":
     case "decline_guard":
       return "AI 탐정: 공격을 막기에 적합한 캐릭터가 없어 가드를 포기했습니다.";
-    case "contact_use_cutin":
-      return `AI 탐정: 컷인을 사용해 AP를 ${cardCutInBonus(hand.find((entry: any) => entry.instance_id === decision?.payload?.instance_id))} 올렸습니다.`;
+    case "contact_use_cutin": {
+      const cutin = hand.find((entry: any) => entry.instance_id === decision?.payload?.instance_id);
+      const subjectId = state?.pending_action?.attacker_user_id === aiId
+        ? state?.pending_action?.attacker_instance_id
+        : state?.pending_action?.target_instance_id;
+      const subject = field.find((entry: any) => String(entry.instance_id || "") === String(subjectId || ""));
+      const bonus = cardCutInBonusForSubject(
+        cutin, subject, state?.current_turn_user_id === aiId,
+        normalizedColor(state?.ai_partner_color || me?.partner_color || ""), field,
+      );
+      return `AI 탐정: 컷인을 사용해 AP를 ${bonus} 올렸습니다.`;
+    }
     case "contact_pass_cutin": return "AI 탐정: 컷인을 사용하지 않고 AP 비교를 진행했습니다.";
     case "resolve_mislead": return "AI 탐정: 사용할 수 있는 미스리드 효과를 확인해 대응했습니다.";
     case "pass_mislead": return "AI 탐정: 사용할 수 있는 미스리드 효과가 없어 대응을 넘겼습니다.";
@@ -520,12 +552,14 @@ function chooseResponse(state: any, aiId: string) {
       : String(pending.target_instance_id || "");
     const contactSubject = field.find((card: any) => String(card.instance_id || "") === contactSubjectId);
     const isAiOwnerTurn = state.current_turn_user_id === aiId;
+    const partnerColor = normalizedColor(state.ai_partner_color || me?.partner_color || "");
+    const cutinBonus = (card: any) => cardCutInBonusForSubject(
+      card, contactSubject, isAiOwnerTurn, partnerColor, field,
+    );
     const cutin = hand.filter((card: any) => {
-      const bonus = cardCutInBonusForSubject(card, contactSubject, isAiOwnerTurn);
+      const bonus = cutinBonus(card);
       return bonus >= needed && bonus > 0;
-    }).sort((a: any, b: any) =>
-      cardCutInBonusForSubject(a, contactSubject, isAiOwnerTurn)
-      - cardCutInBonusForSubject(b, contactSubject, isAiOwnerTurn))[0];
+    }).sort((a: any, b: any) => cutinBonus(a) - cutinBonus(b))[0];
     if (cutin && needed > 0) {
       return { action: "contact_use_cutin", payload: { instance_id: cutin.instance_id } };
     }
@@ -851,9 +885,9 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
       || pending.chooser_user_id === battle.ai_user_id
       || needsAiAcknowledgement
     ));
-    if (!pending) {
-      // This RPC enforces timing on the server: outside the AI's turn it returns
-      // only abilities explicitly marked activationTiming:"any".
+    {
+      // Also read partner colour while a contact is pending so the AI can price
+      // conditional cut-ins (PR278, B05095, B10078) before deciding to spend one.
       const { data: activationData, error: activationError } = await service.rpc("get_private_ai_card_effect_activations_v1", {
         p_room_id: roomId,
         p_ai_user_id: battle.ai_user_id,
@@ -861,6 +895,7 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
       if (activationError) throw activationError;
       state.ai_card_effect_activations = Array.isArray(activationData?.activations) ? activationData.activations : [];
       state.ai_event_effect_candidates = Array.isArray(activationData?.event_candidates) ? activationData.event_candidates : [];
+      state.ai_partner_color = activationData?.partner_color || null;
     }
     const hasAnyTimingAbility = !pending && state.ai_card_effect_activations.some((ability: any) =>
       String(ability?.definition?.activationTiming || "") === "any");
