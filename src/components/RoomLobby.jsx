@@ -53,6 +53,23 @@ function eventHasNonBlueColor(card) {
   return /(?:red|yellow|green|white|black|purple|orange|pink|brown|gold|silver|적|황|녹|백|흑|자|주|빨강|노랑|초록|흰색|검정|보라|桃|赤|黄|緑|白|黒|紫|橙|金|銀)/iu.test(text);
 }
 
+function getPartnerColorLabel(card) {
+  const source = card?.sourceData && typeof card.sourceData === "object"
+    ? card.sourceData
+    : card?.raw && typeof card.raw === "object" ? card.raw : {};
+  const values = [
+    card?.color, card?.colorKo, card?.color_ko, card?.colorKey, card?.color_key,
+    card?.colorText, card?.color_text, card?.colors, card?.originalColor,
+    source?.color, source?.colorKo, source?.color_ko, source?.colorKey, source?.color_key,
+    source?.colors, source?.raw?.color,
+  ];
+  for (const value of values) {
+    if (Array.isArray(value) && value.length) return value.map((entry) => String(entry ?? "").trim()).filter(Boolean).join("/");
+    if (value != null && String(value).trim()) return String(value).trim();
+  }
+  return "";
+}
+
 function getCardTraits(card) {
   const values = [card?.traits, card?.category1, card?.category2, card?.category3];
   return [...new Set(values.flatMap((value) => {
@@ -530,6 +547,13 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
         p_event_rule_code: getEventRuleCode(cardsByKey.get(String(eventId)), eventId),
       });
       if (rpcError) throw rpcError;
+      const partnerColor = getPartnerColorLabel(cardsByKey.get(String(partnerId)));
+      if (!partnerColor) throw new Error("파트너 카드의 색상 정보를 확인할 수 없습니다.");
+      const { error: partnerColorError } = await supabase.rpc("set_private_room_partner_color_v1", {
+        p_room_id: room.id,
+        p_partner_color: partnerColor,
+      });
+      if (partnerColorError) throw partnerColorError;
       const { error: eventColorError } = await supabase.rpc("set_private_room_event_has_non_blue_color_v1", {
         p_room_id: room.id,
         p_has_non_blue_color: eventHasNonBlueColor(cardsByKey.get(String(eventId))),
