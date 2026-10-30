@@ -145,7 +145,12 @@ function normalizedColor(value: unknown): string {
 function isBasicSearchEvent(card: any) {
   const ids = [card?.key, card?.database_id, card?.databaseId, card?.card_id, card?.card_num]
     .map((value) => String(value ?? "").trim().toLocaleUpperCase());
-  return ids.some((id) => ["0158", "0130", "B04083", "D03014"].includes(id));
+  // All six same-pattern level-1 search events should be available to the AI
+  // fallback when it has no character it can currently deploy.
+  return ids.some((id) => [
+    "0144", "0158", "0102", "0116", "0130", "0381",
+    "B04083", "D03014",
+  ].includes(id));
 }
 function cardStrength(card: any) {
   return cardAp(card) * 2 + Math.max(0, 4 - cardCost(card)) * 250 + Number(card?.lp || 0) * 20;
