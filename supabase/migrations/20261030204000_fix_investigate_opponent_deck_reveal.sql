@@ -41,7 +41,7 @@ BEGIN
      UPDATE public.private_card_effect_runs_v1 SET variables=v_vars,step_index=step_index+1,updated_at=now()
        WHERE room_id=p_room_id;
      CONTINUE;
-$new$;
+$old$;
 
   v_replacement := $new$
    ELSIF v_op='investigate_opponent_deck' THEN
