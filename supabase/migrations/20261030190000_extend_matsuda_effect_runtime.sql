@@ -380,7 +380,7 @@ $new$;
      WHERE b.room_id=p_room_id AND b.user_id=v_user AND e.value->>'instance_id'=v_instance_id LIMIT 1 FOR UPDATE;
    IF v_source_card IS NULL THEN RAISE EXCEPTION '효과를 발동할 자신의 현장 캐릭터를 찾을 수 없습니다.'; END IF;
    SELECT d.value INTO v_effect_definition
-$old$;
+$new$;
   v_replacement := $new$
    v_instance_id:=nullif(p_payload->>'source_instance_id','');
    SELECT * INTO v_new_board FROM public.room_player_turn_boards
@@ -400,7 +400,7 @@ $old$;
    IF v_effect_definition IS NULL THEN RAISE EXCEPTION '이 캐릭터에 등록된 효과를 찾을 수 없습니다.'; END IF;
  
 IF NOT public.private_card_effect_is_active_v1(v_source_card) THEN
-$old$;
+$new$;
   v_replacement := $new$
    IF v_effect_definition IS NULL THEN RAISE EXCEPTION '이 캐릭터에 등록된 효과를 찾을 수 없습니다.'; END IF;
    IF v_new_board.partner_mr_card->>'instance_id'=v_instance_id
