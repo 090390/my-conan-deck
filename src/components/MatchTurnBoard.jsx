@@ -82,6 +82,14 @@ function cardHasRuleId(card, targetId) {
     .some((value) => normalizeRuleCardId(value) === target);
 }
 
+function isBlueCard(card) {
+  const values = [
+    card?.color, card?.colorKo, card?.color_ko, card?.colour,
+    card?.sourceData?.color, card?.raw?.color,
+  ].flatMap((value) => Array.isArray(value) ? value : String(value ?? "").split(/[|｜,，、/／·・]+/u));
+  return values.some((value) => ["青", "청", "파랑", "blue"].includes(String(value ?? "").trim().toLocaleLowerCase()));
+}
+
 function cardHasCulpritTrait(card) {
   const values = Array.isArray(card?.traits) ? card.traits : card?.traits == null ? [] : [card.traits];
   return values.some((value) => {
@@ -610,6 +618,9 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   const opponentBoard = boards.find((board) => board.user_id !== userId);
   const currentTurnBoard = boards.find((board) => board.user_id === game?.current_turn_user_id);
   const myHand = Array.isArray(game?.my_hand) ? game.my_hand : [];
+  const blueCutInGranted = (myBoard?.field_cards || []).some((entry) =>
+    cardHasRuleId({ ...infoFor(entry), ...entry }, "0735") && !entry.rested && entry.status !== "rested"
+  );
   const sharedHandReveal = game?.shared_hand_reveal && Array.isArray(game.shared_hand_reveal.cards) ? game.shared_hand_reveal : null;
   const sharedHandRevealSignature = sharedHandReveal ? `${sharedHandReveal.source_user_id || ""}:${sharedHandReveal.cards.map((card) => card.instance_id).join("|")}` : "";
   useEffect(() => {
@@ -1631,7 +1642,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
               </div>
             ))}
           </div>
-          {pending.next_responder_user_id === userId ? <><p style={{ fontSize: 11, color: C.gold, margin: "12px 0 7px" }}>{userId === pending.target_user_id ? "현재 순서: 수비자 · 컷인 사용 여부를 선택해 주세요." : "현재 순서: 공격자 · 컷인 사용 여부를 선택해 주세요."}</p><div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6, marginBottom: 8, padding: 8, border: "1px solid rgba(96,165,250,.28)", borderRadius: 8, background: "rgba(30,58,95,.22)" }}><span style={{ fontSize: 10, color: "#bfdbfe", fontWeight: 800, marginRight: 3 }}>컨택 AP 수동 조정 · 컷인과 별도</span><button type="button" style={{ ...st.smallButton, background: "#1d4ed8" }} disabled={loading} onClick={() => { const raw = window.prompt("본인 컨택 카드에 더할 AP를 입력하세요. (예: 1000)", "1000"); if (raw === null) return; const amount = Math.abs(Number(String(raw).replace(/[,，\s]/gu, ""))); if (!Number.isSafeInteger(amount) || amount < 1 || amount > 100000) { setError("AP 변화량은 1~100000 사이의 정수로 입력해 주세요."); return; } void runAction("contact_adjust_ap", { amount }); }}>AP +N</button><button type="button" style={{ ...st.smallButton, background: "#374151" }} disabled={loading} onClick={() => { const raw = window.prompt("본인 컨택 카드에서 뺄 AP를 입력하세요. (예: 1000)", "1000"); if (raw === null) return; const amount = Math.abs(Number(String(raw).replace(/[,，\s]/gu, ""))); if (!Number.isSafeInteger(amount) || amount < 1 || amount > 100000) { setError("AP 변화량은 1~100000 사이의 정수로 입력해 주세요."); return; } void runAction("contact_adjust_ap", { amount: -amount }); }}>AP −N</button></div><div style={{ display: "grid", gap: 6 }}>{myHand.filter((card) => n(card.cut_in_bonus) > 0 || Boolean(String(infoFor(card)?.cutInEffect || card.cut_in_effect || "").trim())).map((card) => {
+          {pending.next_responder_user_id === userId ? <><p style={{ fontSize: 11, color: C.gold, margin: "12px 0 7px" }}>{userId === pending.target_user_id ? "현재 순서: 수비자 · 컷인 사용 여부를 선택해 주세요." : "현재 순서: 공격자 · 컷인 사용 여부를 선택해 주세요."}</p><div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6, marginBottom: 8, padding: 8, border: "1px solid rgba(96,165,250,.28)", borderRadius: 8, background: "rgba(30,58,95,.22)" }}><span style={{ fontSize: 10, color: "#bfdbfe", fontWeight: 800, marginRight: 3 }}>컨택 AP 수동 조정 · 컷인과 별도</span><button type="button" style={{ ...st.smallButton, background: "#1d4ed8" }} disabled={loading} onClick={() => { const raw = window.prompt("본인 컨택 카드에 더할 AP를 입력하세요. (예: 1000)", "1000"); if (raw === null) return; const amount = Math.abs(Number(String(raw).replace(/[,，\s]/gu, ""))); if (!Number.isSafeInteger(amount) || amount < 1 || amount > 100000) { setError("AP 변화량은 1~100000 사이의 정수로 입력해 주세요."); return; } void runAction("contact_adjust_ap", { amount }); }}>AP +N</button><button type="button" style={{ ...st.smallButton, background: "#374151" }} disabled={loading} onClick={() => { const raw = window.prompt("본인 컨택 카드에서 뺄 AP를 입력하세요. (예: 1000)", "1000"); if (raw === null) return; const amount = Math.abs(Number(String(raw).replace(/[,，\s]/gu, ""))); if (!Number.isSafeInteger(amount) || amount < 1 || amount > 100000) { setError("AP 변화량은 1~100000 사이의 정수로 입력해 주세요."); return; } void runAction("contact_adjust_ap", { amount: -amount }); }}>AP −N</button></div><div style={{ display: "grid", gap: 6 }}>{myHand.filter((card) => n(card.cut_in_bonus) > 0 || Boolean(String(infoFor(card)?.cutInEffect || card.cut_in_effect || "").trim()) || (blueCutInGranted && isBlueCard({ ...infoFor(card), ...card }))).map((card) => {
             const effectText = String(infoFor(card)?.cutInEffect || card.cut_in_effect || "").trim();
             const cardInfo = infoFor(card);
             const isCulpritScalingCutIn = cardHasRuleId({ ...cardInfo, ...card }, "0627");
@@ -1644,7 +1655,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
             const isB10078PoliceCutIn = cardHasRuleId({ ...cardInfo, ...card }, "1134");
             const isB11015CutIn = cardHasRuleId({ ...cardInfo, ...card }, "1183");
             const isB10011CutIn = cardHasRuleId({ ...cardInfo, ...card }, "1073");
-            const isB07003BlueCutIn = cardHasRuleId({ ...cardInfo, ...card }, "0735");
+            const isB07003BlueCutIn = blueCutInGranted && isBlueCard({ ...cardInfo, ...card });
             const isB11015Subject = (myBoard?.field_cards || []).find((entry) => String(entry.instance_id) === String(
               pending.attacker_user_id === userId ? pending.attacker_instance_id : pending.target_instance_id
             ));
