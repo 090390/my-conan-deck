@@ -10,7 +10,7 @@ BEGIN
 
   v_anchor := $old$  if p_action = 'finish_event' then
     v_id := nullif(p_payload ->> 'instance_id', '');
-$new$;
+$old$;
   v_replacement := $new$  if p_action = 'finish_event' then
     if exists(select 1 from public.private_card_effect_runs_v1 where room_id=p_room_id)
        or (v_match.pending_action is not null and v_match.pending_action->>'type' like 'card_effect_%') then
