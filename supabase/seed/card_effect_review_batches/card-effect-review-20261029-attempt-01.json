@@ -989,9 +989,9 @@
           "draftStatus": "dsl_validated_approved",
           "approvalStatus": "approved",
           "confidence": "high",
-          "reviewNotes": "후루야 레이가 현장에 있을 때 턴 종료 시 덱 위 2장을 확인해 지정된 경찰학교 동기 캐릭터를 최대 1장 공개·패에 추가하고, 나머지는 리무브 에이리어로 이동합니다.",
+          "reviewNotes": "10/31 운영 카탈로그 재대조 완료: 내부 ID 1124의 player.turn_ended 정의와 동일한 effectId로 정규화했습니다. 후루야 레이가 현장에 있을 때 덱 위 2장을 확인해 경찰학교 동기 캐릭터를 최대 1장 패에 추가하고, 나머지는 리무브 에이리어로 이동합니다.",
           "proposedDefinition": {
-            "effectId": "card-1124-end-turn-search-listed-police-academy",
+            "effectId": "card-1124-end-turn-search-police-academy",
             "cardIds": [
               "1124"
             ],
