@@ -1207,9 +1207,9 @@
         {
           "candidateId": "implemented-card-0938-contact-start-discard-for-ap-3000",
           "sourceText": "이 캐릭터는 상대의 현장에 있는 레벨 7 이상의 액티브 상태 캐릭터를 지정하여 액션을 수행할 수 있다.\n【파트너 황】 - 〚돌격〛（등장한 턴부터 바로 액션 수행 가능）\n【자신의 턴 중】【턴 1】 - 이 캐릭터가, 이 캐릭터보다 AP가 높은 캐릭터와 컨택했을 때, 패 1장을 리무브해도 된다. 그렇게 했을 경우, 해당 컨택 동안 이 캐릭터의 AP를 +3000한다.",
-          "interpretation": "카드 원문의 character.contact_started 효과를 런타임 DSL로 구현했습니다.",
+          "interpretation": "자신의 턴 중 턴당 1회, 자신보다 AP가 높은 캐릭터와 컨택할 때 손패 1장을 리무브하면 해당 컨택 동안 AP +3000.",
           "confidence": "high",
-          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
+          "reviewNotes": "턴당 1회 제한을 활성 서버 카탈로그와 시드 정의에 반영했습니다.",
           "proposedDefinition": {
             "effectId": "card-0938-contact-start-discard-for-ap-3000",
             "cardIds": [
@@ -1269,7 +1269,8 @@
                   "value": 0
                 }
               }
-            ]
+            ],
+            "oncePerTurn": true
           },
           "approvalStatus": "approved",
           "draftStatus": "dsl_validated_approved",
