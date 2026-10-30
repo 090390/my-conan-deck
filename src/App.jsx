@@ -2610,7 +2610,7 @@ export default function App() {
           .card-detail-layout > div:first-child > img { max-width: 185px; max-height: 34vh; }
         }
         @media (max-width: 600px) {
-          .app-shell { padding: 0 !important; margin: 0 !important; }
+          .app-shell { padding: 10px !important; margin: 0 !important; }
           .app-header h1 { font-size: 20px; }
           .app-panel { padding: 10px !important; border-radius: 12px !important; }
           .conan-card-grid { grid-template-columns: repeat(5, minmax(0, 1fr)) !important; gap: 6px !important; }
