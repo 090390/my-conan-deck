@@ -110,27 +110,6 @@ function isDetectiveVsKidCycleEvent(card: any): boolean {
   return cardIdentifierValues(card).some((value) => aliases.includes(value.toLocaleUpperCase())
     || value.replace(/\D/gu, "").replace(/^0+/u, "") === "1215");
 }
-function isPr181AnyTimingSource(card: any): boolean {
-  return cardIdentifierValues(card).some((value) => value.toLocaleUpperCase() === "PR181")
-    || matchesInternalCardId(card, "0732");
-}
-function canDeployTokyoPoliceFromRemoveArea(state: any): boolean {
-  const removeArea = Array.isArray(state?.my_remove_cards) ? state.my_remove_cards : [];
-  return removeArea.some((card: any) => isCharacter(card) && cardCost(card) <= 4
-    && cardTraits(card).some((trait: string) => /(?:警視庁|경시청)/u.test(trait)));
-}
-function hasReadyPr181AnyTiming(state: any, aiId: string): boolean {
-  if (!state || state.game_over || state.pending_action
-      || state.current_turn_user_id === aiId
-      || String(state.phase || "playing") !== "playing") return false;
-  const aiBoard = (Array.isArray(state.boards) ? state.boards : [])
-    .find((board: any) => board.user_id === aiId);
-  const ownField = Array.isArray(aiBoard?.field_cards) ? aiBoard.field_cards : [];
-  // PR181's off-turn activation remains available; charge keywords grant attacks,
-  // never an immediate investigation action.
-  if (!canDeployTokyoPoliceFromRemoveArea(state)) return false;
-  return ownField.some((card: any) => isPr181AnyTimingSource(card) && isActive(card));
-}
 function normalizedColor(value: unknown): string {
   const token = String(value ?? "").trim().toLocaleLowerCase();
   if (["white", "백", "백색", "白", "白色"].includes(token)) return "white";
@@ -275,6 +254,7 @@ function chooseActivatedAbility(state: any, aiId: string) {
   const hand = Array.isArray(state?.my_hand) ? state.my_hand : [];
   const removeArea = Array.isArray(state?.my_remove_cards) ? state.my_remove_cards : [];
   const ownEvidenceCount = Math.max(0, Number(me.evidence_count || 0));
+  const opponentEvidenceCount = Math.max(0, Number(opponent.evidence_count || 0));
 
   for (const ability of activations) {
     const sourceId = String(ability?.source_instance_id || "");
@@ -330,6 +310,11 @@ function chooseActivatedAbility(state: any, aiId: string) {
       } else if (from === "evidence_area") {
         candidates = Array.from({ length: ownEvidenceCount }, (_, index) => ({
           instance_id: `evidence:${index}`, card_type: "evidence", type: "evidence", face_up: false,
+        }));
+      } else if (from === "opponent_evidence") {
+        candidates = Array.from({ length: opponentEvidenceCount }, (_, index) => ({
+          instance_id: `opponent-evidence:${index}`, card_type: "evidence", type: "evidence",
+          face_up: false, owner_user_id: opponent.user_id,
         }));
       } else if (from === "opponent_hand") {
         const count = Math.max(0, Number(opponent.hand_count || opponent.hand_size || state?.opponent_hand_count || 0));
@@ -866,7 +851,6 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
       || pending.chooser_user_id === battle.ai_user_id
       || needsAiAcknowledgement
     ));
-    const canUseAnyTiming = hasReadyPr181AnyTiming(state, battle.ai_user_id);
     if (!pending) {
       // This RPC enforces timing on the server: outside the AI's turn it returns
       // only abilities explicitly marked activationTiming:"any".
@@ -881,7 +865,7 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
     const hasAnyTimingAbility = !pending && state.ai_card_effect_activations.some((ability: any) =>
       String(ability?.definition?.activationTiming || "") === "any");
     if (state.current_turn_user_id !== battle.ai_user_id
-      && !aiMustRespond && !canUseAnyTiming && !hasAnyTimingAbility) {
+      && !aiMustRespond && !hasAnyTimingAbility) {
       return { is_ai: true, actions: [] };
     }
 
