@@ -5327,11 +5327,6 @@
           "operator": "equals"
         },
         {
-          "fact": "player.event.has_detective_vs_kid_trait",
-          "value": true,
-          "operator": "equals"
-        },
-        {
           "fact": "game.total_evidence_count",
           "value": 5,
           "operator": "greater_than_or_equal"
@@ -6017,6 +6012,11 @@
           "fact": "event.revealed_kudo_or_ran",
           "value": true,
           "operator": "equals"
+        },
+        {
+          "fact": "player.field.has_card_name",
+          "operator": "name_matches",
+          "value": "工藤新一"
         }
       ],
       "oncePerTurn": true,
