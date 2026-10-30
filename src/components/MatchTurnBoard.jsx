@@ -1642,6 +1642,23 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
               return names.some((name) => name === "범인" || name === "犯人");
             }).length : 0;
             const isB10078PoliceCutIn = cardHasRuleId({ ...cardInfo, ...card }, "1134");
+            const isB11015CutIn = cardHasRuleId({ ...cardInfo, ...card }, "1183");
+            const isB10011CutIn = cardHasRuleId({ ...cardInfo, ...card }, "1073");
+            const isB07003BlueCutIn = cardHasRuleId({ ...cardInfo, ...card }, "0735");
+            const isB11015Subject = (myBoard?.field_cards || []).find((entry) => String(entry.instance_id) === String(
+              pending.attacker_user_id === userId ? pending.attacker_instance_id : pending.target_instance_id
+            ));
+            const subjectName = String(infoFor(isB11015Subject)?.name || isB11015Subject?.name || isB11015Subject?.name_ja || "").normalize("NFKC");
+            const isKudoShinichiSubject = subjectName.includes("工藤新一") || subjectName.includes("쿠도 신이치");
+            const isMouriRanSubject = subjectName.includes("毛利蘭") || subjectName.includes("모리 란");
+            const ownTurn = game?.current_turn_user_id === userId;
+            const hasBlueShinichiOnField = (myBoard?.field_cards || []).some((entry) =>
+              cardHasRuleId({ ...infoFor(entry), ...entry }, "0735") && !entry.rested && entry.status !== "rested"
+            );
+            const canUseB11015CutIn = !isB11015CutIn || ownTurn;
+            const canUseB10011CutIn = !isB10011CutIn || isKudoShinichiSubject || isMouriRanSubject;
+            const canUseCutIn = canUseB10078PoliceCutIn && canUseB11015CutIn && canUseB10011CutIn;
+
             const contactSubjectId = pending.attacker_user_id === userId
               ? pending.attacker_instance_id
               : pending.target_instance_id;
@@ -1650,8 +1667,11 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
               || (game?.current_turn_user_id === userId && normalizeCardTraits(contactSubject).includes("경찰"));
             const bonus = isCulpritScalingCutIn
               ? (culpritCardCount + 1) * 2000
-              : isB10078PoliceCutIn ? (canUseB10078PoliceCutIn ? 2000 : 0) : n(card.cut_in_bonus);
-            return <button key={card.instance_id} type="button" style={{ ...st.button, background: "#164e63", textAlign: "left", opacity: canUseB10078PoliceCutIn ? 1 : .45 }} disabled={loading || !canUseB10078PoliceCutIn} title={isB10078PoliceCutIn && !canUseB10078PoliceCutIn ? "B10078: 자신의 턴 중 특징 [경찰] 캐릭터에 컷인할 때만 사용할 수 있습니다." : ""} onClick={() => void runAction("contact_use_cutin", { instance_id: card.instance_id })}>
+              : isB10078PoliceCutIn ? (canUseB10078PoliceCutIn ? 2000 : 0)
+              : isB11015CutIn ? (isKudoShinichiSubject ? 3000 : 1000)
+              : isB10011CutIn ? 2000
+              : n(card.cut_in_bonus) + (isB07003BlueCutIn ? 1000 : 0);
+            return <button key={card.instance_id} type="button" style={{ ...st.button, background: "#164e63", textAlign: "left", opacity: canUseCutIn ? 1 : .45 }} disabled={loading || !canUseCutIn} title={!canUseCutIn ? (isB10078PoliceCutIn ? "B10078: 자신의 턴 중 특징 [경찰] 캐릭터에 컷인할 때만 사용할 수 있습니다." : isB11015CutIn && !ownTurn ? "B11015: 자신의 턴에만 사용할 수 있습니다." : "B10011: 쿠도 신이치 또는 모리 란에만 사용할 수 있습니다.") : ""} onClick={() => void runAction("contact_use_cutin", { instance_id: card.instance_id })}>
               <strong style={{ display: "block", marginBottom: 4 }}>{nameOf(card)} · {bonus > 0 ? `AP +${bonus}` : "조건 미충족"}</strong>
               <span style={{ display: "block", whiteSpace: "pre-wrap", overflowWrap: "anywhere", fontSize: 10, lineHeight: 1.5 }}>{effectText || "컷인 효과 문구를 확인할 수 없습니다."}</span>
             </button>;
