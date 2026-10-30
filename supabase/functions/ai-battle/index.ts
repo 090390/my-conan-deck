@@ -275,6 +275,14 @@ function chooseActivatedAbility(state: any, aiId: string) {
     const source = ownField.find((card: any) => String(card?.instance_id || "") === sourceId);
     if (!source || !isActive(source)) continue;
 
+    // Preflight follow-up contacts before opening an effect chooser. The SQL
+    // effect runner rejects a newly summoned source when start_contact does
+    // not explicitly allow it, which otherwise leaves a stale selection modal.
+    const hasBlockedNewlyPlayedContact = Boolean(source.summoned_this_turn)
+      && definition.steps.some((step: any) =>
+        step?.op === "start_contact" && step?.allowNewlyPlayed !== true);
+    if (hasBlockedNewlyPlayedContact) continue;
+
     const selections: Array<{ step: any; targets: any[] }> = [];
     const unresolvedVars = new Set<string>();
     let invalid = false;
