@@ -381,7 +381,10 @@ function chooseActivatedAbility(state: any, aiId: string) {
           candidate?.op === "move_cards"
           && String(candidate?.from || "") === `vars.${String(step.saveAs || "")}`
           && String(candidate?.to || "") === "field");
-        if (definition.steps.some((candidate: any) => candidate?.op === "pay_cost") || feedsDeployment) {
+        // Optional steps in a multi-part effect may have no legal target while
+        // another step still has one (e.g. B06085's evidence and field choices).
+        // The final cost guard below rejects only when every selection is empty.
+        if (feedsDeployment) {
           invalid = true;
           break;
         }
