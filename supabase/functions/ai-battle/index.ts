@@ -83,9 +83,13 @@ function hasCaseOnlyCharge(card: any): boolean {
   return dslKeywordValues(card).some((value) =>
     ["charge_case", "돌격[사건]", "돌격［사건］", "突撃[事件]", "突撃［事件］"].includes(value));
 }
+function hasCharacterOnlyCharge(card: any): boolean {
+  return dslKeywordValues(card).some((value) =>
+    ["charge_character", "돌격[캐릭터]", "돌격［キャラ］", "突撃[キャラ]", "突撃［キャラ］"].includes(value));
+}
 function hasCharge(card: any): boolean {
-  return hasCaseOnlyCharge(card) || dslKeywordValues(card).some((value) =>
-    ["charge", "돌격", "突撃"].includes(value));
+  return hasCaseOnlyCharge(card) || hasCharacterOnlyCharge(card)
+    || dslKeywordValues(card).some((value) => ["charge", "돌격", "突撃"].includes(value));
 }
 function isDetectiveVsKidCycleEvent(card: any): boolean {
   const aliases = ["1215", "B11049P2", "B11049P", "B11049"];
@@ -131,6 +135,30 @@ function isBasicSearchEvent(card: any) {
 }
 function cardStrength(card: any) {
   return cardAp(card) * 2 + Math.max(0, 4 - cardCost(card)) * 250 + Number(card?.lp || 0) * 20;
+}
+function estimateEventEffectScore(definition: any): number {
+  const steps = Array.isArray(definition?.steps) ? definition.steps : [];
+  return steps.reduce((score: number, step: any) => {
+    switch (String(step?.op || "")) {
+      case "peek_top_cards": return score + 4 + Math.min(4, Math.max(0, Number(step.count || 0))) * 0.5;
+      case "draw_cards": return score + 4 * Math.max(1, Number(step.count || 1));
+      case "move_cards":
+        if (step.to === "field") return score + 5;
+        if (step.to === "hand") return score + 2.5;
+        if (step.to === "evidence_area") return score + 3;
+        return score;
+      case "flip_evidence": return score + 2.5;
+      case "rest_cards": return score + 2;
+      case "modify_stat":
+      case "modify_contact_ap": return score + 1.5;
+      case "grant_keyword":
+      case "set_continuous_keyword": return score + 2.5;
+      case "attach_top_card": return score + 1.5;
+      case "select_cards": return score + 0.5;
+      case "schedule_move_to_deck_bottom": return score + 1;
+      default: return score;
+    }
+  }, 0);
 }
 function cardTraits(card: any): string[] {
   const source = card?.sourceData && typeof card.sourceData === "object" ? card.sourceData
@@ -280,7 +308,14 @@ function chooseActivatedAbility(state: any, aiId: string) {
         candidates = Array.from({ length: count }, (_, index) => ({
           instance_id: `opponent-hand:${index}`, card_type: "unknown",
         }));
-      } else if (from === "deck") candidates = [];
+      } else if (from === "deck") {
+        const deckCount = Math.max(0, Number(state?.my_deck_count ?? me?.deck_count ?? 0));
+        if (deckCount > 0) {
+          if (step.saveAs) unresolvedVars.add(String(step.saveAs));
+          continue;
+        }
+        candidates = [];
+      }
       else if (/^vars\./u.test(from)) {
         if (step.saveAs) unresolvedVars.add(String(step.saveAs));
         continue;
@@ -356,6 +391,10 @@ function describeAction(decision: any, state: any, aiId: string) {
     case "place_files": return "AI 탐정: 턴 시작에 필요한 파일을 배치했습니다.";
     case "play_character":
       return `AI 탐정: 현재 레벨 상한에 맞는 ${cardName(card)}(코스트 ${cost})를 골라 등장시켰습니다.`;
+    case "play_event":
+      return `AI 탐정: 카드 효과를 사용할 수 있는 ${cardName(card)} 이벤트를 발동했습니다.`;
+    case "declare_solution":
+      return "AI 탐정: 파일 수와 파트너 조건이 충족되어 해결편으로 전환했습니다.";
     case "next_hint_take_file":
       return "AI 탐정: 해결편에서 합법적으로 등장시킬 수 있는 카드가 확인되어 넥스트 힌트를 선언하고 파일 1장을 소비했습니다.";
     case "next_hint":
@@ -496,6 +535,8 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
     && (!card.summoned_this_turn || hasCharge(card)))
     .sort((a: any, b: any) => cardAp(b) - cardAp(a));
   const characterAttackers = activeAttackers.filter((card: any) => !hasCaseOnlyCharge(card));
+  const evidenceAttackers = activeAttackers.filter((card: any) =>
+    !hasCaseOnlyCharge(card) && !hasCharacterOnlyCharge(card));
   const characterCount = field.filter((card: any) => isCharacter(card)).length;
   const level = Math.max(0, Number(me.file_count || 0)) + (me.partner_assist_used ? 1 : 0);
   const basePlayed = Boolean(me.base_card_played_this_turn || me.character_played_this_turn);
@@ -535,6 +576,13 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
     }
   }
 
+  const solutionFileThreshold = state.first_player_user_id === aiId ? 7 : 6;
+  const canTransitionSolution = !isSolution
+    && Number(me.file_count || 0) >= solutionFileThreshold
+    && !me.partner_rested && !me.partner_assist_used
+    && !me.next_hint_used && !me.next_hint_pending;
+  if (canTransitionSolution) return { action: "declare_solution" };
+
   if (me.next_hint_pending) {
     const nextCard = hand.filter((card: any) => isCharacter(card)
       && cardCost(card) <= level + 1 && characterCount < 5)
@@ -557,8 +605,30 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
     const playableCharacters = hand.filter((card: any) => isCharacter(card)
       && cardCost(card) <= level && characterCount < 5)
       .sort((a: any, b: any) => cardStrength(b) - cardStrength(a));
-    if (playableCharacters[0]) {
-      return { action: "play_character", payload: { instance_id: playableCharacters[0].instance_id } };
+    const eventCandidates = Array.isArray(state?.ai_event_effect_candidates)
+      ? state.ai_event_effect_candidates : [];
+    const eventScoreByInstance = new Map<string, number>();
+    for (const candidate of eventCandidates) {
+      const instanceId = String(candidate?.source_instance_id || "");
+      if (!instanceId) continue;
+      const score = estimateEventEffectScore(candidate?.definition);
+      eventScoreByInstance.set(instanceId, Math.max(eventScoreByInstance.get(instanceId) || 0, score));
+    }
+    const effectEvent = hand.filter((card: any) => isEvent(card)
+      && cardCost(card) <= level
+      && eventScoreByInstance.has(String(card?.instance_id || "")))
+      .map((card: any) => ({
+        card,
+        score: eventScoreByInstance.get(String(card.instance_id)) || 0,
+      }))
+      .sort((a: any, b: any) => b.score - a.score || cardCost(a.card) - cardCost(b.card))[0];
+    const bestCharacter = playableCharacters[0];
+    const characterPriority = bestCharacter ? cardStrength(bestCharacter) / 250 : -1;
+    if (effectEvent && effectEvent.score >= Math.max(5, characterPriority)) {
+      return { action: "play_event", payload: { instance_id: effectEvent.card.instance_id } };
+    }
+    if (bestCharacter) {
+      return { action: "play_character", payload: { instance_id: bestCharacter.instance_id } };
     }
     // Use color-search events when no character in hand is currently playable.
     const searchEvent = hand.filter((card: any) => isEvent(card) && isBasicSearchEvent(card)
@@ -622,7 +692,7 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
           target_user_id: opponent.user_id,
           target_instance_id: activeHighLevelTarget.instance_id,
           allow_active_target: true,
-          allow_newly_played: false,
+          allow_newly_played: hasCharge(specialTargetAttacker),
         },
       };
     }
@@ -649,18 +719,18 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
           target_user_id: opponent.user_id,
           target_instance_id: restedTarget.instance_id,
           allow_active_target: false,
-          allow_newly_played: false,
+          allow_newly_played: hasCharge(attacker),
         },
       };
     }
   }
-  if (activeAttackers.length && Number(opponent.evidence_count || 0) > 0) {
+  if (evidenceAttackers.length && Number(opponent.evidence_count || 0) > 0) {
     return {
       action: "attack_evidence",
       payload: {
-        attacker_instance_id: activeAttackers[0].instance_id,
+        attacker_instance_id: evidenceAttackers[0].instance_id,
         target_user_id: opponent.user_id,
-        allow_newly_played: false,
+        allow_newly_played: hasCharge(evidenceAttackers[0]),
       },
     };
   }
@@ -761,23 +831,22 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
       || needsAiAcknowledgement
     ));
     const canUseAnyTiming = hasReadyPr181AnyTiming(state, battle.ai_user_id);
-    if (state.current_turn_user_id !== battle.ai_user_id && !aiMustRespond && !canUseAnyTiming) {
-      return { is_ai: true, actions: [] };
-    }
-
-    if (!pending && (
-      (state.current_turn_user_id === battle.ai_user_id && ["file", "main"].includes(String(state.turn_step || "")))
-      || canUseAnyTiming
-    )) {
-      // DECLARE/SLEEP is legal at any non-blocked timing in the AI's own turn.
-      // Evaluate eligible activations during the file step as well as main; the planner
-      // will still place files first when no useful, legal activation is available.
+    if (!pending) {
+      // This RPC enforces timing on the server: outside the AI's turn it returns
+      // only abilities explicitly marked activationTiming:"any".
       const { data: activationData, error: activationError } = await service.rpc("get_private_ai_card_effect_activations_v1", {
         p_room_id: roomId,
         p_ai_user_id: battle.ai_user_id,
       });
       if (activationError) throw activationError;
       state.ai_card_effect_activations = Array.isArray(activationData?.activations) ? activationData.activations : [];
+      state.ai_event_effect_candidates = Array.isArray(activationData?.event_candidates) ? activationData.event_candidates : [];
+    }
+    const hasAnyTimingAbility = !pending && state.ai_card_effect_activations.some((ability: any) =>
+      String(ability?.definition?.activationTiming || "") === "any");
+    if (state.current_turn_user_id !== battle.ai_user_id
+      && !aiMustRespond && !canUseAnyTiming && !hasAnyTimingAbility) {
+      return { is_ai: true, actions: [] };
     }
 
     let decision: any = null;
