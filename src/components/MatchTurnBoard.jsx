@@ -845,10 +845,15 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
     return keywordAliases.some((word) => {
       const key = String(word).toLocaleLowerCase();
       if (key === "charge") {
-        return /突撃(?!［(?:事件|キャラ)］)(?!\[(?:事件|キャラ)\])|돌격(?![［\[](?:사건|캐릭터|캐라)[]］])/u.test(printed);
+        // 사건/캐릭터 한정 돌격 키워드는 일반 돌격으로 잘못 취급하지 않습니다.
+        return /突撃(?!［(?:事件|キャラ)］)(?!\[(?:事件|キャラ)\])|돌격(?!［(?:사건|캐릭터|캐라)］)(?!\[(?:사건|캐릭터|캐라)\])/u.test(printed);
       }
-      if (key === "charge_case") return /突撃[［\[]事件[]］]|돌격[［\[]사건[]］]/u.test(printed);
-      if (key === "charge_character") return /突撃[［\[]キャラ[]］]|突撃[［\[]キャラクター[]］]|돌격[［\[]캐릭터[]］]/u.test(printed);
+      if (key === "charge_case") {
+        return /突撃(?:［|\[)事件(?:］|\])|돌격(?:［|\[)사건(?:］|\])/u.test(printed);
+      }
+      if (key === "charge_character") {
+        return /突撃(?:［|\[)(?:キャラ|キャラクター)(?:］|\])|돌격(?:［|\[)캐릭터(?:］|\])/u.test(printed);
+      }
       return printed.includes(key);
     });
   }
