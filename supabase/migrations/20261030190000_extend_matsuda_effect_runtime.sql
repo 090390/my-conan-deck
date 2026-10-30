@@ -62,8 +62,7 @@ $new$;
   -- Add custom operations for a private opponent-hand reveal and an opponent-deck investigate.
   SELECT pg_get_functiondef('public.private_card_effect_run_v1(uuid)'::regprocedure)
     INTO v_definition;
-  v_anchor := $old$ v_from_zone text;
-$new$;
+  v_anchor := $old$ v_from_zone text;$old$;
   v_replacement := $new$ v_from_zone text;
  v_hand_owner uuid; v_hand_cards jsonb;
  v_investigate_owner uuid; v_investigate_deck jsonb; v_investigate_cards jsonb;
