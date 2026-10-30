@@ -762,7 +762,9 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
     const attacker = characterAttackers.find((candidate: any) => {
       const attackerAp = cardAp(candidate);
       const targetAp = cardAp(restedTarget);
-      return attackerAp > targetAp || hand.some((card: any) => {
+      const canUseMatsudaContactEffect = matchesInternalCardId(candidate, "0938")
+        && hand.length > 0 && attackerAp < targetAp && attackerAp + 3000 > targetAp;
+      return attackerAp > targetAp || canUseMatsudaContactEffect || hand.some((card: any) => {
         const bonus = cardCutInBonusForSubject(card, candidate, true, partnerColor, field);
         return bonus > 0 && attackerAp + bonus > targetAp;
       });
