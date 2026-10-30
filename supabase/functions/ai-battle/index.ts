@@ -223,6 +223,7 @@ function matchesDslFilter(card: any, filter: any): boolean {
   const expected = filter.value;
   let actual: any;
   switch (field) {
+    case "controller": actual = String(card?.controller || "").toLowerCase(); break;
     case "card_type": actual = isCharacter(card) ? "character" : String(card?.card_type || card?.type || "").toLowerCase(); break;
     case "level": actual = cardCost(card); break;
     case "ap_current": actual = cardAp(card); break;
