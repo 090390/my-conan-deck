@@ -217,11 +217,11 @@
         {
           "candidateId": "b06088-on-enter-search-keishicho-1",
           "sourceText": "【등장 시】 - 자신의 덱에서 위쪽부터 3장의 카드를 확인한다. 그중에서 〚특징 [경시청]〛을 가진 캐릭터 카드를 최대 1장까지 공개하여 패에 추가하고, 나머지는 원하는 순서대로 덱 밑으로 옮긴다.",
-          "interpretation": "등장 시 덱 위 최대 3장을 확인한다. 그중 특징 [경시청]인 캐릭터를 최대 1장 선택해 공개한다. 상대는 공개된 카드를 실제로 확인하고 확인 완료를 눌러야 이후 손패 이동과 덱 아래 정리가 진행된다. 적격 카드가 없거나 선택하지 않으면 공개와 손패 이동 없이 확인한 카드들을 원하는 순서로 덱 아래에 둔다.",
-          "draftStatus": "draft_candidate",
-          "approvalStatus": "pending",
+          "interpretation": "카드 효과 검토 완료: 등장 시 덱 위 3장 중 경시청 캐릭터를 최대 1장 공개·패에 추가하고, 나머지의 덱 아래 순서를 정하는 실행 정의가 등록되었습니다. 공개 확인과 덱 순서 선택 단계가 런타임에서 처리됩니다.",
+          "draftStatus": "dsl_validated_approved",
+          "approvalStatus": "approved",
           "confidence": "high",
-          "reviewNotes": "reveal_cards의 수신 대상은 opponent이고 공개 확인을 기다리도록 awaitAcknowledgement=true로 설정했다. 상대에게 카드가 실제로 표시되고 확인 완료를 누른 뒤에만 손패 이동 단계가 진행된다. displayVariable=seen으로 확인한 3장도 선택 모달에서 보이게 해 적격 카드가 없는 경우 전체 순서를 정할 수 있다.",
+          "reviewNotes": "카드 효과 검토 완료: 등장 시 덱 위 3장 중 경시청 캐릭터를 최대 1장 공개·패에 추가하고, 나머지의 덱 아래 순서를 정하는 실행 정의가 등록되었습니다. 공개 확인과 덱 순서 선택 단계가 런타임에서 처리됩니다.",
           "proposedDefinition": {
             "effectId": "card-0707-on-enter-search-keishicho",
             "cardIds": [
@@ -390,11 +390,11 @@
         {
           "candidateId": "b07080-on-enter-remove-level7-1",
           "sourceText": "【등장 시】 - 레벨 7 이하의 캐릭터를 1장까지 선택하여 리무브한다.\n【파트너 황】【FILE5】【선언】【슬립】〚현장에 있는 레벨 7 이하의 특징 [경시청]을 가진 캐릭터 1장을 덱 맨 아래로 옮긴다〛 - 캐릭터를 1장까지 선택하여 리무브한다.",
-          "interpretation": "등장 시 상대 현장의 레벨 7 이하 캐릭터를 최대 1장 선택해 리무브한다. 별도 소유 위치 수식어가 없는 캐릭터 리무브이므로 상대 현장이 대상이다.",
-          "draftStatus": "draft_candidate",
-          "approvalStatus": "pending",
-          "confidence": "medium",
-          "reviewNotes": "등장 시 효과에는 FILE 조건이 없다. 별도 소유 위치 수식어 없이 캐릭터를 리무브하므로 상대 현장의 레벨 7 이하 캐릭터를 최대 1장 선택한다. FILE5는 두 번째 선언·슬립 능력에만 적용되며, 해당 후보는 player.file.count >= 5로 표현한다.",
+          "interpretation": "등장 시 효과와 파트너 황·FILE5 선언 효과를 각각 실행 정의로 등록했습니다. 등장 시 레벨 7 이하 캐릭터 리무브, 선언 시 자신의 레벨 7 이하 경시청 캐릭터를 덱 아래로 옮긴 뒤 상대 캐릭터 리무브를 순서대로 처리합니다.",
+          "draftStatus": "dsl_validated_approved",
+          "approvalStatus": "approved",
+          "confidence": "high",
+          "reviewNotes": "등장 시 효과와 파트너 황·FILE5 선언 효과를 각각 실행 정의로 등록했습니다. 등장 시 레벨 7 이하 캐릭터 리무브, 선언 시 자신의 레벨 7 이하 경시청 캐릭터를 덱 아래로 옮긴 뒤 상대 캐릭터 리무브를 순서대로 처리합니다.",
           "proposedDefinition": {
             "effectId": "card-0808-on-enter-remove-level7",
             "cardIds": [
@@ -456,11 +456,11 @@
         {
           "candidateId": "b07080-activated-partner-yellow-file5-police-bottom-remove-2",
           "sourceText": "【파트너 황】【FILE5】【선언】【슬립】〚현장에 있는 레벨 7 이하의 특징 [경시청]을 가진 캐릭터 1장을 덱 맨 아래로 옮긴다〛 - 캐릭터를 1장까지 선택하여 리무브한다.",
-          "interpretation": "파트너 색상이 황이고 자신의 파일이 5장 이상인 자신의 턴에, 이 카드를 슬립시키고 자신의 현장에 있는 레벨 7 이하·특징 [경시청] 캐릭터 1장을 덱 맨 아래로 옮긴다. 이어서 상대 현장 캐릭터를 최대 1장 선택해 리무브한다.",
-          "draftStatus": "draft_candidate",
-          "approvalStatus": "pending",
+          "interpretation": "등장 시 효과와 파트너 황·FILE5 선언 효과를 각각 실행 정의로 등록했습니다. 등장 시 레벨 7 이하 캐릭터 리무브, 선언 시 자신의 레벨 7 이하 경시청 캐릭터를 덱 아래로 옮긴 뒤 상대 캐릭터 리무브를 순서대로 처리합니다.",
+          "draftStatus": "dsl_validated_approved",
+          "approvalStatus": "approved",
           "confidence": "high",
-          "reviewNotes": "FILE5 조건은 player.file.count >= 5로 구현했다. 효과 순서와 대상 소유자를 확인한 규칙대로 반영했다.",
+          "reviewNotes": "등장 시 효과와 파트너 황·FILE5 선언 효과를 각각 실행 정의로 등록했습니다. 등장 시 레벨 7 이하 캐릭터 리무브, 선언 시 자신의 레벨 7 이하 경시청 캐릭터를 덱 아래로 옮긴 뒤 상대 캐릭터 리무브를 순서대로 처리합니다.",
           "proposedDefinition": {
             "effectId": "card-0808-activated-partner-yellow-file5-police-bottom-remove",
             "cardIds": [
@@ -914,11 +914,11 @@
         {
           "candidateId": "b10068-on-enter-remove-ap8000-1",
           "sourceText": "【파트너 황】【등장 시】 - AP 8000 이하의 캐릭터를 1장까지 선택하여 리무브한다.\n【인연 : 후루야 레이】 - 자신의 턴 종료 시, 자신의 덱에서 위쪽부터 2장의 카드를 확인한다. 그 중에서 〚카드명 [후루야 레이] 또는 [모로후시 히로미츠] 또는 [다테 와타루] 또는 [하기와라 켄지] 또는 [마츠다 진페이]〛 중 1장까지 공개하여 패에 추가하고, 나머지는 리무브 에이리어로 옮긴다.",
-          "interpretation": "파트너 카드의 색상이 황이고 이 카드가 등장했을 때, 상대 현장의 AP 8000 이하 캐릭터를 최대 1장 선택해 리무브한다.",
-          "draftStatus": "draft_candidate",
-          "approvalStatus": "pending",
-          "confidence": "medium",
-          "reviewNotes": "파트너 황 조건을 conditions에 명시했다. 소유 위치 수식어 없는 캐릭터 리무브의 대상은 사용자가 확인한 일반 해석에 따라 상대 현장이다.",
+          "interpretation": "파트너 황 조건을 확인한 뒤 등장 시 AP 8000 이하 상대 캐릭터를 최대 1장 리무브합니다.",
+          "draftStatus": "dsl_validated_approved",
+          "approvalStatus": "approved",
+          "confidence": "high",
+          "reviewNotes": "파트너 황 조건을 확인한 뒤 등장 시 AP 8000 이하 상대 캐릭터를 최대 1장 리무브합니다.",
           "proposedDefinition": {
             "effectId": "card-1124-on-enter-remove-ap8000",
             "cardIds": [
@@ -985,11 +985,11 @@
         {
           "candidateId": "b10068-end-turn-search-listed-police-academy-2",
           "sourceText": "【파트너 황】【등장 시】 - AP 8000 이하의 캐릭터를 1장까지 선택하여 리무브한다.\n【인연 : 후루야 레이】 - 자신의 턴 종료 시, 자신의 덱에서 위쪽부터 2장의 카드를 확인한다. 그 중에서 〚카드명 [후루야 레이] 또는 [모로후시 히로미츠] 또는 [다테 와타루] 또는 [하기와라 켄지] 또는 [마츠다 진페이]〛 중 1장까지 공개하여 패에 추가하고, 나머지는 리무브 에이리어로 옮긴다.",
-          "interpretation": "자신의 턴 종료 시 이 카드가 자신의 현장에 남아 있고, 자신의 현장에 카드명에 [후루야 레이]가 포함된 카드가 있을 때 발동한다. 덱 위 2장 중 지정된 다섯 카드명 중 하나를 최대 1장 공개해 상대 확인 후 손패에 넣고, 선택되지 않은 카드는 리무브한다. 조건에 맞는 카드가 없으면 공개나 손패 이동 없이 2장 모두 리무브한다.",
-          "draftStatus": "draft_candidate",
-          "approvalStatus": "pending",
+          "interpretation": "후루야 레이가 현장에 있을 때 턴 종료 시 덱 위 2장을 확인해 지정된 경찰학교 동기 캐릭터를 최대 1장 공개·패에 추가하고, 나머지는 리무브 에이리어로 이동합니다.",
+          "draftStatus": "dsl_validated_approved",
+          "approvalStatus": "approved",
           "confidence": "high",
-          "reviewNotes": "사용자가 [후루야 레이]를 인연 조건으로 확정했다. [모로후시 히로미츠]는 검색 대상 다섯 카드명 중 하나로 처리한다. 이름 포함형 인연 조건과 실제 공개 확인을 적용했다.",
+          "reviewNotes": "후루야 레이가 현장에 있을 때 턴 종료 시 덱 위 2장을 확인해 지정된 경찰학교 동기 캐릭터를 최대 1장 공개·패에 추가하고, 나머지는 리무브 에이리어로 이동합니다.",
           "proposedDefinition": {
             "effectId": "card-1124-end-turn-search-listed-police-academy",
             "cardIds": [
@@ -1110,11 +1110,11 @@
         {
           "candidateId": "d05009-native-general-partner-rules-1",
           "sourceText": "【파트너 황】 - 〚돌격〛(등장한 턴부터 바로 액션 수행 가능)",
-          "interpretation": "파트너 색상에 따른 키워드 부여는 지속 조건 처리와 관련되어 현재 카드 DSL 초안 카탈로그에 중복 등록하지 않습니다.",
-          "draftStatus": "native_general_partner_rules",
-          "approvalStatus": "not_required",
-          "confidence": "low",
-          "reviewNotes": "파트너 색상에 따른 키워드 부여는 지속 조건 처리와 관련되어 현재 카드 DSL 초안 카탈로그에 중복 등록하지 않습니다."
+          "interpretation": "파트너 황일 때 지속 효과로 돌격 키워드를 부여하는 정의를 등록했습니다.",
+          "draftStatus": "dsl_validated_approved",
+          "approvalStatus": "approved",
+          "confidence": "high",
+          "reviewNotes": "파트너 황일 때 지속 효과로 돌격 키워드를 부여하는 정의를 등록했습니다."
         }
       ]
     },
@@ -1298,11 +1298,11 @@
         {
           "candidateId": "b09075p-activated-police-ap-plus-2000-1",
           "sourceText": "【해결편】 - 【질풍】 자신의 리무브 에이리어에 있는 레벨 6 이하의 〚특징 [경찰]〛 캐릭터를 1장까지 선택하여 등장시킨다. (이번 턴 자신의 현장에 가장 먼저 등장했을 때 발동)\n【선언】【슬립】 - 〚특징 [경찰]〛을 가진 캐릭터를 1장까지 선택하여, 턴 종료 시까지 AP를 +2000한다.",
-          "interpretation": "자신의 턴 중 원하는 타이밍에 이 카드를 슬립시키고, 자신의 현장에 있는 특징 [경찰] 캐릭터를 최대 1장 선택해 턴 종료 시까지 AP +2000을 부여한다. AI는 공격 직전 등 유리한 타이밍을 판단한다. 대상은 액티브 상태일 필요는 없지만, 전략상 액티브한 아군에게 부여하는 것이 유리할 수 있다.",
-          "draftStatus": "draft_candidate",
-          "approvalStatus": "pending",
+          "interpretation": "자신의 턴 중 슬립 비용을 지불하고 자신의 경찰 캐릭터 1장의 AP를 턴 종료 시까지 2000 올리는 능력입니다.",
+          "draftStatus": "dsl_validated_approved",
+          "approvalStatus": "approved",
           "confidence": "high",
-          "reviewNotes": "본인 턴 여부는 DSL 조건과 서버의 발동 권한에서 검사한다. 서버는 begin/file/main을 포함한 자신의 턴 중 어느 단계든 허용하고, 진행 중인 선택/응답이나 다른 효과가 있으면 발동을 막는다.",
+          "reviewNotes": "자신의 턴 중 슬립 비용을 지불하고 자신의 경찰 캐릭터 1장의 AP를 턴 종료 시까지 2000 올리는 능력입니다.",
           "proposedDefinition": {
             "effectId": "card-1015-activated-police-ap-plus-2000",
             "cardIds": [
@@ -1380,11 +1380,11 @@
         {
           "candidateId": "b09075p-solution-first-entry-recover-police-2",
           "sourceText": "【해결편】 - 【질풍】 자신의 리무브 에이리어에 있는 레벨 6 이하의 〚특징 [경찰]〛 캐릭터를 1장까지 선택하여 등장시킨다. (이번 턴 자신의 현장에 가장 먼저 등장했을 때 발동)",
-          "interpretation": "자신의 사건이 해결편이고 이번 턴 자신의 현장에 가장 먼저 등장했을 때, 자신의 리무브 에이리어에서 레벨 6 이하·특징 [경찰] 캐릭터를 최대 1장 선택해 현장에 등장시킨다.",
-          "draftStatus": "draft_candidate",
-          "approvalStatus": "pending",
+          "interpretation": "해결편에서 해당 턴 첫 캐릭터 등장 조건을 만족할 때 리무브 에이리어의 레벨 6 이하 경찰 캐릭터를 최대 1장 등장시킵니다.",
+          "draftStatus": "dsl_validated_approved",
+          "approvalStatus": "approved",
           "confidence": "high",
-          "reviewNotes": "해결편 조건과 이번 턴 첫 등장 조건을 DSL fact로 함께 검사하도록 했다.",
+          "reviewNotes": "해결편에서 해당 턴 첫 캐릭터 등장 조건을 만족할 때 리무브 에이리어의 레벨 6 이하 경찰 캐릭터를 최대 1장 등장시킵니다.",
           "proposedDefinition": {
             "effectId": "card-1015-solution-first-entry-recover-police",
             "cardIds": [
@@ -1475,11 +1475,11 @@
         {
           "candidateId": "b10078-review-required-1",
           "sourceText": "【히라메키】(증거에서 리무브될 때 발동한다) 카드를 1장 뽑는다.\n【컷인】【자신의 턴 중】 〚특징 [경찰]〛을 가진 캐릭터에게 【컷인】할 경우, AP＋2000 (자신 턴 중 컨택 시 패에서 리무브하여 사용)",
-          "interpretation": "히라메키 발동 이벤트와 컷인 대상 특징 조건은 현재 DSL의 일반 필드 트리거 및 고정 AP 보너스만으로 완전하게 표현되지 않습니다.",
-          "draftStatus": "review_required",
-          "approvalStatus": "pending",
-          "confidence": "low",
-          "reviewNotes": "히라메키 발동 이벤트와 컷인 대상 특징 조건은 현재 DSL의 일반 필드 트리거 및 고정 AP 보너스만으로 완전하게 표현되지 않습니다."
+          "interpretation": "히라메키(증거에서 리무브될 때 1장 드로우)는 DSL 트리거로 구현했습니다. 컷인은 네이티브 컷인 처리에서 자신의 턴 중 특징 [경찰] 캐릭터에 사용한 경우에만 AP +2000이 적용되도록 서버와 AI 판단을 보완했습니다.",
+          "draftStatus": "dsl_validated_approved",
+          "approvalStatus": "approved",
+          "confidence": "high",
+          "reviewNotes": "히라메키(증거에서 리무브될 때 1장 드로우)는 DSL 트리거로 구현했습니다. 컷인은 네이티브 컷인 처리에서 자신의 턴 중 특징 [경찰] 캐릭터에 사용한 경우에만 AP +2000이 적용되도록 서버와 AI 판단을 보완했습니다."
         }
       ]
     },
@@ -1758,11 +1758,11 @@
         {
           "candidateId": "b06084-review-required-1",
           "sourceText": "【파트너 황】【등장 시】 - 상대는 패를 공개한다. (그 후, 원래대로 되돌린다) 레벨 9 이하의 캐릭터를 1장까지 선택하여 리무브한다.\n【선언】【턴 1】 - 카드 1장을 뽑고, 〚수사 1〛(상대는 덱의 카드를 위에서부터 지정한 수만큼 공개하고, 원하는 순서대로 덱 아래로 옮긴다)을 수행한다. 레벨 7 이하의 카드가 발견된 경우, 자신은 패 1장을 리무브한다. 이 능력은 파트너 에이리어에서도 선언할 수 있다.\n【컷인】AP＋2000",
-          "interpretation": "상대 손패 공개 후 그 공개 집합에서 선택하는지 여부와 조사(덱 공개/순서 지정) 하위 절차, 파트너 영역 선언 지원을 각각 검증해야 합니다.",
-          "draftStatus": "review_required",
-          "approvalStatus": "pending",
-          "confidence": "low",
-          "reviewNotes": "상대 손패 공개 후 그 공개 집합에서 선택하는지 여부와 조사(덱 공개/순서 지정) 하위 절차, 파트너 영역 선언 지원을 각각 검증해야 합니다."
+          "interpretation": "상대 손패 공개·확인 단계를 거친 뒤 현장의 레벨 9 이하 캐릭터를 최대 1장 리무브하는 등장 효과와, 파트너 에이리어에서도 사용할 수 있는 드로우 1장·상대 덱 조사 1장·레벨 7 이하가 발견되면 손패 1장 리무브하는 선언 효과를 구현했습니다. 조사 카드는 공개 후 상대 덱 아래로 돌아가며 상대 확인을 기다립니다.",
+          "draftStatus": "dsl_validated_approved",
+          "approvalStatus": "approved",
+          "confidence": "high",
+          "reviewNotes": "상대 손패 공개·확인 단계를 거친 뒤 현장의 레벨 9 이하 캐릭터를 최대 1장 리무브하는 등장 효과와, 파트너 에이리어에서도 사용할 수 있는 드로우 1장·상대 덱 조사 1장·레벨 7 이하가 발견되면 손패 1장 리무브하는 선언 효과를 구현했습니다. 조사 카드는 공개 후 상대 덱 아래로 돌아가며 상대 확인을 기다립니다."
         }
       ]
     },
@@ -1783,11 +1783,11 @@
         {
           "candidateId": "b06085-review-required-1",
           "sourceText": "【파트너 황】【선언】【턴 1】【슬립】 - 상대의 증거를 1개까지 선택하여 덱의 맨 아래로 옮긴다. 상대방 현장에 있는 AP 8000 이하의 캐릭터를 1장까지 선택하면, 상대방은 그 카드를 앞면이 보이도록 한 채 증거로 얻는다. 상대방 현장에 있는 MR 캐릭터를 선택한 경우, 상대방은 덱의 카드 중 맨 위 1장을 앞면이 보이도록 한 채 증거로 얻는다.\n【히라메키】(증거에서 리무브될 때 발동한다) 캐릭터 1장을 선택하여 슬립시킨다.",
-          "interpretation": "MR 여부에 따라 추가 증거를 얻는 분기와 상대 증거 선택·덱 아래 이동이 연계됩니다. 현재 조건 평가에서 선택된 카드의 희귀도를 안전하게 분기하는 사실 경로가 확인되지 않았습니다.",
-          "draftStatus": "review_required",
-          "approvalStatus": "pending",
-          "confidence": "low",
-          "reviewNotes": "MR 여부에 따라 추가 증거를 얻는 분기와 상대 증거 선택·덱 아래 이동이 연계됩니다. 현재 조건 평가에서 선택된 카드의 희귀도를 안전하게 분기하는 사실 경로가 확인되지 않았습니다."
+          "interpretation": "슬립 비용의 턴 1 선언 효과를 구현했습니다. 상대 증거 최대 1장을 덱 아래로 옮기고, 상대 AP 8000 이하 캐릭터를 앞면 증거로 이동합니다. 선택한 캐릭터가 MR/MRP면 추가로 상대 덱 위 1장을 앞면 증거로 얻는 분기를 지원합니다. 증거에서 리무브될 때의 히라메키(캐릭터 1장 슬립)도 등록했습니다.",
+          "draftStatus": "dsl_validated_approved",
+          "approvalStatus": "approved",
+          "confidence": "high",
+          "reviewNotes": "슬립 비용의 턴 1 선언 효과를 구현했습니다. 상대 증거 최대 1장을 덱 아래로 옮기고, 상대 AP 8000 이하 캐릭터를 앞면 증거로 이동합니다. 선택한 캐릭터가 MR/MRP면 추가로 상대 덱 위 1장을 앞면 증거로 얻는 분기를 지원합니다. 증거에서 리무브될 때의 히라메키(캐릭터 1장 슬립)도 등록했습니다."
         }
       ]
     },
