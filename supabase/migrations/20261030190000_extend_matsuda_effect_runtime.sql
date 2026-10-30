@@ -164,6 +164,8 @@ $old$;
   v_definition:=replace(v_definition,v_anchor,v_replacement);
 
   -- Ensure evidence-card removal triggers only run when the card actually enters the remove area.
+  SELECT pg_get_functiondef('public.perform_private_turn_action_v2(uuid,text,jsonb)'::regprocedure)
+    INTO v_definition;
   v_anchor := $old$
        IF NOT EXISTS(SELECT 1 FROM jsonb_array_elements(coalesce(v_after_evidence,'[]'::jsonb)) e(value)
          WHERE e.value->>'instance_id'=v_old_evidence_card->>'instance_id') THEN
