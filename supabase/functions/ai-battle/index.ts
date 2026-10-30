@@ -112,9 +112,8 @@ function hasReadyPr181AnyTiming(state: any, aiId: string): boolean {
   const aiBoard = (Array.isArray(state.boards) ? state.boards : [])
     .find((board: any) => board.user_id === aiId);
   const ownField = Array.isArray(aiBoard?.field_cards) ? aiBoard.field_cards : [];
-  // Once PR181 has put a charge[case] character onto the field, keep the AI
-  // worker active long enough to perform its immediate investigation as well.
-  if (ownField.some((card: any) => isCharacter(card) && isActive(card) && hasCaseOnlyCharge(card))) return true;
+  // PR181's off-turn activation remains available; charge keywords grant attacks,
+  // never an immediate investigation action.
   if (!canDeployTokyoPoliceFromRemoveArea(state)) return false;
   return ownField.some((card: any) => isPr181AnyTimingSource(card) && isActive(card));
 }
@@ -535,8 +534,7 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
     && (!card.summoned_this_turn || hasCharge(card)))
     .sort((a: any, b: any) => cardAp(b) - cardAp(a));
   const characterAttackers = activeAttackers.filter((card: any) => !hasCaseOnlyCharge(card));
-  const evidenceAttackers = activeAttackers.filter((card: any) =>
-    !hasCaseOnlyCharge(card) && !hasCharacterOnlyCharge(card));
+  const evidenceAttackers = activeAttackers.filter((card: any) => !hasCharacterOnlyCharge(card));
   const characterCount = field.filter((card: any) => isCharacter(card)).length;
   const level = Math.max(0, Number(me.file_count || 0)) + (me.partner_assist_used ? 1 : 0);
   const basePlayed = Boolean(me.base_card_played_this_turn || me.character_played_this_turn);
@@ -558,23 +556,6 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
     return { action: "place_files" };
   }
   if (state.turn_step !== "main") return null;
-
-  // PR181 may resolve during the opponent's turn. The deployed charge[case]
-  // character gets exactly the immediate case action (investigate), not contact.
-  if (field.some((card: any) => isCharacter(card) && isActive(card) && hasCaseOnlyCharge(card))) {
-    const caseOnlyAttacker = field.find((card: any) =>
-      isCharacter(card) && isActive(card) && hasCaseOnlyCharge(card));
-    if (caseOnlyAttacker) {
-      return {
-        action: "investigate",
-        payload: {
-          instance_id: caseOnlyAttacker.instance_id,
-          evidence_count: Math.max(0, Math.min(3, Number(caseOnlyAttacker.lp || 1))),
-          allow_newly_played: true,
-        },
-      };
-    }
-  }
 
   const solutionFileThreshold = state.first_player_user_id === aiId ? 7 : 6;
   const canTransitionSolution = !isSolution
@@ -885,13 +866,7 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
       }
     }
     if (!decision) {
-      const canResolveCaseChargeNow = canUseAnyTiming
-        && state.current_turn_user_id !== battle.ai_user_id
-        && (Array.isArray(state?.boards) ? state.boards : [])
-          .filter((board: any) => board.user_id === battle.ai_user_id)
-          .some((board: any) => (Array.isArray(board.field_cards) ? board.field_cards : [])
-            .some((card: any) => isCharacter(card) && isActive(card) && hasCaseOnlyCharge(card)));
-      decision = state.current_turn_user_id === battle.ai_user_id || pending || canResolveCaseChargeNow
+      decision = state.current_turn_user_id === battle.ai_user_id || pending
         ? chooseTurnAction(state, battle.ai_user_id, battle.last_next_hint_turn_number)
         : chooseActivatedAbility(state, battle.ai_user_id);
     }
