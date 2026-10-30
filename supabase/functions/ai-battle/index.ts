@@ -87,22 +87,24 @@ function cardIdentifierValues(card: any): string[] {
   const sourceData = card?.sourceData && typeof card.sourceData === "object" ? card.sourceData : {};
   const raw = card?.raw && typeof card.raw === "object" ? card.raw : {};
   const candidates = [
-    card?.internal_card_id, card?.internalCardId, card?.id_code, card?.idCode, card?.cardId,
+    card?.internal_card_id, card?.internalCardId, card?.id_code, card?.idCode,
+    card?.card_id, card?.cardId, card?.card_num, card?.cardNum,
     sourceData?.internal_card_id, sourceData?.internalCardId, sourceData?.id_code,
     sourceData?.idCode, sourceData?.card_id, sourceData?.cardId,
-    raw?.internal_card_id, raw?.internalCardId, raw?.id_code, raw?.idCode, raw?.cardId,
+    raw?.internal_card_id, raw?.internalCardId, raw?.id_code, raw?.idCode,
+    raw?.card_id, raw?.cardId, raw?.card_num, raw?.cardNum,
     raw?.sourceData?.internal_card_id, raw?.sourceData?.internalCardId,
     raw?.sourceData?.card_id, raw?.sourceData?.cardId,
   ];
   // Only explicit canonical ID fields are accepted. Printing codes, database row
   // IDs, card numbers, and UUID/key fields are never parsed as card identities.
   return candidates.map((value) => String(value ?? "").trim().toLocaleUpperCase())
-    .map((value) => value.replace(/^ID\\s*:\\s*/u, ""))
-    .filter((value) => /^\\d{4}$/u.test(value));
+    .map((value) => value.replace(/^ID\s*:\s*/u, ""))
+    .filter((value) => /^\d{4}$/u.test(value));
 }
 function matchesInternalCardId(card: any, internalId: string): boolean {
-  const wanted = String(internalId ?? "").trim().replace(/^ID\\s*:\\s*/iu, "");
-  return /^\\d{4}$/u.test(wanted) && cardIdentifierValues(card).includes(wanted);
+  const wanted = String(internalId ?? "").trim().replace(/^ID\s*:\s*/iu, "");
+  return /^\d{4}$/u.test(wanted) && cardIdentifierValues(card).includes(wanted);
 }
 function dslKeywordValues(card: any): string[] {
   const fields = [card?.dsl_keywords, card?.dsl_continuous_keywords, card?.keywords, card?.keyword_tags, card?.keyword];
@@ -142,7 +144,7 @@ function normalizedColor(value: unknown): string {
   return token;
 }
 function isBasicSearchEvent(card: any) {
-  // All six same-pattern level-1 search events are keyed by their four-digit ID.
+  // Search events share one rules implementation per four-digit internal ID.
   return ["0144", "0158", "0102", "0116", "0130", "0381"]
     .some((id) => matchesInternalCardId(card, id));
 }
