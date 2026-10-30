@@ -325,16 +325,8 @@ $new$;
 
   SELECT pg_get_functiondef('public.get_private_ai_card_effect_activations_v1(uuid,uuid)'::regprocedure)
     INTO v_definition;
-  v_anchor := $old$
- END LOOP;
- END LOOP;
-
-
- IF coalesce(v_is_own_turn,false)$old$;
+  v_anchor := $old$ IF coalesce(v_is_own_turn,false)$old$;
   v_replacement := $new$
- END LOOP;
- END LOOP;
-
  IF v_board.partner_mr_card IS NOT NULL
     AND public.private_card_effect_is_active_v1(v_board.partner_mr_card) THEN
    v_card:=v_board.partner_mr_card;
@@ -364,7 +356,6 @@ $new$;
      END IF;
    END LOOP;
  END IF;
-
  IF coalesce(v_is_own_turn,false)$new$;
   IF position(v_anchor IN v_definition)=0 THEN RAISE EXCEPTION 'AI partner activation insertion anchor missing'; END IF;
   v_definition:=replace(v_definition,v_anchor,v_replacement);
