@@ -59,10 +59,9 @@ BEGIN
  RETURN false;
 EXCEPTION WHEN invalid_text_representation OR numeric_value_out_of_range THEN RETURN false;
 END
-$function$
+$function$;
 
-
-DO $$
+DO $
 BEGIN
   IF NOT public.private_card_effect_filter_matches_v1(
     NULL,
