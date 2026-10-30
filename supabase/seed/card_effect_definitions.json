@@ -5763,16 +5763,16 @@
         {
           "op": "select_cards",
           "max": 1,
-          "min": 0,
+          "min": 1,
           "from": "seen",
           "when": {
             "fact": "vars.seen.count",
-            "value": 0,
-            "operator": "greater_than"
+            "operator": "greater_than",
+            "value": 0
           },
           "prompt": "공개한 카드 중 손패에 넣을 카드 1장을 선택하세요.",
           "saveAs": "to_hand",
-          "optional": true
+          "optional": false
         },
         {
           "op": "move_cards",
@@ -5782,19 +5782,19 @@
         {
           "op": "select_cards",
           "max": 1,
-          "min": 0,
+          "min": 1,
           "from": "seen",
           "when": {
             "allOf": [
               {
                 "fact": "vars.seen.count",
-                "value": 1,
-                "operator": "greater_than"
+                "operator": "greater_than",
+                "value": 1
               },
               {
                 "fact": "vars.to_hand.count",
-                "value": 0,
-                "operator": "greater_than"
+                "operator": "greater_than",
+                "value": 0
               }
             ]
           },
@@ -5807,7 +5807,7 @@
           },
           "prompt": "공개한 카드 중 리무브 에이리어로 보낼 카드 1장을 선택하세요.",
           "saveAs": "to_remove",
-          "optional": true
+          "optional": false
         },
         {
           "op": "move_cards",
@@ -6021,6 +6021,61 @@
       ],
       "oncePerTurn": true,
       "activationLabelKo": "턴당 1회 · 쿠도 신이치/모리 란 공개 비용 후 손패 리무브 및 레벨 7 이하 리무브"
+    },
+    {
+      "steps": [
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 0,
+          "from": "remove_area",
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "value": "character",
+                "operator": "equals"
+              },
+              {
+                "field": "level",
+                "value": 4,
+                "operator": "less_than_or_equal"
+              },
+              {
+                "field": "color",
+                "value": "white",
+                "operator": "equals"
+              }
+            ]
+          },
+          "prompt": "리무브 에이리어에서 레벨 4 이하 백색 캐릭터를 최대 1장 선택하세요.",
+          "saveAs": "deployment",
+          "optional": true
+        },
+        {
+          "op": "move_cards",
+          "to": "field",
+          "from": "deployment",
+          "when": {
+            "fact": "vars.deployment.count",
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "rested": true,
+          "entryMethod": "character_ability"
+        }
+      ],
+      "cardIds": [
+        "0205"
+      ],
+      "trigger": {
+        "event": "character.entered_field",
+        "timing": "after"
+      },
+      "effectId": "card-0205-on-enter-deploy-white-level4",
+      "cardNameJa": "怪盗キッド",
+      "cardNameKo": "괴도 키드",
+      "conditions": []
     }
   ]
 }
