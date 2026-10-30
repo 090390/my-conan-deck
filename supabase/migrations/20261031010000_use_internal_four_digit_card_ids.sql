@@ -8,7 +8,7 @@ LANGUAGE sql
 IMMUTABLE
 SET search_path TO 'pg_catalog', 'public'
 AS $function$
-  SELECT candidate.canonical_id
+  SELECT normalized.canonical_id
   FROM unnest(ARRAY[
     p_card ->> 'internal_card_id', p_card ->> 'internalCardId',
     p_card ->> 'id_code', p_card ->> 'idCode', p_card ->> 'cardId',
