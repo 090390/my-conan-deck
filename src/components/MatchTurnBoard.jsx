@@ -1666,16 +1666,15 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
             const hasBlueShinichiOnField = (myBoard?.field_cards || []).some((entry) =>
               cardHasRuleId({ ...infoFor(entry), ...entry }, "0735") && !entry.rested && entry.status !== "rested"
             );
-            const canUseB11015CutIn = !isB11015CutIn || ownTurn;
-            const canUseB10011CutIn = !isB10011CutIn || isKudoShinichiSubject || isMouriRanSubject;
-            const canUseCutIn = canUseB10078PoliceCutIn && canUseB11015CutIn && canUseB10011CutIn;
-
             const contactSubjectId = pending.attacker_user_id === userId
               ? pending.attacker_instance_id
               : pending.target_instance_id;
             const contactSubject = (myBoard?.field_cards || []).find((entry) => String(entry.instance_id) === String(contactSubjectId));
             const canUseB10078PoliceCutIn = !isB10078PoliceCutIn
               || (game?.current_turn_user_id === userId && normalizeCardTraits(contactSubject).includes("경찰"));
+            const canUseB11015CutIn = !isB11015CutIn || ownTurn;
+            const canUseB10011CutIn = !isB10011CutIn || isKudoShinichiSubject || isMouriRanSubject;
+            const canUseCutIn = canUseB10078PoliceCutIn && canUseB11015CutIn && canUseB10011CutIn;
             const bonus = isCulpritScalingCutIn
               ? (culpritCardCount + 1) * 2000
               : isB10078PoliceCutIn ? (canUseB10078PoliceCutIn ? 2000 : 0)
