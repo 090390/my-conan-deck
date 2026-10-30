@@ -1,5 +1,6 @@
 import React, { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import './index.css';
 import App from './App.jsx';
 
 class AppRenderErrorBoundary extends React.Component {
@@ -34,7 +35,12 @@ class AppRenderErrorBoundary extends React.Component {
   }
 }
 
-createRoot(document.getElementById('root')).render(
+const rootElement = document.getElementById('root');
+if (!rootElement) {
+  throw new Error('앱을 표시할 #root 요소를 찾지 못했습니다.');
+}
+
+createRoot(rootElement).render(
   <StrictMode>
     <AppRenderErrorBoundary>
       <App />
