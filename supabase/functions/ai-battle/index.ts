@@ -598,7 +598,7 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
   const evidenceAttackers = activeAttackers.filter((card: any) => !hasCharacterOnlyCharge(card));
   const characterCount = field.filter((card: any) => isCharacter(card)).length;
   const level = Math.max(0, Number(me.file_count || 0)) + (me.partner_assist_used ? 1 : 0);
-  const basePlayed = Boolean(me.base_card_played_this_turn || me.character_played_this_turn);
+  const basePlayed = Boolean(me.base_action_done || me.base_card_played_this_turn || me.base_character_played_this_turn || me.character_played_this_turn);
   const turnNumber = Number(state?.turn_number || 0);
   const nextHintAlreadyUsedThisTurn = turnNumber > 0 && Number(lastNextHintTurnNumber) === turnNumber;
   const isSolution = String(me.case_phase || "incident").toLocaleLowerCase() === "solution";
@@ -617,6 +617,11 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
     return { action: "place_files" };
   }
   if (state.turn_step !== "main") return null;
+
+  // An event is only left on the field while its effect is resolving. Once no
+  // pending response remains, finish it before selecting any other main action.
+  const resolvingEvent = field.find((card: any) => isEvent(card) && card.resolving);
+  if (resolvingEvent) return { action: "finish_event", payload: { instance_id: resolvingEvent.instance_id } };
 
   // [신속] alone grants an immediate investigation after entering the field.
   // [돌격] variants are handled only by the character/evidence attack branches below.
@@ -797,8 +802,6 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
     };
   }
 
-  const resolvingEvent = field.find((card: any) => isEvent(card) && card.resolving);
-  if (resolvingEvent) return { action: "finish_event", payload: { instance_id: resolvingEvent.instance_id } };
   return { action: "end_turn" };
 }
 
