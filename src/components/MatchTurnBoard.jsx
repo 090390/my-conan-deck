@@ -1708,7 +1708,32 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
         </section>
       </div>}
 
-      {isContactGuardPending && minimizedModal !== "contact" && <div style={{ position: "fixed", inset: 0, zIndex: 100025, padding: 12, display: "flex", justifyContent: "center", alignItems: "center", background: "rgba(0,0,0,.88)", backdropFilter: "blur(5px)" }}><section onDoubleClick={(event) => minimizeOnDoubleClick(event, "contact")} role="dialog" aria-modal="true" aria-label="컨택 가드 선택" style={{ width: "min(100%, 760px)", maxHeight: "90dvh", overflowY: "auto", padding: 15, border: "1px solid rgba(252,211,77,.6)", borderRadius: 12, background: "#111a2a", color: C.text }}><h2 style={{ margin: "0 0 7px", fontSize: 18 }}>컨택 공격 · 가드 지정</h2><p style={{ ...st.muted, marginBottom: 10 }}>{pending.target_user_id === userId ? "공격을 받을 캐릭터 대신 액티브 캐릭터로 가드할 수 있습니다. 가드한 캐릭터는 컨택 대결에서 패배하면 리무브되고, 승리하면 슬립 상태로 남습니다." : "상대가 공격 가드를 선택하고 있습니다."}</p>{pending.target_user_id === userId ? <><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(110px,1fr))", gap: 7 }}>{(myBoard?.field_cards || []).filter((card) => card.card_type === "character" && card.instance_id !== pending.target_instance_id && !card.rested && (card.status || "active") === "active").map((card) => <button key={card.instance_id} type="button" style={{ ...st.smallButton, padding: 7 }} disabled={loading} onClick={() => void runAction("guard_contact_with_character", { instance_id: card.instance_id })}>{infoFor(card)?.imageUrl ? <img src={infoFor(card).imageUrl} alt={nameOf(card)} style={{ width: "100%", aspectRatio: "3/4", objectFit: "contain" }} /> : <div style={st.faceDown} />}<span style={{ display: "block", marginTop: 4 }}>{nameOf(card)}<br/>AP {n(card.ap)+n(card.ap_bonus)}</span></button>)}</div><button type="button" style={{ ...st.button, width: "100%", marginTop: 10 }} disabled={loading} onClick={() => void runAction("decline_contact_guard")}>가드하지 않고 진행</button></> : <p style={{ marginTop: 10, color: C.gold, fontSize: 11 }}>수비자의 선택을 기다리는 중입니다.</p>}</section></div>}
+      {isContactGuardPending && minimizedModal !== "contact" && <div style={{ position: "fixed", inset: 0, zIndex: 100025, padding: 12, display: "flex", justifyContent: "center", alignItems: "center", background: "rgba(0,0,0,.88)", backdropFilter: "blur(5px)" }}><section onDoubleClick={(event) => minimizeOnDoubleClick(event, "contact")} role="dialog" aria-modal="true" aria-label="컨택 가드 선택" style={{ width: "min(100%, 760px)", maxHeight: "90dvh", overflowY: "auto", padding: 15, border: "1px solid rgba(252,211,77,.6)", borderRadius: 12, background: "#111a2a", color: C.text }}><h2 style={{ margin: "0 0 7px", fontSize: 18 }}>컨택 공격 · 가드 지정</h2>
+          <div aria-label="현재 공격 정보" style={{ margin: "8px 0 11px", padding: 10, border: "1px solid rgba(252,211,77,.35)", borderRadius: 9, background: "rgba(120,83,10,.12)" }}>
+            <strong style={{ display: "block", marginBottom: 7, color: C.gold, fontSize: 10 }}>현재 공격 상황</strong>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 8 }}>
+              {[{
+                title: "공격자",
+                board: contactAttackerBoard,
+                card: contactAttackerCard,
+                ap: n(pending.attacker_ap) + n(pending.attacker_bonus),
+              }, {
+                title: "공격 대상",
+                board: contactTargetBoard,
+                card: contactTargetCard,
+                ap: n(pending.target_ap) + n(pending.target_bonus),
+              }].map((entry) => (
+                <div key={entry.title} style={{ minWidth: 0, padding: 8, border: "1px solid rgba(255,255,255,.1)", borderRadius: 7, background: "#080d16" }}>
+                  <div style={{ color: C.muted, fontSize: 9 }}>{entry.title} · {entry.board?.display_name || "플레이어"}</div>
+                  <strong style={{ display: "block", marginTop: 4, fontSize: 11, overflowWrap: "anywhere" }}>{entry.card ? nameOf(entry.card) : "카드 정보를 불러오는 중"}</strong>
+                  <div style={{ marginTop: 4, color: C.gold, fontSize: 10 }}>AP {entry.ap || (n(entry.card?.ap) + n(entry.card?.ap_bonus))}</div>
+                </div>
+              ))}
+            </div>
+            <p style={{ margin: "8px 0 0", color: C.text, fontSize: 10, lineHeight: 1.5 }}>
+              {contactAttackerCard ? nameOf(contactAttackerCard) : "공격자"}가 {contactTargetCard ? nameOf(contactTargetCard) : "대상 캐릭터"}를 공격하고 있습니다. 아래에서 대신 가드할 액티브 캐릭터를 선택하세요.
+            </p>
+          </div><p style={{ ...st.muted, marginBottom: 10 }}>{pending.target_user_id === userId ? "공격을 받을 캐릭터 대신 액티브 캐릭터로 가드할 수 있습니다. 가드한 캐릭터는 컨택 대결에서 패배하면 리무브되고, 승리하면 슬립 상태로 남습니다." : "상대가 공격 가드를 선택하고 있습니다."}</p>{pending.target_user_id === userId ? <><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(110px,1fr))", gap: 7 }}>{(myBoard?.field_cards || []).filter((card) => card.card_type === "character" && card.instance_id !== pending.target_instance_id && !card.rested && (card.status || "active") === "active").map((card) => <button key={card.instance_id} type="button" style={{ ...st.smallButton, padding: 7 }} disabled={loading} onClick={() => void runAction("guard_contact_with_character", { instance_id: card.instance_id })}>{infoFor(card)?.imageUrl ? <img src={infoFor(card).imageUrl} alt={nameOf(card)} style={{ width: "100%", aspectRatio: "3/4", objectFit: "contain" }} /> : <div style={st.faceDown} />}<span style={{ display: "block", marginTop: 4 }}>{nameOf(card)}<br/>AP {n(card.ap)+n(card.ap_bonus)}</span></button>)}</div><button type="button" style={{ ...st.button, width: "100%", marginTop: 10 }} disabled={loading} onClick={() => void runAction("decline_contact_guard")}>가드하지 않고 진행</button></> : <p style={{ marginTop: 10, color: C.gold, fontSize: 11 }}>수비자의 선택을 기다리는 중입니다.</p>}</section></div>}
 
       {isContactPending && minimizedModal !== "contact" && <div style={{ position: "fixed", inset: 0, zIndex: 100030, padding: 12, display: "flex", justifyContent: "center", alignItems: "center", background: "rgba(0,0,0,.86)", backdropFilter: "blur(5px)" }}>
         <section onDoubleClick={(event) => minimizeOnDoubleClick(event, "contact")} role="dialog" aria-modal="true" aria-label="컨택 및 컷인 선택" style={{ width: "min(100%, 700px)", maxHeight: "90dvh", overflowY: "auto", padding: 15, border: "1px solid rgba(251,113,133,.6)", borderRadius: 12, background: "#111a2a", color: C.text, boxShadow: "0 24px 70px rgba(0,0,0,.7)" }}>
