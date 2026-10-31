@@ -932,7 +932,17 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
         });
         if (optionsError) throw optionsError;
         const options = Array.isArray(effectOptions?.options) ? effectOptions.options : [];
-        const ids = options.map((option: any) => String(option?.instance_id || option?.card?.instance_id || "")).filter(Boolean);
+        const restTargetEffects = new Set([
+          "card-0211-hirameki-rest-character",
+          "card-0691-hirameki-rest-character",
+          "card-0704-hirameki-rest-character",
+          "card-1197-activated-ready-ap-minus2000-and-rest-character",
+        ]);
+        const preferOpponentRestTarget = restTargetEffects.has(String(pending.effect_id || ""));
+        const targetOptions = preferOpponentRestTarget
+          ? options.filter((option: any) => String(option?.owner_user_id || "") !== String(battle.ai_user_id))
+          : options;
+        const ids = targetOptions.map((option: any) => String(option?.instance_id || option?.card?.instance_id || "")).filter(Boolean);
         if (pending.type === "card_effect_order") {
           decision = { action: "card_effect_continue", payload: { selected_instance_ids: ids } };
         } else {
