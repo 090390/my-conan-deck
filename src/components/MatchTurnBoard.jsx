@@ -929,7 +929,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
       : <div role={onClick ? "button" : "img"} tabIndex={onClick ? 0 : undefined} onClick={onClick || undefined} onKeyDown={onClick ? (event) => { if (event.key === "Enter" || event.key === " ") onClick(); } : undefined} style={{ ...style, display: "grid", placeItems: "center", color: C.muted, border: 0, fontSize: 10 }}>이미지 없음</div>;
   }
 
-  function ZoneCard({ instance, rested = false, ownerId, mine = false, eventResolving = false }) {
+  function ZoneCard({ instance, rested = false, ownerId, mine = false, eventResolving = false, canManualEffect = false }) {
     const isEvent = instance.card_type === "event";
     const cardStatus = instance.status === "stunned"
       ? "stunned"
@@ -1199,7 +1199,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
           <div style={{ padding: 9, borderRadius: 7, border: "1px solid rgba(148,163,184,.13)", background: "#090f1b" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 8, marginBottom: 8 }}><strong style={{ color: C.muted, fontSize: 10 }}>{opponentBoard?.display_name || "상대"} · 현장</strong><span style={st.muted}>{opponentBoard?.field_cards?.length || 0}장</span></div>
             <div className="mock-field-row">
-              {(opponentBoard?.field_cards || []).map((card) => <ZoneCard key={card.instance_id} instance={card} rested={Boolean(card.rested)} ownerId={opponentBoard.user_id} mine={false} eventResolving={Boolean(card.resolving)} />)}
+              {(opponentBoard?.field_cards || []).map((card) => <ZoneCard key={card.instance_id} instance={card} rested={Boolean(card.rested)} ownerId={opponentBoard.user_id} mine={false} eventResolving={Boolean(card.resolving)} canManualEffect={canManualEffect} />)}
               {!opponentBoard?.field_cards?.length && <p style={st.muted}>현장에 카드가 없습니다.</p>}
             </div>
           </div>
@@ -1265,7 +1265,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
           <div style={{ padding: 9, borderRadius: 7, border: "1px solid rgba(148,163,184,.13)", background: "#090f1b" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 8, marginBottom: 8 }}><strong style={{ color: C.muted, fontSize: 10 }}>내 현장</strong><span style={st.muted}>{myBoard?.field_cards?.length || 0}장 · {isMyTurn ? "내 턴" : "상대 턴"}</span></div>
             <div className="mock-field-row">
-              {(myBoard?.field_cards || []).map((card) => <ZoneCard key={card.instance_id} instance={card} rested={Boolean(card.rested)} ownerId={userId} mine eventResolving={Boolean(card.resolving)} />)}
+              {(myBoard?.field_cards || []).map((card) => <ZoneCard key={card.instance_id} instance={card} rested={Boolean(card.rested)} ownerId={userId} mine eventResolving={Boolean(card.resolving)} canManualEffect={canManualEffect} />)}
               {!myBoard?.field_cards?.length && <p style={st.muted}>아직 현장에 등장한 카드가 없습니다.</p>}
             </div>
           </div>
