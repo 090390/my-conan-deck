@@ -598,12 +598,12 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
   const evidenceAttackers = activeAttackers.filter((card: any) => !hasCharacterOnlyCharge(card));
   const characterCount = field.filter((card: any) => isCharacter(card)).length;
   const level = Math.max(0, Number(me.file_count || 0)) + (me.partner_assist_used ? 1 : 0);
-  const basePlayed = Boolean(me.base_action_done || me.base_card_played_this_turn || me.base_character_played_this_turn || me.character_played_this_turn);
+  // Partner assist/deduction and other non-card actions may set base_action_done;\n  // Next Hint is unlocked only after the actual basic character/event card play.\n  const basePlayed = Boolean(me.base_card_played_this_turn || me.base_character_played_this_turn || me.character_played_this_turn);
   const turnNumber = Number(state?.turn_number || 0);
   const nextHintAlreadyUsedThisTurn = turnNumber > 0 && Number(lastNextHintTurnNumber) === turnNumber;
   const isSolution = String(me.case_phase || "incident").toLocaleLowerCase() === "solution";
   const canPlanNextHint = Boolean(
-    me.base_action_done && !me.next_hint_used && !nextHintAlreadyUsedThisTurn
+    basePlayed && !me.next_hint_used && !nextHintAlreadyUsedThisTurn
       && isSolution && Number(me.file_count || 0) >= 4 && characterCount < 5
   );
 
