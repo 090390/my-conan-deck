@@ -1107,7 +1107,8 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   const evidenceRemoveAcknowledgedIds = Array.isArray(pending?.acknowledged_user_ids) ? pending.acknowledged_user_ids : [];
   const myEvidenceRemoveAcknowledged = evidenceRemoveAcknowledgedIds.includes(userId);
   const winnerBoard = boards.find((board) => board.user_id === game?.winner_user_id);
-  const winnerName = game?.winner_display_name || winnerBoard?.display_name || "플레이어";
+  const isAiWinner = Boolean(isAIBattle && game?.winner_user_id && game.winner_user_id !== userId);
+  const winnerName = isAiWinner ? "AI 탐정" : game?.winner_display_name || winnerBoard?.display_name || "플레이어";
   const minimizedModalLabels = { remove: "리무브 에이리어", peek: "덱 위 카드 살펴보기", sharedPeek: "상대가 공개한 카드", handReveal: "상대 손패 공개 확인", contact: "컨택 · 컷인 선택", evidence: "증거 카드 공개", detail: "카드 상세 정보", opponentDeck: "상대 덱 보기", deckRemove: "덱 위 카드 리무브 확인" };
   const minimizedModalExists = Boolean(
     (minimizedModal === "remove" && showRemoveArea) ||
