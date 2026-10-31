@@ -2298,7 +2298,7 @@ export default function App() {
   }
 
   return (
-    <main className={`app-shell min-h-screen bg-[#080d17] text-slate-100${gameFieldOnly ? ' app-shell-game' : ''}`}>
+    <main className="app-shell min-h-screen bg-[#080d17] text-slate-100">
       {/* Tailwind 미적용 환경에서도 카드 그리드와 상세 모달의 핵심 레이아웃이 유지되도록 하는 안전장치 */}
       <style>{`
         .conan-card-grid {
@@ -2357,7 +2357,7 @@ export default function App() {
         .app-shell .app-nav button[class*="bg-rose-600"] { color: white; background: #e11d48; }
         .app-header a { display: inline-flex; align-items: center; min-height: 36px; border: 1px solid rgba(255,255,255,.12); border-radius: 9px; padding: 7px 11px; color: #cbd5e1; text-decoration: none; font-size: 12px; font-weight: 650; }
         .app-header a:hover { border-color: rgba(251,113,133,.55); color: white; }
-        .app-panel { min-width: 0; padding: 14px !important; border: 1px solid rgba(255,255,255,.09) !important; border-radius: 16px !important; background: #101827 !important; box-shadow: 0 12px 36px rgba(0,0,0,.12); }
+        .app-panel { min-width: 0; padding: 16px !important; border: 1px solid rgba(255,255,255,.09) !important; border-radius: 16px !important; background: #101827 !important; box-shadow: 0 12px 36px rgba(0,0,0,.12); }
         .card-list-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin: 0 0 14px !important; }
         .card-list-toolbar > div { display: flex; align-items: baseline; gap: 9px; }
         .card-list-toolbar h2, .deck-panel h2 { margin: 0; color: #f1f5f9; font-size: 16px; font-weight: 800; }
@@ -2603,16 +2603,16 @@ export default function App() {
           .conan-card-grid { grid-template-columns: repeat(9, minmax(0, 1fr)) !important; }
         }
         @media (max-width: 800px) {
-          .app-shell { padding: 14px !important; margin: 0 !important; }
+          .app-shell { padding: 16px !important; margin: 0 !important; }
           .conan-card-grid { grid-template-columns: repeat(7, minmax(0, 1fr)) !important; }
           .card-detail-header h2 { font-size: 18px; }
           .card-detail-layout { grid-template-columns: minmax(0, 1fr) !important; }
           .card-detail-layout > div:first-child > img { max-width: 185px; max-height: 34vh; }
         }
         @media (max-width: 600px) {
-          .app-shell { padding: 10px !important; margin: 0 !important; }
+          .app-shell { padding: 14px !important; margin: 0 !important; }
           .app-header h1 { font-size: 20px; }
-          .app-panel { padding: 10px !important; border-radius: 12px !important; }
+          .app-panel { padding: 14px !important; border-radius: 12px !important; }
           .conan-card-grid { grid-template-columns: repeat(5, minmax(0, 1fr)) !important; gap: 6px !important; }
           .card-tile-caption { padding: 5px !important; }
           .card-tile-title { font-size: 10px !important; }
@@ -2630,8 +2630,6 @@ export default function App() {
           .card-detail-layout { grid-template-columns: 220px minmax(0, 1fr) !important; }
           .card-meta-grid { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
         }
-        /* Keep the live match field edge-to-edge while catalog/deck views retain outer spacing. */
-        .app-shell.app-shell-game { padding: 0 !important; margin: 0 !important; }
       `}</style>
       <header className="app-header mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4" style={gameFieldOnly ? { position: "sticky", top: 0, zIndex: 1000, background: "#080d17", paddingTop: 6 } : undefined}>
         <h1 className="text-xl font-black tracking-tight md:text-2xl">명탐정 코난 TCG 도감</h1>
