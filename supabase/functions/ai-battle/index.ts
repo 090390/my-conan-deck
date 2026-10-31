@@ -442,6 +442,8 @@ function describeAction(decision: any, state: any, aiId: string) {
       return `AI 탐정: 카드 효과를 사용할 수 있는 ${cardName(card)} 이벤트를 발동했습니다.`;
     case "declare_solution":
       return "AI 탐정: 파일 수와 파트너 조건이 충족되어 해결편으로 전환했습니다.";
+    case "solve_case":
+      return "AI 탐정: 승리 조건을 충족해 사건 해결을 선언하고 승리했습니다.";
     case "next_hint_take_file":
       return "AI 탐정: 해결편에서 합법적으로 등장시킬 수 있는 카드가 확인되어 넥스트 힌트를 선언하고 파일 1장을 소비했습니다.";
     case "next_hint":
