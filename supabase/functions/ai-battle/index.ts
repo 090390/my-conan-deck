@@ -1034,26 +1034,16 @@ Deno.serve(async (req: Request) => {
       const room = Array.isArray(newRoom) ? newRoom[0] : newRoom;
       if (!room?.out_room_id || !room?.out_invite_code) throw new Error("AI 대전용 방을 생성하지 못했습니다.");
 
-      const { error: deckError } = await userClient.rpc("submit_private_room_deck", {
+      const { error: deckError } = await userClient.rpc("submit_private_room_deck_with_metadata_v1", {
         p_room_id: room.out_room_id,
         p_main_deck: humanDeck,
         p_partner_key: String(body.partner_key),
         p_event_key: String(body.event_key),
         p_event_rule_code: String(body.event_rule_code || ""),
+        p_partner_color: String(body.partner_color || ""),
+        p_event_has_non_blue_color: Boolean(body.event_has_non_blue_color),
       });
       if (deckError) throw deckError;
-      if (body.partner_color) {
-        const { error: humanPartnerColorError } = await userClient.rpc("set_private_room_partner_color_v1", {
-          p_room_id: room.out_room_id,
-          p_partner_color: String(body.partner_color),
-        });
-        if (humanPartnerColorError) throw humanPartnerColorError;
-      }
-      const { error: humanEventColorError } = await userClient.rpc("set_private_room_event_has_non_blue_color_v1", {
-        p_room_id: room.out_room_id,
-        p_has_non_blue_color: Boolean(body.event_has_non_blue_color),
-      });
-      if (humanEventColorError) throw humanEventColorError;
 
       const botId = await ensureBotAccount(service);
       const { error: battleError } = await service.rpc("create_private_ai_battle_v1", {
