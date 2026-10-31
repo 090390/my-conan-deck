@@ -6648,7 +6648,36 @@
     {
       "steps": [
         {
+          "op": "filter_cards",
+          "from": "hand",
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "value": "character",
+                "operator": "equals"
+              },
+              {
+                "field": "level",
+                "value": 7,
+                "operator": "less_than_or_equal"
+              },
+              {
+                "field": "color",
+                "value": "black",
+                "operator": "equals"
+              }
+            ]
+          },
+          "saveAs": "available_deployments"
+        },
+        {
           "op": "offer_reaction",
+          "when": {
+            "fact": "vars.available_deployments.count",
+            "value": 0,
+            "operator": "greater_than"
+          },
           "prompt": "FILE 6장 이상 조건을 충족했습니다. 버본을 리무브하고 손패의 레벨 7 이하 흑색 캐릭터를 최대 1장 등장시킬까요?",
           "saveAs": "remove_self",
           "choices": [
