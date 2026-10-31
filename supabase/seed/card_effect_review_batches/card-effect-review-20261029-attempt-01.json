@@ -772,7 +772,7 @@
           "sourceText": "【선언】【슬립】 - 자신의 리무브 에이리어에 있는 레벨 4 이하의 〚특징 [경시청]〛 캐릭터를 1장까지 선택하여 등장시킨다. 턴 종료 시까지 해당 캐릭터에게 〚돌격 [사건]〛(등장한 턴부터 바로 사건 대상 액션 수행 가능)과 “턴 종료 시, 이 캐릭터를 현장에서 덱 맨 아래로 옮긴다.”를 부여한다.",
           "interpretation": "선언 · 경시청 캐릭터 등장 후 턴 종료 시 덱 아래로 이동",
           "confidence": "high",
-          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
+          "reviewNotes": "실행 정의는 운영 카탈로그에 있으나 미구현 DSL 단계가 남아 있습니다: schedule_move_to_deck_bottom. 선택한 카드를 덱 아래로 예약 이동시키는 단계가 아직 실행기에서 지원되지 않습니다.",
           "proposedDefinition": {
             "effectId": "card-0732-activated-deploy-tokyo-police-temporary-charge-return",
             "cardIds": [
@@ -858,7 +858,10 @@
           "structuralValidation": {
             "status": "passed",
             "errors": []
-          }
+          },
+          "runtimeBlockers": [
+            "schedule_move_to_deck_bottom"
+          ]
         }
       ],
       "reviewNotes": "액티브 능력 비용으로 자신을 슬립, 리무브 에이리어의 경시청 레벨 4 이하 캐릭터 등장, 사건 행동용 돌격 부여, 해당 턴 종료 후 덱 아래 이동까지 구현."
@@ -1203,7 +1206,7 @@
           "sourceText": "이 캐릭터는 상대의 현장에 있는 레벨 7 이상의 액티브 상태 캐릭터를 지정하여 액션을 수행할 수 있다.\n【파트너 황】 - 〚돌격〛（등장한 턴부터 바로 액션 수행 가능）\n【자신의 턴 중】【턴 1】 - 이 캐릭터가, 이 캐릭터보다 AP가 높은 캐릭터와 컨택했을 때, 패 1장을 리무브해도 된다. 그렇게 했을 경우, 해당 컨택 동안 이 캐릭터의 AP를 +3000한다.",
           "interpretation": "자신의 턴 중 턴당 1회, 자신보다 AP가 높은 캐릭터와 컨택할 때 손패 1장을 리무브하면 해당 컨택 동안 AP +3000.",
           "confidence": "high",
-          "reviewNotes": "턴당 1회 제한을 활성 서버 카탈로그와 시드 정의에 반영했습니다.",
+          "reviewNotes": "실행 정의는 운영 카탈로그에 있으나 미구현 DSL 단계가 남아 있습니다: modify_contact_ap. 컨택 중 AP +3000을 반영하는 단계가 아직 실행기에서 지원되지 않습니다.",
           "proposedDefinition": {
             "effectId": "card-0938-contact-start-discard-for-ap-3000",
             "cardIds": [
@@ -1271,7 +1274,10 @@
           "structuralValidation": {
             "status": "passed",
             "errors": []
-          }
+          },
+          "runtimeBlockers": [
+            "modify_contact_ap"
+          ]
         }
       ],
       "reviewNotes": "파트너 황 돌격, 레벨 7 이상 액티브 대상 컨택 예외, 자신의 턴에 더 높은 AP 대상 컨택 중 손패 리무브 선택과 AP +3000을 연결."
@@ -1757,7 +1763,7 @@
           "draftStatus": "dsl_validated_approved",
           "approvalStatus": "approved",
           "confidence": "high",
-          "reviewNotes": "사용자가 대상 영역을 명확히 확정함. 등장 효과의 대상은 상대 현장 레벨 9 이하 캐릭터이며, 상대 손패는 전체 공개 후 확인 절차를 거쳐 원상 복귀한다. 운영 카탈로그도 opponent_field 선택 및 targetOwner=opponent로 실행하도록 구성되어 있음.",
+          "reviewNotes": "실행 정의는 운영 카탈로그에 있으나 미구현 DSL 단계가 남아 있습니다: reveal_opponent_hand, investigate_opponent_deck. 상대 손패 공개 확인 및 상대 덱 위 카드 조사 단계가 아직 실행기에서 지원되지 않습니다.",
           "reviewedSemantics": {
             "trigger": {
               "event": "character.entered_field",
@@ -1803,9 +1809,16 @@
                 }
               }
             ],
-            "runtimeBlockers": [],
+            "runtimeBlockers": [
+              "reveal_opponent_hand",
+              "investigate_opponent_deck"
+            ],
             "userConfirmed": true
-          }
+          },
+          "runtimeBlockers": [
+            "reveal_opponent_hand",
+            "investigate_opponent_deck"
+          ]
         }
       ]
     },
@@ -1930,7 +1943,7 @@
           "sourceText": "이 사건이 해결편에 접어들면, 나는 패 1장을 리무브한다.\n【해결편】【FILE5】【선언】【턴 1】〚뒷면인 증거 3개를 앞면으로 뒤집는다〛 - 자신의 현장에 있는 〚카드명 [마츠다 진페이]〛 중 1장까지 선택하여, 앞면 상태로 증거로 획득한다.",
           "interpretation": "뒷면 증거 3장 공개 · 마츠다 진페이 1장을 증거로 획득",
           "confidence": "high",
-          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
+          "reviewNotes": "실행 정의는 운영 카탈로그에 있으나 미구현 DSL 단계가 남아 있습니다: flip_evidence. 선택한 증거 카드를 앞면으로 뒤집는 단계가 아직 실행기에서 지원되지 않습니다.",
           "proposedDefinition": {
             "effectId": "card-1139-returning-detective-case-effect",
             "cardIds": [
@@ -2022,7 +2035,10 @@
           "structuralValidation": {
             "status": "passed",
             "errors": []
-          }
+          },
+          "runtimeBlockers": [
+            "flip_evidence"
+          ]
         }
       ],
       "reviewNotes": "해결편 진입 시 손패 리무브와 해결편/FILE5/뒷면 증거 3장 조건의 선언 효과를 실제 선택 UI에 연결."
@@ -2341,7 +2357,7 @@
           "sourceText": "【파트너 백】【자신의 턴 중】【턴 1】 - 자신의 현장에 〚카드명 [쿠도 유사쿠]〛가 등장했을 때, AP 8000 이하의 캐릭터를 1장까지 선택하여 리무브한다.\n【인연 : 쿠도 유사쿠】【선언】【턴 1】 - 자신의 현장에 있는 〚카드명 [쿠도 유사쿠]〛를 1장까지 선택하고, 턴 종료 시까지 “이 캐릭터의 【인연】은 지정된 카드명의 캐릭터가 자신의 현장에 있는 것으로 취급한다.”를 부여한다.",
           "interpretation": "턴당 1회 · 선택한 쿠도 유사쿠의 인연 조건 대체",
           "confidence": "high",
-          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
+          "reviewNotes": "실행 정의는 운영 카탈로그에 있으나 미구현 DSL 단계가 남아 있습니다: grant_bond_alias. 턴 종료까지 인연 이름을 임시로 추가하는 단계가 아직 실행기에서 지원되지 않습니다.",
           "proposedDefinition": {
             "effectId": "card-1166-activated-bond-alias",
             "cardIds": [
@@ -2405,7 +2421,10 @@
           "structuralValidation": {
             "status": "passed",
             "errors": []
-          }
+          },
+          "runtimeBlockers": [
+            "grant_bond_alias"
+          ]
         }
       ]
     },
@@ -2480,7 +2499,7 @@
           "sourceText": "【변장 시】 - 자신의 리무브 에이리어에 있는 〚카드명 [쿠도 유사쿠]〛을 1장까지 선택하여 패에 추가한다.\n【등장 시】 - 이 캐릭터를 슬립로 만들 수 있다. 그럴 경우, 패에서 레벨 6 이하의 〚카드명 [쿠도 유사쿠]〛를 1장까지 등장시키고, 자신의 덱에서 카드를 위에서부터 1장 뒤집어 그 캐릭터에 세트한 뒤, 카드를 1장 뽑는다.",
           "interpretation": "카드 원문의 character.entered_field 효과를 런타임 DSL로 구현했습니다.",
           "confidence": "high",
-          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
+          "reviewNotes": "실행 정의는 운영 카탈로그에 있으나 미구현 DSL 단계가 남아 있습니다: attach_top_card. 덱 맨 위 카드를 이 캐릭터 아래에 겹치는 단계가 아직 실행기에서 지원되지 않습니다.",
           "proposedDefinition": {
             "effectId": "card-0981-enter-sleep-deploy-yusaku-stack-draw",
             "cardIds": [
@@ -2584,7 +2603,10 @@
           "structuralValidation": {
             "status": "passed",
             "errors": []
-          }
+          },
+          "runtimeBlockers": [
+            "attach_top_card"
+          ]
         }
       ]
     },
@@ -2948,7 +2970,7 @@
           "sourceText": "【사건 탐정 VS 괴도】 자신의 턴 종료 시, 자신의 증거가 9개 이상인 경우 게임에서 승리한다.\n【사건 탐정 VS 괴도】【선언】【턴 1】 캐릭터 카드를 1장까지 선택하여 덱 밑으로 옮긴다.\n【등장 시】 서로의 증거를 합쳐 5개 이상일 경우, 카드를 2장 뽑고, 패에서 2장을 리무브한다. 합쳐서 4개 이하일 경우, 패에서 1장을 리무브해도 된다. 그렇게 한 경우, 자신은 증거 1개를 얻는다.\n자신의 턴 종료 시, 카드를 1장 뽑는다. 자신의 패가 5장 이상인 경우, 패에서 카드를 1장 리무브한다. 이 능력은 파트너 구역에서도 발동한다.\n【컷인】AP＋2000",
           "interpretation": "카드 원문의 player.turn_ended 효과를 런타임 DSL로 구현했습니다.",
           "confidence": "high",
-          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
+          "reviewNotes": "실행 정의는 운영 카탈로그에 있으나 미구현 DSL 단계가 남아 있습니다: win_game. 조건 충족 시 승리 상태로 종료하는 단계가 아직 실행기에서 지원되지 않습니다.",
           "proposedDefinition": {
             "effectId": "card-1258-win-at-nine-evidence-turn-end",
             "cardIds": [
@@ -2983,7 +3005,10 @@
           "structuralValidation": {
             "status": "passed",
             "errors": []
-          }
+          },
+          "runtimeBlockers": [
+            "win_game"
+          ]
         },
         {
           "candidateId": "implemented-card-1258-activated-return-character-to-deck-bottom",
@@ -3371,7 +3396,7 @@
           "sourceText": "【사건 탐정 VS 괴도】【선언】【턴 1】〚패 1장을 리무브한다〛: 이 캐릭터를 활성 상태로 만들고, 턴 종료 시까지 이 캐릭터의 AP를 -2000으로 만든다. 캐릭터 1장까지 선택하여 슬립 상태로 만든다. 이 능력은 양쪽의 증거가 합쳐서 5개 이상일 때 선언할 수 있다.\n【선언】【슬립】：상대의 현장에 있는 슬립 상태의 캐릭터를 1장까지 선택하고, 이 캐릭터와의 컨택을 발생시킨다. (이 캐릭터는 액션을 수행한 쪽의 캐릭터가 된다)",
           "interpretation": "상대 슬립 캐릭터에 컨택",
           "confidence": "high",
-          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
+          "reviewNotes": "실행 정의는 운영 카탈로그에 있으나 미구현 DSL 단계가 남아 있습니다: start_contact. 선택한 상대 슬립 캐릭터와 컨택을 개시하는 단계가 아직 실행기에서 지원되지 않습니다.",
           "proposedDefinition": {
             "effectId": "card-1197-activated-contact-opponent-rested",
             "cardIds": [
@@ -3422,7 +3447,10 @@
           "structuralValidation": {
             "status": "passed",
             "errors": []
-          }
+          },
+          "runtimeBlockers": [
+            "start_contact"
+          ]
         }
       ]
     },
@@ -4000,7 +4028,7 @@
           "sourceText": "【변장 시】 - 카드를 1장 뽑는다. 이 컨택 동안, 이 캐릭터의 AP를 +1000한다.\n【등장 시】 - 자신의 리무브 에이리어에 있는 레벨 4 이하의 【백】 캐릭터를 1장까지 선택하여, 슬립 상태로 등장시킨다.",
           "interpretation": "변장으로 등장한 이 캐릭터가 현재 컨택의 주체일 때 1장 드로우하고 해당 컨택에서 AP+1000.",
           "confidence": "high",
-          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
+          "reviewNotes": "실행 정의는 운영 카탈로그에 있으나 미구현 DSL 단계가 남아 있습니다: modify_contact_ap. 변장 후 컨택 AP +1000을 반영하는 단계가 아직 실행기에서 지원되지 않습니다.",
           "proposedDefinition": {
             "effectId": "card-0205-disguised-draw-and-ap",
             "cardIds": [
@@ -4031,7 +4059,10 @@
           "structuralValidation": {
             "status": "passed",
             "errors": []
-          }
+          },
+          "runtimeBlockers": [
+            "modify_contact_ap"
+          ]
         },
         {
           "candidateId": "implemented-card-0205-on-enter-lowlevel-white-rested",
@@ -4330,7 +4361,7 @@
           "sourceText": "이 사건이 해결편이 되었을 때, 나는 패 1장을 리무브한다.\n【파트너 청or백】【해결편】【선언】【턴 1】〚뒷면인 증거 2개를 앞면으로 뒤집는다〛: 자신의 현장에 있는 캐릭터 1장을 리무브해도 된다. 그렇게 했을 경우, 상대의 현장에 있는 레벨 7 이하의 MR이 아닌 슬립 상태의 캐릭터를 1장까지 선택하여 패로 옮기고, 상대는 패에서 카드 1장을 리무브한다. 선택한 캐릭터와 ID가 다른 카드를 패에서 리무브한 경우, 상대는 추가로 패에서 카드 1장을 리무브한다.",
           "interpretation": "뒷면 증거 2장 공개 · 캐릭터 리무브 및 상대 손패 리무브",
           "confidence": "high",
-          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
+          "reviewNotes": "실행 정의는 운영 카탈로그에 있으나 미구현 DSL 단계가 남아 있습니다: flip_evidence. 선택한 증거 카드를 앞면으로 뒤집는 단계가 아직 실행기에서 지원되지 않습니다.",
           "proposedDefinition": {
             "effectId": "card-1261-conan-vs-kid-case-effect",
             "cardIds": [
@@ -4538,7 +4569,10 @@
           "structuralValidation": {
             "status": "passed",
             "errors": []
-          }
+          },
+          "runtimeBlockers": [
+            "flip_evidence"
+          ]
         }
       ],
       "reviewNotes": "사건 해결편 진입 손패 리무브 및 파트너 청/백 조건 선언 능력을 선택된 증거 뒤집기·자신의 캐릭터 리무브·상대 손패 선택까지 연결."
