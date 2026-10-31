@@ -27,7 +27,7 @@
           "draftStatus": "dsl_validated_approved",
           "approvalStatus": "approved",
           "confidence": "high",
-          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
+          "reviewNotes": "10/31 운영 재검토: 파트너 황색 등장 시 돌격 부여와 컨택으로 상대 캐릭터를 리무브한 뒤 선택 반응·자기 리무브·경찰 캐릭터 등장 경로까지 활성 카탈로그 및 perform_private_turn_action_v2 트리거에서 확인했습니다.",
           "proposedDefinition": {
             "steps": [
               {
@@ -81,10 +81,7 @@
                 "displayNameKo": "돌격"
               }
             ],
-            "runtimeBlockers": [
-              "컨택으로 상대 캐릭터를 리무브한 결과 트리거",
-              "자기 자신 리무브 후 손패의 Police 캐릭터 추가 등장"
-            ],
+            "runtimeBlockers": [],
             "implementedSubset": "파트너가 황색인 경우 등장 시 턴 종료까지 돌격 부여"
           },
           "structuralValidation": {
@@ -1139,7 +1136,7 @@
           "draftStatus": "dsl_validated_approved",
           "approvalStatus": "approved",
           "confidence": "high",
-          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
+          "reviewNotes": "10/31 운영 재검토: 등장 시 파트너 황색 조건, 서버의 레벨 7 이상 액티브 대상 제한, 컨택 시작 이벤트, 손패 비용과 컨택 중 AP +3000 처리를 활성 카탈로그와 perform_private_turn_action_v2에서 확인했습니다.",
           "proposedDefinition": {
             "effectId": "card-0938-on-enter-partner-yellow-charge",
             "cardIds": [
@@ -1193,10 +1190,7 @@
                 "duration": "turn_end"
               }
             ],
-            "runtimeBlockers": [
-              "레벨 7 이상 액티브 상대 캐릭터를 대상으로 하는 액션 제한",
-              "컨택 결과 이벤트 및 손패 비용/일시 AP +3000"
-            ],
+            "runtimeBlockers": [],
             "implementedSubset": "파트너가 황색인 경우 등장 시 턴 종료까지 돌격 부여"
           },
           "structuralValidation": {
