@@ -6021,6 +6021,822 @@
       ],
       "oncePerTurn": true,
       "activationLabelKo": "턴당 1회 · 쿠도 신이치/모리 란 공개 비용 후 손패 리무브 및 레벨 7 이하 리무브"
+    },
+    {
+      "steps": [
+        {
+          "op": "pay_cost",
+          "cost": "sleep_source_character"
+        },
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 0,
+          "from": "both_fields",
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "value": "character",
+                "operator": "equals"
+              },
+              {
+                "field": "ap_current",
+                "value": 8000,
+                "operator": "less_than_or_equal"
+              }
+            ]
+          },
+          "prompt": "AP 8000 이하 캐릭터를 최대 1장 선택해 리무브합니다.",
+          "saveAs": "target",
+          "optional": true
+        },
+        {
+          "op": "move_cards",
+          "to": "remove_area",
+          "from": "target",
+          "when": {
+            "fact": "vars.target.count",
+            "value": 0,
+            "operator": "greater_than"
+          }
+        }
+      ],
+      "cardIds": [
+        "1039"
+      ],
+      "trigger": {
+        "event": "character.activated_ability",
+        "timing": "after"
+      },
+      "effectId": "card-1039-declare-remove-character-ap-8000",
+      "cardNameJa": "犯人",
+      "cardNameKo": "범인",
+      "conditions": [],
+      "oncePerTurn": true,
+      "activationLabelKo": "AP 8000 이하 캐릭터 리무브"
+    },
+    {
+      "steps": [
+        {
+          "op": "pay_cost",
+          "cost": "sleep_source_character"
+        },
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 0,
+          "from": "both_fields",
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "value": "character",
+                "operator": "equals"
+              },
+              {
+                "field": "level",
+                "value": 7,
+                "operator": "less_than_or_equal"
+              }
+            ]
+          },
+          "prompt": "레벨 7 이하 캐릭터를 최대 1장 선택해 리무브합니다.",
+          "saveAs": "target",
+          "optional": true
+        },
+        {
+          "op": "move_cards",
+          "to": "remove_area",
+          "from": "target",
+          "when": {
+            "fact": "vars.target.count",
+            "value": 0,
+            "operator": "greater_than"
+          }
+        }
+      ],
+      "cardIds": [
+        "1040"
+      ],
+      "trigger": {
+        "event": "character.activated_ability",
+        "timing": "after"
+      },
+      "effectId": "card-1040-declare-remove-character-level-7",
+      "cardNameJa": "犯人",
+      "cardNameKo": "범인",
+      "conditions": [
+        {
+          "fact": "player.event.has_culprit_trait",
+          "value": true,
+          "operator": "equals"
+        }
+      ],
+      "oncePerTurn": true,
+      "activationLabelKo": "레벨 7 이하 캐릭터 리무브"
+    },
+    {
+      "steps": [
+        {
+          "op": "offer_reaction",
+          "prompt": "파트너 슬립, 손패 1장과 FILE 위 2장을 리무브하고, 서로 다른 레벨의 범인 캐릭터를 최대 5장 등장시킬까요?",
+          "saveAs": "perform",
+          "choices": [
+            "yes",
+            "no"
+          ]
+        },
+        {
+          "op": "pay_cost",
+          "cost": "sleep_partner",
+          "when": {
+            "fact": "vars.perform",
+            "value": "yes",
+            "operator": "equals"
+          }
+        },
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 1,
+          "from": "hand",
+          "when": {
+            "fact": "vars.perform",
+            "value": "yes",
+            "operator": "equals"
+          },
+          "prompt": "코스트로 리무브할 손패 1장을 선택하세요.",
+          "saveAs": "hand_cost"
+        },
+        {
+          "op": "move_cards",
+          "to": "remove_area",
+          "from": "hand_cost",
+          "when": {
+            "fact": "vars.perform",
+            "value": "yes",
+            "operator": "equals"
+          }
+        },
+        {
+          "op": "move_top_file_cards",
+          "to": "remove_area",
+          "when": {
+            "fact": "vars.perform",
+            "value": "yes",
+            "operator": "equals"
+          },
+          "count": 2
+        },
+        {
+          "op": "select_cards",
+          "max": 5,
+          "min": 0,
+          "from": "remove_area",
+          "when": {
+            "fact": "vars.perform",
+            "value": "yes",
+            "operator": "equals"
+          },
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "value": "character",
+                "operator": "equals"
+              },
+              {
+                "field": "level",
+                "value": 8,
+                "operator": "less_than_or_equal"
+              },
+              {
+                "field": "trait",
+                "value": "犯人",
+                "operator": "has_trait"
+              }
+            ]
+          },
+          "prompt": "리무브 영역에서 레벨 8 이하의 특징 [범인] 캐릭터를 서로 다른 레벨로 최대 5장 선택하세요.",
+          "saveAs": "deployment",
+          "optional": true,
+          "uniqueBy": "level"
+        },
+        {
+          "op": "calculate_switch_count",
+          "when": {
+            "fact": "vars.perform",
+            "value": "yes",
+            "operator": "equals"
+          },
+          "saveAs": "switch_needed",
+          "deploymentVariable": "vars.deployment"
+        },
+        {
+          "op": "select_cards",
+          "max": 0,
+          "min": 0,
+          "from": "field",
+          "when": {
+            "allOf": [
+              {
+                "fact": "vars.perform",
+                "value": "yes",
+                "operator": "equals"
+              },
+              {
+                "fact": "vars.switch_needed",
+                "value": 0,
+                "operator": "greater_than"
+              }
+            ]
+          },
+          "filter": {
+            "field": "card_type",
+            "value": "character",
+            "operator": "equals"
+          },
+          "prompt": "현장 캐릭터가 5장을 초과하는 경우, 교체할 기존 캐릭터를 선택하세요.",
+          "saveAs": "switch_targets",
+          "maxFrom": "vars.switch_needed",
+          "minFrom": "vars.switch_needed",
+          "optional": true
+        },
+        {
+          "op": "move_cards",
+          "to": "remove_area",
+          "from": "switch_targets",
+          "when": {
+            "allOf": [
+              {
+                "fact": "vars.perform",
+                "value": "yes",
+                "operator": "equals"
+              },
+              {
+                "fact": "vars.switch_targets.count",
+                "value": 0,
+                "operator": "greater_than"
+              }
+            ]
+          }
+        },
+        {
+          "op": "move_cards",
+          "to": "field",
+          "from": "deployment",
+          "when": {
+            "allOf": [
+              {
+                "fact": "vars.perform",
+                "value": "yes",
+                "operator": "equals"
+              },
+              {
+                "fact": "vars.deployment.count",
+                "value": 0,
+                "operator": "greater_than"
+              }
+            ]
+          }
+        },
+        {
+          "op": "set_next_hint_disabled",
+          "when": {
+            "fact": "vars.perform",
+            "value": "yes",
+            "operator": "equals"
+          }
+        }
+      ],
+      "cardIds": [
+        "1044"
+      ],
+      "trigger": {
+        "event": "event.played",
+        "timing": "after"
+      },
+      "effectId": "card-1044-event-deploy-different-level-culprits",
+      "cardNameJa": "キッ",
+      "cardNameKo": "킷",
+      "conditions": [
+        {
+          "fact": "player.event.has_culprit_trait",
+          "value": true,
+          "operator": "equals"
+        },
+        {
+          "fact": "player.partner.color",
+          "value": "black",
+          "operator": "equals"
+        },
+        {
+          "fact": "player.partner.is_active",
+          "value": true,
+          "operator": "equals"
+        },
+        {
+          "fact": "player.hand.count",
+          "value": 1,
+          "operator": "greater_than_or_equal"
+        },
+        {
+          "fact": "player.file.count_non_partner",
+          "value": 2,
+          "operator": "greater_than_or_equal"
+        }
+      ],
+      "activationLabelKo": "범인 캐릭터 최대 5장 전개"
+    },
+    {
+      "steps": [
+        {
+          "op": "set_continuous_stat",
+          "stat": "lp",
+          "amount": 1,
+          "target": "source_character"
+        }
+      ],
+      "cardIds": [
+        "0375"
+      ],
+      "effectId": "card-0375-continuous-incident-lp-plus-one",
+      "cardNameJa": "犯人",
+      "cardNameKo": "범인",
+      "conditions": [
+        {
+          "fact": "player.case_phase",
+          "value": "incident",
+          "operator": "equals"
+        }
+      ],
+      "continuous": true
+    },
+    {
+      "steps": [
+        {
+          "op": "set_continuous_stat",
+          "stat": "ap",
+          "amount": 2000,
+          "target": "source_character"
+        }
+      ],
+      "cardIds": [
+        "0375"
+      ],
+      "effectId": "card-0375-continuous-solution-ap-plus-2000",
+      "cardNameJa": "犯人",
+      "cardNameKo": "범인",
+      "conditions": [
+        {
+          "fact": "player.case_phase",
+          "value": "solution",
+          "operator": "equals"
+        }
+      ],
+      "continuous": true
+    },
+    {
+      "steps": [
+        {
+          "op": "remove_contact_target"
+        }
+      ],
+      "cardIds": [
+        "0935"
+      ],
+      "trigger": {
+        "event": "character.contact_started",
+        "timing": "before"
+      },
+      "effectId": "card-0935-contact-remove-opponent-before-cutin",
+      "cardNameJa": "犯人",
+      "cardNameKo": "범인",
+      "conditions": [
+        {
+          "fact": "player.partner.color",
+          "value": "black",
+          "operator": "equals"
+        },
+        {
+          "fact": "turn.is_source_controller_turn",
+          "value": true,
+          "operator": "equals"
+        }
+      ]
+    },
+    {
+      "steps": [
+        {
+          "op": "offer_reaction",
+          "prompt": "히라메키를 발동해 덱 위에서 최대 5장을 리무브할까요?",
+          "saveAs": "activate_hirameki",
+          "choices": [
+            "yes",
+            "no"
+          ]
+        },
+        {
+          "op": "remove_top_deck_cards_and_refresh_excluding_source_if_empty",
+          "when": {
+            "fact": "vars.activate_hirameki",
+            "value": "yes",
+            "operator": "equals"
+          },
+          "count": 5
+        }
+      ],
+      "cardIds": [
+        "0935"
+      ],
+      "trigger": {
+        "event": "evidence.card_removed",
+        "timing": "after"
+      },
+      "effectId": "card-0935-hirameki-remove-top-five-and-refresh",
+      "cardNameJa": "犯人",
+      "cardNameKo": "범인"
+    },
+    {
+      "steps": [
+        {
+          "op": "move_source_to_remove_area"
+        }
+      ],
+      "cardIds": [
+        "0249"
+      ],
+      "trigger": {
+        "event": "character.entered_field",
+        "scope": "field_watch",
+        "timing": "after"
+      },
+      "effectId": "card-0249-remove-other-culprit-entry",
+      "cardNameJa": "犯人",
+      "cardNameKo": "범인",
+      "conditions": [
+        {
+          "fact": "entry.source.card_name",
+          "value": "犯人",
+          "operator": "name_matches"
+        },
+        {
+          "fact": "source.instance_id",
+          "value": {
+            "fact": "entry.source.instance_id"
+          },
+          "operator": "not_equals"
+        },
+        {
+          "fact": "entry.controller_is_source_controller",
+          "value": true,
+          "operator": "equals"
+        }
+      ]
+    },
+    {
+      "steps": [
+        {
+          "op": "remove_top_evidence_silently"
+        },
+        {
+          "op": "move_source_to_faceup_evidence"
+        }
+      ],
+      "cardIds": [
+        "0249"
+      ],
+      "trigger": {
+        "event": "player.turn_ended",
+        "scope": "field_watch",
+        "timing": "after"
+      },
+      "effectId": "card-0249-end-turn-swap-evidence",
+      "cardNameJa": "犯人",
+      "cardNameKo": "범인",
+      "oncePerTurn": true
+    },
+    {
+      "steps": [
+        {
+          "op": "select_cards",
+          "max": 100,
+          "min": 0,
+          "from": "hand",
+          "filter": {
+            "allOf": [
+              {
+                "field": "color",
+                "value": "black",
+                "operator": "equals"
+              },
+              {
+                "field": "keyword",
+                "value": "カットイン",
+                "operator": "has_keyword"
+              }
+            ]
+          },
+          "prompt": "손패에서 리무브할 흑색 컷인 카드를 원하는 만큼 선택하세요.",
+          "saveAs": "discarded",
+          "optional": true
+        },
+        {
+          "op": "move_cards",
+          "to": "remove_area",
+          "from": "discarded",
+          "when": {
+            "fact": "vars.discarded.count",
+            "value": 0,
+            "operator": "greater_than"
+          }
+        },
+        {
+          "op": "draw_cards",
+          "countFrom": "vars.discarded",
+          "destination": "hand"
+        }
+      ],
+      "cardIds": [
+        "0829"
+      ],
+      "trigger": {
+        "event": "character.entered_field",
+        "timing": "after"
+      },
+      "effectId": "card-0829-entry-discard-black-cutins-draw-equal",
+      "cardNameJa": "犯人",
+      "cardNameKo": "범인"
+    },
+    {
+      "steps": [
+        {
+          "op": "remove_all_field_characters"
+        },
+        {
+          "op": "move_top_file_cards",
+          "to": "hand",
+          "count": 2
+        },
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 0,
+          "from": "hand",
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "value": "character",
+                "operator": "equals"
+              },
+              {
+                "field": "level",
+                "value": 7,
+                "operator": "less_than_or_equal"
+              },
+              {
+                "field": "color",
+                "value": "black",
+                "operator": "equals"
+              }
+            ]
+          },
+          "prompt": "손패에서 레벨 7 이하의 흑색 캐릭터를 최대 1장 선택해 등장시킵니다.",
+          "saveAs": "deployment",
+          "optional": true
+        },
+        {
+          "op": "move_cards",
+          "to": "field",
+          "from": "deployment",
+          "when": {
+            "fact": "vars.deployment.count",
+            "value": 0,
+            "operator": "greater_than"
+          }
+        },
+        {
+          "op": "set_next_hint_disabled"
+        }
+      ],
+      "cardIds": [
+        "0721"
+      ],
+      "trigger": {
+        "event": "event.played",
+        "timing": "after"
+      },
+      "effectId": "card-0721-solution-remove-all-and-deploy-black",
+      "cardNameJa": "カッ",
+      "cardNameKo": "캇",
+      "conditions": [
+        {
+          "fact": "player.case_phase",
+          "value": "solution",
+          "operator": "equals"
+        },
+        {
+          "fact": "player.partner.color",
+          "value": "black",
+          "operator": "equals"
+        }
+      ],
+      "activationLabelKo": "모든 캐릭터 리무브 후 파일 회수·전개"
+    },
+    {
+      "steps": [
+        {
+          "op": "offer_reaction",
+          "prompt": "FILE 6장 이상 조건을 충족했습니다. 버본을 리무브하고 손패의 레벨 7 이하 흑색 캐릭터를 최대 1장 등장시킬까요?",
+          "saveAs": "remove_self",
+          "choices": [
+            "yes",
+            "no"
+          ]
+        },
+        {
+          "op": "move_source_to_remove_area",
+          "when": {
+            "fact": "vars.remove_self",
+            "value": "yes",
+            "operator": "equals"
+          }
+        },
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 0,
+          "from": "hand",
+          "when": {
+            "fact": "vars.remove_self",
+            "value": "yes",
+            "operator": "equals"
+          },
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "value": "character",
+                "operator": "equals"
+              },
+              {
+                "field": "level",
+                "value": 7,
+                "operator": "less_than_or_equal"
+              },
+              {
+                "field": "color",
+                "value": "black",
+                "operator": "equals"
+              }
+            ]
+          },
+          "prompt": "손패에서 레벨 7 이하의 흑색 캐릭터를 최대 1장 선택하세요.",
+          "saveAs": "deployment",
+          "optional": true
+        },
+        {
+          "op": "move_cards",
+          "to": "field",
+          "from": "deployment",
+          "when": {
+            "fact": "vars.deployment.count",
+            "value": 0,
+            "operator": "greater_than"
+          }
+        }
+      ],
+      "cardIds": [
+        "0604"
+      ],
+      "trigger": {
+        "event": "character.acted",
+        "timing": "after"
+      },
+      "effectId": "card-0604-file-six-action-remove-self-deploy-black",
+      "cardNameJa": "バーボン",
+      "cardNameKo": "버본",
+      "conditions": [
+        {
+          "fact": "player.file.count",
+          "value": 6,
+          "operator": "greater_than_or_equal"
+        }
+      ],
+      "oncePerTurn": true
+    },
+    {
+      "steps": [
+        {
+          "op": "set_continuous_keyword",
+          "target": "source_character",
+          "keyword": "haya"
+        }
+      ],
+      "cardIds": [
+        "0390"
+      ],
+      "effectId": "card-0390-partner-black-swift",
+      "cardNameJa": "バーボン",
+      "cardNameKo": "버본",
+      "conditions": [
+        {
+          "fact": "player.partner.color",
+          "value": "black",
+          "operator": "equals"
+        }
+      ],
+      "continuous": true
+    },
+    {
+      "steps": [
+        {
+          "op": "set_continuous_keyword",
+          "target": "source_character",
+          "keyword": "charge"
+        }
+      ],
+      "cardIds": [
+        "0393"
+      ],
+      "effectId": "card-0393-partner-black-charge",
+      "cardNameJa": "ウォッカ",
+      "cardNameKo": "워커",
+      "conditions": [
+        {
+          "fact": "player.partner.color",
+          "value": "black",
+          "operator": "equals"
+        }
+      ],
+      "continuous": true
+    },
+    {
+      "steps": [
+        {
+          "op": "remove_all_deck_and_refresh"
+        },
+        {
+          "op": "reveal_all_evidence"
+        },
+        {
+          "op": "win_game"
+        }
+      ],
+      "cardIds": [
+        "1046"
+      ],
+      "trigger": {
+        "event": "case.activated_ability",
+        "timing": "after"
+      },
+      "effectId": "card-1046-culprits-crime-case-effect",
+      "cardNameJa": "犯人たちの犯行",
+      "cardNameKo": "범인들의 범행",
+      "conditions": [
+        {
+          "fact": "player.case_phase",
+          "value": "solution",
+          "operator": "equals"
+        },
+        {
+          "fact": "player.evidence.count_matching_trait.culprit",
+          "value": 8,
+          "operator": "greater_than_or_equal"
+        },
+        {
+          "fact": "player.deck.count",
+          "value": 0,
+          "operator": "greater_than"
+        }
+      ],
+      "oncePerTurn": true,
+      "activationLabelKo": "범인들의 범행"
+    },
+    {
+      "steps": [
+        {
+          "op": "set_continuous_keyword",
+          "target": "source_character",
+          "keyword": "charge"
+        }
+      ],
+      "cardIds": [
+        "0604"
+      ],
+      "effectId": "card-0604-partner-black-charge",
+      "cardNameJa": "バーボン",
+      "cardNameKo": "버본",
+      "conditions": [
+        {
+          "fact": "player.partner.color",
+          "value": "black",
+          "operator": "equals"
+        }
+      ],
+      "continuous": true
     }
   ]
 }
