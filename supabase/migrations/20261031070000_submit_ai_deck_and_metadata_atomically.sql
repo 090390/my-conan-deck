@@ -163,8 +163,7 @@ begin
 
   return query select true, v_total;
 end;
-$function$
-
+$function$;
 
 REVOKE ALL ON FUNCTION public.submit_private_room_deck_with_metadata_v1(uuid,jsonb,text,text,text,text,boolean) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.submit_private_room_deck_with_metadata_v1(uuid,jsonb,text,text,text,text,boolean) TO authenticated;
