@@ -3295,7 +3295,7 @@
           "sourceText": "【사건 탐정 VS 괴도】【선언】【턴 1】〚패 1장을 리무브한다〛: 이 캐릭터를 활성 상태로 만들고, 턴 종료 시까지 이 캐릭터의 AP를 -2000으로 만든다. 캐릭터 1장까지 선택하여 슬립 상태로 만든다. 이 능력은 양쪽의 증거가 합쳐서 5개 이상일 때 선언할 수 있다.\n【선언】【슬립】：상대의 현장에 있는 슬립 상태의 캐릭터를 1장까지 선택하고, 이 캐릭터와의 컨택을 발생시킨다. (이 캐릭터는 액션을 수행한 쪽의 캐릭터가 된다)",
           "interpretation": "턴당 1회 · 손패 1장 리무브 후 액티브, AP −2000 및 캐릭터 슬립",
           "confidence": "high",
-          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
+          "reviewNotes": "실행 정의와 start_contact 단계를 운영 실행기에 등록했습니다. 일반 컨택 검증을 재사용하며 비용으로 슬립한 공격자는 컨택 개시 직후 다시 슬립 상태가 됩니다. 실제 플레이 검증은 별도 필요합니다.",
           "proposedDefinition": {
             "effectId": "card-1197-activated-ready-ap-minus2000-and-rest-character",
             "cardIds": [
@@ -3372,14 +3372,15 @@
           "structuralValidation": {
             "status": "passed",
             "errors": []
-          }
+          },
+          "runtimeBlockers": []
         },
         {
           "candidateId": "implemented-card-1197-activated-contact-opponent-rested",
           "sourceText": "【사건 탐정 VS 괴도】【선언】【턴 1】〚패 1장을 리무브한다〛: 이 캐릭터를 활성 상태로 만들고, 턴 종료 시까지 이 캐릭터의 AP를 -2000으로 만든다. 캐릭터 1장까지 선택하여 슬립 상태로 만든다. 이 능력은 양쪽의 증거가 합쳐서 5개 이상일 때 선언할 수 있다.\n【선언】【슬립】：상대의 현장에 있는 슬립 상태의 캐릭터를 1장까지 선택하고, 이 캐릭터와의 컨택을 발생시킨다. (이 캐릭터는 액션을 수행한 쪽의 캐릭터가 된다)",
           "interpretation": "상대 슬립 캐릭터에 컨택",
           "confidence": "high",
-          "reviewNotes": "실행 정의는 운영 카탈로그에 있으나 미구현 DSL 단계가 남아 있습니다: start_contact. 선택한 상대 슬립 캐릭터와 컨택을 개시하는 단계가 아직 실행기에서 지원되지 않습니다.",
+          "reviewNotes": "실행 정의와 start_contact 단계를 운영 실행기에 등록했습니다. 일반 컨택 검증을 재사용하며 비용으로 슬립한 공격자는 컨택 개시 직후 다시 슬립 상태가 됩니다. 실제 플레이 검증은 별도 필요합니다.",
           "proposedDefinition": {
             "effectId": "card-1197-activated-contact-opponent-rested",
             "cardIds": [
@@ -3431,9 +3432,7 @@
             "status": "passed",
             "errors": []
           },
-          "runtimeBlockers": [
-            "start_contact"
-          ]
+          "runtimeBlockers": []
         }
       ]
     },
