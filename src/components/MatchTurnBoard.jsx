@@ -630,6 +630,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   const myFileCards = Array.isArray(game?.my_file_cards) ? game.my_file_cards : [];
   const opponentRemoveCards = Array.isArray(game?.opponent_remove_cards) ? game.opponent_remove_cards : [];
   const pending = game?.pending_action || null;
+  const canManualEffect = !game.game_over && !pending && !myBoard?.next_hint_pending && (!game.deck_peek_locked || Boolean(game.my_deck_peek));
 
   useEffect(() => {
     let cancelled = false;
@@ -1014,7 +1015,6 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   const winEvidenceThreshold = solutionFileThreshold + (hasConanVsKidCase ? 1 : 0);
   const roleText = game.first_player_user_id === userId ? "선공" : "후공";
   const currentTurnRole = game.current_turn_user_id === userId ? "내 턴" : "상대 턴";
-  const canManualEffect = !game.game_over && !pending && !myBoard?.next_hint_pending && (!game.deck_peek_locked || Boolean(game.my_deck_peek));
   // Next Hint only blocks ending the turn; deck actions remain available while the required character is pending.
   const canUseDeckActions = !game.game_over && !pending && (!game.deck_peek_locked || Boolean(game.my_deck_peek));
   const canTransitionSolution = canActMain && myBoard?.case_phase === "incident" && n(myBoard?.file_count) >= solutionFileThreshold
