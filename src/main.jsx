@@ -6,7 +6,7 @@ import App from './App.jsx';
 class AppRenderErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { error: null };
+    this.state = { error: null, componentStack: "" };
   }
 
   static getDerivedStateFromError(error) {
@@ -15,6 +15,7 @@ class AppRenderErrorBoundary extends React.Component {
 
   componentDidCatch(error, info) {
     console.error('App render failed:', error, info);
+    this.setState({ componentStack: info?.componentStack || "" });
   }
 
   render() {
@@ -25,7 +26,11 @@ class AppRenderErrorBoundary extends React.Component {
           <section style={{ width: 'min(720px, 100%)', margin: '8vh auto 0', padding: 24, border: '1px solid #543344', borderRadius: 16, background: '#111a2b' }}>
             <h1 style={{ margin: 0, color: '#fff', fontSize: 22, fontWeight: 850 }}>화면을 표시하는 중 오류가 발생했어요.</h1>
             <p style={{ margin: '16px 0 0', color: '#ff9aaa', fontSize: 13, lineHeight: 1.7, overflowWrap: 'anywhere' }}>{message}</p>
-            <p style={{ margin: '12px 0 0', color: '#a7b4c8', fontSize: 13, lineHeight: 1.7 }}>오류가 표시되도록 복구 화면을 띄웠습니다. 새로고침 후에도 반복되면 이 오류 내용으로 원인을 추적할 수 있습니다.</p>
+            <p style={{ margin: '12px 0 0', color: '#a7b4c8', fontSize: 13, lineHeight: 1.7 }}>오류가 표시되도록 복구 화면을 띄웠습니다. 새로고침 후에도 반복되면 아래 오류 위치 정보를 함께 보내 주세요.</p>
+            <details style={{ marginTop: 12, color: '#a7b4c8', fontSize: 11, lineHeight: 1.5 }}>
+              <summary style={{ cursor: 'pointer' }}>오류 위치 정보 보기</summary>
+              <pre style={{ maxHeight: 220, overflow: 'auto', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', color: '#fda4af', fontSize: 10 }}>{String(this.state.error?.stack || this.state.error)}{this.state.componentStack}</pre>
+            </details>
             <button type="button" onClick={() => window.location.reload()} style={{ marginTop: 20, minHeight: 40, border: '1px solid #9f3449', borderRadius: 9, padding: '8px 16px', color: '#fff', background: '#be123c', fontSize: 13, fontWeight: 750, cursor: 'pointer' }}>새로고침</button>
           </section>
         </main>
