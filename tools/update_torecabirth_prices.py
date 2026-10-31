@@ -32,8 +32,8 @@ OUT_PATH = Path(__file__).resolve().parents[1] / "public" / "torecabirth-prices.
 # Public card-list categories currently used by TorecaBirth. Update this list
 # when new Conan TCG booster/starter/collection categories are added.
 CATEGORY_IDS = [
-    # Booster packs 1–10
-    2, 7, 25, 68, 75, 83, 84, 111, 122, 134,
+    # Booster packs 1–11
+    2, 7, 25, 68, 75, 83, 84, 111, 122, 134, 145,
     # Starter / theme decks CT-D01–CT-D11
     9, 10, 11, 12, 13, 26, 42, 73, 74, 103, 123,
     # Conan promos / magazine supplements / executive collections
@@ -44,7 +44,7 @@ CATEGORY_URLS = [f"{BASE_URL}/product-list/{category_id}" for category_id in CAT
 PRICE_RE = re.compile(r"([0-9][0-9,]*)\s*円\s*(?:\(\s*税込\s*\)|（\s*税込\s*）)")
 STOCK_RE = re.compile(r"在庫数\s*([0-9][0-9,]*)\s*点")
 CARD_NUMBER_RE = re.compile(r"型番\s*[:：]?\s*([A-Za-z]{1,5}(?:-[A-Za-z]{1,5})?-?\d{1,4}|\d{3,4})", re.I)
-RARITY_RE = re.compile(r"[〖【［\[]\s*(MRCP|SRCP|MRP|SRP|SEC|MR|SR|CP|RP|SP|PR|R|C|D|P)\s*[〗】］\]]", re.I)
+RARITY_RE = re.compile(r"[〖【［\[]\s*(MRCP|SRCP|MRP|SRP|CP2|RP2|SP2|SEC|MR|SR|CP|RP|SP|PR|R|C|D|P)\s*[〗】］\]]", re.I)
 PRODUCT_PATH_RE = re.compile(r"^/product/\d+/?$")
 
 
