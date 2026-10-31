@@ -426,7 +426,7 @@ function describeAction(decision: any, state: any, aiId: string) {
   const target = (Array.isArray(opponent?.field_cards) ? opponent.field_cards : [])
     .find((entry: any) => entry.instance_id === decision?.payload?.target_instance_id);
   switch (decision?.action) {
-    case "begin_turn": return "AI 탐정: 제 턴을 시작했습니다.";
+    case "begin_turn": return "AI 탐정: 현장 카드를 액티브로 전환하고 손패 1장 드로우와 파일 배치를 한 번에 완료했습니다.";
     case "place_files": return "AI 탐정: 턴 시작에 필요한 파일을 배치했습니다.";
     case "play_character":
       return `AI 탐정: 현재 레벨 상한에 맞는 ${cardName(card)}(코스트 ${cost})를 골라 등장시켰습니다.`;
