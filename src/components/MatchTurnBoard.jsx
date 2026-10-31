@@ -104,7 +104,7 @@ function roundNumberFromTurn(turnNumber) {
 }
 
 function displayActionLabel(actionLabel) {
-  return String(actionLabel || "").replace(/^턴\\s*(\\d+)\\s*시작:/u, (_match, rawTurn) => {
+  return String(actionLabel || "").replace(/^턴\s*(\d+)\s*시작:/u, (_match, rawTurn) => {
     const turn = Number(rawTurn);
     return `턴 ${roundNumberFromTurn(turn)} ${turn % 2 === 1 ? "선공" : "후공"} 시작:`;
   });
