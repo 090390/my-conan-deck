@@ -182,12 +182,14 @@ DECLARE
    RETURN false;
  END IF;$old$;
   v_new text := $new$IF jsonb_array_length(v_queue)=0 THEN
+   IF p_require_match THEN
+     RAISE EXCEPTION '이 카드의 효과 조건이 충족되지 않았거나 이번 턴에 이미 사용했습니다.';
+   END IF;
    IF p_trigger_event='event.played' THEN
      PERFORM public.private_card_effect_move_event_to_remove_v1(
        p_room_id,p_source_user_id,p_source_card->>'instance_id'
      );
    END IF;
-   IF p_require_match THEN RAISE EXCEPTION '이 카드의 효과 조건이 충족되지 않았거나 이번 턴에 이미 사용했습니다.'; END IF;
    RETURN false;
  END IF;$new$;
 BEGIN
