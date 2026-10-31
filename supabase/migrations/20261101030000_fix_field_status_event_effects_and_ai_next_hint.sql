@@ -58,6 +58,11 @@ BEGIN
 END
 $function$;
 
+-- The 3-argument overload is internal to the SECURITY DEFINER turn-action
+-- pipeline. Do not expose it as a direct anonymous/authenticated RPC.
+REVOKE ALL ON FUNCTION public.private_card_effect_start_event_v1(uuid,uuid,jsonb)
+  FROM PUBLIC, anon, authenticated;
+
 -- Partner assist/deduction and other main actions can set base_action_done.
 -- Next Hint itself must only unlock after the normal basic character/event play.
 DO $migration$
