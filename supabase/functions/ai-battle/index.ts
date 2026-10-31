@@ -633,6 +633,18 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
   const resolvingEvent = field.find((card: any) => isEvent(card) && card.resolving);
   if (resolvingEvent) return { action: "finish_event", payload: { instance_id: resolvingEvent.instance_id } };
 
+  // Resolve the case as soon as the evidence threshold is met. The Conan vs Kid
+  // event uses its own 8/7 threshold; other cases use 7/6 (first/second player).
+  const currentCaseKey = String(me.event_key || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+  const isConanVsKidCase = ["B11098", "B11098P", "1261"].includes(currentCaseKey)
+    || String(me.event_rule_code || "") === "conan_vs_kid_1261";
+  const solveEvidenceThreshold = isConanVsKidCase
+    ? (state.first_player_user_id === aiId ? 8 : 7)
+    : (state.first_player_user_id === aiId ? 7 : 6);
+  if (isSolution && Number(me.evidence_count || 0) >= solveEvidenceThreshold) {
+    return { action: "solve_case" };
+  }
+
   // [신속] alone grants an immediate investigation after entering the field.
   // [돌격] variants are handled only by the character/evidence attack branches below.
   const newlyPlayedSwift = field.find((card: any) =>
