@@ -103,6 +103,13 @@ function roundNumberFromTurn(turnNumber) {
   return value > 0 ? Math.ceil(value / 2) : 0;
 }
 
+function displayActionLabel(actionLabel) {
+  return String(actionLabel || "").replace(/^턴\\s*(\\d+)\\s*시작:/u, (_match, rawTurn) => {
+    const turn = Number(rawTurn);
+    return `턴 ${roundNumberFromTurn(turn)} ${turn % 2 === 1 ? "선공" : "후공"} 시작:`;
+  });
+}
+
 export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode = "", isAIBattle = false, onLeaveField = null, onReturnToLobby = null }) {
   const [game, setGame] = useState(null);
   // The server state is null during the first fetch; render helpers use an empty read-only fallback.
@@ -545,7 +552,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
       if (action === "play_character" || action === "play_event") setLocalBaseCardPlayLocked(true);
       setNotice(action === "refresh_deck"
         ? "리프레시를 완료했습니다. 리무브 에이리어의 카드를 셔플해 덱으로 되돌렸고, 상대에게 증거 1장을 추가했습니다."
-        : updatedGame?.last_action_label || data?.last_action_label || "행동을 반영했습니다.");
+        : displayActionLabel(updatedGame?.last_action_label || data?.last_action_label || "행동을 반영했습니다."));
       if (action === "next_hint") setSelectedNextHint("");
       if (["declare_contact", "attack_character", "attack_evidence", "guard_with_character", "decline_guard", "guard_contact_with_character", "decline_contact_guard", "contact_use_cutin", "contact_pass_cutin"].includes(action)) setSelectedAttacker("");
       if ((action === "move_field_card" || action === "move_hand_card") && (payload.owner_user_id || userId) === userId) setDetailCard(null);
@@ -1222,7 +1229,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
       {(error || notice) && <div role={error ? "alert" : "status"} style={{ marginBottom: 10, padding: 9, borderRadius: 6, border: `1px solid ${error ? "rgba(253,164,175,.3)" : "rgba(134,239,172,.24)"}`, color: error ? C.red : C.green, background: error ? "rgba(190,24,93,.07)" : "rgba(22,101,52,.07)", fontSize: 11 }}>{error || notice}</div>}
       {gameState.last_action_label && <div style={{ display: "grid", gap: 4, marginBottom: 10 }}>
         <button type="button" onClick={() => void openActionLog()} style={{ ...st.muted, textAlign: "left", padding: "7px 9px", border: "1px solid rgba(148,163,184,.24)", borderRadius: 5, background: "rgba(71,85,105,.22)", color: C.text, cursor: "pointer" }} title="눌러서 전체 게임 행동 로그를 최신순으로 확인">
-          전체 게임 행동 내역: {actionLog[0]?.action_label || gameState.last_action_label}
+          전체 게임 행동 내역: {displayActionLabel(actionLog[0]?.action_label || gameState.last_action_label)}
         </button>
       </div>}
       </div>
@@ -1870,7 +1877,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
             {actionLogError && <p role="alert" style={{ color: C.red, fontSize: 10, lineHeight: 1.6 }}>{actionLogError}</p>}
             {actionLog.map((entry, index) => <article key={entry.id || (String(entry.created_at) + "-" + index)} style={{ display: "grid", gridTemplateColumns: "minmax(96px,auto) minmax(0,1fr)", gap: 10, alignItems: "start", padding: "9px 10px", border: "1px solid rgba(255,255,255,.08)", borderRadius: 7, background: index === 0 ? "rgba(30,58,95,.3)" : "#080d16" }}>
               <div><div style={{ color: C.gold, fontSize: 10, fontWeight: 850 }}>턴 {entry.turn_number == null ? "-" : roundNumberFromTurn(entry.turn_number)}{entry.actor_user_id ? ` · ${entry.actor_user_id === gameState.first_player_user_id ? "선공" : "후공"}` : ""}</div><div style={{ marginTop: 3, color: C.muted, fontSize: 9 }}>{entry.created_at ? new Date(entry.created_at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "시간 미상"}</div></div>
-              <div><div style={{ color: entry.actor_user_id === userId ? C.green : C.blue, fontSize: 9, fontWeight: 800, marginBottom: 3 }}>{entry.actor_user_id === userId ? "나" : (entry.actor_display_name || "플레이어")}{entry.actor_seat ? " · 좌석 " + entry.actor_seat : ""}</div><div style={{ overflowWrap: "anywhere", fontSize: 11, lineHeight: 1.6 }}>{entry.action_label}</div></div>
+              <div><div style={{ color: entry.actor_user_id === userId ? C.green : C.blue, fontSize: 9, fontWeight: 800, marginBottom: 3 }}>{entry.actor_user_id === userId ? "나" : (entry.actor_display_name || "플레이어")}{entry.actor_seat ? " · 좌석 " + entry.actor_seat : ""}</div><div style={{ overflowWrap: "anywhere", fontSize: 11, lineHeight: 1.6 }}>{displayActionLabel(entry.action_label)}</div></div>
             </article>)}
           </div>
         </section>
