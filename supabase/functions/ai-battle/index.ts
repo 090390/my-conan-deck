@@ -342,7 +342,11 @@ function chooseActivatedAbility(state: any, aiId: string) {
 
       let candidates: any[] = [];
       const from = String(step.from || "");
-      if (from === "opponent_field") candidates = enemyField;
+      const effectId = String(ability?.effect_id || "");
+      if (effectId === "card-1039-declare-remove-character-ap-8000"
+        || effectId === "card-1040-declare-remove-character-level-7") {
+        candidates = enemyField;
+      } else if (from === "opponent_field") candidates = enemyField;
       else if (from === "field" || from === "own_field" || from === "self_field") candidates = ownField;
       else if (from === "both_fields") candidates = [...ownField, ...enemyField];
       else if (from === "remove_area") candidates = removeArea;
@@ -713,7 +717,18 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
     for (const candidate of eventCandidates) {
       const instanceId = String(candidate?.source_instance_id || "");
       if (!instanceId) continue;
-      const score = estimateEventEffectScore(candidate?.definition);
+      let score = estimateEventEffectScore(candidate?.definition);
+      const effectId = String(candidate?.effect_id || candidate?.definition?.effectId || "");
+      if (effectId === "card-1044-event-deploy-different-level-culprits") {
+        const distinctCulpritLevels = new Set(removeArea
+          .filter((card: any) => isCharacter(card) && cardCost(card) <= 8
+            && (hasTrait(card, "犯人") || hasTrait(card, "범인")))
+          .map((card: any) => cardCost(card)));
+        score += Math.min(5, distinctCulpritLevels.size) * 12;
+      } else if (effectId === "card-0721-solution-remove-all-and-deploy-black") {
+        const totalFieldCharacters = [...field, ...enemyField].filter((card: any) => isCharacter(card)).length;
+        score += totalFieldCharacters * 16;
+      }
       eventScoreByInstance.set(instanceId, Math.max(eventScoreByInstance.get(instanceId) || 0, score));
     }
     const effectEvent = hand.filter((card: any) => isEvent(card)
@@ -968,7 +983,9 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
           "card-0704-hirameki-rest-character",
           "card-1197-activated-ready-ap-minus2000-and-rest-character",
         ]);
-        const preferOpponentRestTarget = restTargetEffects.has(String(pending.effect_id || ""));
+        const preferOpponentRestTarget = restTargetEffects.has(String(pending.effect_id || ""))
+          || String(pending.effect_id || "") === "card-1039-declare-remove-character-ap-8000"
+          || String(pending.effect_id || "") === "card-1040-declare-remove-character-level-7";
         const targetOptions = preferOpponentRestTarget
           ? options.filter((option: any) => String(option?.owner_user_id || "") !== String(battle.ai_user_id))
           : options;
