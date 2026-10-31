@@ -632,6 +632,31 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   const myFileCards = Array.isArray(game?.my_file_cards) ? gameState.my_file_cards : [];
   const opponentRemoveCards = Array.isArray(game?.opponent_remove_cards) ? gameState.opponent_remove_cards : [];
   const pending = game?.pending_action || null;
+  const pendingSourceInstance = pending?.source_instance_id
+    ? boards.flatMap((board) => [
+        ...(Array.isArray(board?.field_cards) ? board.field_cards : []),
+        ...(Array.isArray(board?.partner_non_mr_cards) ? board.partner_non_mr_cards : []),
+        ...(board?.partner_mr_card ? [board.partner_mr_card] : []),
+      ]).find((card) => String(card?.instance_id || "") === String(pending.source_instance_id))
+    : null;
+  const pendingSourceCard = pendingSourceInstance || pending?.source_card || null;
+  const pendingSourceCardInfo = pendingSourceCard
+    ? cardsByKey.get(String(pendingSourceCard.key || pendingSourceCard.database_id || pendingSourceCard.card_id || ""))
+      || cards.find((card) => [card?.key, card?.databaseId, card?.database_id, card?.cardId, card?.cardNum]
+        .some((value) => String(value ?? "") === String(pendingSourceCard.key || pendingSourceCard.database_id || pendingSourceCard.card_id || "")))
+      || null
+    : null;
+  const pendingSourceCardName = pendingSourceCardInfo?.name
+    || pendingSourceCard?.name
+    || pending?.source_card_name
+    || pending?.effect_id
+    || "발동 카드 정보를 확인할 수 없습니다.";
+  const pendingEffectSections = pendingSourceCardInfo ? [
+    { label: "카드 효과", text: pendingSourceCardInfo.ability },
+    { label: "히라메키", text: pendingSourceCardInfo.hiramekiEffect },
+    { label: "컷인", text: pendingSourceCardInfo.cutInEffect },
+    { label: "변장", text: pendingSourceCardInfo.hensoEffect || pendingSourceCardInfo.disguiseEffect },
+  ].filter((section) => typeof section.text === "string" && section.text.trim()) : [];
   const canManualEffect = !gameState.game_over && !pending && !myBoard?.next_hint_pending && (!gameState.deck_peek_locked || Boolean(gameState.my_deck_peek));
 
   useEffect(() => {
@@ -1593,7 +1618,24 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
         <section role="dialog" aria-modal="true" aria-label="카드 효과 처리" style={{ width: "min(100%, 850px)", maxHeight: "90dvh", display: "flex", flexDirection: "column", overflow: "hidden", border: "1px solid rgba(96,165,250,.45)", borderRadius: 12, background: "#111a2a", color: C.text, boxShadow: "0 24px 70px rgba(0,0,0,.75)" }}>
           <header style={{ padding: 14, borderBottom: "1px solid rgba(255,255,255,.09)" }}>
             <h2 style={{ margin: 0, fontSize: 17 }}>카드 효과 처리</h2>
-            <p style={{ ...st.muted, marginTop: 7 }}>{pending.prompt || "카드 효과의 다음 절차를 진행해 주세요."}</p>
+            <section aria-label="효과를 발생시킨 카드와 전체 효과" style={{ marginTop: 10, padding: 11, border: "1px solid rgba(252,211,77,.26)", borderRadius: 9, background: "rgba(120,83,10,.10)" }}>
+              <div style={{ color: C.gold, fontSize: 9, fontWeight: 900, letterSpacing: ".08em" }}>효과를 발생시킨 카드</div>
+              <strong style={{ display: "block", marginTop: 4, fontSize: 13, lineHeight: 1.4, overflowWrap: "anywhere" }}>{pendingSourceCardName}</strong>
+              <div style={{ marginTop: 3, color: C.muted, fontSize: 9 }}>
+                {pendingSourceCardInfo?.cardId || pendingSourceCardInfo?.cardNum || pendingSourceCard?.key || pending?.source_instance_id || ""}
+              </div>
+              {pendingEffectSections.length > 0 ? pendingEffectSections.map((section) => (
+                <div key={section.label} style={{ marginTop: 9, paddingTop: 8, borderTop: "1px solid rgba(255,255,255,.08)" }}>
+                  <strong style={{ display: "block", marginBottom: 4, color: "#dbeafe", fontSize: 10 }}>{section.label} 전문</strong>
+                  <p style={{ margin: 0, color: C.text, fontSize: 11, lineHeight: 1.65, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{section.text}</p>
+                </div>
+              )) : (
+                <p style={{ margin: "7px 0 0", color: C.muted, fontSize: 10, lineHeight: 1.5 }}>
+                  이 카드의 한국어 효과 번역문을 카드 데이터에서 찾지 못했습니다.
+                </p>
+              )}
+            </section>
+            <p style={{ ...st.muted, marginTop: 9 }}>{pending.prompt || "카드 효과의 다음 절차를 진행해 주세요."}</p>
             {pending.chooser_user_id && pending.chooser_user_id !== userId && <p style={{ color: C.gold, fontSize: 11, margin: "8px 0 0" }}>상대 플레이어의 선택을 기다리는 중입니다.</p>}
           </header>
           <div style={{ padding: 12, overflowY: "auto", minHeight: 0 }}>
