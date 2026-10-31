@@ -1,4 +1,4 @@
--- AI turn state must expose the true basic-card-play flag; generic base_action_done also includes partner actions.
+-- Expose the actual basic-card-play flag to the AI. base_action_done also includes partner actions.
 CREATE OR REPLACE FUNCTION public.get_private_turn_state_v2(p_room_id uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -142,7 +142,7 @@ end;
 $function$
 
 
--- AI-selected human hand/field targets are revealed and acknowledged before the next immediate move; preserve multi-party reveal/sequence/reaction flow.
+-- Reveal every AI-selected human hand/field target before the next effect step; preserve dual acknowledgement, sequence and reaction flows.
 CREATE OR REPLACE FUNCTION public.private_card_effect_continue_v1(p_room_id uuid, p_payload jsonb DEFAULT '{}'::jsonb)
  RETURNS void
  LANGUAGE plpgsql
@@ -288,14 +288,11 @@ BEGIN
    END IF;
 
    v_vars:=jsonb_set(v_vars,ARRAY[v_save],v_selected,true);
-   -- If the AI selects a human-owned hand/field card and the next DSL step
-   -- immediately moves that selection, reveal the chosen card before resolving it.
+   -- Whenever the AI selects a human-owned hand/field card as an effect target,
+   -- show the choice before proceeding to the following effect step.
    SELECT ai_user_id INTO v_ai_user_id
      FROM public.private_ai_battles WHERE room_id=p_room_id;
-   v_next:=v_run.effect_queue->v_run.effect_index->'steps'->(v_run.step_index+1);
    IF v_ai_user_id IS NOT NULL AND v_user=v_ai_user_id
-      AND v_next->>'op'='move_cards'
-      AND replace(coalesce(v_next->>'from',''),'vars.','')=v_save
       AND EXISTS (
         SELECT 1 FROM jsonb_array_elements(v_selected) chosen(value)
         WHERE chosen.value->>'zone' IN ('hand','field')
