@@ -48,8 +48,18 @@ function cardCutInBonusForSubject(
   isOwnerTurn: boolean,
   partnerColor = "",
   ownField: any[] = [],
+  removeArea: any[] = [],
 ): number {
   let bonus = cardCutInBonus(card);
+
+  // PR158 / PR164 (internal 0627): AP+2000 per removed card named 犯人,
+  // including this cut-in card itself. The printed AP is therefore dynamic.
+  if (matchesInternalCardId(card, "0627")) {
+    if (!isOwnerTurn) return 0;
+    const removedCulprits = removeArea.filter((entry: any) =>
+      matchesCardName(entry, "犯人") || matchesCardName(entry, "범인")).length;
+    return (removedCulprits + 1) * 2000;
+  }
 
   // PR278 / internal 0940: partner-yellow adds 1000 AP; the server separately
   // draws when the supported character has Police.
@@ -158,10 +168,14 @@ function estimateEventEffectScore(definition: any): number {
       case "peek_top_cards": return score + 4 + Math.min(4, Math.max(0, Number(step.count || 0))) * 0.5;
       case "draw_cards": return score + 4 * Math.max(1, Number(step.count || 1));
       case "move_cards":
-        if (step.to === "field") return score + 5;
+        if (step.to === "field") return score + (String(step.from || "").includes("deployment") ? 7 : 5);
         if (step.to === "hand") return score + 2.5;
         if (step.to === "evidence_area") return score + 3;
         return score;
+      case "remove_all_field_characters": return score + 12;
+      case "move_top_file_cards": return score + (step.to === "hand" ? 2.5 : 1.5);
+      case "calculate_switch_count": return score + 1;
+      case "set_next_hint_disabled": return score + 0.5;
       case "flip_evidence": return score + 2.5;
       case "rest_cards": return score + 2;
       case "modify_stat":
@@ -169,7 +183,7 @@ function estimateEventEffectScore(definition: any): number {
       case "grant_keyword":
       case "set_continuous_keyword": return score + 2.5;
       case "attach_top_card": return score + 1.5;
-      case "select_cards": return score + 0.5;
+      case "select_cards": return score + (step.uniqueBy === "level" ? 3 : 0.5);
       case "schedule_move_to_deck_bottom": return score + 1;
       default: return score;
     }
@@ -481,6 +495,7 @@ function describeAction(decision: any, state: any, aiId: string) {
       const bonus = cardCutInBonusForSubject(
         cutin, subject, state?.current_turn_user_id === aiId,
         normalizedColor(state?.ai_partner_color || me?.partner_color || ""), field,
+        Array.isArray(state?.my_remove_cards) ? state.my_remove_cards : [],
       );
       return `AI 탐정: 컷인을 사용해 AP를 ${bonus} 올렸습니다.`;
     }
@@ -515,6 +530,7 @@ function chooseResponse(state: any, aiId: string) {
   const me = boards.find((board: any) => board.user_id === aiId);
   const field = Array.isArray(me?.field_cards) ? me.field_cards : [];
   const hand = Array.isArray(state?.my_hand) ? state.my_hand : [];
+  const removeArea = Array.isArray(state?.my_remove_cards) ? state.my_remove_cards : [];
   if (!pending) return null;
 
   // Shared reveal windows always need an AI acknowledgement, even when it is not the AI's turn.
@@ -568,7 +584,7 @@ function chooseResponse(state: any, aiId: string) {
     const isAiOwnerTurn = state.current_turn_user_id === aiId;
     const partnerColor = normalizedColor(state.ai_partner_color || me?.partner_color || "");
     const cutinBonus = (card: any) => cardCutInBonusForSubject(
-      card, contactSubject, isAiOwnerTurn, partnerColor, field,
+      card, contactSubject, isAiOwnerTurn, partnerColor, field, removeArea,
     );
     const cutin = hand.filter((card: any) => {
       const bonus = cutinBonus(card);
@@ -770,7 +786,7 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
     const canWinWithoutCost = attackerAp > targetAp;
     const canWinByD11007 = hand.length > 0 && attackerAp < targetAp && attackerAp + 3000 > targetAp;
     const canWinByCutin = hand.some((card: any) => {
-      const bonus = cardCutInBonusForSubject(card, specialTargetAttacker, true, partnerColor, field);
+      const bonus = cardCutInBonusForSubject(card, specialTargetAttacker, true, partnerColor, field, removeArea);
       return bonus > 0 && attackerAp + bonus > targetAp;
     });
     if (canWinWithoutCost || canWinByD11007 || canWinByCutin) {
@@ -798,7 +814,7 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
       const canUseMatsudaContactEffect = matchesInternalCardId(candidate, "0938")
         && hand.length > 0 && attackerAp < targetAp && attackerAp + 3000 > targetAp;
       return attackerAp > targetAp || canUseMatsudaContactEffect || hand.some((card: any) => {
-        const bonus = cardCutInBonusForSubject(card, candidate, true, partnerColor, field);
+        const bonus = cardCutInBonusForSubject(card, candidate, true, partnerColor, field, removeArea);
         return bonus > 0 && attackerAp + bonus > targetAp;
       });
     });
