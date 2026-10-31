@@ -772,7 +772,7 @@
           "sourceText": "【선언】【슬립】 - 자신의 리무브 에이리어에 있는 레벨 4 이하의 〚특징 [경시청]〛 캐릭터를 1장까지 선택하여 등장시킨다. 턴 종료 시까지 해당 캐릭터에게 〚돌격 [사건]〛(등장한 턴부터 바로 사건 대상 액션 수행 가능)과 “턴 종료 시, 이 캐릭터를 현장에서 덱 맨 아래로 옮긴다.”를 부여한다.",
           "interpretation": "선언 · 경시청 캐릭터 등장 후 턴 종료 시 덱 아래로 이동",
           "confidence": "high",
-          "reviewNotes": "실행 정의는 운영 카탈로그에 있으나 미구현 DSL 단계가 남아 있습니다: schedule_move_to_deck_bottom. 선택한 카드를 덱 아래로 예약 이동시키는 단계가 아직 실행기에서 지원되지 않습니다.",
+          "reviewNotes": "실행 정의와 해당 DSL 단계가 운영 실행기에 등록되었습니다. 카드별 실제 플레이 동작은 별도 확인이 필요합니다.",
           "proposedDefinition": {
             "effectId": "card-0732-activated-deploy-tokyo-police-temporary-charge-return",
             "cardIds": [
@@ -859,9 +859,7 @@
             "status": "passed",
             "errors": []
           },
-          "runtimeBlockers": [
-            "schedule_move_to_deck_bottom"
-          ]
+          "runtimeBlockers": []
         }
       ],
       "reviewNotes": "액티브 능력 비용으로 자신을 슬립, 리무브 에이리어의 경시청 레벨 4 이하 캐릭터 등장, 사건 행동용 돌격 부여, 해당 턴 종료 후 덱 아래 이동까지 구현."
@@ -1761,7 +1759,7 @@
           "draftStatus": "dsl_validated_approved",
           "approvalStatus": "approved",
           "confidence": "high",
-          "reviewNotes": "실행 정의는 운영 카탈로그에 있으나 미구현 DSL 단계가 남아 있습니다: reveal_opponent_hand, investigate_opponent_deck. 상대 손패 공개 확인 및 상대 덱 위 카드 조사 단계가 아직 실행기에서 지원되지 않습니다.",
+          "reviewNotes": "실행 정의와 해당 DSL 단계가 운영 실행기에 등록되었습니다. 카드별 실제 플레이 동작은 별도 확인이 필요합니다.",
           "reviewedSemantics": {
             "trigger": {
               "event": "character.entered_field",
@@ -1807,16 +1805,10 @@
                 }
               }
             ],
-            "runtimeBlockers": [
-              "reveal_opponent_hand",
-              "investigate_opponent_deck"
-            ],
+            "runtimeBlockers": [],
             "userConfirmed": true
           },
-          "runtimeBlockers": [
-            "reveal_opponent_hand",
-            "investigate_opponent_deck"
-          ]
+          "runtimeBlockers": []
         }
       ]
     },
@@ -2273,7 +2265,7 @@
           "sourceText": "【파트너 백】【자신의 턴 중】【턴 1】 - 자신의 현장에 〚카드명 [쿠도 유사쿠]〛가 등장했을 때, AP 8000 이하의 캐릭터를 1장까지 선택하여 리무브한다.\n【인연 : 쿠도 유사쿠】【선언】【턴 1】 - 자신의 현장에 있는 〚카드명 [쿠도 유사쿠]〛를 1장까지 선택하고, 턴 종료 시까지 “이 캐릭터의 【인연】은 지정된 카드명의 캐릭터가 자신의 현장에 있는 것으로 취급한다.”를 부여한다.",
           "interpretation": "턴당 1회 · 쿠도 유사쿠 등장 시 AP 8000 이하 리무브",
           "confidence": "high",
-          "reviewNotes": "실행 정의가 활성 서버 카탈로그에 등록되어 있고 트리거·선택 대상·카드 이동 동작이 런타임에 구현되었습니다.",
+          "reviewNotes": "실행 정의와 해당 DSL 단계가 운영 실행기에 등록되었습니다. 카드별 실제 플레이 동작은 별도 확인이 필요합니다.",
           "proposedDefinition": {
             "effectId": "card-1166-on-yusaku-enter-remove-ap8k",
             "cardIds": [
@@ -2346,14 +2338,15 @@
           "structuralValidation": {
             "status": "passed",
             "errors": []
-          }
+          },
+          "runtimeBlockers": []
         },
         {
           "candidateId": "implemented-card-1166-activated-bond-alias",
           "sourceText": "【파트너 백】【자신의 턴 중】【턴 1】 - 자신의 현장에 〚카드명 [쿠도 유사쿠]〛가 등장했을 때, AP 8000 이하의 캐릭터를 1장까지 선택하여 리무브한다.\n【인연 : 쿠도 유사쿠】【선언】【턴 1】 - 자신의 현장에 있는 〚카드명 [쿠도 유사쿠]〛를 1장까지 선택하고, 턴 종료 시까지 “이 캐릭터의 【인연】은 지정된 카드명의 캐릭터가 자신의 현장에 있는 것으로 취급한다.”를 부여한다.",
           "interpretation": "턴당 1회 · 선택한 쿠도 유사쿠의 인연 조건 대체",
           "confidence": "high",
-          "reviewNotes": "실행 정의는 운영 카탈로그에 있으나 미구현 DSL 단계가 남아 있습니다: grant_bond_alias. 턴 종료까지 인연 이름을 임시로 추가하는 단계가 아직 실행기에서 지원되지 않습니다.",
+          "reviewNotes": "실행 정의와 해당 DSL 단계가 운영 실행기에 등록되었습니다. 카드별 실제 플레이 동작은 별도 확인이 필요합니다.",
           "proposedDefinition": {
             "effectId": "card-1166-activated-bond-alias",
             "cardIds": [
@@ -2418,9 +2411,7 @@
             "status": "passed",
             "errors": []
           },
-          "runtimeBlockers": [
-            "grant_bond_alias"
-          ]
+          "runtimeBlockers": []
         }
       ]
     },
