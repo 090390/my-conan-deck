@@ -1,9 +1,6 @@
 name: Refresh TorecaBirth prices
 
 on:
-  push:
-    paths:
-      - '.github/price-refresh-trigger-20261101'
   schedule:
     # Weekly, Tuesday 03:12 JST (Monday 18:12 UTC)
     - cron: '12 18 * * 1'
