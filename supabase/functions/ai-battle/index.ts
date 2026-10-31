@@ -389,6 +389,12 @@ function chooseActivatedAbility(state: any, aiId: string) {
       let validTargets = from === "evidence_area"
         ? candidates
         : candidates.filter((card: any) => matchesDslFilter(card, step.filter));
+      if ((String(ability?.effect_id || "") === "card-1039-declare-remove-character-ap-8000"
+        || String(ability?.effect_id || "") === "card-1040-declare-remove-character-level-7")
+        && validTargets.length === 0) {
+        invalid = true;
+        break;
+      }
       const statStep = definition.steps.find((candidate: any) =>
         candidate?.op === "modify_stat"
         && String(candidate.target || "").replace(/^vars\./u, "") === String(step.saveAs || ""));
@@ -724,7 +730,9 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
           .filter((card: any) => isCharacter(card) && cardCost(card) <= 8
             && (hasTrait(card, "犯人") || hasTrait(card, "범인")))
           .map((card: any) => cardCost(card)));
-        score += Math.min(5, distinctCulpritLevels.size) * 12;
+        score = distinctCulpritLevels.size > 0
+          ? score + Math.min(5, distinctCulpritLevels.size) * 12
+          : -1;
       } else if (effectId === "card-0721-solution-remove-all-and-deploy-black") {
         const totalFieldCharacters = [...field, ...enemyField].filter((card: any) => isCharacter(card)).length;
         score += totalFieldCharacters * 16;
