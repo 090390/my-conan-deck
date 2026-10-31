@@ -293,7 +293,15 @@ function chooseActivatedAbility(state: any, aiId: string) {
       || (Array.isArray(me.partner_non_mr_cards) ? me.partner_non_mr_cards : [])
         .find((card: any) => String(card?.instance_id || "") === sourceId)
       || null;
-    if (!source || !isActive(source)) continue;
+    if (!source) continue;
+    const sourceStatus = String(source.status || "active").toLowerCase();
+    const sourceIsRested = Boolean(source.rested)
+      || ["rested", "sleep", "slumber", "sleeping", "슬립"].includes(sourceStatus);
+    const sourceIsStunned = Boolean(source.stunned || source.stun || source.is_stunned)
+      || ["stunned", "stun", "스턴"].includes(sourceStatus);
+    const canReadyRestedSource = sourceIsRested && !sourceIsStunned
+      && definition.steps.some((step: any) => step?.op === "ready_source_character");
+    if (!isActive(source) && !canReadyRestedSource) continue;
 
     // Preflight follow-up contacts before opening an effect chooser. The SQL
     // effect runner rejects a newly summoned source when start_contact does
@@ -598,7 +606,9 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
   const evidenceAttackers = activeAttackers.filter((card: any) => !hasCharacterOnlyCharge(card));
   const characterCount = field.filter((card: any) => isCharacter(card)).length;
   const level = Math.max(0, Number(me.file_count || 0)) + (me.partner_assist_used ? 1 : 0);
-  // Partner assist/deduction and other non-card actions may set base_action_done;\n  // Next Hint is unlocked only after the actual basic character/event card play.\n  const basePlayed = Boolean(me.base_card_played_this_turn || me.base_character_played_this_turn || me.character_played_this_turn);
+  // Partner assist/deduction and other non-card actions may set base_action_done;
+  // Next Hint is unlocked only after the actual basic character/event card play.
+  const basePlayed = Boolean(me.base_card_played_this_turn || me.base_character_played_this_turn || me.character_played_this_turn);
   const turnNumber = Number(state?.turn_number || 0);
   const nextHintAlreadyUsedThisTurn = turnNumber > 0 && Number(lastNextHintTurnNumber) === turnNumber;
   const isSolution = String(me.case_phase || "incident").toLocaleLowerCase() === "solution";
