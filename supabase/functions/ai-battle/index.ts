@@ -994,7 +994,12 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
         const preferOpponentRestTarget = restTargetEffects.has(String(pending.effect_id || ""))
           || String(pending.effect_id || "") === "card-1039-declare-remove-character-ap-8000"
           || String(pending.effect_id || "") === "card-1040-declare-remove-character-level-7";
-        const targetOptions = preferOpponentRestTarget
+        // Some effects use the same effect ID for multiple selection steps.
+        // For ID:1197 the first step is an AI-owned hand discard cost, while
+        // the later step targets an opposing field character. Apply the
+        // opponent-only preference only to field-card choices, never to hand costs.
+        const isFieldTargetSelection = options.some((option: any) => String(option?.zone || "") === "field");
+        const targetOptions = preferOpponentRestTarget && isFieldTargetSelection
           ? options.filter((option: any) => String(option?.owner_user_id || "") !== String(battle.ai_user_id))
           : options;
         const ids = targetOptions.map((option: any) => String(option?.instance_id || option?.card?.instance_id || "")).filter(Boolean);
