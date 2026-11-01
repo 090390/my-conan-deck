@@ -1527,7 +1527,8 @@
           "op": "set_continuous_stat",
           "stat": "lp",
           "amount": 1,
-          "target": "source_character"
+          "target": "source_character",
+          "duration": "while_condition_true"
         }
       ],
       "cardIds": [
@@ -1543,7 +1544,11 @@
           "operator": "equals"
         }
       ],
-      "continuous": true
+      "continuous": true,
+      "trigger": {
+        "event": "continuous.recalculate",
+        "timing": "continuous"
+      }
     },
     {
       "steps": [
@@ -1551,7 +1556,8 @@
           "op": "set_continuous_stat",
           "stat": "ap",
           "amount": 2000,
-          "target": "source_character"
+          "target": "source_character",
+          "duration": "while_condition_true"
         }
       ],
       "cardIds": [
@@ -1567,7 +1573,11 @@
           "operator": "equals"
         }
       ],
-      "continuous": true
+      "continuous": true,
+      "trigger": {
+        "event": "continuous.recalculate",
+        "timing": "continuous"
+      }
     },
     {
       "steps": [
@@ -1693,7 +1703,8 @@
         {
           "op": "set_continuous_keyword",
           "target": "source_character",
-          "keyword": "haya"
+          "keyword": "haya",
+          "duration": "while_condition_true"
         }
       ],
       "cardIds": [
@@ -1709,14 +1720,19 @@
           "operator": "equals"
         }
       ],
-      "continuous": true
+      "continuous": true,
+      "trigger": {
+        "event": "continuous.recalculate",
+        "timing": "continuous"
+      }
     },
     {
       "steps": [
         {
           "op": "set_continuous_keyword",
           "target": "source_character",
-          "keyword": "charge"
+          "keyword": "charge",
+          "duration": "while_condition_true"
         }
       ],
       "cardIds": [
@@ -1732,7 +1748,11 @@
           "operator": "equals"
         }
       ],
-      "continuous": true
+      "continuous": true,
+      "trigger": {
+        "event": "continuous.recalculate",
+        "timing": "continuous"
+      }
     },
     {
       "steps": [
@@ -2775,7 +2795,8 @@
         {
           "op": "set_continuous_keyword",
           "target": "source_character",
-          "keyword": "charge"
+          "keyword": "charge",
+          "duration": "while_condition_true"
         }
       ],
       "cardIds": [
@@ -2791,7 +2812,11 @@
           "operator": "equals"
         }
       ],
-      "continuous": true
+      "continuous": true,
+      "trigger": {
+        "event": "continuous.recalculate",
+        "timing": "continuous"
+      }
     },
     {
       "steps": [
