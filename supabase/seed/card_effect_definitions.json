@@ -9614,6 +9614,621 @@
       "reviewNotes": {
         "sourceText": "【解決編】【宣言】【ターン1】〚裏向きの証拠2つを表向きにする〛：自分のデッキの上から3枚を見る。その中から《服部平次》または《遠山和葉》を1枚まで公開して手札に加え、残りを好きな順番でデッキの下に置く。この能力は自分の現場に《服部平次》または《遠山和葉》がいる場合に宣言できる。"
       }
+    },
+    {
+      "effectId": "card-0531-activated-once-ready-or-charge-green-level8",
+      "cardIds": [
+        "0531"
+      ],
+      "cardNameJa": "服部平次＆遠山和葉",
+      "cardNameKo": "핫토리 헤이지&토야마 카즈하",
+      "trigger": {
+        "event": "character.activated_ability",
+        "timing": "after"
+      },
+      "allowPartnerArea": true,
+      "oncePerTurn": true,
+      "activationLabelKo": "레벨 8 이하 녹 캐릭터 액티브화 또는 돌격 부여",
+      "conditions": [
+        {
+          "fact": "player.partner.color",
+          "value": "green",
+          "operator": "equals"
+        }
+      ],
+      "steps": [
+        {
+          "op": "offer_reaction",
+          "actor": "controller",
+          "saveAs": "mode",
+          "reactionId": "card-0531-choose-ready-or-charge",
+          "prompt": "레벨 8 이하의 녹 캐릭터를 액티브로 만들까요, 아니면 턴 종료 시까지 돌격을 부여할까요?",
+          "choices": [
+            "액티브화",
+            "돌격 부여"
+          ]
+        },
+        {
+          "op": "select_cards",
+          "from": "both_fields",
+          "min": 0,
+          "max": 1,
+          "saveAs": "ready_target",
+          "optional": true,
+          "when": {
+            "fact": "vars.mode",
+            "value": "액티브화",
+            "operator": "equals"
+          },
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "value": "character",
+                "operator": "equals"
+              },
+              {
+                "field": "color",
+                "value": "green",
+                "operator": "equals"
+              },
+              {
+                "field": "level",
+                "value": 8,
+                "operator": "less_than_or_equal"
+              }
+            ]
+          },
+          "prompt": "액티브로 만들 레벨 8 이하의 녹 캐릭터를 최대 1장 선택하세요."
+        },
+        {
+          "op": "ready_cards",
+          "target": "vars.ready_target",
+          "when": {
+            "fact": "vars.mode",
+            "value": "액티브화",
+            "operator": "equals"
+          }
+        },
+        {
+          "op": "select_cards",
+          "from": "both_fields",
+          "min": 0,
+          "max": 1,
+          "saveAs": "charge_target",
+          "optional": true,
+          "when": {
+            "fact": "vars.mode",
+            "value": "돌격 부여",
+            "operator": "equals"
+          },
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "value": "character",
+                "operator": "equals"
+              },
+              {
+                "field": "color",
+                "value": "green",
+                "operator": "equals"
+              },
+              {
+                "field": "level",
+                "value": 8,
+                "operator": "less_than_or_equal"
+              }
+            ]
+          },
+          "prompt": "턴 종료 시까지 돌격을 부여할 레벨 8 이하의 녹 캐릭터를 최대 1장 선택하세요."
+        },
+        {
+          "op": "grant_keyword",
+          "target": "vars.charge_target",
+          "keyword": "charge",
+          "duration": "turn_end",
+          "displayNameKo": "돌격",
+          "when": {
+            "fact": "vars.mode",
+            "value": "돌격 부여",
+            "operator": "equals"
+          }
+        }
+      ],
+      "reviewNotes": {
+        "sourceText": "【パートナー緑】【宣言】【ターン1】レベル8以下の【緑】のキャラを1枚まで選び、アクティブにするか、ターン終了時まで〚突撃〛を与える。",
+        "interpretation": "녹 파트너 조건의 턴당 1회 선언 능력입니다. 액티브화와 턴 종료까지 돌격 부여 중 하나를 선택합니다. 스턴 상태 캐릭터를 액티브화할 경우 규칙에 따라 슬립 상태가 되고 스턴은 유지됩니다."
+      }
+    },
+    {
+      "effectId": "card-0531-when-heiji-or-self-enters-rest-character",
+      "cardIds": [
+        "0531"
+      ],
+      "cardNameJa": "服部平次＆遠山和葉",
+      "cardNameKo": "핫토리 헤이지&토야마 카즈하",
+      "trigger": {
+        "event": "character.entered_field",
+        "timing": "after",
+        "scope": "field_watch"
+      },
+      "allowPartnerArea": true,
+      "oncePerTurn": true,
+      "conditions": [
+        {
+          "allOf": [
+            {
+              "fact": "entry.controller_is_source_controller",
+              "value": true,
+              "operator": "equals"
+            },
+            {
+              "anyOf": [
+                {
+                  "fact": "entry.source.card_id",
+                  "value": "0531",
+                  "operator": "equals"
+                },
+                {
+                  "fact": "entry.source.card_name",
+                  "value": "服部平次",
+                  "operator": "name_matches"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "steps": [
+        {
+          "op": "select_cards",
+          "from": "both_fields",
+          "min": 0,
+          "max": 1,
+          "saveAs": "rest_target",
+          "optional": true,
+          "filter": {
+            "field": "card_type",
+            "value": "character",
+            "operator": "equals"
+          },
+          "prompt": "핫토리 헤이지 또는 헤이지&카즈하가 등장했습니다. 슬립시킬 캐릭터를 최대 1장 선택하세요."
+        },
+        {
+          "op": "rest_cards",
+          "target": "vars.rest_target"
+        }
+      ],
+      "reviewNotes": {
+        "sourceText": "【ターン1】自分の現場に〚カード名［服部平次］〛か〚［遠山和葉］〛が登場したとき、キャラを1枚まで選び、スリープさせる。この能力はパートナーエリアでも発動する。",
+        "interpretation": "턴당 1회. 자신의 현장에 핫토리 헤이지 또는 이 카드 자신(헤이지&카즈하)이 등장했을 때 캐릭터 1장까지 슬립시킵니다. 파트너 에이리어에서도 발동합니다."
+      }
+    },
+    {
+      "effectId": "card-0419-when-heiji-or-self-enters-disable-opponent-ability",
+      "cardIds": [
+        "0419"
+      ],
+      "cardNameJa": "遠山和葉",
+      "cardNameKo": "토야마 카즈하",
+      "trigger": {
+        "event": "character.entered_field",
+        "timing": "after",
+        "scope": "field_watch"
+      },
+      "conditions": [
+        {
+          "allOf": [
+            {
+              "fact": "entry.controller_is_source_controller",
+              "value": true,
+              "operator": "equals"
+            },
+            {
+              "anyOf": [
+                {
+                  "fact": "entry.source.card_name",
+                  "value": "服部平次",
+                  "operator": "name_matches"
+                },
+                {
+                  "fact": "entry.source.card_name",
+                  "value": "遠山和葉",
+                  "operator": "name_matches"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "steps": [
+        {
+          "op": "select_cards",
+          "from": "opponent_field",
+          "min": 0,
+          "max": 1,
+          "saveAs": "silence_target",
+          "optional": true,
+          "filter": {
+            "field": "card_type",
+            "value": "character",
+            "operator": "equals"
+          },
+          "targetController": "opponent",
+          "prompt": "토야마 카즈하 또는 핫토리 헤이지가 등장했습니다. 원래 능력을 턴 종료 시까지 무효화할 상대 캐릭터를 최대 1장 선택하세요."
+        },
+        {
+          "op": "disable_original_abilities",
+          "target": "vars.silence_target"
+        }
+      ],
+      "reviewNotes": {
+        "sourceText": "このキャラか〚カード名［服部平次］〛が自分の現場に登場したとき、相手の現場にいるキャラを1枚まで選び、ターン終了時まで元の能力を無効にする。",
+        "interpretation": "이 토야마 카즈하 또는 핫토리 헤이지가 자신의 현장에 등장하면 상대 현장의 캐릭터 1장까지 선택합니다. 선택한 캐릭터의 원래 능력만 턴 종료 시까지 무효화하며, 다른 카드가 부여한 능력과 이미 해결된 효과는 유지합니다. 변장으로 교체된 캐릭터에도 무효화 상태를 이어받습니다."
+      }
+    },
+    {
+      "effectId": "card-0419-opponent-turn-field-remove-draw",
+      "cardIds": [
+        "0419"
+      ],
+      "cardNameJa": "遠山和葉",
+      "cardNameKo": "토야마 카즈하",
+      "trigger": {
+        "event": "character.removed_from_field",
+        "timing": "after",
+        "scope": "source"
+      },
+      "conditions": [
+        {
+          "fact": "turn.is_opponent_turn",
+          "value": true,
+          "operator": "equals"
+        }
+      ],
+      "steps": [
+        {
+          "op": "draw_cards",
+          "count": 1,
+          "destination": "hand"
+        }
+      ],
+      "reviewNotes": {
+        "sourceText": "【相手ターン中】【現場リムーブ時】カードを1枚引く。",
+        "interpretation": "상대 턴 중 이 카드가 현장에서 리무브 에이리어로 이동했을 때 카드 1장을 뽑습니다. 효과에 의한 리무브도 포함합니다."
+      }
+    },
+    {
+      "effectId": "card-0419-solution-declare-discard-hand-sleep-revive-heiji-level5",
+      "cardIds": [
+        "0419"
+      ],
+      "cardNameJa": "遠山和葉",
+      "cardNameKo": "토야마 카즈하",
+      "trigger": {
+        "event": "character.activated_ability",
+        "timing": "after"
+      },
+      "activationLabelKo": "패 1장 리무브·슬립으로 리무브 에이리어의 레벨 5 이하 헤이지 등장",
+      "conditions": [
+        {
+          "fact": "player.partner.color",
+          "value": "green",
+          "operator": "equals"
+        },
+        {
+          "fact": "player.case_phase",
+          "value": "solution",
+          "operator": "equals"
+        }
+      ],
+      "steps": [
+        {
+          "op": "select_cards",
+          "from": "hand",
+          "min": 1,
+          "max": 1,
+          "saveAs": "hand_cost",
+          "optional": false,
+          "prompt": "토야마 카즈하의 선언 비용으로 패 1장을 선택해 리무브하세요."
+        },
+        {
+          "op": "move_cards",
+          "to": "remove_area",
+          "from": "vars.hand_cost"
+        },
+        {
+          "op": "pay_cost",
+          "cost": "sleep_source_character"
+        },
+        {
+          "op": "select_cards",
+          "from": "remove_area",
+          "min": 0,
+          "max": 1,
+          "saveAs": "heiji_to_deploy",
+          "optional": true,
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "value": "character",
+                "operator": "equals"
+              },
+              {
+                "field": "card_name",
+                "value": "服部平次",
+                "operator": "name_matches"
+              },
+              {
+                "field": "level",
+                "value": 5,
+                "operator": "less_than_or_equal"
+              }
+            ]
+          },
+          "prompt": "리무브 에이리어에서 레벨 5 이하의 핫토리 헤이지를 최대 1장 선택해 등장시킬 수 있습니다."
+        },
+        {
+          "op": "calculate_switch_count",
+          "deploymentVariable": "vars.heiji_to_deploy",
+          "saveAs": "switch_count",
+          "when": {
+            "fact": "vars.heiji_to_deploy.count",
+            "value": 0,
+            "operator": "greater_than"
+          }
+        },
+        {
+          "op": "select_cards",
+          "from": "field",
+          "minFrom": "vars.switch_count",
+          "maxFrom": "vars.switch_count",
+          "saveAs": "switch_targets",
+          "optional": true,
+          "targetController": "self",
+          "when": {
+            "fact": "vars.switch_count",
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "filter": {
+            "field": "card_type",
+            "value": "character",
+            "operator": "equals"
+          },
+          "prompt": "현장에 캐릭터가 5장 있어 등장 공간이 부족합니다. 리무브할 자신의 현장 캐릭터를 선택하세요."
+        },
+        {
+          "op": "move_cards",
+          "to": "remove_area",
+          "from": "vars.switch_targets",
+          "when": {
+            "fact": "vars.switch_count",
+            "value": 0,
+            "operator": "greater_than"
+          }
+        },
+        {
+          "op": "move_cards",
+          "to": "field",
+          "from": "vars.heiji_to_deploy",
+          "entryMethod": "event_effect",
+          "when": {
+            "fact": "vars.heiji_to_deploy.count",
+            "value": 0,
+            "operator": "greater_than"
+          }
+        }
+      ],
+      "reviewNotes": {
+        "sourceText": "【パートナー緑】【解決編】【宣言】【スリープ】〚手札を1枚リムーブする〛：自分のリムーブエリアにあるレベル5以下の〚カード名［服部平次］〛を1枚まで選び、登場させる。",
+        "interpretation": "녹 파트너·해결편에서 사용합니다. 이 캐릭터를 슬립시키고 패 1장을 리무브한 뒤, 리무브 에이리어의 레벨 5 이하 핫토리 헤이지를 최대 1장 등장시킵니다. 현장 캐릭터가 이미 5장이라면 규칙에 따라 1장을 스위치합니다."
+      }
+    },
+    {
+      "effectId": "card-0971-activated-face-down-set-or-hand-cost-stun-rested-character",
+      "cardIds": [
+        "0971"
+      ],
+      "cardNameJa": "大岡紅葉",
+      "cardNameKo": "오오카 모미지",
+      "trigger": {
+        "event": "character.activated_ability",
+        "timing": "after"
+      },
+      "oncePerTurn": true,
+      "activationLabelKo": "세트 카드 또는 패 1장 리무브로 슬립 캐릭터 스턴",
+      "steps": [
+        {
+          "op": "select_cards",
+          "from": "hand_or_attachment",
+          "min": 1,
+          "max": 1,
+          "saveAs": "stun_cost",
+          "optional": false,
+          "filter": {
+            "field": "face_up",
+            "value": false,
+            "operator": "equals"
+          },
+          "prompt": "현장 캐릭터에게 뒷면으로 세트된 카드 1장 또는 패 1장을 선택해 리무브하세요."
+        },
+        {
+          "op": "move_cards",
+          "to": "remove_area",
+          "from": "vars.stun_cost"
+        },
+        {
+          "op": "select_cards",
+          "from": "both_fields",
+          "min": 0,
+          "max": 1,
+          "saveAs": "stun_target",
+          "optional": true,
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "value": "character",
+                "operator": "equals"
+              },
+              {
+                "field": "status",
+                "value": "rested",
+                "operator": "equals"
+              }
+            ]
+          },
+          "prompt": "슬립 상태인 캐릭터를 최대 1장 선택해 스턴 상태로 만드세요."
+        },
+        {
+          "op": "stun_cards",
+          "target": "vars.stun_target"
+        }
+      ],
+      "reviewNotes": {
+        "sourceText": "【宣言】【ターン1】〚現場にいるキャラに裏向きでセットされているカード1枚か、手札を1枚リムーブする〛：スリープ状態のキャラを1枚まで選び、スタンさせる。",
+        "interpretation": "턴당 1회. 자신의 현장 캐릭터에 뒷면으로 세트된 카드 1장 또는 패 1장을 비용으로 리무브합니다. 그 후 슬립 캐릭터 1장까지 스턴시킵니다. 스턴 캐릭터를 액티브로 만들려 하면 슬립 처리되며 스턴은 유지됩니다."
+      }
+    },
+    {
+      "effectId": "card-1083-partner-green-sleep-remove-level8-character",
+      "cardIds": [
+        "1083"
+      ],
+      "cardNameJa": "遠山和葉",
+      "cardNameKo": "토야마 카즈하",
+      "trigger": {
+        "event": "character.activated_ability",
+        "timing": "after"
+      },
+      "activationLabelKo": "슬립으로 레벨 8 이하 캐릭터 리무브",
+      "conditions": [
+        {
+          "fact": "player.partner.color",
+          "value": "green",
+          "operator": "equals"
+        }
+      ],
+      "steps": [
+        {
+          "op": "pay_cost",
+          "cost": "sleep_source_character"
+        },
+        {
+          "op": "select_cards",
+          "from": "both_fields",
+          "min": 0,
+          "max": 1,
+          "saveAs": "level8_target",
+          "optional": true,
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "value": "character",
+                "operator": "equals"
+              },
+              {
+                "field": "level",
+                "value": 8,
+                "operator": "less_than_or_equal"
+              }
+            ]
+          },
+          "prompt": "레벨 8 이하의 캐릭터를 최대 1장 선택해 리무브하세요."
+        },
+        {
+          "op": "move_cards",
+          "to": "remove_area",
+          "from": "vars.level8_target"
+        }
+      ],
+      "reviewNotes": {
+        "sourceText": "【パートナー緑】【宣言】【スリープ】：レベル8以下のキャラを1枚まで選び、リムーブする。",
+        "interpretation": "녹 파트너 조건의 선언 능력입니다. 이 캐릭터를 슬립시키고, 레벨 8 이하 캐릭터 1장까지 선택해 리무브합니다."
+      }
+    },
+    {
+      "effectId": "card-1083-activated-remove-two-facedown-heiji-green-police-set-cards",
+      "cardIds": [
+        "1083"
+      ],
+      "cardNameJa": "遠山和葉",
+      "cardNameKo": "토야마 카즈하",
+      "trigger": {
+        "event": "character.activated_ability",
+        "timing": "after"
+      },
+      "oncePerTurn": true,
+      "activationLabelKo": "헤이지·녹색 경찰 캐릭터의 뒷면 세트 카드 2장 리무브",
+      "conditions": [
+        {
+          "fact": "player.partner.color",
+          "value": "green",
+          "operator": "equals"
+        }
+      ],
+      "steps": [
+        {
+          "op": "select_cards",
+          "from": "heiji_green_police_attachments",
+          "min": 2,
+          "max": 2,
+          "saveAs": "set_cost",
+          "optional": false,
+          "filter": {
+            "field": "face_up",
+            "value": false,
+            "operator": "equals"
+          },
+          "prompt": "자신의 현장에서 핫토리 헤이지 또는 녹색·경찰 특징 캐릭터에 뒷면으로 세트된 카드 2장을 선택해 리무브하세요. 두 캐릭터에 1장씩 나누어 선택해도 됩니다."
+        },
+        {
+          "op": "move_cards",
+          "to": "remove_area",
+          "from": "vars.set_cost"
+        },
+        {
+          "op": "select_cards",
+          "from": "both_fields",
+          "min": 0,
+          "max": 1,
+          "saveAs": "level7_rest_target",
+          "optional": true,
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "value": "character",
+                "operator": "equals"
+              },
+              {
+                "field": "level",
+                "value": 7,
+                "operator": "less_than_or_equal"
+              },
+              {
+                "field": "status",
+                "value": "rested",
+                "operator": "equals"
+              }
+            ]
+          },
+          "prompt": "레벨 7 이하의 슬립 상태인 캐릭터를 최대 1장 선택해 리무브하세요."
+        },
+        {
+          "op": "move_cards",
+          "to": "remove_area",
+          "from": "vars.level7_rest_target"
+        }
+      ],
+      "reviewNotes": {
+        "sourceText": "【宣言】【ターン1】〚現場にいるカード名［服部平次］か【緑】の特徴［警察］のキャラに裏向きでセットされているカードを合わせて2枚リムーブする〛：レベル7以下のスリープ状態のキャラを1枚まで選び、リムーブする。",
+        "interpretation": "턴당 1회. 자신의 현장에 있는 핫토리 헤이지 또는 녹색·경찰 특징 캐릭터에 뒷면으로 세트된 카드 2장을 리무브합니다. 두 장은 한 캐릭터에 모두 세트되어 있어도 되고, 두 캐릭터에 나누어 세트되어 있어도 됩니다. 이후 레벨 7 이하의 슬립 캐릭터 1장까지 리무브합니다."
+      }
     }
   ]
 }
