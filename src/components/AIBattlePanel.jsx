@@ -19,6 +19,7 @@ const REVIEWED_AI_DECK_IDS = new Set([
   "bab580f2-582d-4eb8-8896-814f51c0dd4b", // 11탄 청백 키드신란
   "e3819c6f-c9e6-4d3d-9a21-b69ed334adea", // 범인덱
   "f59538fa-d17d-4da6-b8f9-44bcca43d30f", // FBI
+  "1f8bd048-f356-4470-b4c6-08cdc9c21e74", // 녹 헤카 컨트롤
 ]);
 
 function exemptionId(card, fallback = "") {
