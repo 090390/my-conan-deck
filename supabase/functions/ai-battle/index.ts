@@ -719,6 +719,44 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
     const nextCard = hand.filter((card: any) => isCharacter(card)
       && cardCost(card) <= level + 1 && characterCount < 5)
       .sort((a: any, b: any) => cardStrength(b) - cardStrength(a))[0];
+
+    // Event cards are legal after Next Hint too. The server exposes only event
+    // effects whose live partner/case/file conditions currently pass; choose a
+    // playable event when its payoff compares favourably with the best character.
+    const eventCandidates = Array.isArray(state?.ai_event_effect_candidates)
+      ? state.ai_event_effect_candidates : [];
+    const eventScoreByInstance = new Map<string, number>();
+    for (const candidate of eventCandidates) {
+      const instanceId = String(candidate?.source_instance_id || "");
+      if (!instanceId) continue;
+      let score = estimateEventEffectScore(candidate?.definition);
+      const effectId = String(candidate?.effect_id || candidate?.definition?.effectId || "");
+      if (effectId === "card-1044-event-deploy-different-level-culprits") {
+        const distinctCulpritLevels = new Set(removeArea
+          .filter((card: any) => isCharacter(card) && cardCost(card) <= 8
+            && (hasTrait(card, "犯人") || hasTrait(card, "범인")))
+          .map((card: any) => cardCost(card)));
+        score = distinctCulpritLevels.size > 0
+          ? score + Math.min(5, distinctCulpritLevels.size) * 12
+          : -1;
+      } else if (effectId === "card-0721-solution-remove-all-and-deploy-black") {
+        const totalFieldCharacters = [...field, ...enemyField].filter((card: any) => isCharacter(card)).length;
+        score += totalFieldCharacters * 16;
+      }
+      eventScoreByInstance.set(instanceId, Math.max(eventScoreByInstance.get(instanceId) || 0, score));
+    }
+    const nextHintEvent = hand.filter((card: any) => isEvent(card)
+      && cardCost(card) <= level + 1
+      && eventScoreByInstance.has(String(card?.instance_id || "")))
+      .map((card: any) => ({
+        card,
+        score: eventScoreByInstance.get(String(card.instance_id)) || 0,
+      }))
+      .sort((a: any, b: any) => b.score - a.score || cardCost(a.card) - cardCost(b.card))[0];
+    const eventThreshold = nextCard ? Math.max(5, cardStrength(nextCard) / 250) : 1.5;
+    if (nextHintEvent && nextHintEvent.score >= eventThreshold) {
+      return { action: "play_event", payload: { instance_id: nextHintEvent.card.instance_id } };
+    }
     return nextCard
       ? { action: "next_hint", payload: { instance_id: nextCard.instance_id } }
       : { action: "cancel_next_hint" };
