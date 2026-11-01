@@ -56,6 +56,7 @@ function cardCutInBonusForSubject(
 
   // Card-specific legality modifiers. These are conditions for whether the cut-in
   // can be used at all, not just changes to its AP bonus.
+  if (matchesInternalCardId(card, "1001") && !isOwnerTurn) return 0;
   if (matchesInternalCardId(card, "0570") && partnerColor !== "red") return 0;
   if (matchesInternalCardId(card, "1073")) {
     const allowedTarget = Boolean(subject && (
@@ -1293,6 +1294,12 @@ Deno.serve(async (req: Request) => {
       });
       if (deckError) throw deckError;
 
+      const { error: humanEventRedColorError } = await userClient.rpc("set_private_room_event_has_non_red_color_v1", {
+        p_room_id: room.out_room_id,
+        p_has_non_red_color: Boolean(body.event_has_non_red_color),
+      });
+      if (humanEventRedColorError) throw humanEventRedColorError;
+
       const botId = await ensureBotAccount(service);
       const { error: battleError } = await service.rpc("create_private_ai_battle_v1", {
         p_room_id: room.out_room_id,
@@ -1304,6 +1311,7 @@ Deno.serve(async (req: Request) => {
         p_ai_event_has_non_blue_color: Boolean(aiDeck.event_has_non_blue_color),
         p_ai_event_rule_code: String(aiDeck.event_rule_code || ""),
         p_ai_partner_color: String(aiDeck.partner_color || ""),
+        p_ai_event_has_non_red_color: Boolean(aiDeck.event_has_non_red_color),
       });
       if (battleError) throw battleError;
 
