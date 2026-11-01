@@ -372,11 +372,12 @@ function chooseActivatedAbility(state: any, aiId: string) {
       let candidates: any[] = [];
       const from = String(step.from || "");
       const effectId = String(ability?.effect_id || "");
-      if (effectId === "card-1039-declare-remove-character-ap-8000"
-        || effectId === "card-1040-declare-remove-character-level-7") {
-        // The card text targets a character, not only an opposing character.
-        // Keep both sides available; the chooser prefers an opponent target
-        // and falls back to a legal own-field target when needed.
+      if (effectId === "card-1039-declare-remove-character-ap-8000") {
+        // ID:1039 is strategically used only when it can remove an opponent's
+        // character. Do not sleep the AI source merely to remove its own card.
+        candidates = enemyField;
+      } else if (effectId === "card-1040-declare-remove-character-level-7") {
+        // ID:1040 retains the card text's both-field target semantics.
         candidates = [...enemyField, ...ownField];
       } else if (from === "opponent_field") candidates = enemyField;
       else if (from === "field" || from === "own_field" || from === "self_field") candidates = ownField;
@@ -660,6 +661,7 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
   const hand = Array.isArray(state?.my_hand) ? state.my_hand : [];
   const field = Array.isArray(me.field_cards) ? me.field_cards : [];
   const enemyField = Array.isArray(opponent.field_cards) ? opponent.field_cards : [];
+  const removeArea = Array.isArray(state?.my_remove_cards) ? state.my_remove_cards : [];
   const partnerColor = normalizedColor(state.ai_partner_color || me.partner_color || "");
   const activeAttackers = field.filter((card: any) => isCharacter(card) && isActive(card)
     && (!card.summoned_this_turn || hasCharge(card)))
@@ -1065,8 +1067,9 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
           "card-0704-hirameki-rest-character",
           "card-1197-activated-ready-ap-minus2000-and-rest-character",
         ]);
+        const strictOpponentRemoval = String(pending.effect_id || "") === "card-1039-declare-remove-character-ap-8000";
         const preferOpponentRestTarget = restTargetEffects.has(String(pending.effect_id || ""))
-          || String(pending.effect_id || "") === "card-1039-declare-remove-character-ap-8000"
+          || strictOpponentRemoval
           || String(pending.effect_id || "") === "card-1040-declare-remove-character-level-7";
         // Some effects use the same effect ID for multiple selection steps.
         // For ID:1197 the first step is an AI-owned hand discard cost, while
@@ -1077,7 +1080,7 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
           ? (() => {
               const opponents = options.filter((option: any) =>
                 String(option?.owner_user_id || "") !== String(battle.ai_user_id));
-              return opponents.length > 0 ? opponents : options;
+              return strictOpponentRemoval ? opponents : opponents.length > 0 ? opponents : options;
             })()
           : options;
         const ids = targetOptions.map((option: any) => String(option?.instance_id || option?.card?.instance_id || "")).filter(Boolean);
