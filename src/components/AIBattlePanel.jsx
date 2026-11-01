@@ -51,6 +51,25 @@ function eventHasNonBlueColor(card) {
   return /(?:red|yellow|green|white|black|purple|orange|pink|brown|gold|silver|적|황|녹|백|흑|자|주|빨강|노랑|초록|흰색|검정|보라|桃|赤|黄|緑|白|黒|紫|橙|金|銀)/iu.test(text);
 }
 
+function eventHasNonRedColor(card) {
+  const source = card?.sourceData && typeof card.sourceData === "object"
+    ? card.sourceData
+    : card?.raw && typeof card.raw === "object" ? card.raw : {};
+  const values = [
+    card?.color, card?.colorKo, card?.color_ko, card?.colorKey, card?.color_key,
+    card?.colorText, card?.color_text, card?.colors, card?.originalColor,
+    source?.color, source?.colorKo, source?.color_ko, source?.colorKey, source?.color_key,
+    source?.colors, source?.raw?.color,
+  ];
+  const text = values.flatMap((value) => Array.isArray(value) ? value : [value])
+    .filter((value) => value !== null && value !== undefined)
+    .map((value) => String(value).normalize("NFKC").trim().toLocaleLowerCase())
+    .join(" ");
+  if (!text) return true;
+  if (/(?:blue|yellow|green|white|black|purple|orange|pink|brown|gold|silver|청|황|녹|백|흑|자|주|파랑|노랑|초록|흰색|검정|보라|青|黄|緑|白|黒|紫|橙|金|銀)/iu.test(text)) return true;
+  return !/(?:red|적|빨강|赤)/iu.test(text);
+}
+
 function getTraits(card) {
   const values = [card?.traits, card?.category1, card?.category2, card?.category3];
   return [...new Set(values.flatMap((value) => {
@@ -105,6 +124,7 @@ function cardPayload(card, key, count) {
     card_num: String(card?.cardNum || card?.sourceData?.card_num || ""),
     database_id: String(card?.databaseId || card?.sourceData?.database_id || key),
     name_ja: String(card?.originalName || card?.original_name || card?.name_ja || card?.nameJa || card?.sourceData?.name_ja || card?.sourceData?.nameJa || ""),
+    original_ability: String(card?.abilityJp || card?.abilityKo || card?.ability || card?.originalAbility || card?.sourceData?.feature || "").trim(),
     color: getCardColorLabel(card),
     traits: getTraits(card),
     category1: String(card?.category1 || ""),
@@ -179,6 +199,7 @@ function preparePublicDeck(cards, item) {
     event_key: String(event.key),
     event_rule_code: getEventRuleCode(event, event.key),
     event_has_non_blue_color: eventHasNonBlueColor(event),
+    event_has_non_red_color: eventHasNonRedColor(event),
     deck_name: String(item.deck_name || "이름 없는 공개 덱"),
     composer_name: String(item.composer_name || ""),
   };
@@ -315,6 +336,7 @@ export default function AIBattlePanel({ deck, partnerId, eventId, cards = [], en
           event_key: String(eventId),
           event_rule_code: getEventRuleCode(event, eventId),
           event_has_non_blue_color: eventHasNonBlueColor(event),
+          event_has_non_red_color: eventHasNonRedColor(event),
           ai_deck: aiDeck,
         },
       });
