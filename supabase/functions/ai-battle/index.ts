@@ -478,7 +478,7 @@ function chooseActivatedAbility(state: any, aiId: string) {
         return serialized.includes(`vars.${variable}`)
           || [step?.from, step?.target, step?.selectedVariable, step?.deploymentVariable,
             step?.targetVariable, step?.source]
-            .some((value) => String(value || "").replace(/^vars\\./u, "") === variable);
+            .some((value) => String(value || "").replace(/^vars\./u, "") === variable);
       };
 
       const selectionHasUsefulOutcome = (selectionStep: any) => {
