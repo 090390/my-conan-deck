@@ -52,12 +52,13 @@ function cardCutInBonusForSubject(
 ): number {
   let bonus = cardCutInBonus(card);
 
-  // ID0627: count only 犯人 cards already in the remove area; this cut-in card is excluded.
+  // ID0627: count 犯人 cards already in the remove area plus this cut-in card,
+  // which is moved from hand to the remove area as part of using the cut-in.
   if (matchesInternalCardId(card, "0627")) {
     if (!isOwnerTurn) return 0;
     const removedCulprits = removeArea.filter((entry: any) =>
       matchesCardName(entry, "犯人") || matchesCardName(entry, "범인")).length;
-    return removedCulprits * 2000;
+    return (removedCulprits + 1) * 2000;
   }
 
   // PR278 / internal 0940: partner-yellow adds 1000 AP; the server separately
