@@ -51,12 +51,18 @@ function cardCutInBonusForSubject(
   partnerColor = "",
   ownField: any[] = [],
   removeArea: any[] = [],
+  eventKey = "",
 ): number {
   let bonus = cardCutInBonus(card);
 
   // Card-specific legality modifiers. These are conditions for whether the cut-in
   // can be used at all, not just changes to its AP bonus.
   if (matchesInternalCardId(card, "1001") && !isOwnerTurn) return 0;
+  if ((matchesInternalCardId(card, "0974") || matchesInternalCardId(card, "0729")) && !isOwnerTurn) return 0;
+  // ID0540 is legal only with the green partner and a mono-green incident.
+  // The current supported green case in this deck is 恋と推理の剣道大会 (0666).
+  if (matchesInternalCardId(card, "0540")
+    && (partnerColor !== "green" || !["B06043P", "B06043", "0666"].includes(String(eventKey || "").toUpperCase()))) return 0;
   if (matchesInternalCardId(card, "0570") && partnerColor !== "red") return 0;
   if (matchesInternalCardId(card, "1073")) {
     const allowedTarget = Boolean(subject && (
@@ -642,7 +648,7 @@ function describeAction(decision: any, state: any, aiId: string) {
       const bonus = cardCutInBonusForSubject(
         cutin, subject, state?.current_turn_user_id === aiId,
         normalizedColor(state?.ai_partner_color || me?.partner_color || ""), field,
-        Array.isArray(state?.my_remove_cards) ? state.my_remove_cards : [],
+        Array.isArray(state?.my_remove_cards) ? state.my_remove_cards : [], String(me?.event_key || ""),
       );
       return `AI 탐정: 컷인을 사용해 AP를 ${bonus} 올렸습니다.`;
     }
@@ -733,7 +739,7 @@ function chooseResponse(state: any, aiId: string) {
     const isAiOwnerTurn = state.current_turn_user_id === aiId;
     const partnerColor = normalizedColor(state.ai_partner_color || me?.partner_color || "");
     const cutinBonus = (card: any) => cardCutInBonusForSubject(
-      card, contactSubject, isAiOwnerTurn, partnerColor, field, removeArea,
+      card, contactSubject, isAiOwnerTurn, partnerColor, field, removeArea, String(me?.event_key || ""),
     );
     const cutin = hand.filter((card: any) => {
       const bonus = cutinBonus(card);
@@ -989,7 +995,7 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
     const canWinWithoutCost = attackerAp >= targetAp;
     const canWinByD11007 = hand.length > 0 && attackerAp < targetAp && attackerAp + 3000 >= targetAp;
     const canWinByCutin = hand.some((card: any) => {
-      const bonus = cardCutInBonusForSubject(card, specialTargetAttacker, true, partnerColor, field, removeArea);
+      const bonus = cardCutInBonusForSubject(card, specialTargetAttacker, true, partnerColor, field, removeArea, String(me?.event_key || ""));
       return bonus > 0 && attackerAp + bonus >= targetAp;
     });
     if (canWinWithoutCost || canWinByD11007 || canWinByCutin) {
@@ -1017,7 +1023,7 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
       const canUseMatsudaContactEffect = matchesInternalCardId(candidate, "0938")
         && hand.length > 0 && attackerAp < targetAp && attackerAp + 3000 >= targetAp;
       return attackerAp >= targetAp || canUseMatsudaContactEffect || hand.some((card: any) => {
-        const bonus = cardCutInBonusForSubject(card, candidate, true, partnerColor, field, removeArea);
+        const bonus = cardCutInBonusForSubject(card, candidate, true, partnerColor, field, removeArea, String(me?.event_key || ""));
         return bonus > 0 && attackerAp + bonus >= targetAp;
       });
     });
