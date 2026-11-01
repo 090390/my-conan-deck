@@ -11,6 +11,11 @@ function n(value, fallback = 0) {
   const valueNumber = Number(value);
   return Number.isFinite(valueNumber) ? valueNumber : fallback;
 }
+function cardLevel(card) {
+  const base = Number(card?.cost ?? card?.level ?? card?.level_number ?? card?.levelNumber);
+  if (!Number.isFinite(base)) return null;
+  return Math.max(0, base + n(card?.level_bonus ?? card?.levelBonus));
+}
 function normalizeEffectQuotes(value) {
   return String(value ?? "").replace(/[“”]/gu, (quote) => quote === "“" ? "「" : "」");
 }
@@ -465,6 +470,13 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
                   p_instance_id: payload.instance_id,
                   p_delta: payload.delta,
                 })
+              : action === "adjust_character_level"
+                ? await supabase.rpc("adjust_private_character_level_v1", {
+                    p_room_id: roomId,
+                    p_owner_user_id: payload.owner_user_id,
+                    p_instance_id: payload.instance_id,
+                    p_delta: payload.delta,
+                  })
               : action === "move_mr_partner_card"
                 ? await supabase.rpc("move_private_mr_partner_to_zone_v1", {
                     p_room_id: roomId,
@@ -846,6 +858,22 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
     }
     void runAction("adjust_character_ap", { instance_id: card.instance_id, owner_user_id: ownerId, delta: -amount });
   }
+  function promptLevelAdjustment(card, ownerId, sign) {
+    const direction = sign > 0 ? "올릴" : "낮출";
+    const raw = window.prompt(`${nameOf(card)}의 레벨을 ${direction} 수치 (숫자)`, "1");
+    if (raw === null) return;
+    const amount = Math.floor(Number(raw));
+    if (!Number.isInteger(amount) || amount < 1 || amount > 100) {
+      window.alert("1~100 사이의 정수를 입력해 주세요.");
+      return;
+    }
+    void runAction("adjust_character_level", {
+      instance_id: card.instance_id,
+      owner_user_id: ownerId,
+      delta: sign * amount,
+    });
+  }
+
   function invokePromptDraw() {
     const count = promptCount("몇 장 드로우할까요?", 1, 20);
     if (count !== null) void runAction("draw_cards", { count });
@@ -1001,7 +1029,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
           </div>
         </button>
         <div style={{ marginTop: 4, fontSize: 9, fontWeight: 800, lineHeight: 1.3, overflowWrap: "anywhere" }}>{nameOf(instance)}</div>
-        <div style={{ marginTop: 2, color: C.muted, fontSize: 8 }}>AP {n(instance.ap) + n(instance.ap_bonus)} · 레벨 {instance.cost ?? "-"}</div>
+        <div style={{ marginTop: 2, color: C.muted, fontSize: 8 }}>AP {n(instance.ap) + n(instance.ap_bonus)} · 레벨 {cardLevel(instance) ?? "-"}</div>
         {eventResolving && mine && <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 5, background: "#075985" }} disabled={loading || Boolean(pending)} title={pending?.type?.startsWith("card_effect_") ? "카드 효과 처리가 끝난 뒤 리무브할 수 있습니다." : ""} onClick={() => void runAction("finish_event", { instance_id: instance.instance_id })}>효과 처리 완료 → 리무브</button>}
         {canOfferContact && <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 5, borderColor: "#fb7185", color: C.red }} disabled={loading} onClick={() => {
           const hasD11007ActiveTargetRule = cardHasRuleId(selectedAttackerCard, "0938");
@@ -1025,10 +1053,16 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
             {!isEvent && (cardStatus === "active" || cardStatus === "stunned") && <button type="button" style={st.smallButton} disabled={loading} onClick={() => { if (window.confirm(`${nameOf(instance)} 카드를 슬립 상태로 만들까요?`)) void restCharacterManually(instance, ownerId); }}>슬립</button>}
             {!isEvent && (cardStatus === "active" || cardStatus === "rested") && <button type="button" style={st.smallButton} disabled={loading} onClick={() => { if (window.confirm(`${nameOf(instance)} 카드를 스턴 상태로 만들까요?`)) void runAction("stun_character", { instance_id: instance.instance_id, owner_user_id: ownerId }); }}>스턴</button>}
             {!isEvent && (cardStatus === "rested" || cardStatus === "stunned") && <button type="button" style={st.smallButton} disabled={loading} onClick={() => void runAction("activate_character", { instance_id: instance.instance_id, owner_user_id: ownerId })}>액티브</button>}
-            {String(instance?.card_type || "").trim().toLowerCase() === "character" && <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 4 }}>
-              <button type="button" style={st.smallButton} disabled={loading} onClick={() => promptApBonus(instance, ownerId)}>AP +N</button>
-              <button type="button" style={st.smallButton} disabled={loading} onClick={() => promptApPenalty(instance, ownerId)}>AP −N</button>
-            </div>}
+            {String(instance?.card_type || "").trim().toLowerCase() === "character" && <>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 4 }}>
+                <button type="button" style={st.smallButton} disabled={loading} onClick={() => promptApBonus(instance, ownerId)}>AP +N</button>
+                <button type="button" style={st.smallButton} disabled={loading} onClick={() => promptApPenalty(instance, ownerId)}>AP −N</button>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 4 }}>
+                <button type="button" style={st.smallButton} disabled={loading} onClick={() => promptLevelAdjustment(instance, ownerId, 1)}>[LV +N]</button>
+                <button type="button" style={st.smallButton} disabled={loading} onClick={() => promptLevelAdjustment(instance, ownerId, -1)}>[LV −N]</button>
+              </div>
+            </>}
           </div></details>
           <details style={{ marginTop: 5 }}><summary style={{ cursor: "pointer", fontSize: 8, color: "#8796ac" }}>카드 이동</summary><div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 4, marginTop: 5 }}>
             <button type="button" style={st.smallButton} disabled={loading} onClick={() => moveField(instance, ownerId, "hand")}>손패로</button>
@@ -1841,7 +1875,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
           <div className="mock-card-modal-layout">
             <div>{infoFor(detailCard)?.imageUrl && <img src={infoFor(detailCard).imageUrl} alt={nameOf(detailCard)} style={{ width: "100%", maxHeight: "58vh", objectFit: "contain", background: "#080d16", borderRadius: 8 }} />}</div>
             <div style={{ minWidth: 0, display: "grid", gap: 9, alignContent: "start" }}>
-              <dl style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 6, margin: 0 }}>{[["종류", infoFor(detailCard)?.type], ["색상", infoFor(detailCard)?.color], ["레어도", infoFor(detailCard)?.rarity], ["레벨", detailCard.cost ?? infoFor(detailCard)?.cost], ["AP", detailCard.ap ?? infoFor(detailCard)?.ap], ["LP", detailCard.lp ?? infoFor(detailCard)?.lp], ["수록 제품", infoFor(detailCard)?.set]].map(([label, value]) => <div key={label} style={{ padding: 8, borderRadius: 6, background: "#080d16", border: "1px solid rgba(255,255,255,.07)" }}><dt style={{ color: C.muted, fontSize: 9 }}>{label}</dt><dd style={{ margin: "3px 0 0", fontSize: 11, fontWeight: 750, overflowWrap: "anywhere" }}>{value ?? "-"}</dd></div>)}</dl>
+              <dl style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 6, margin: 0 }}>{[["종류", infoFor(detailCard)?.type], ["색상", infoFor(detailCard)?.color], ["레어도", infoFor(detailCard)?.rarity], ["레벨", cardLevel(detailCard) ?? infoFor(detailCard)?.cost], ["AP", detailCard.ap ?? infoFor(detailCard)?.ap], ["LP", detailCard.lp ?? infoFor(detailCard)?.lp], ["수록 제품", infoFor(detailCard)?.set]].map(([label, value]) => <div key={label} style={{ padding: 8, borderRadius: 6, background: "#080d16", border: "1px solid rgba(255,255,255,.07)" }}><dt style={{ color: C.muted, fontSize: 9 }}>{label}</dt><dd style={{ margin: "3px 0 0", fontSize: 11, fontWeight: 750, overflowWrap: "anywhere" }}>{value ?? "-"}</dd></div>)}</dl>
               {(infoFor(detailCard)?.traits?.length > 0) && <div style={{ padding: 9, background: "#080d16", borderRadius: 6 }}><h3 style={{ fontSize: 11, margin: "0 0 5px", color: C.blue }}>특징</h3><p style={{ margin: 0, fontSize: 11, lineHeight: 1.6 }}>{infoFor(detailCard).traits.join(" · ")}</p></div>}
               {(infoFor(detailCard)?.keywordTags?.length > 0) && <div style={{ padding: 9, background: "#080d16", borderRadius: 6 }}><h3 style={{ fontSize: 11, margin: "0 0 5px", color: C.blue }}>특수 태그</h3><p style={{ margin: 0, fontSize: 11, lineHeight: 1.6 }}>{infoFor(detailCard).keywordTags.join(" · ")}</p></div>}
               {(infoFor(detailCard)?.hiramekiEffect || infoFor(detailCard)?.cutInEffect || infoFor(detailCard)?.disguiseEffect) && <div style={{ padding: 9, background: "#080d16", borderRadius: 6 }}><h3 style={{ fontSize: 11, margin: "0 0 5px", color: C.blue }}>게임 시스템 효과</h3>{infoFor(detailCard)?.hiramekiEffect && <p style={{ whiteSpace: "pre-wrap", fontSize: 11, lineHeight: 1.65, margin: "4px 0" }}><b style={{ color: C.muted }}>히라메키</b>　{infoFor(detailCard).hiramekiEffect}</p>}{infoFor(detailCard)?.cutInEffect && <p style={{ whiteSpace: "pre-wrap", fontSize: 11, lineHeight: 1.65, margin: "4px 0" }}><b style={{ color: C.muted }}>컷인</b>　{infoFor(detailCard).cutInEffect}</p>}{infoFor(detailCard)?.disguiseEffect && <p style={{ whiteSpace: "pre-wrap", fontSize: 11, lineHeight: 1.65, margin: "4px 0" }}><b style={{ color: C.muted }}>변장</b>　{infoFor(detailCard).disguiseEffect}</p>}</div>}
