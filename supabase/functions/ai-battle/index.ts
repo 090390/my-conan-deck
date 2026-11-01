@@ -12,8 +12,10 @@ function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: corsHeaders });
 }
 function cardCost(card: any) {
-  const value = Number(card?.cost);
-  return Number.isFinite(value) ? value : 999;
+  const value = Number(card?.cost ?? card?.level ?? card?.level_number ?? card?.sourceData?.cost);
+  if (!Number.isFinite(value)) return 999;
+  const bonus = Number(card?.level_bonus ?? card?.levelBonus ?? 0);
+  return Math.max(0, value + (Number.isFinite(bonus) ? bonus : 0));
 }
 function cardAp(card: any) {
   const value = Number(card?.ap) + Number(card?.ap_bonus || 0);
@@ -377,8 +379,9 @@ function chooseActivatedAbility(state: any, aiId: string) {
         // character. Do not sleep the AI source merely to remove its own card.
         candidates = enemyField;
       } else if (effectId === "card-1040-declare-remove-character-level-7") {
-        // ID:1040 retains the card text's both-field target semantics.
-        candidates = [...enemyField, ...ownField];
+        // ID:1040 is used only when it can remove a legal character from the
+        // opponent's field; never sleep the source to target the AI's own field.
+        candidates = enemyField;
       } else if (from === "opponent_field") candidates = enemyField;
       else if (from === "field" || from === "own_field" || from === "self_field") candidates = ownField;
       else if (from === "both_fields") candidates = [...ownField, ...enemyField];
@@ -459,10 +462,57 @@ function chooseActivatedAbility(state: any, aiId: string) {
     }
     if (invalid) continue;
 
-    // Avoid paying costs when no actual target exists; non-field zones (e.g. remove/evidence)
-    // are valid meaningful targets too, including PR181's remove-area deployment.
-    if (definition.steps.some((step: any) => step?.op === "pay_cost")
-      && selections.length > 0 && !selections.some(({ targets }) => targets.length > 0)) continue;
+    // Do not pay an activation cost merely because a cost-selection target exists.
+    // Check whether at least one selected variable actually feeds a useful effect
+    // (remove/deploy/buff/contact/etc.), or whether the definition has a separate
+    // independent effect such as a draw or reveal.
+    const hasExplicitCost = definition.steps.some((step: any) => step?.op === "pay_cost");
+    if (hasExplicitCost) {
+      const selectionSteps = definition.steps.filter((step: any) =>
+        step?.op === "select_cards" && step?.saveAs);
+      const effectSteps = definition.steps.filter((step: any) =>
+        !["pay_cost", "select_cards", "offer_reaction"].includes(String(step?.op || "")));
+
+      const stepUsesVariable = (step: any, variable: string) => {
+        const serialized = JSON.stringify(step || {});
+        return serialized.includes(`vars.${variable}`)
+          || [step?.from, step?.target, step?.selectedVariable, step?.deploymentVariable,
+            step?.targetVariable, step?.source]
+            .some((value) => String(value || "").replace(/^vars\\./u, "") === variable);
+      };
+
+      const selectionHasUsefulOutcome = (selectionStep: any) => {
+        const variable = String(selectionStep.saveAs);
+        const selection = selections.find(({ step: selectedStep }) =>
+          String(selectedStep?.saveAs || "") === variable);
+        const canSelectSomething = selection
+          ? selection.targets.length > 0
+          : unresolvedVars.has(variable);
+        if (!canSelectSomething) return false;
+
+        return effectSteps.some((effectStep: any) => {
+          if (!stepUsesVariable(effectStep, variable)) return false;
+          if (effectStep?.op === "move_cards") {
+            const source = String(selectionStep.from || "");
+            const filterText = JSON.stringify(selectionStep.filter || {});
+            const selectsOwnField = /"field":"controller","value":"self"/u.test(filterText);
+            // A character the AI sends from its own field to deck bottom or remove
+            // is a cost-like trade, not the opponent-facing payoff being sought.
+            if (effectStep.to === "deck_bottom"
+              && (["field", "own_field", "self_field"].includes(source) || selectsOwnField)) return false;
+            if (effectStep.to === "remove_area"
+              && (source === "hand" || selectsOwnField)) return false;
+          }
+          return true;
+        });
+      };
+
+      const hasTargetedPayoff = selectionSteps.some(selectionHasUsefulOutcome);
+      const hasIndependentPayoff = effectSteps.some((effectStep: any) =>
+        !selectionSteps.some((selectionStep: any) =>
+          stepUsesVariable(effectStep, String(selectionStep.saveAs))));
+      if (!hasTargetedPayoff && !hasIndependentPayoff) continue;
+    }
 
     return { action: "activate_card_effect", payload: { source_instance_id: sourceId, effect_id: ability.effect_id } };
   }
