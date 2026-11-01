@@ -53,6 +53,25 @@ function eventHasNonBlueColor(card) {
   return /(?:red|yellow|green|white|black|purple|orange|pink|brown|gold|silver|적|황|녹|백|흑|자|주|빨강|노랑|초록|흰색|검정|보라|桃|赤|黄|緑|白|黒|紫|橙|金|銀)/iu.test(text);
 }
 
+function eventHasNonRedColor(card) {
+  const source = card?.sourceData && typeof card.sourceData === "object"
+    ? card.sourceData
+    : card?.raw && typeof card.raw === "object" ? card.raw : {};
+  const values = [
+    card?.color, card?.colorKo, card?.color_ko, card?.colorKey, card?.color_key,
+    card?.colorText, card?.color_text, card?.colors, card?.originalColor,
+    source?.color, source?.colorKo, source?.color_ko, source?.colorKey, source?.color_key,
+    source?.colors, source?.raw?.color,
+  ];
+  const text = values.flatMap((value) => Array.isArray(value) ? value : [value])
+    .filter((value) => value !== null && value !== undefined)
+    .map((value) => String(value).normalize("NFKC").trim().toLocaleLowerCase())
+    .join(" ");
+  if (!text) return true;
+  if (/(?:blue|yellow|green|white|black|purple|orange|pink|brown|gold|silver|청|황|녹|백|흑|자|주|파랑|노랑|초록|흰색|검정|보라|青|黄|緑|白|黒|紫|橙|金|銀)/iu.test(text)) return true;
+  return !/(?:red|적|빨강|赤)/iu.test(text);
+}
+
 function getPartnerColorLabel(card) {
   const source = card?.sourceData && typeof card.sourceData === "object"
     ? card.sourceData
@@ -559,6 +578,11 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
         p_has_non_blue_color: eventHasNonBlueColor(cardsByKey.get(String(eventId))),
       });
       if (eventColorError) throw eventColorError;
+      const { error: eventRedColorError } = await supabase.rpc("set_private_room_event_has_non_red_color_v1", {
+        p_room_id: room.id,
+        p_has_non_red_color: eventHasNonRedColor(cardsByKey.get(String(eventId))),
+      });
+      if (eventRedColorError) throw eventRedColorError;
       setReadyDeckSignature(deckSignature);
       await loadPlayers(room.id);
       setNotice("덱은 비공개로 저장되었으며, 준비 완료 상태로 표시되었습니다.");
