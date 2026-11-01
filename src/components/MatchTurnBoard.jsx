@@ -758,7 +758,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   const opponentEventCard = opponentBoard ? cardsByKey.get(String(opponentBoard.event_key)) : null;
 
   const st = {
-    root: { position: "fixed", inset: 0, boxSizing: "border-box", width: "100vw", height: "100dvh", overflowY: "auto", zIndex: 90000, padding: "clamp(10px, 2vw, 22px)", paddingBottom: "calc(92px + env(safe-area-inset-bottom))", background: C.bg, color: C.text, fontFamily: 'Inter, Pretendard, "Noto Sans KR", sans-serif' },
+    root: { position: "fixed", inset: 0, boxSizing: "border-box", width: "100vw", height: "100dvh", overflowY: "auto", zIndex: 90000, padding: "0 clamp(10px, 2vw, 22px)", paddingBottom: "calc(92px + env(safe-area-inset-bottom))", background: C.bg, color: C.text, fontFamily: 'Inter, Pretendard, "Noto Sans KR", sans-serif' },
     panel: { minWidth: 0, padding: 12, border: `2px solid ${C.border}`, borderRadius: 7, background: C.panel2 },
     zoneTitle: { margin: "0 0 10px", fontSize: 12, letterSpacing: ".04em", color: C.blue, fontWeight: 900 },
     button: { border: "1px solid rgba(255,255,255,.16)", borderRadius: 7, padding: "8px 10px", background: "#263d63", color: "white", cursor: loading ? "wait" : "pointer", fontSize: 11, fontWeight: 800, opacity: loading ? 0.6 : 1 },
@@ -1170,7 +1170,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
     <main style={st.root}>
 
       <style>{`
-        .mock-sticky-status { position: sticky; top: 0; z-index: 1000; margin: 0 0 12px; padding: 4px 0 10px; background: #080d17; backdrop-filter: blur(12px); border-bottom: 1px solid rgba(148,163,184,.18); box-shadow: 0 8px 20px rgba(0,0,0,.16); }
+        .mock-sticky-status { position: sticky; top: 0; z-index: 1000; margin: 0 0 12px; padding: clamp(10px, 2vw, 22px) 0 10px; background: #080d17; backdrop-filter: blur(12px); border-bottom: 1px solid rgba(148,163,184,.18); box-shadow: 0 8px 20px rgba(0,0,0,.16); }
         .mock-board-grid { display:grid; grid-template-columns:minmax(145px,1.05fr) minmax(0,7fr) minmax(145px,1.05fr); grid-template-rows:auto auto auto; gap:10px; align-items:stretch; }
         .mock-zone-case {grid-column:1;grid-row:1;} .mock-zone-center {grid-column:2;grid-row:1 / span 2;} .mock-zone-deck {grid-column:3;grid-row:1;}
         .mock-zone-evidence {grid-column:1;grid-row:2 / span 1;} .mock-zone-remove {grid-column:3;grid-row:2 / span 1;} .mock-zone-files {grid-column:1 / span 3;grid-row:3;}
