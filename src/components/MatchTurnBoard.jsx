@@ -1527,12 +1527,13 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
           })}
         </div>
 
-        <div className="mock-zone-remove" style={{ ...st.panel, display:"flex", flexDirection:"column", gap:9 }}>
-          <section><h2 style={st.zoneTitle}>리무브 에이리어</h2>
+        <div className="mock-zone-remove-stack" style={{display:"grid",gridTemplateRows:"repeat(2,minmax(0,1fr))",gap:10,minHeight:260,minWidth:0}}>
+          <section className="mock-zone-remove" style={st.panel}>
+            <h2 style={st.zoneTitle}>리무브 에이리어</h2>
             <div style={{ ...st.counts, gridTemplateColumns:"repeat(2,minmax(0,1fr))" }}><div style={st.countCell}><div style={{fontSize:10,color:C.muted}}>내 리무브</div><div style={{fontSize:22,fontWeight:900}}>{myBoard?.remove_count??0}</div></div><div style={st.countCell}><div style={{fontSize:10,color:C.muted}}>상대 리무브</div><div style={{fontSize:22,fontWeight:900}}>{opponentBoard?.remove_count??0}</div></div></div>
             <button type="button" style={{...st.smallButton,width:"100%",marginTop:8}} onClick={()=>setShowRemoveArea(true)}>리무브 에이리어 보기</button>
           </section>
-          <section style={{borderTop:"1px solid rgba(255,255,255,.12)",paddingTop:9}}>
+          <section className="mock-zone-opponent-hand" style={st.panel}>
             <h2 style={st.zoneTitle}>상대 손패</h2>
             <div style={{fontSize:9,color:C.muted,marginBottom:7}}>상대 손패 {n(opponentBoard?.hand_count)}장</div>
             <button type="button" style={{...st.smallButton,width:"100%"}} disabled={loading||!n(opponentBoard?.hand_count)||Boolean(pending)} onClick={()=>{const count=promptCount("상대 손패에서 확인할 카드 수",1,Math.min(20,n(opponentBoard?.hand_count)));if(count!==null)void runAction("request_opponent_hand",{operation:"view",count,selection_mode:"requester"});}}>N장 보기</button>
