@@ -322,16 +322,58 @@ function chooseActivatedAbility(state: any, aiId: string) {
     .map((card: any) => ({ ...card, controller: "opponent" }));
   const hand = Array.isArray(state?.my_hand) ? state.my_hand : [];
   const removeArea = Array.isArray(state?.my_remove_cards) ? state.my_remove_cards : [];
-  const ownEvidenceCount = Math.max(0, Number(me.evidence_count || 0));
+  // get_private_turn_state_v2 returns the AI's own evidence cards in full while
+  // masking the opponent's facedown evidence. Use these real cards so a face-up
+  // evidence card is never mistaken for a legal facedown selection candidate.
+  const ownEvidenceCards = Array.isArray(me.evidence_private_cards) ? me.evidence_private_cards : [];
+  const ownEvidenceCount = Math.max(0, Number(me.evidence_count ?? ownEvidenceCards.length));
   const opponentEvidenceCount = Math.max(0, Number(opponent.evidence_count || 0));
+  const opponentHandCount = Math.max(0, Number(opponent.hand_count || opponent.hand_size || state?.opponent_hand_count || 0));
 
   for (const ability of activations) {
     const sourceId = String(ability?.source_instance_id || "");
     const definition = ability?.definition;
     if (!definition || !Array.isArray(definition.steps)) continue;
-    // Case abilities use a synthetic source. The server RPC has already checked the
-    // solution phase, partner colour, evidence count and per-turn use limit.
+    // Case abilities use synthetic sources, so preflight every mandatory,
+    // statically-resolvable selection before asking the server to start the effect.
+    // In particular, a total evidence count is not enough: ID:0806 and ID:1139
+    // require actual facedown evidence cards.
     if (sourceId.startsWith("case:")) {
+      const missingRequiredSelection = definition.steps.some((step: any) => {
+        if (step?.op !== "select_cards") return false;
+        const min = Math.max(0, Number(step.min ?? (step.optional ? 0 : 1)));
+        if (min <= 0) return false;
+
+        const whenText = JSON.stringify(step.when || {});
+        // A selector gated by an earlier selection is evaluated by the effect
+        // runner after that selection, not by this preflight.
+        if (whenText.includes("vars.")) return false;
+        // The only case-effect hand-count guard currently used by the catalog.
+        if (whenText.includes("opponent.hand.count")
+          && opponentHandCount === 0
+          && /greater_than|greater_than_or_equal/u.test(whenText)) return false;
+
+        const from = String(step.from || "");
+        let candidates: any[] | null = null;
+        if (from === "evidence_area") candidates = ownEvidenceCards;
+        else if (from === "field" || from === "own_field" || from === "self_field") candidates = ownField;
+        else if (from === "opponent_field") candidates = enemyField;
+        else if (from === "both_fields") candidates = [...ownField, ...enemyField];
+        else if (from === "hand") candidates = hand;
+        else if (from === "remove_area") candidates = removeArea;
+        else if (from === "opponent_hand") {
+          candidates = Array.from({ length: opponentHandCount }, () => ({ card_type: "unknown" }));
+        } else if (from === "opponent_evidence") {
+          candidates = Array.from({ length: opponentEvidenceCount }, () => ({
+            card_type: "evidence", type: "evidence", face_up: false,
+          }));
+        }
+        // Dynamic or deck-backed selectors are resolved by the effect runner.
+        if (candidates === null) return false;
+        const valid = candidates.filter((card: any) => matchesDslFilter(card, step.filter));
+        return valid.length < min;
+      });
+      if (missingRequiredSelection) continue;
       return { action: "activate_case_effect", payload: { effect_id: String(ability?.effect_id || "") } };
     }
     const source = ownField.find((card: any) => String(card?.instance_id || "") === sourceId)
@@ -409,16 +451,14 @@ function chooseActivatedAbility(state: any, aiId: string) {
           return Array.isArray(attached) ? attached.map((entry: any) => entry?.card || entry) : [];
         });
       } else if (from === "evidence_area") {
-        candidates = Array.from({ length: ownEvidenceCount }, (_, index) => ({
-          instance_id: `evidence:${index}`, card_type: "evidence", type: "evidence", face_up: false,
-        }));
+        candidates = ownEvidenceCards;
       } else if (from === "opponent_evidence") {
         candidates = Array.from({ length: opponentEvidenceCount }, (_, index) => ({
           instance_id: `opponent-evidence:${index}`, card_type: "evidence", type: "evidence",
           face_up: false, owner_user_id: opponent.user_id,
         }));
       } else if (from === "opponent_hand") {
-        const count = Math.max(0, Number(opponent.hand_count || opponent.hand_size || state?.opponent_hand_count || 0));
+        const count = opponentHandCount;
         candidates = Array.from({ length: count }, (_, index) => ({
           instance_id: `opponent-hand:${index}`, card_type: "unknown",
         }));
@@ -438,9 +478,7 @@ function chooseActivatedAbility(state: any, aiId: string) {
         continue;
       }
 
-      let validTargets = from === "evidence_area"
-        ? candidates
-        : candidates.filter((card: any) => matchesDslFilter(card, step.filter));
+      let validTargets = candidates.filter((card: any) => matchesDslFilter(card, step.filter));
       if ((String(ability?.effect_id || "") === "card-1039-declare-remove-character-ap-8000"
         || String(ability?.effect_id || "") === "card-1040-declare-remove-character-level-7")
         && validTargets.length === 0) {
