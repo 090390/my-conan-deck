@@ -190,7 +190,7 @@ for (const [index, def] of (data.definitions ?? []).entries()) {
   need(Array.isArray(def.conditions ?? []), `${loc}: conditions는 배열이어야 합니다.`);
   for (const [ci, condition] of (def.conditions ?? []).entries()) checkCondition(condition, `${loc}.conditions[${ci}]`);
   need(Array.isArray(def.steps) && def.steps.length > 0, `${loc}: steps 배열이 필요합니다.`);
-  if (def.continuous) need(def.trigger.event === "continuous.recalculate", `${loc}: continuous 정의는 continuous.recalculate여야 합니다.`);
+  if (def.continuous) need(def.trigger?.event === "continuous.recalculate", `${loc}: continuous 정의는 continuous.recalculate여야 합니다.`);
   const vars = new Set();
   for (const [si, step] of (def.steps ?? []).entries()) checkStep(step, `${loc}.steps[${si}]`, vars, def);
   if (def.oncePerTurn !== undefined) need(typeof def.oncePerTurn === "boolean", `${loc}: oncePerTurn은 boolean이어야 합니다.`);
