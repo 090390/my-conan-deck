@@ -2017,6 +2017,8 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
         aria-label="AI 대전을 강제 종료하고 로비로 돌아가기"
         title="어떤 모달이 열려 있어도 AI 대전을 종료하고 로비로 돌아갑니다."
         onClick={async () => {
+          const confirmed = window.confirm("정말로 AI 대전을 강제 종료하시겠습니까?\n현재 대전은 즉시 종료되며 진행 중인 상태가 정리됩니다.");
+          if (!confirmed) return;
           aiMountedRef.current = false;
           const { error: cleanupError } = await supabase.rpc("force_end_private_ai_battle_v1", {
             p_room_id: roomId,
