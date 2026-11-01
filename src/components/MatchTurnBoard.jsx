@@ -108,11 +108,47 @@ function roundNumberFromTurn(turnNumber) {
   return value > 0 ? Math.ceil(value / 2) : 0;
 }
 
-function displayActionLabel(actionLabel) {
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/gu, "\\function displayActionLabel(actionLabel) {
   return String(actionLabel || "").replace(/^턴\s*(\d+)\s*시작:/u, (_match, rawTurn) => {
     const turn = Number(rawTurn);
     return `턴 ${roundNumberFromTurn(turn)} ${turn % 2 === 1 ? "선공" : "후공"} 시작:`;
   });
+}");
+}
+function particleForCardName(name, particle) {
+  const lastCharacter = Array.from(String(name).trim()).at(-1);
+  const codePoint = lastCharacter?.codePointAt(0) ?? 0;
+  const isHangulSyllable = codePoint >= 0xac00 && codePoint <= 0xd7a3;
+  if (!isHangulSyllable) return particle;
+  const finalConsonant = (codePoint - 0xac00) % 28;
+  const hasBatchim = finalConsonant !== 0;
+  const isRieul = finalConsonant === 8;
+  switch (particle) {
+    case "을": case "를": return hasBatchim ? "을" : "를";
+    case "이": case "가": return hasBatchim ? "이" : "가";
+    case "은": case "는": return hasBatchim ? "은" : "는";
+    case "과": case "와": return hasBatchim ? "과" : "와";
+    case "으로": case "로": return hasBatchim && !isRieul ? "으로" : "로";
+    default: return particle;
+  }
+}
+function correctCardNameParticles(value, cardNames = []) {
+  let label = String(value || "");
+  for (const name of cardNames) {
+    const escapedName = escapeRegExp(name);
+    const pattern = new RegExp(`(${escapedName})(을|를|이|가|은|는|과|와|으로|로)(?=$|[\\s.,!?;:，。！？、)\\]}>"'”’])`, "gu");
+    label = label.replace(pattern, (_match, matchedName, particle) =>
+      `${matchedName}${particleForCardName(matchedName, particle)}`);
+  }
+  return label;
+}
+function displayActionLabel(actionLabel, cardNames = []) {
+  const label = String(actionLabel || "").replace(/^턴\s*(\d+)\s*시작:/u, (_match, rawTurn) => {
+    const turn = Number(rawTurn);
+    return `턴 ${roundNumberFromTurn(turn)} ${turn % 2 === 1 ? "선공" : "후공"} 시작:`;
+  });
+  return correctCardNameParticles(label, cardNames);
 }
 
 export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode = "", isAIBattle = false, onLeaveField = null, onReturnToLobby = null }) {
@@ -193,6 +229,9 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
     cutInEffect: normalizeEffectQuotes(card.cutInEffect),
     disguiseEffect: normalizeEffectQuotes(cardDisguiseEffect(card)),
   }])), [cards]);
+  const cardNamesForParticles = useMemo(() => [...new Set(
+    [...cardsByKey.values()].map((card) => String(card.name || "").trim()).filter(Boolean)
+  )].sort((a, b) => b.length - a.length), [cardsByKey]);
 
   const refreshActionLog = useCallback(async () => {
     if (!roomId) return;
@@ -564,7 +603,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
       if (action === "play_character" || action === "play_event") setLocalBaseCardPlayLocked(true);
       setNotice(action === "refresh_deck"
         ? "리프레시를 완료했습니다. 리무브 에이리어의 카드를 셔플해 덱으로 되돌렸고, 상대에게 증거 1장을 추가했습니다."
-        : displayActionLabel(updatedGame?.last_action_label || data?.last_action_label || "행동을 반영했습니다."));
+        : displayActionLabel(updatedGame?.last_action_label || data?.last_action_label || "행동을 반영했습니다.", cardNamesForParticles));
       if (action === "next_hint") setSelectedNextHint("");
       if (["declare_contact", "attack_character", "attack_evidence", "guard_with_character", "decline_guard", "guard_contact_with_character", "decline_contact_guard", "contact_use_cutin", "contact_pass_cutin"].includes(action)) setSelectedAttacker("");
       if ((action === "move_field_card" || action === "move_hand_card") && (payload.owner_user_id || userId) === userId) setDetailCard(null);
@@ -1259,12 +1298,12 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
           <strong style={{ fontSize: 11, color: "#7dd3fc", letterSpacing: ".04em" }}>AI 탐정 · 행동 선언</strong>
           {aiIsWaiting && <span style={{ fontSize: 9, color: "#94a3b8" }}>다음 판단을 준비하고 있습니다…</span>}
         </div>
-        <p style={{ margin: 0, fontSize: 12, lineHeight: 1.7 }}>{aiStatusMessage}</p>
+        <p style={{ margin: 0, fontSize: 12, lineHeight: 1.7 }}>{displayActionLabel(aiStatusMessage, cardNamesForParticles)}</p>
       </section>}
       {(error || notice) && <div role={error ? "alert" : "status"} style={{ marginBottom: 10, padding: 9, borderRadius: 6, border: `1px solid ${error ? "rgba(253,164,175,.3)" : "rgba(134,239,172,.24)"}`, color: error ? C.red : C.green, background: error ? "rgba(190,24,93,.07)" : "rgba(22,101,52,.07)", fontSize: 11 }}>{error || notice}</div>}
       {gameState.last_action_label && <div style={{ display: "grid", gap: 4, marginBottom: 10 }}>
         <button type="button" onClick={() => void openActionLog()} style={{ ...st.muted, textAlign: "left", padding: "7px 9px", border: "1px solid rgba(148,163,184,.24)", borderRadius: 5, background: "rgba(71,85,105,.22)", color: C.text, cursor: "pointer" }} title="눌러서 전체 게임 행동 로그를 최신순으로 확인">
-          전체 게임 행동 내역: {displayActionLabel(actionLog[0]?.action_label || gameState.last_action_label)}
+          전체 게임 행동 내역: {displayActionLabel(actionLog[0]?.action_label || gameState.last_action_label, cardNamesForParticles)}
         </button>
       </div>}
       </div>
@@ -1684,7 +1723,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
                 </p>
               )}
             </section>
-            <p style={{ ...st.muted, marginTop: 9 }}>{pending.prompt || "카드 효과의 다음 절차를 진행해 주세요."}</p>
+            <p style={{ ...st.muted, marginTop: 9 }}>{displayActionLabel(pending.prompt || "카드 효과의 다음 절차를 진행해 주세요.", cardNamesForParticles)}</p>
             {pending.chooser_user_id && pending.chooser_user_id !== userId && <p style={{ color: C.gold, fontSize: 11, margin: "8px 0 0" }}>상대 플레이어의 선택을 기다리는 중입니다.</p>}
           </header>
           <div style={{ padding: 12, overflowY: "auto", minHeight: 0 }}>
@@ -1915,7 +1954,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
             {actionLogError && <p role="alert" style={{ color: C.red, fontSize: 10, lineHeight: 1.6 }}>{actionLogError}</p>}
             {actionLog.map((entry, index) => <article key={entry.id || (String(entry.created_at) + "-" + index)} style={{ display: "grid", gridTemplateColumns: "minmax(96px,auto) minmax(0,1fr)", gap: 10, alignItems: "start", padding: "9px 10px", border: "1px solid rgba(255,255,255,.08)", borderRadius: 7, background: index === 0 ? "rgba(30,58,95,.3)" : "#080d16" }}>
               <div><div style={{ color: C.gold, fontSize: 10, fontWeight: 850 }}>턴 {entry.turn_number == null ? "-" : roundNumberFromTurn(entry.turn_number)}{entry.actor_user_id ? ` · ${entry.actor_user_id === gameState.first_player_user_id ? "선공" : "후공"}` : ""}</div><div style={{ marginTop: 3, color: C.muted, fontSize: 9 }}>{entry.created_at ? new Date(entry.created_at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "시간 미상"}</div></div>
-              <div><div style={{ color: entry.actor_user_id === userId ? C.green : C.blue, fontSize: 9, fontWeight: 800, marginBottom: 3 }}>{entry.actor_user_id === userId ? "나" : (entry.actor_display_name || "플레이어")}{entry.actor_seat ? " · 좌석 " + entry.actor_seat : ""}</div><div style={{ overflowWrap: "anywhere", fontSize: 11, lineHeight: 1.6 }}>{displayActionLabel(entry.action_label)}</div></div>
+              <div><div style={{ color: entry.actor_user_id === userId ? C.green : C.blue, fontSize: 9, fontWeight: 800, marginBottom: 3 }}>{entry.actor_user_id === userId ? "나" : (entry.actor_display_name || "플레이어")}{entry.actor_seat ? " · 좌석 " + entry.actor_seat : ""}</div><div style={{ overflowWrap: "anywhere", fontSize: 11, lineHeight: 1.6 }}>{displayActionLabel(entry.action_label, cardNamesForParticles)}</div></div>
             </article>)}
           </div>
         </section>
