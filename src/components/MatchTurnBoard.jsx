@@ -170,6 +170,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   const [showHandRevealSelector, setShowHandRevealSelector] = useState(false);
   const [selectedHandRevealIds, setSelectedHandRevealIds] = useState([]);
   const [handRemoveSelectionMode, setHandRemoveSelectionMode] = useState("requester");
+  const [handDiscardReview, setHandDiscardReview] = useState(null);
   const [cardEffectActivations, setCardEffectActivations] = useState([]);
   const [cardEffectLockedActivations, setCardEffectLockedActivations] = useState([]);
   const [cardEffectOptions, setCardEffectOptions] = useState([]);
@@ -472,7 +473,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
         : action === "respond_opponent_hand"
           ? await supabase.rpc("respond_opponent_hand_operation_v1", { p_room_id: roomId, p_accept: payload.accept })
           : action === "select_opponent_hand_cards"
-            ? await supabase.rpc("select_opponent_hand_operation_cards_v1", { p_room_id: roomId, p_instance_ids: payload.instance_ids })
+            ? await supabase.rpc("select_opponent_hand_operation_cards_v1", { p_room_id: roomId, p_instance_ids: payload.instance_ids, p_slot_indexes: payload.slot_indexes })
             : action === "confirm_opponent_hand_discard"
               ? await supabase.rpc("confirm_opponent_hand_discard_v1", { p_room_id: roomId, p_confirm: payload.confirm })
               : action === "cancel_opponent_hand_operation"
@@ -700,6 +701,15 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   const myRemoveCards = Array.isArray(game?.my_remove_cards) ? gameState.my_remove_cards : [];
   const myFileCards = Array.isArray(game?.my_file_cards) ? gameState.my_file_cards : [];
   const opponentRemoveCards = Array.isArray(game?.opponent_remove_cards) ? gameState.opponent_remove_cards : [];
+  useEffect(() => {
+    let active = true;
+    if (pending?.type === "opponent_hand_discard_confirmation" && pending.confirm_user_id === userId) {
+      supabase.rpc("get_private_opponent_hand_discard_review_v1", { p_room_id: roomId })
+        .then(({data,error}) => { if(active) setHandDiscardReview(error ? null : data); })
+        .catch(() => { if(active) setHandDiscardReview(null); });
+    } else setHandDiscardReview(null);
+    return () => { active = false; };
+  }, [roomId,userId,pending?.type,pending?.confirm_user_id,game?.state_version]);
   const pending = game?.pending_action || null;
   const pendingSourceInstance = pending?.source_instance_id
     ? boards.flatMap((board) => [
@@ -1515,10 +1525,18 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
           })}
         </div>
 
-        <div className="mock-zone-remove" style={st.panel}>
-          <h2 style={st.zoneTitle}>리무브 에이리어</h2>
-          <div style={{ ...st.counts, gridTemplateColumns: "repeat(2,minmax(0,1fr))" }}><div style={st.countCell}><div style={{ fontSize: 10, color: C.muted }}>내 리무브</div><div style={{ fontSize: 22, fontWeight: 900 }}>{myBoard?.remove_count ?? 0}</div></div><div style={st.countCell}><div style={{ fontSize: 10, color: C.muted }}>상대 리무브</div><div style={{ fontSize: 22, fontWeight: 900 }}>{opponentBoard?.remove_count ?? 0}</div></div></div>
-          <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 8 }} onClick={() => setShowRemoveArea(true)}>리무브 에이리어 보기</button>
+        <div className="mock-zone-remove" style={{ ...st.panel, display:"flex", flexDirection:"column", gap:9 }}>
+          <section><h2 style={st.zoneTitle}>리무브 에이리어</h2>
+            <div style={{ ...st.counts, gridTemplateColumns:"repeat(2,minmax(0,1fr))" }}><div style={st.countCell}><div style={{fontSize:10,color:C.muted}}>내 리무브</div><div style={{fontSize:22,fontWeight:900}}>{myBoard?.remove_count??0}</div></div><div style={st.countCell}><div style={{fontSize:10,color:C.muted}}>상대 리무브</div><div style={{fontSize:22,fontWeight:900}}>{opponentBoard?.remove_count??0}</div></div></div>
+            <button type="button" style={{...st.smallButton,width:"100%",marginTop:8}} onClick={()=>setShowRemoveArea(true)}>리무브 에이리어 보기</button>
+          </section>
+          <section style={{borderTop:"1px solid rgba(255,255,255,.12)",paddingTop:9}}>
+            <h2 style={st.zoneTitle}>상대 손패</h2>
+            <div style={{fontSize:9,color:C.muted,marginBottom:7}}>상대 손패 {n(opponentBoard?.hand_count)}장</div>
+            <button type="button" style={{...st.smallButton,width:"100%"}} disabled={loading||!n(opponentBoard?.hand_count)||Boolean(pending)} onClick={()=>{const count=promptCount("상대 손패에서 확인할 카드 수",1,Math.min(20,n(opponentBoard?.hand_count)));if(count!==null)void runAction("request_opponent_hand",{operation:"view",count,selection_mode:"requester"});}}>N장 보기</button>
+            <select aria-label="리무브 카드 선택 주체" value={handRemoveSelectionMode} onChange={event=>setHandRemoveSelectionMode(event.target.value)} disabled={loading||Boolean(pending)} style={{width:"100%",marginTop:5,padding:6,borderRadius:5,background:"#0b1220",color:C.text,border:"1px solid rgba(148,163,184,.3)",fontSize:9}}><option value="requester">내가 선택</option><option value="target">상대가 선택</option></select>
+            <button type="button" style={{...st.smallButton,width:"100%",marginTop:5}} disabled={loading||!n(opponentBoard?.hand_count)||Boolean(pending)} onClick={()=>{const count=promptCount("상대 손패에서 리무브할 카드 수",1,Math.min(20,n(opponentBoard?.hand_count)));if(count!==null)void runAction("request_opponent_hand",{operation:"remove",count,selection_mode:handRemoveSelectionMode});}}>N장 리무브</button>
+          </section>
         </div>
 
         <div className="mock-zone-files" style={st.panel}>
@@ -1641,6 +1659,9 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
         </section>
       </div>}
 
+      {pending?.type === "opponent_hand_request" && pending.target_user_id === userId && <div style={{position:"fixed",inset:0,zIndex:100080,display:"grid",placeItems:"center",padding:14,background:"rgba(0,0,0,.86)"}}><section role="dialog" aria-modal="true" style={{width:"min(100%,430px)",padding:18,borderRadius:12,background:"#111a2a",color:C.text,border:"1px solid rgba(147,197,253,.4)"}}><h2 style={{margin:0,fontSize:17}}>상대 손패 요청</h2><p style={{fontSize:11,color:C.muted,lineHeight:1.5}}>{pending.prompt}</p><div style={{display:"flex",gap:8,justifyContent:"flex-end"}}><button type="button" style={st.button} disabled={loading} onClick={()=>void runAction("respond_opponent_hand",{accept:false})}>거절</button><button type="button" style={{...st.button,background:"#166534"}} disabled={loading} onClick={()=>void runAction("respond_opponent_hand",{accept:true})}>승인</button></div></section></div>}
+      {pending?.type === "opponent_hand_select" && pending.chooser_user_id === userId && <div style={{position:"fixed",inset:0,zIndex:100081,display:"grid",placeItems:"center",padding:12,background:"rgba(0,0,0,.88)"}}><section role="dialog" aria-modal="true" style={{width:"min(100%,850px)",maxHeight:"90dvh",display:"flex",flexDirection:"column",background:"#111a2a",color:C.text,borderRadius:12,border:"1px solid rgba(147,197,253,.45)",overflow:"hidden"}}><header style={{padding:14}}><h2 style={{margin:0,fontSize:17}}>상대 손패 선택</h2><p style={{fontSize:11,color:C.muted}}>{pending.prompt} · {pending.count||pending.requested_count}장</p></header><div style={{padding:12,overflowY:"auto",display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(90px,1fr))",gap:8}}>{Array.from({length:Math.max(0,Number(pending.slot_count||0))},(_,i)=>i+1).map(slot=>{const selected=selectedHandRevealIds.includes(String(slot));return <button key={slot} type="button" aria-pressed={selected} onClick={()=>setSelectedHandRevealIds(ids=>selected?ids.filter(id=>id!==String(slot)):ids.length<(pending.count||pending.requested_count)?[...ids,String(slot)]:ids)} style={{padding:7,borderRadius:7,border:selected?"2px solid #fcd34d":"1px solid rgba(255,255,255,.15)",background:"#080d16",color:C.text}}><div style={{...st.faceDown,height:105}}/><span style={{display:"block",fontSize:9,marginTop:5}}>뒷면 {slot}</span></button>})}</div><footer style={{display:"flex",justifyContent:"space-between",padding:12,borderTop:"1px solid rgba(255,255,255,.1)"}}><button type="button" style={st.button} disabled={loading} onClick={()=>void runAction("cancel_opponent_hand_operation")}>취소</button><button type="button" style={{...st.button,background:"#854d0e"}} disabled={loading||selectedHandRevealIds.length!==(pending.count||pending.requested_count)} onClick={async()=>{const requesterChooses=pending.chooser_user_id===pending.requester_user_id;const ok=await runAction("select_opponent_hand_cards",requesterChooses?{slot_indexes:selectedHandRevealIds.map(Number)}:{instance_ids:selectedHandRevealIds});if(ok)setSelectedHandRevealIds([]);}}>선택한 {selectedHandRevealIds.length}장 확인</button></footer></section></div>}
+      {pending?.type === "opponent_hand_discard_confirmation" && pending.confirm_user_id === userId && <div style={{position:"fixed",inset:0,zIndex:100082,display:"grid",placeItems:"center",padding:12,background:"rgba(0,0,0,.9)"}}><section role="dialog" aria-modal="true" style={{width:"min(100%,760px)",maxHeight:"90dvh",overflow:"auto",padding:14,borderRadius:12,background:"#111a2a",color:C.text,border:"1px solid rgba(248,113,113,.55)"}}><h2 style={{margin:0,fontSize:17}}>리무브할 상대 손패 확인</h2><p style={{fontSize:11,color:C.muted}}>선택된 카드를 확인한 뒤 리무브합니다.</p>{handDiscardReview?.cards?.length?<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(110px,1fr))",gap:8}}>{handDiscardReview.cards.map(card=><div key={card.instance_id} style={{padding:7,borderRadius:7,background:"#080d16"}}><CardArt instance={card}/><div style={{fontSize:9,marginTop:5}}>{nameOf(card)}</div></div>)}</div>:<p style={{fontSize:11,color:C.muted}}>선택된 카드 정보를 불러오는 중입니다.</p>}<div style={{display:"flex",justifyContent:"flex-end",gap:8,marginTop:14}}><button type="button" style={st.button} disabled={loading} onClick={()=>void runAction("confirm_opponent_hand_discard",{confirm:false})}>취소</button><button type="button" style={{...st.button,background:"#7f1d1d"}} disabled={loading||!handDiscardReview?.cards?.length} onClick={()=>void runAction("confirm_opponent_hand_discard",{confirm:true})}>확인하고 리무브</button></div></section></div>}
       {sharedHandReveal && !gameState.game_over && minimizedModal !== "handReveal" && <div style={{ position: "fixed", inset: 0, zIndex: 100060, padding: 12, display: "flex", justifyContent: "center", alignItems: "center", background: "rgba(0,0,0,.88)", backdropFilter: "blur(5px)" }}>
         <section onDoubleClick={(event) => minimizeOnDoubleClick(event, "handReveal")} role="dialog" aria-modal="true" aria-label="상대가 공개한 손패" style={{ width: "min(100%, 850px)", maxHeight: "92dvh", display: "flex", flexDirection: "column", overflow: "hidden", border: "1px solid rgba(252,211,77,.7)", borderRadius: 13, background: "#111a2a", color: C.text, boxShadow: "0 24px 70px rgba(0,0,0,.8)" }}>
           <header style={{ padding: 14, borderBottom: "1px solid rgba(255,255,255,.1)" }}><h2 style={{ margin: 0, fontSize: 18 }}>{sharedHandReveal.source_display_name || "상대"}님이 손패를 공개했습니다</h2><p style={{ ...st.muted, marginTop: 6, fontSize: 11 }}>상대가 선택한 손패 {sharedHandReveal.cards.length}장입니다. 카드는 손패에 그대로 남아 있습니다.</p></header>
