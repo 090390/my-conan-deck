@@ -2,9 +2,11 @@
 
 이 문서는 `supabase/seed/card_effect_definitions.json`에 쓰는 카드 효과 데이터 형식과 각 실행 명령의 의미를 정의합니다. 카드의 한국어 표시 문구는 기존 `public/card-translations.ko.json`에 계속 두고, 이 파일에는 **규칙 엔진이 읽을 조건과 명령만** 넣습니다.
 
-## 중요한 실행 경계
+## 실제 대전 연결
 
-이 커밋은 정의 형식·검증기·대표 카드 정의를 준비합니다. 현재 대전의 권위 있는 상태 변경은 PostgreSQL의 `perform_private_turn_action_v2`에서 이뤄지므로, 이 JSON만 추가한다고 실전 대전에서 효과가 자동 발동하는 것은 아닙니다. 정의를 실제 대전에 적용하려면 서버 측 효과 실행기를 연결하고, 아래의 대기/선택 단계와 턴 종료 정리를 서버 트랜잭션에 연결해야 합니다. 브라우저에서 JSON을 직접 실행해 게임 상태를 바꾸지 않습니다.
+카드 효과의 권위 있는 실행은 Supabase PostgreSQL의 서버 측 DSL 실행기에서 처리합니다. `supabase/seed/card_effect_definitions.json`은 기준 카탈로그이며, 배포 DB의 `private_card_effect_catalog_v1`에도 같은 정의가 등록되어야 실제 대전에서 발동합니다. 트리거, 선택 대기, 비용 지불, 카드 이동, 상대 확인은 서버 트랜잭션 안에서 처리하고 브라우저는 JSON을 직접 실행해 상태를 변경하지 않습니다.
+
+새 DSL 명령이나 트리거를 추가할 때는 정의 파일만 고치지 말고 실행기, 발동 이벤트 전달 경로, AI 선택 정책, 검증기, 이 문서를 함께 갱신합니다. DB 마이그레이션은 `supabase/migrations`에 보존합니다.
 
 ## 최상위 형식
 
@@ -24,12 +26,22 @@
 
 ## 이벤트와 조건
 
-현재 정의된 이벤트:
+현재 사용 중인 주요 이벤트:
 
 - `character.entered_field`: 캐릭터가 현장에 들어온 직후.
+- `character.removed_from_field`: 캐릭터가 현장에서 벗어난 직후.
+- `character.activated_ability`: 캐릭터의 선언 능력을 발동할 때.
+- `character.acted`: 캐릭터가 추리 또는 사건 액션을 마쳤을 때.
+- `character.contact_removed_opponent`: 컨택으로 상대 캐릭터를 실제 리무브했을 때.
+- `evidence.card_removed`: 증거가 리무브되었을 때(히라메키 등).
+- `case.solution_entered`: 사건이 해결편으로 바뀐 직후.
+- `case.activated_ability`: 사건 카드의 선언 능력을 발동할 때.
+- `event.played`: 이벤트를 사용했을 때.
+- `event.resolved`: 이벤트 효과가 끝나고 이벤트 카드가 리무브 에이리어로 이동한 직후.
+- `continuous.recalculate`: 지속 효과를 다시 계산할 때.
 - `opponent.deduction.declared`: 상대가 추리를 선언하고 반응을 받을 수 있는 시점.
 
-조건의 `fact`는 서버 이벤트 문맥에서 읽는 경로입니다. 예: `player.partner.color`, `entry.method`, `entry.source.level`, `source.is_active`, `vars.selected_red.count`.
+조건의 `fact`는 서버 이벤트 문맥에서 읽는 경로입니다. 예: `player.partner.color`, `player.case_phase`, `entry.method`, `entry.action_type`, `entry.source.level`, `entry.source.color`, `source.is_active`, `vars.selected_red.count`.
 
 지원 조건 연산자:
 
@@ -49,7 +61,7 @@
 | `peek_top_cards` | 덱 위에서 최대 `count`장 확인하고 `saveAs`에 카드 인스턴스를 기록합니다. `allowFewer: true`이면 부족한 수만큼 확인합니다. |
 | `select_cards` | `from` 영역/변수에서 `min`~`max`장을 선택합니다. `filter`, `targetController`, `optional`, `saveAs`를 지원합니다. 최대 0장은 선택하지 않는 선택을 허용합니다. |
 | `reveal_cards` | `from` 결과를 `to` 대상에게 공개합니다. `awaitAcknowledgement: true`이면 상대 확인 응답 전에는 다음 단계로 넘어가지 않습니다. |
-| `move_cards` | 카드 인스턴스를 `from`에서 `to` 영역으로 이동합니다. |
+| `move_cards` | 카드 인스턴스를 `from`에서 `to` 영역으로 이동합니다. 증거로 이동할 때 `faceUp: false`를 지정하면 뒷면 증거로 놓습니다. |
 | `filter_cards` | 앞 단계 변수 `from`에서 `filter` 조건에 맞는 카드만 선택 UI 없이 골라 `saveAs` 변수에 저장합니다. 카드를 실제로 이동하지 않으며, 적격 카드 수는 `vars.변수명.count`으로 조건 판정에 사용할 수 있습니다. |
 | `move_unselected_to_deck_bottom` | 확인한 카드 중 `selectedVariable`에 포함되지 않은 카드를 덱 아래로 옮깁니다. `order: player_choice`는 사용자가 순서를 정한다는 뜻입니다. |
 | `grant_keyword` | 카드에 임시 키워드를 부여합니다. `target`, `keyword`, `duration`을 사용합니다. 지속 키워드는 턴 종료 때 만료되어야 합니다. |
@@ -82,10 +94,10 @@
 npm run validate:card-effects
 ```
 
-검증 통과는 데이터 형식의 일관성을 뜻할 뿐, 효과가 실제 온라인 대전에서 이미 활성화됐다는 뜻은 아닙니다.
+검증 통과는 데이터 형식의 일관성을 뜻합니다. 실제 활성화 여부는 대응하는 DB 마이그레이션과 라이브 카탈로그 등록 여부까지 확인해야 합니다.
 
 
-추가 트리거: `event.played`는 이벤트 카드가 메인 단계에서 현장에 놓인 직후 발생합니다.
+추가 트리거: `event.played`는 이벤트 카드 사용 시 발생하며, `event.resolved`는 그 효과가 모두 끝나 이벤트 카드가 리무브 에이리어로 이동한 뒤 발생합니다. 이벤트 사용 후 반응 효과는 반드시 해결 완료 이벤트에 연결해야 합니다.
 
 동적 fact 필터: `filter.value`에 `{ "fact": "player.file.count" }`를 지정하면 현재 파일 수를 읽어 카드 레벨과 비교할 수 있습니다.
 
@@ -93,3 +105,10 @@ npm run validate:card-effects
 ## 백청덱 추가 구현 명령
 
 실행 엔진은 이제 `field_watch` 트리거, `both_fields`, `opponent_hand`, `attached_cards` 대상 출처, 선택한 증거를 지정해 뒤집는 `flip_evidence`, 턴 종료 시 덱 아래로 되돌리는 `schedule_move_to_deck_bottom`, 현재 컨택 중 AP 보정 `modify_contact_ap`, 임시 인연 별명 `grant_bond_alias` 및 특수 컨택 `start_contact` 명령을 지원합니다. `charge`(일반), `charge_character`, `charge_case` 키워드는 캐릭터 행동과 사건 행동의 즉시 행동 조건에 별도로 반영됩니다.
+
+
+## 녹 헤카 컨트롤 초기 구현
+
+초기 구현은 뱀남자(ID:0652), 오니마루 타케시(ID:0661), 토야마 카즈하(ID:0860), 핫토리 헤이지(ID:0861), 핫토리 헤이지(ID:0404), 쿠니스에 테루아키(ID:1090), 이벤트(ID:0427, ID:0729), 사건(ID:0666)의 정의를 추가했습니다. ID:0666은 해결편 진입 시 손패 리무브와, 해결편에서 핫토리 헤이지 또는 토야마 카즈하가 현장에 있을 때 사용하는 턴 1회 선언 능력을 별도 트리거로 처리합니다.
+
+ID:0860의 녹색 이벤트 사용 후 제거 효과는 `event.resolved`를 사용합니다. ID:0652의 등장 효과에서 증거를 뒷면으로 놓는 처리는 `move_cards.faceUp: false`로 표현합니다. 아직 타깃 범위나 원래 능력 무효화처럼 의미 확인 또는 추가 런타임 구현이 필요한 정의는 검토 완료로 간주하지 않습니다.
