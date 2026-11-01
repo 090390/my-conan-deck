@@ -1093,8 +1093,8 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
                 <button type="button" style={st.smallButton} disabled={loading} onClick={() => promptApPenalty(instance, ownerId)}>AP −N</button>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 4 }}>
-                <button type="button" style={st.smallButton} disabled={loading} onClick={() => promptLevelAdjustment(instance, ownerId, 1)}>[LV +N]</button>
-                <button type="button" style={st.smallButton} disabled={loading} onClick={() => promptLevelAdjustment(instance, ownerId, -1)}>[LV −N]</button>
+                <button type="button" style={st.smallButton} disabled={loading} onClick={() => promptLevelAdjustment(instance, ownerId, 1)}>LV +N</button>
+                <button type="button" style={st.smallButton} disabled={loading} onClick={() => promptLevelAdjustment(instance, ownerId, -1)}>LV −N</button>
               </div>
             </>}
           </div></details>
