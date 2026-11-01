@@ -1117,22 +1117,39 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
           "card-0704-hirameki-rest-character",
           "card-1197-activated-ready-ap-minus2000-and-rest-character",
         ]);
-        const strictOpponentRemoval = String(pending.effect_id || "") === "card-1039-declare-remove-character-ap-8000";
+        const strictOpponentRemoval = new Set([
+          "card-1039-declare-remove-character-ap-8000",
+          "card-1040-declare-remove-character-level-7",
+        ]).has(String(pending.effect_id || ""));
         const preferOpponentRestTarget = restTargetEffects.has(String(pending.effect_id || ""))
-          || strictOpponentRemoval
-          || String(pending.effect_id || "") === "card-1040-declare-remove-character-level-7";
+          || strictOpponentRemoval;
         // Some effects use the same effect ID for multiple selection steps.
         // For ID:1197 the first step is an AI-owned hand discard cost, while
         // the later step targets an opposing field character. Apply the
         // opponent-only preference only to field-card choices, never to hand costs.
         const isFieldTargetSelection = options.some((option: any) => String(option?.zone || "") === "field");
-        const targetOptions = preferOpponentRestTarget && isFieldTargetSelection
+        let targetOptions = preferOpponentRestTarget && isFieldTargetSelection
           ? (() => {
               const opponents = options.filter((option: any) =>
                 String(option?.owner_user_id || "") !== String(battle.ai_user_id));
               return strictOpponentRemoval ? opponents : opponents.length > 0 ? opponents : options;
             })()
           : options;
+
+        // For field removal, prefer a card that is still active and represents
+        // the largest remaining threat. A rested low-AP character is normally
+        // a much less valuable removal than an active high-AP character.
+        const isRemovalSelection = isFieldTargetSelection
+          && /(?:리무브|제거)/u.test(String(pending.prompt || ""));
+        if (isRemovalSelection) {
+          targetOptions = [...targetOptions].sort((left: any, right: any) => {
+            const leftCard = left?.card || left;
+            const rightCard = right?.card || right;
+            const activePriority = Number(isActive(rightCard)) - Number(isActive(leftCard));
+            if (activePriority !== 0) return activePriority;
+            return cardAp(rightCard) - cardAp(leftCard);
+          });
+        }
         const ids = targetOptions.map((option: any) => String(option?.instance_id || option?.card?.instance_id || "")).filter(Boolean);
         if (pending.type === "card_effect_order") {
           decision = { action: "card_effect_continue", payload: { selected_instance_ids: ids } };
