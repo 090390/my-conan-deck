@@ -701,6 +701,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   const myRemoveCards = Array.isArray(game?.my_remove_cards) ? gameState.my_remove_cards : [];
   const myFileCards = Array.isArray(game?.my_file_cards) ? gameState.my_file_cards : [];
   const opponentRemoveCards = Array.isArray(game?.opponent_remove_cards) ? gameState.opponent_remove_cards : [];
+  const pending = game?.pending_action || null;
   useEffect(() => {
     let active = true;
     if (pending?.type === "opponent_hand_discard_confirmation" && pending.confirm_user_id === userId) {
@@ -710,7 +711,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
     } else setHandDiscardReview(null);
     return () => { active = false; };
   }, [roomId,userId,pending?.type,pending?.confirm_user_id,game?.state_version]);
-  const pending = game?.pending_action || null;
+
   const pendingSourceInstance = pending?.source_instance_id
     ? boards.flatMap((board) => [
         ...(Array.isArray(board?.field_cards) ? board.field_cards : []),
