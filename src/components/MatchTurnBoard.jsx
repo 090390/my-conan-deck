@@ -109,7 +109,7 @@ function roundNumberFromTurn(turnNumber) {
 }
 
 function escapeRegExp(value) {
-  return String(value).replace(/[.*+?^$()|[\\]\\\\]/gu, "\\\\$&");
+  return String(value).replace(/[.*+?^$()|[\]\\]/gu, "\\$&");
 }
 function particleForCardName(name, particle) {
   const lastCharacter = Array.from(String(name).trim()).at(-1);
