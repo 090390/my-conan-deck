@@ -52,8 +52,8 @@ function cardCutInBonusForSubject(
 ): number {
   let bonus = cardCutInBonus(card);
 
-  // PR158 / PR164 (internal 0627): AP+2000 per removed card named 犯人,
-  // including this cut-in card itself. The printed AP is therefore dynamic.
+  // PR158 / PR164 (internal 0627): AP+2000 per 犯人 card already in the
+  // remove area. The cut-in card is still in hand, so it is not counted here.
   if (matchesInternalCardId(card, "0627")) {
     if (!isOwnerTurn) return 0;
     const removedCulprits = removeArea.filter((entry: any) =>
@@ -600,7 +600,9 @@ function chooseResponse(state: any, aiId: string) {
     const opponentAp = pending.attacker_user_id === aiId
       ? Number(pending.target_ap || 0) + Number(pending.target_bonus || 0)
       : Number(pending.attacker_ap || 0) + Number(pending.attacker_bonus || 0);
-    const needed = Math.max(0, opponentAp - myAp);
+    const isAiAttacker = pending.attacker_user_id === aiId;
+    // The attacker wins AP ties; a defender must exceed the attacker's AP.
+    const needed = Math.max(0, opponentAp - myAp + (isAiAttacker ? 0 : 1));
     const contactSubjectId = pending.attacker_user_id === aiId
       ? String(pending.attacker_instance_id || "")
       : String(pending.target_instance_id || "");
@@ -817,11 +819,11 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
   if (specialTargetAttacker && activeHighLevelTarget) {
     const attackerAp = cardAp(specialTargetAttacker);
     const targetAp = cardAp(activeHighLevelTarget);
-    const canWinWithoutCost = attackerAp > targetAp;
-    const canWinByD11007 = hand.length > 0 && attackerAp < targetAp && attackerAp + 3000 > targetAp;
+    const canWinWithoutCost = attackerAp >= targetAp;
+    const canWinByD11007 = hand.length > 0 && attackerAp < targetAp && attackerAp + 3000 >= targetAp;
     const canWinByCutin = hand.some((card: any) => {
       const bonus = cardCutInBonusForSubject(card, specialTargetAttacker, true, partnerColor, field, removeArea);
-      return bonus > 0 && attackerAp + bonus > targetAp;
+      return bonus > 0 && attackerAp + bonus >= targetAp;
     });
     if (canWinWithoutCost || canWinByD11007 || canWinByCutin) {
       return {
@@ -846,10 +848,10 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
       const attackerAp = cardAp(candidate);
       const targetAp = cardAp(restedTarget);
       const canUseMatsudaContactEffect = matchesInternalCardId(candidate, "0938")
-        && hand.length > 0 && attackerAp < targetAp && attackerAp + 3000 > targetAp;
-      return attackerAp > targetAp || canUseMatsudaContactEffect || hand.some((card: any) => {
+        && hand.length > 0 && attackerAp < targetAp && attackerAp + 3000 >= targetAp;
+      return attackerAp >= targetAp || canUseMatsudaContactEffect || hand.some((card: any) => {
         const bonus = cardCutInBonusForSubject(card, candidate, true, partnerColor, field, removeArea);
-        return bonus > 0 && attackerAp + bonus > targetAp;
+        return bonus > 0 && attackerAp + bonus >= targetAp;
       });
     });
     if (attacker) {
