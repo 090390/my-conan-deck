@@ -388,7 +388,7 @@ export default function AIBattlePanel({ deck, partnerId, eventId, cards = [], en
             {deckListError && <p role="alert" style={{ margin: 0, padding: 12, color: "#fda4af", fontSize: 12 }}>{deckListError}</p>}
             {!deckListLoading && !deckListError && publicDecks.length === 0 && <p style={{ margin: 0, padding: 12, color: "#fda4af", fontSize: 12 }}>공개 덱 저장소에 등록된 덱이 없습니다.</p>}
             <p style={{ margin: "10px 12px 0", color: "#94a3b8", fontSize: 10, lineHeight: 1.65 }}>
-              '카드 검토 완료' 표시는 덱에 포함된 카드 효과의 1차 분석과 구현 가능한 효과 정의 등록을 마친 덱입니다. 실제 대전 검증은 별도로 진행하며, 테스트 플레이에서 발견되는 오류는 계속 수정합니다.
+              카드 효과 1차 검토와 구현 정의 등록을 마친 덱입니다. 실제 대전 검증과 오류 수정은 계속 진행합니다.
             </p>
             <div style={{ maxHeight: 340, overflowY: "auto" }}>
               {sortAiDecks(publicDecks).map((item) => {
