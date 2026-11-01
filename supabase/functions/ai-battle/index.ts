@@ -340,6 +340,21 @@ function chooseActivatedAbility(state: any, aiId: string) {
         .find((card: any) => String(card?.instance_id || "") === sourceId)
       || null;
     if (!source) continue;
+
+    // ID:1004 grants Charge until the end of the current turn. Its printed
+    // text does not impose a once-per-turn limit, but activating it again
+    // while the same source already has this temporary Charge only wastes
+    // another hand card. Suppress that redundant AI choice without changing
+    // the card's general activation legality for human players.
+    const abilityEffectId = String(ability?.effect_id || "");
+    if (abilityEffectId === "card-1004-activated-discard-hand-grant-charge") {
+      const alreadyHasChargeFromThisAbility = (Array.isArray(source.dsl_keywords) ? source.dsl_keywords : [])
+        .some((entry: any) => String(entry?.keyword || "").toLowerCase() === "charge"
+          && String(entry?.effect_id || "") === abilityEffectId
+          && Number(entry?.expires_turn_number || 0) >= Number(state?.turn_number || 0));
+      if (alreadyHasChargeFromThisAbility) continue;
+    }
+
     const sourceStatus = String(source.status || "active").toLowerCase();
     const sourceIsRested = Boolean(source.rested)
       || ["rested", "sleep", "slumber", "sleeping", "슬립"].includes(sourceStatus);
