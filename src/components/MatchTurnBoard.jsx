@@ -1263,7 +1263,10 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
         .mock-sticky-status { position: sticky; top: 0; z-index: 1000; margin: 0 0 12px; padding: clamp(10px, 2vw, 22px) 0 10px; background: #080d17; backdrop-filter: blur(12px); border-bottom: 1px solid rgba(148,163,184,.18); box-shadow: 0 8px 20px rgba(0,0,0,.16); }
         .mock-board-grid { display:grid; grid-template-columns:minmax(145px,1.05fr) minmax(0,7fr) minmax(145px,1.05fr); grid-template-rows:auto auto auto; gap:10px; align-items:stretch; }
         .mock-zone-case {grid-column:1;grid-row:1;} .mock-zone-center {grid-column:2;grid-row:1 / span 2;} .mock-zone-deck {grid-column:3;grid-row:1;}
-        .mock-zone-evidence {grid-column:1;grid-row:2 / span 1;} .mock-zone-remove {grid-column:3;grid-row:2 / span 1;} .mock-zone-files {grid-column:1 / span 3;grid-row:3;}
+        .mock-zone-evidence {grid-column:1;grid-row:2 / span 1;}
+        .mock-zone-remove-stack {grid-column:3;grid-row:2;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) minmax(0,1fr);gap:10px;min-width:0;min-height:0;align-self:stretch;}
+        .mock-zone-remove-stack > .mock-zone-remove,.mock-zone-remove-stack > .mock-zone-opponent-hand {grid-column:auto;grid-row:auto;min-width:0;min-height:0;}
+        .mock-zone-files {grid-column:1 / span 3;grid-row:3;}
         .mock-file-row {display:flex;align-items:center;gap:8px;min-width:0;padding:7px;background:#070c14;border:1px solid rgba(255,255,255,.07);border-radius:6px;}
         .mock-file-card-strip {display:flex;align-items:center;gap:3px;min-width:0;flex:1;overflow-x:auto;padding:4px 2px;}
         .mock-file-card {position:relative;flex:0 0 34px;width:34px;height:30px;display:grid;place-items:center;padding:0;border:0;border-radius:4px;background:transparent;cursor:pointer;}
