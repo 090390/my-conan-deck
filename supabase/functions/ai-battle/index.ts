@@ -359,7 +359,10 @@ function chooseActivatedAbility(state: any, aiId: string) {
       const effectId = String(ability?.effect_id || "");
       if (effectId === "card-1039-declare-remove-character-ap-8000"
         || effectId === "card-1040-declare-remove-character-level-7") {
-        candidates = enemyField;
+        // The card text targets a character, not only an opposing character.
+        // Keep both sides available; the chooser prefers an opponent target
+        // and falls back to a legal own-field target when needed.
+        candidates = [...enemyField, ...ownField];
       } else if (from === "opponent_field") candidates = enemyField;
       else if (from === "field" || from === "own_field" || from === "self_field") candidates = ownField;
       else if (from === "both_fields") candidates = [...ownField, ...enemyField];
@@ -679,10 +682,15 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
   const currentCaseKey = String(me.event_key || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
   const isConanVsKidCase = ["B11098", "B11098P", "1261"].includes(currentCaseKey)
     || String(me.event_rule_code || "") === "conan_vs_kid_1261";
+  const isCulpritsCrimeCase = ["B09107", "B09107P", "1046"].includes(currentCaseKey)
+    || String(me.event_rule_code || "") === "culprits_1046";
   const solveEvidenceThreshold = isConanVsKidCase
     ? (state.first_player_user_id === aiId ? 8 : 7)
     : (state.first_player_user_id === aiId ? 7 : 6);
-  if (isSolution && Number(me.evidence_count || 0) >= solveEvidenceThreshold) {
+  // B09107P cannot be solved normally; its dedicated activated ability is the
+  // only win route and is evaluated later in the main-step decision sequence.
+  if (isSolution && !isCulpritsCrimeCase
+    && Number(me.evidence_count || 0) >= solveEvidenceThreshold) {
     return { action: "solve_case" };
   }
 
