@@ -1073,6 +1073,18 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
     if (greeting && greeting.is_complete !== true) return { is_ai: true, actions: [] };
 
     const pending = state.pending_action || null;
+    if (
+      pending
+      && String(pending.type || "").startsWith("card_effect_")
+      && pending.chooser_user_id
+      && pending.chooser_user_id !== battle.ai_user_id
+    ) {
+      return {
+        is_ai: true,
+        actions: [],
+        message: "AI 탐정: 카드 효과의 선택·공개 확인을 플레이어가 완료하기를 기다립니다.",
+      };
+    }
     if (pending && ["opponent_hand_request","opponent_hand_select","opponent_hand_discard_confirmation"].includes(String(pending.type || ""))) {
       const { data: handStep, error: handStepError } = await service.rpc("perform_private_ai_opponent_hand_step_v1", {
         p_room_id: roomId,
