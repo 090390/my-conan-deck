@@ -1204,30 +1204,38 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
         });
         if (optionsError) throw optionsError;
         const options = Array.isArray(effectOptions?.options) ? effectOptions.options : [];
-        const restTargetEffects = new Set([
+        const preferOpponentFieldTargetEffects = new Set([
           "card-0211-hirameki-rest-character",
           "card-0691-hirameki-rest-character",
           "card-0704-hirameki-rest-character",
           "card-1197-activated-ready-ap-minus2000-and-rest-character",
+          "card-0531-when-heiji-or-self-enters-rest-character",
+          "card-0971-activated-face-down-set-or-hand-cost-stun-rested-character",
+          "card-1083-partner-green-sleep-remove-level8-character",
+          "card-1083-activated-remove-two-facedown-heiji-green-police-set-cards",
         ]);
         const strictOpponentRemoval = new Set([
           "card-1039-declare-remove-character-ap-8000",
           "card-1040-declare-remove-character-level-7",
         ]).has(String(pending.effect_id || ""));
-        const preferOpponentRestTarget = restTargetEffects.has(String(pending.effect_id || ""))
+        const preferOpponentRestTarget = preferOpponentFieldTargetEffects.has(String(pending.effect_id || ""))
           || strictOpponentRemoval;
         // Some effects use the same effect ID for multiple selection steps.
         // For ID:1197 the first step is an AI-owned hand discard cost, while
         // the later step targets an opposing field character. Apply the
         // opponent-only preference only to field-card choices, never to hand costs.
         const isFieldTargetSelection = options.some((option: any) => String(option?.zone || "") === "field");
+        const preferOwnFieldTarget = String(pending.effect_id || "") === "card-0531-activated-once-ready-or-charge-green-level8"
+          && isFieldTargetSelection;
         let targetOptions = preferOpponentRestTarget && isFieldTargetSelection
           ? (() => {
               const opponents = options.filter((option: any) =>
                 String(option?.owner_user_id || "") !== String(battle.ai_user_id));
               return strictOpponentRemoval ? opponents : opponents.length > 0 ? opponents : options;
             })()
-          : options;
+          : preferOwnFieldTarget
+            ? options.filter((option: any) => String(option?.owner_user_id || "") === String(battle.ai_user_id))
+            : options;
 
         // For field removal, prefer a card that is still active and represents
         // the largest remaining threat. A rested low-AP character is normally
@@ -1265,6 +1273,27 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
         if (reactionId === "b05052-cost-zone") {
           if (hand.length > 0 && choices.includes("hand")) choice = "hand";
           else if (choices.includes("attachment")) choice = "attachment";
+        }
+        if (reactionId === "card-0531-choose-ready-or-charge") {
+          const boards = Array.isArray(state?.boards) ? state.boards : [];
+          const ownBoard = boards.find((board: any) => String(board?.user_id || "") === String(battle.ai_user_id));
+          const greenLevel8 = (Array.isArray(ownBoard?.field_cards) ? ownBoard.field_cards : []).filter((card: any) =>
+            isCharacter(card)
+            && normalizedColor(card?.color || card?.color_key || card?.colorKo || card?.color_ja) === "green"
+            && cardCost(card) <= 8
+          );
+          const hasUsefulReadyTarget = greenLevel8.some((card: any) => {
+            const status = String(card?.status || (card?.rested ? "rested" : "active")).toLowerCase();
+            const stunned = Boolean(card?.stunned || card?.stun || card?.is_stunned)
+              || ["stunned", "stun", "스턴"].includes(status);
+            return !stunned && (Boolean(card?.rested) || ["rested", "sleep", "slumber", "슬립"].includes(status));
+          });
+          const hasUsefulChargeTarget = greenLevel8.some((card: any) =>
+            isActive(card) && Boolean(card?.summoned_this_turn) && !hasCharge(card)
+          );
+          if (hasUsefulReadyTarget && choices.includes("액티브화")) choice = "액티브화";
+          else if (hasUsefulChargeTarget && choices.includes("돌격 부여")) choice = "돌격 부여";
+          else if (choices.includes("액티브화")) choice = "액티브화";
         }
         if (choice) decision = { action: "card_effect_continue", payload: { choice } };
       }
