@@ -1086,6 +1086,13 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
           message: String(handStep.message || "AI 탐정: 상대 손패 요청을 처리했습니다."),
         };
       }
+      if (pending.type === "opponent_hand_select" && pending.chooser_user_id !== battle.ai_user_id) {
+        return {
+          is_ai: true,
+          actions: [],
+          message: "AI 탐정: 플레이어가 손패에서 카드를 선택하기를 기다립니다.",
+        };
+      }
     }
     const acknowledgedIds = Array.isArray(pending?.acknowledged_user_ids) ? pending.acknowledged_user_ids : [];
     const sharedAcknowledgementAction = SHARED_REVEAL_ACKNOWLEDGEMENTS[String(pending?.type || "")];
