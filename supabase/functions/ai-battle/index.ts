@@ -1073,7 +1073,7 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
     if (greeting && greeting.is_complete !== true) return { is_ai: true, actions: [] };
 
     const pending = state.pending_action || null;
-    if (pending && ["opponent_hand_request","opponent_hand_discard_confirmation"].includes(String(pending.type || ""))) {
+    if (pending && ["opponent_hand_request","opponent_hand_select","opponent_hand_discard_confirmation"].includes(String(pending.type || ""))) {
       const { data: handStep, error: handStepError } = await service.rpc("perform_private_ai_opponent_hand_step_v1", {
         p_room_id: roomId,
         p_ai_user_id: battle.ai_user_id,
