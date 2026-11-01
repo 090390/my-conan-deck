@@ -169,7 +169,6 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   const [loadingOpponentDeck, setLoadingOpponentDeck] = useState(false);
   const [showHandRevealSelector, setShowHandRevealSelector] = useState(false);
   const [selectedHandRevealIds, setSelectedHandRevealIds] = useState([]);
-  const [handRemoveSelectionMode, setHandRemoveSelectionMode] = useState("requester");
   const [handDiscardReview, setHandDiscardReview] = useState(null);
   const [cardEffectActivations, setCardEffectActivations] = useState([]);
   const [cardEffectLockedActivations, setCardEffectLockedActivations] = useState([]);
