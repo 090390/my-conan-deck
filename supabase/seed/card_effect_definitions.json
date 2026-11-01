@@ -9383,9 +9383,9 @@
           "from": "top_three",
           "to": "remove_area",
           "when": {
-            "fact": "player.deck.count",
+            "fact": "vars.top_three.count",
             "operator": "greater_than_or_equal",
-            "value": 0
+            "value": 3
           }
         },
         {
@@ -9396,9 +9396,9 @@
           "optional": true,
           "saveAs": "deployment",
           "when": {
-            "fact": "player.deck.count",
+            "fact": "vars.top_three.count",
             "operator": "greater_than_or_equal",
-            "value": 0
+            "value": 3
           },
           "filter": {
             "allOf": [
@@ -9421,9 +9421,18 @@
           "from": "deployment",
           "to": "field",
           "when": {
-            "fact": "vars.deployment.count",
-            "operator": "greater_than",
-            "value": 0
+            "allOf": [
+              {
+                "fact": "vars.top_three.count",
+                "operator": "greater_than_or_equal",
+                "value": 3
+              },
+              {
+                "fact": "vars.deployment.count",
+                "operator": "greater_than",
+                "value": 0
+              }
+            ]
           },
           "entryMethod": "event_effect"
         }
@@ -9482,14 +9491,18 @@
       },
       "conditions": [
         {
-          "fact": "player.case_phase",
-          "operator": "equals",
-          "value": "solution"
-        },
-        {
-          "fact": "player.field.has_card_name",
-          "operator": "equals",
-          "value": "服部平次"
+          "anyOf": [
+            {
+              "fact": "player.field.has_card_name",
+              "operator": "equals",
+              "value": "服部平次"
+            },
+            {
+              "fact": "player.field.has_card_name",
+              "operator": "equals",
+              "value": "遠山和葉"
+            }
+          ]
         }
       ],
       "steps": [
