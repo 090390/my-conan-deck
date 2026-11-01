@@ -58,7 +58,7 @@ function cardCutInBonusForSubject(
     if (!isOwnerTurn) return 0;
     const removedCulprits = removeArea.filter((entry: any) =>
       matchesCardName(entry, "犯人") || matchesCardName(entry, "범인")).length;
-    return (removedCulprits + 1) * 2000;
+    return removedCulprits * 2000;
   }
 
   // PR278 / internal 0940: partner-yellow adds 1000 AP; the server separately
@@ -262,7 +262,21 @@ function matchesDslFilter(card: any, filter: any): boolean {
     }
     case "keyword": {
       const values = dslKeywordValues(card);
-      if (op === "has_keyword") return values.includes(String(expected ?? "").toLocaleLowerCase());
+      if (op === "has_keyword") {
+        const keyword = String(expected ?? "").toLocaleLowerCase();
+        if (values.includes(keyword)) return true;
+        if (["カットイン", "컷인", "cut_in", "cut-in"].includes(keyword)) {
+          const source = card?.sourceData && typeof card.sourceData === "object" ? card.sourceData
+            : card?.raw && typeof card.raw === "object" ? card.raw : {};
+          const printed = [
+            card?.cut_in, card?.cutIn, card?.cut_in_text, card?.cutInText,
+            card?.cut_in_effect, card?.cutInEffect, source?.cut_in, source?.cutIn,
+            card?.abilityJp, card?.abilityKo, card?.ability_jp, card?.ability_ko,
+          ].filter((value) => typeof value === "string").join(" ");
+          return /カットイン|컷인|cut[\\s_-]*in/iu.test(printed);
+        }
+        return false;
+      }
       actual = values;
       break;
     }
@@ -586,7 +600,7 @@ function chooseResponse(state: any, aiId: string) {
     const opponentAp = pending.attacker_user_id === aiId
       ? Number(pending.target_ap || 0) + Number(pending.target_bonus || 0)
       : Number(pending.attacker_ap || 0) + Number(pending.attacker_bonus || 0);
-    const needed = Math.max(0, opponentAp - myAp + 1);
+    const needed = Math.max(0, opponentAp - myAp);
     const contactSubjectId = pending.attacker_user_id === aiId
       ? String(pending.attacker_instance_id || "")
       : String(pending.target_instance_id || "");
@@ -647,11 +661,8 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
 
   if (state.turn_step === "begin") return { action: "begin_turn" };
   if (state.turn_step === "file") {
-    // Ability timing is a tactical choice. Use a legal DECLARE/SLEEP ability here
-    // only if its condition and a meaningful target are currently available; otherwise
-    // proceed with the normal file placement.
-    const earlyActivatedAbility = chooseActivatedAbility(state, aiId);
-    if (earlyActivatedAbility) return earlyActivatedAbility;
+    // DECLARE/SLEEP abilities are main-step actions; finish the required file
+    // placement before considering them.
     return { action: "place_files" };
   }
   if (state.turn_step !== "main") return null;
@@ -1000,7 +1011,11 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
         // opponent-only preference only to field-card choices, never to hand costs.
         const isFieldTargetSelection = options.some((option: any) => String(option?.zone || "") === "field");
         const targetOptions = preferOpponentRestTarget && isFieldTargetSelection
-          ? options.filter((option: any) => String(option?.owner_user_id || "") !== String(battle.ai_user_id))
+          ? (() => {
+              const opponents = options.filter((option: any) =>
+                String(option?.owner_user_id || "") !== String(battle.ai_user_id));
+              return opponents.length > 0 ? opponents : options;
+            })()
           : options;
         const ids = targetOptions.map((option: any) => String(option?.instance_id || option?.card?.instance_id || "")).filter(Boolean);
         if (pending.type === "card_effect_order") {
