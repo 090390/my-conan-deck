@@ -1279,7 +1279,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
         .mock-field-empty { grid-column:1 / -1; min-height:55px; display:grid; place-items:center; }
         .mock-card-modal-layout { display:grid; grid-template-columns:minmax(150px,250px) minmax(0,1fr); gap:14px; padding:14px; overflow-y:auto; }
         @media(max-width:680px){.mock-card-modal-layout{grid-template-columns:minmax(0,1fr)}.mock-card-modal-layout>div:first-child img{max-width:200px;display:block;margin:0 auto}}
-        @media(max-width:820px){.mock-file-row{gap:5px;padding:5px}.mock-file-assist{flex-basis:145px;min-width:125px}.mock-file-row>strong{flex-basis:65px!important}.mock-board-grid{grid-template-columns:minmax(115px,1fr) minmax(0,3fr) minmax(115px,1fr);gap:7px}.mock-zone-center{grid-column:1 / span 3;grid-row:2}.mock-zone-evidence{grid-column:1;grid-row:3}.mock-zone-remove{grid-column:3;grid-row:3}.mock-zone-files{grid-column:1 / span 3;grid-row:4}.mock-zone-case{grid-column:1;grid-row:1}.mock-zone-deck{grid-column:3;grid-row:1}}
+        @media(max-width:820px){.mock-file-row{gap:5px;padding:5px}.mock-file-assist{flex-basis:145px;min-width:125px}.mock-file-row>strong{flex-basis:65px!important}.mock-board-grid{grid-template-columns:minmax(115px,1fr) minmax(0,3fr) minmax(115px,1fr);gap:7px}.mock-zone-center{grid-column:1 / span 3;grid-row:2}.mock-zone-evidence{grid-column:1;grid-row:3}.mock-zone-remove-stack{grid-column:3;grid-row:3}.mock-zone-remove{grid-column:auto;grid-row:auto}.mock-zone-files{grid-column:1 / span 3;grid-row:4}.mock-zone-case{grid-column:1;grid-row:1}.mock-zone-deck{grid-column:3;grid-row:1}}
       `}</style>
 
       <div className="mock-sticky-status">
