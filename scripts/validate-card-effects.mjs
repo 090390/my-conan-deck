@@ -13,7 +13,7 @@ const allowedEvents = new Set([
   "event.played",
   "opponent.deduction.declared",
   "character.disguised", "character.contact_removed_opponent", "character.contact_started",
-  "case.solution_entered", "case.activated_ability", "evidence.card_removed",
+  "case.solution_entered", "case.activated_ability", "evidence.card_removed", "event.resolved",
 ]);
 const allowedOperators = new Set([
   "equals", "not_equals", "in", "less_than", "less_than_or_equal", "greater_than",
