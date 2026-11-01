@@ -375,12 +375,12 @@ export default function AIBattlePanel({ deck, partnerId, eventId, cards = [], en
           <p style={{ margin: "0 0 5px", color: "#7dd3fc", fontSize: 10, fontWeight: 900, letterSpacing: ".18em" }}>AI BATTLE · EXPERIMENTAL</p>
           <h2 style={{ margin: 0, fontSize: 22, fontWeight: 850 }}>AI 대전</h2>
           <p style={{ color: "#9aa8bd", marginTop: 7, fontSize: 13, lineHeight: 1.7 }}>
-            기본적으로 공개 덱 후보가 모두 선택되어 있습니다. 후보 상자를 열어 일부 덱만 선택할 수도 있으며, 선택한 덱 중 하나를 무작위로 골라 대전합니다.
+            공개 덱 저장소의 덱을 불러와 AI와 대전합니다. 후보 상자를 열어 대상 덱을 지정할 수 있습니다.
           </p>
         </div>
       </div>
       <div style={{ marginTop: 14, padding: 12, borderRadius: 9, border: "1px solid rgba(252,211,77,.24)", background: "rgba(161,98,7,.09)", color: "#fcd34d", fontSize: 11, lineHeight: 1.7 }}>
-        개발 중인 기능으로, 카드 효과는 정상 동작되는 것보다 정상 동작되지 않는 것이 훨씬 더 많습니다. 현재로서는 문제가 많은 시스템이므로 사용을 권장하지 않습니다.
+        개발 중인 기능으로, 아직 구현되지 않은 것이나 미비점이 많습니다. 게임 진행에 치명적인 오류가 발생할 가능성이 존재하나 기본적인 진행 자체는 가능합니다.
       </div>
       <div style={{ marginTop: 16, border: "1px solid rgba(148,163,184,.2)", borderRadius: 12, overflow: "hidden" }}>
         <button
