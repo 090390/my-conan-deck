@@ -229,17 +229,23 @@ function getCardColorLabel(card) {
 }
 
 function sortAiDecks(items) {
-  return [...(Array.isArray(items) ? items : [])].sort((a, b) => {
-    const aReviewed = REVIEWED_AI_DECK_IDS.has(String(a?.id)) ? 1 : 0;
-    const bReviewed = REVIEWED_AI_DECK_IDS.has(String(b?.id)) ? 1 : 0;
-    if (aReviewed !== bReviewed) return bReviewed - aReviewed;
-    const nameOrder = String(a?.deck_name || "이름 없는 덱").localeCompare(
+  const decks = Array.isArray(items) ? items : [];
+  const compareKoreanNames = (a, b) => {
+    const byName = String(a?.deck_name || "이름 없는 덱").localeCompare(
       String(b?.deck_name || "이름 없는 덱"),
       "ko-KR",
-      { sensitivity: "base", numeric: true },
+      { usage: "sort", sensitivity: "base", numeric: true, ignorePunctuation: false },
     );
-    return nameOrder || String(a?.id || "").localeCompare(String(b?.id || ""));
-  });
+    return byName || String(a?.id || "").localeCompare(String(b?.id || ""));
+  };
+  const reviewed = [];
+  const unreviewed = [];
+  for (const deck of decks) {
+    (REVIEWED_AI_DECK_IDS.has(String(deck?.id)) ? reviewed : unreviewed).push(deck);
+  }
+  reviewed.sort(compareKoreanNames);
+  unreviewed.sort(compareKoreanNames);
+  return [...reviewed, ...unreviewed];
 }
 
 function publicDeckLabels(cards, item) {
