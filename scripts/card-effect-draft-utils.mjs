@@ -4,7 +4,7 @@ export const ALLOWED_EVENTS = new Set([
   "character.entered_field", "character.removed_from_field", "character.activated_ability",
   "character.acted", "player.turn_ended", "continuous.recalculate", "event.played", "opponent.deduction.declared",
   "character.disguised", "character.contact_removed_opponent", "character.contact_started",
-  "case.solution_entered", "case.activated_ability", "evidence.card_removed"
+  "case.solution_entered", "case.activated_ability", "evidence.card_removed", "event.resolved"
 ]);
 export const ALLOWED_OPERATORS = new Set([
   "equals", "not_equals", "in", "less_than", "less_than_or_equal", "greater_than", "greater_than_or_equal",
@@ -66,7 +66,7 @@ export async function loadActiveCatalog() {
     "player.field.has_card_name", "player.partner.color", "player.deck.count", "player.hand.count",
     "player.file.count", "player.case_phase", "player.event.has_non_blue_color",
     "opponent.hand.count", "entry.method", "entry.source.card_type", "entry.source.level",
-    "entry.is_first_character_this_turn", "entry.source.card_name", "entry.source.card_id",
+    "entry.is_first_character_this_turn", "entry.source.card_name", "entry.source.card_id", "entry.source.color", "entry.action_type",
     "source.under_cards.count", "player.evidence.count", "player.evidence.facedown_count",
     "game.total_evidence_count", "turn.number", "contact.source.ap", "contact.target.ap",
     "player.event.has_detective_vs_kid_trait"
