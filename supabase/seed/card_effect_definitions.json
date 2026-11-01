@@ -4109,6 +4109,125 @@
     {
       "steps": [
         {
+          "op": "select_cards",
+          "max": 1,
+          "min": 1,
+          "from": "evidence_area",
+          "filter": {
+            "field": "face_up",
+            "value": false,
+            "operator": "equals"
+          },
+          "prompt": "앞면으로 뒤집을 자신의 뒷면 증거 1장을 선택하세요.",
+          "saveAs": "evidence_to_flip",
+          "optional": false
+        },
+        {
+          "op": "flip_evidence",
+          "from": "vars.evidence_to_flip",
+          "count": 1
+        },
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 0,
+          "from": "opponent_field",
+          "filter": {
+            "field": "card_type",
+            "value": "character",
+            "operator": "equals"
+          },
+          "prompt": "턴 종료 시까지 레벨을 1 낮출 상대 캐릭터를 최대 1장 선택하세요.",
+          "saveAs": "target",
+          "optional": true
+        },
+        {
+          "op": "modify_stat",
+          "stat": "level",
+          "when": {
+            "fact": "vars.target.count",
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "amount": -1,
+          "target": "vars.target",
+          "duration": "turn_end",
+          "stacking": "additive"
+        }
+      ],
+      "cardIds": [
+        "0806"
+      ],
+      "trigger": {
+        "event": "case.activated_ability",
+        "timing": "after"
+      },
+      "effectId": "card-0806-case-solution-activated-flip-evidence-level-down",
+      "cardNameJa": "揺れる心",
+      "cardNameKo": "흔들리는 마음",
+      "conditions": [
+        {
+          "fact": "player.case_phase",
+          "value": "solution",
+          "operator": "equals"
+        },
+        {
+          "fact": "player.field.count_matching_trait.FBI",
+          "value": 1,
+          "operator": "greater_than_or_equal"
+        }
+      ],
+      "oncePerTurn": true,
+      "reviewNotes": {
+        "sourceText": "【解決編】【宣言】【ターン1】〚裏向きの証拠を1つ表向きにする〛：相手の現場にいるキャラを1枚まで選び、ターン終了時までレベル－1する。この能力は自分の現場に〚特徴［FBI］〛のキャラがいる場合に宣言できる。"
+      },
+      "activationLabelKo": "뒷면 증거를 뒤집고 상대 레벨 하락"
+    },
+    {
+      "steps": [
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 1,
+          "from": "hand",
+          "when": {
+            "fact": "player.hand.count",
+            "value": 1,
+            "operator": "greater_than_or_equal"
+          },
+          "prompt": "사건이 해결편이 되었으므로 리무브할 손패 1장을 선택하세요.",
+          "saveAs": "hand_cost",
+          "optional": false
+        },
+        {
+          "op": "move_cards",
+          "to": "remove_area",
+          "from": "hand_cost",
+          "when": {
+            "fact": "vars.hand_cost.count",
+            "value": 0,
+            "operator": "greater_than"
+          }
+        }
+      ],
+      "cardIds": [
+        "0806"
+      ],
+      "trigger": {
+        "event": "case.solution_entered",
+        "timing": "after"
+      },
+      "effectId": "card-0806-solution-enter-discard-hand",
+      "cardNameJa": "揺れる心",
+      "cardNameKo": "흔들리는 마음",
+      "conditions": [],
+      "reviewNotes": {
+        "sourceText": "この事件が解決編になったとき、自分は手札を1枚リムーブする。"
+      }
+    },
+    {
+      "steps": [
+        {
           "op": "pay_cost",
           "cost": "sleep_source_character"
         },
