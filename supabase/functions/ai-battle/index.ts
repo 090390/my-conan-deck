@@ -52,6 +52,20 @@ function cardCutInBonusForSubject(
 ): number {
   let bonus = cardCutInBonus(card);
 
+  // Card-specific legality modifiers. These are conditions for whether the cut-in
+  // can be used at all, not just changes to its AP bonus.
+  if (matchesInternalCardId(card, "0570") && partnerColor !== "red") return 0;
+  if (matchesInternalCardId(card, "1073")) {
+    const allowedTarget = Boolean(subject && (
+      matchesCardName(subject, "쿠도 신이치") || matchesCardName(subject, "모리 란")
+    ));
+    return allowedTarget ? bonus : 0;
+  }
+  if (matchesInternalCardId(card, "1183")) {
+    if (!isOwnerTurn) return 0;
+    return subject && matchesCardName(subject, "쿠도 신이치") ? Math.max(3000, bonus) : bonus;
+  }
+
   // ID0627: count 犯人 cards already in the remove area plus this cut-in card,
   // which is moved from hand to the remove area as part of using the cut-in.
   if (matchesInternalCardId(card, "0627")) {
@@ -212,6 +226,7 @@ const CARD_NAME_ALIASES: Record<string, string[]> = {
   "하기와라 켄지": ["하기와라 켄지", "萩原研二", "kenji hagiwara"],
   "마츠다 진페이": ["마츠다 진페이", "松田陣平", "jinpei matsuda"],
   "쿠도 신이치": ["쿠도 신이치", "工藤新一", "kudo shinichi", "kudou shinichi"],
+  "모리 란": ["모리 란", "毛利蘭", "毛利 蘭", "mouri ran", "ran mouri"],
 };
 function matchesCardName(card: any, expected: unknown): boolean {
   const token = String(expected ?? "").trim().toLocaleLowerCase();
@@ -1118,6 +1133,23 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
       });
       if (!fallback.error) {
         return { is_ai: true, actions: ["cancel_next_hint"], message: "AI 탐정: 넥스트 힌트로 가져온 카드의 등장이 처리되지 않아 응급 취소로 진행을 복구했습니다." };
+      }
+      actionError = fallback.error;
+    }
+    if (actionError && decision.action === "contact_use_cutin") {
+      // A card may have a conditional target/turn requirement that is not fully
+      // represented in the AI's normalized metadata. If the server rejects that
+      // cut-in, the failed RPC has rolled back; safely pass instead of freezing
+      // the contact window.
+      const fallback = await service.rpc("perform_private_ai_turn_action_v1", {
+        p_room_id: roomId, p_action: "contact_pass_cutin", p_payload: {},
+      });
+      if (!fallback.error) {
+        return {
+          is_ai: true,
+          actions: ["contact_pass_cutin"],
+          message: "AI 탐정: 컷인 사용 조건을 충족하지 않아 컷인 없이 컨택을 진행했습니다.",
+        };
       }
       actionError = fallback.error;
     }
