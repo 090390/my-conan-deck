@@ -467,7 +467,17 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
     if (loading) return false;
     setLoading(true); setError(""); setNotice("");
     try {
-      const { data, error: rpcError } = action === "refresh_deck"
+      const { data, error: rpcError } = action === "request_opponent_hand"
+        ? await supabase.rpc("request_opponent_hand_operation_v1", { p_room_id: roomId, p_operation: payload.operation, p_count: payload.count, p_selection_mode: payload.selection_mode || "target" })
+        : action === "respond_opponent_hand"
+          ? await supabase.rpc("respond_opponent_hand_operation_v1", { p_room_id: roomId, p_accept: payload.accept })
+          : action === "select_opponent_hand_cards"
+            ? await supabase.rpc("select_opponent_hand_operation_cards_v1", { p_room_id: roomId, p_instance_ids: payload.instance_ids })
+            : action === "confirm_opponent_hand_discard"
+              ? await supabase.rpc("confirm_opponent_hand_discard_v1", { p_room_id: roomId, p_confirm: payload.confirm })
+              : action === "cancel_opponent_hand_operation"
+                ? await supabase.rpc("cancel_opponent_hand_operation_v1", { p_room_id: roomId })
+                : action === "refresh_deck"
         ? await supabase.rpc("refresh_private_deck_v1", { p_room_id: roomId })
         : action === "cancel_next_hint"
           ? await supabase.rpc("cancel_private_next_hint_v2", { p_room_id: roomId })
