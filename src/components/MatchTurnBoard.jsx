@@ -955,13 +955,11 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
     if (count !== null) void runAction("expose_evidence", { target_user_id: targetUserId, count });
   }
   function invokeGiveOpponentEvidence() {
-    const available = n(opponentBoard?.deck_count);
-    if (!opponentBoard?.user_id || available < 1) {
+    if (!opponentBoard?.user_id || n(opponentBoard?.deck_count) < 1) {
       showBlockedReason("상대 덱에 증거로 가져올 카드가 없습니다.");
       return;
     }
-    const count = promptCount("상대 덱 위에서 증거로 가져올 카드 수", 1, Math.min(20, available));
-    if (count !== null) void runAction("gain_evidence_for_opponent_from_deck", { count });
+    void runAction("gain_evidence_for_opponent_from_deck", { count: 1 });
   }
   function invokeRemoveTopDeck() {
     const available = n(game?.my_deck_count);
@@ -1510,7 +1508,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
           <h2 style={st.zoneTitle}>증거 에이리어</h2>
           <div style={{ ...st.counts, gridTemplateColumns: "repeat(2,minmax(0,1fr))" }}><div style={st.countCell}><div style={{ fontSize: 10, color: C.muted }}>내 증거</div><div style={{ fontSize: 22, fontWeight: 900 }}>{myBoard?.evidence_count ?? 0}</div></div><div style={st.countCell}><div style={{ fontSize: 10, color: C.muted }}>상대 증거</div><div style={{ fontSize: 22, fontWeight: 900 }}>{opponentBoard?.evidence_count ?? 0}</div></div></div>
           <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 8 }} disabled={loading || n(game?.my_deck_count) < 1 || Boolean(pending) || Boolean(game?.deck_peek_locked)} onClick={() => void runAction("gain_evidence_from_deck")}>덱에서 증거 획득</button>
-          <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 5 }} disabled={loading || n(opponentBoard?.deck_count) < 1 || Boolean(pending) || Boolean(game?.deck_peek_locked)} title="상대 자신의 덱 맨 위 카드를 상대 증거 에이리어에 뒷면으로 추가합니다." onClick={invokeGiveOpponentEvidence}>상대 덱에서 증거 획득</button>
+          <button type="button" style={{ ...st.smallButton, width: "100%", marginTop: 5 }} disabled={loading || n(opponentBoard?.deck_count) < 1 || Boolean(pending) || Boolean(game?.deck_peek_locked)} title="상대 덱 맨 위 카드 1장을 상대 증거 에이리어에 뒷면으로 추가합니다." onClick={invokeGiveOpponentEvidence}>상대에게 증거 1장 주기</button>
           {[{ board: opponentBoard, mine: false }, { board: myBoard, mine: true }].map(({ board, mine }) => {
             const publicCards = Array.isArray(board?.evidence_public_cards) ? board.evidence_public_cards : [];
             const privateEvidenceCards = mine && Array.isArray(board?.evidence_private_cards) ? board.evidence_private_cards : null;
