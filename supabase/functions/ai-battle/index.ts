@@ -420,6 +420,12 @@ function chooseActivatedAbility(state: any, aiId: string) {
         step?.op === "start_contact" && step?.allowNewlyPlayed !== true);
     if (hasBlockedNewlyPlayedContact) continue;
 
+    const restTargetVariables = new Set(
+      definition.steps
+        .filter((step: any) => step?.op === "rest_cards")
+        .map((step: any) => String(step?.target || "").replace(/^vars\./u, ""))
+        .filter(Boolean),
+    );
     const selections: Array<{ step: any; targets: any[] }> = [];
     const unresolvedVars = new Set<string>();
     let invalid = false;
@@ -485,6 +491,12 @@ function chooseActivatedAbility(state: any, aiId: string) {
       }
 
       let validTargets = candidates.filter((card: any) => matchesDslFilter(card, step.filter));
+      // A card that is already rested cannot be meaningfully rested again.
+      // Apply this guard based on the actual rest_cards target variable so all
+      // current and future catalog effects get the same legality check.
+      if (step.saveAs && restTargetVariables.has(String(step.saveAs))) {
+        validTargets = validTargets.filter((card: any) => isActive(card));
+      }
       if ((String(ability?.effect_id || "") === "card-1039-declare-remove-character-ap-8000"
         || String(ability?.effect_id || "") === "card-1040-declare-remove-character-level-7")
         && validTargets.length === 0) {
@@ -632,7 +644,7 @@ function describeAction(decision: any, state: any, aiId: string) {
     case "declare_contact":
       return `AI 탐정: ${cardName(attacker)}으로 ${cardName(target)}에게 컨택을 선언했습니다.`;
     case "attack_evidence":
-      return `AI 탐정: ${cardName(attacker)}으로 상대 증거 에이리어를 공격했습니다.`;
+      return `AI 탐정: ${cardName(attacker)}으로 ${opponent?.display_name || "상대"}의 증거 에이리어를 공격했습니다.`;
     case "guard_contact_with_character":
     case "guard_with_character":
       return `AI 탐정: ${cardName(field.find((entry: any) => entry.instance_id === decision?.payload?.instance_id))}으로 상대 공격을 가드했습니다.`;
@@ -1225,9 +1237,18 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
         // the later step targets an opposing field character. Apply the
         // opponent-only preference only to field-card choices, never to hand costs.
         const isFieldTargetSelection = options.some((option: any) => String(option?.zone || "") === "field");
+        const isRestTargetSelection = isFieldTargetSelection
+          && /슬립(?:시킬| 상태로 만들)/u.test(String(pending.prompt || ""));
         const preferOwnFieldTarget = String(pending.effect_id || "") === "card-0531-activated-once-ready-or-charge-green-level8"
           && isFieldTargetSelection;
-        let targetOptions = preferOpponentRestTarget && isFieldTargetSelection
+        let targetOptions = isRestTargetSelection
+          ? (() => {
+              const activeTargets = options.filter((option: any) => isActive(option?.card || option));
+              const activeOpponents = activeTargets.filter((option: any) =>
+                String(option?.owner_user_id || option?.card?.owner_user_id || "") !== String(battle.ai_user_id));
+              return activeOpponents.length > 0 ? activeOpponents : activeTargets;
+            })()
+          : preferOpponentRestTarget && isFieldTargetSelection
           ? (() => {
               const opponents = options.filter((option: any) =>
                 String(option?.owner_user_id || "") !== String(battle.ai_user_id));
