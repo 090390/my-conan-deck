@@ -984,9 +984,18 @@
           "min": 0,
           "from": "both_fields",
           "filter": {
-            "field": "card_type",
-            "value": "character",
-            "operator": "equals"
+            "allOf": [
+              {
+                "field": "card_type",
+                "value": "character",
+                "operator": "equals"
+              },
+              {
+                "field": "is_active",
+                "operator": "equals",
+                "value": true
+              }
+            ]
           },
           "prompt": "슬립시킬 캐릭터를 최대 1장 선택하세요.",
           "saveAs": "hirameki_target",
@@ -2646,9 +2655,18 @@
           "min": 0,
           "from": "both_fields",
           "filter": {
-            "field": "card_type",
-            "value": "character",
-            "operator": "equals"
+            "allOf": [
+              {
+                "field": "card_type",
+                "value": "character",
+                "operator": "equals"
+              },
+              {
+                "field": "is_active",
+                "operator": "equals",
+                "value": true
+              }
+            ]
           },
           "prompt": "슬립시킬 캐릭터를 최대 1장 선택하세요.",
           "saveAs": "hirameki_target",
@@ -3137,9 +3155,18 @@
           "min": 0,
           "from": "both_fields",
           "filter": {
-            "field": "card_type",
-            "value": "character",
-            "operator": "equals"
+            "allOf": [
+              {
+                "field": "card_type",
+                "value": "character",
+                "operator": "equals"
+              },
+              {
+                "field": "is_active",
+                "operator": "equals",
+                "value": true
+              }
+            ]
           },
           "prompt": "슬립시킬 캐릭터를 최대 1장 선택하세요.",
           "saveAs": "hirameki_target",
@@ -3488,9 +3515,18 @@
           "min": 0,
           "from": "both_fields",
           "filter": {
-            "field": "card_type",
-            "value": "character",
-            "operator": "equals"
+            "allOf": [
+              {
+                "field": "card_type",
+                "value": "character",
+                "operator": "equals"
+              },
+              {
+                "field": "is_active",
+                "operator": "equals",
+                "value": true
+              }
+            ]
           },
           "prompt": "슬립 상태로 만들 캐릭터를 최대 1장 선택하세요.",
           "saveAs": "rest_target",
@@ -7869,9 +7905,18 @@
           "min": 0,
           "from": "both_fields",
           "filter": {
-            "field": "card_type",
-            "value": "character",
-            "operator": "equals"
+            "allOf": [
+              {
+                "field": "card_type",
+                "value": "character",
+                "operator": "equals"
+              },
+              {
+                "field": "is_active",
+                "operator": "equals",
+                "value": true
+              }
+            ]
           },
           "prompt": "슬립시킬 캐릭터를 최대 1장 선택하세요.",
           "saveAs": "rest_target",
@@ -8737,9 +8782,18 @@
           "optional": true,
           "saveAs": "target",
           "filter": {
-            "field": "card_type",
-            "operator": "equals",
-            "value": "character"
+            "allOf": [
+              {
+                "field": "card_type",
+                "operator": "equals",
+                "value": "character"
+              },
+              {
+                "field": "is_active",
+                "operator": "equals",
+                "value": true
+              }
+            ]
           },
           "prompt": "슬립시킬 캐릭터를 최대 1장 선택하세요."
         },
@@ -9789,9 +9843,18 @@
           "saveAs": "rest_target",
           "optional": true,
           "filter": {
-            "field": "card_type",
-            "value": "character",
-            "operator": "equals"
+            "allOf": [
+              {
+                "field": "card_type",
+                "value": "character",
+                "operator": "equals"
+              },
+              {
+                "field": "is_active",
+                "operator": "equals",
+                "value": true
+              }
+            ]
           },
           "prompt": "핫토리 헤이지 또는 헤이지&카즈하가 등장했습니다. 슬립시킬 캐릭터를 최대 1장 선택하세요."
         },
