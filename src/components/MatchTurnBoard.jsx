@@ -522,6 +522,13 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
                     p_instance_id: payload.instance_id,
                     p_delta: payload.delta,
                   })
+              : action === "set_bullet_manual"
+                ? await supabase.rpc("set_private_character_bullet_manual_v1", {
+                    p_room_id: roomId,
+                    p_owner_user_id: payload.owner_user_id,
+                    p_instance_id: payload.instance_id,
+                    p_enabled: payload.enabled,
+                  })
               : action === "move_mr_partner_card"
                 ? await supabase.rpc("move_private_mr_partner_to_zone_v1", {
                     p_room_id: roomId,
@@ -1065,6 +1072,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
       ? "stunned"
       : (instance.rested ? "rested" : (instance.status || "active"));
     const allowFreshForCard = Boolean(allowFreshlyPlayedByCard[instance.instance_id]);
+    const manualBulletEnabled = Boolean(instance?.manual_bullet);
     const notReadyForCharacterAction = !canActOnFreshCharacter(instance, "character");
     const notReadyForCaseAction = !canActOnFreshCharacter(instance, "case");
     const selectedAttackerCard = (myBoard?.field_cards || []).find((card) => String(card.instance_id) === String(selectedAttacker));
@@ -1125,6 +1133,27 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
                 <button type="button" style={st.smallButton} disabled={loading} onClick={() => promptLevelAdjustment(instance, ownerId, 1)}>LV +N</button>
                 <button type="button" style={st.smallButton} disabled={loading} onClick={() => promptLevelAdjustment(instance, ownerId, -1)}>LV −N</button>
               </div>
+              <button
+                type="button"
+                style={{
+                  ...st.smallButton,
+                  borderColor: manualBulletEnabled ? "#fbbf24" : "rgba(255,255,255,.13)",
+                  color: manualBulletEnabled ? "#fcd34d" : "#dbe4f1",
+                  background: manualBulletEnabled ? "rgba(120,80,15,.22)" : "#17243a",
+                }}
+                disabled={loading}
+                onClick={() => {
+                  const nextEnabled = !manualBulletEnabled;
+                  const actionLabel = nextEnabled ? "불렛 능력을 수동 지정" : "수동 불렛 지정을 해제";
+                  if (!window.confirm(`${nameOf(instance)} 카드의 ${actionLabel}할까요?\n불렛이 적용된 캐릭터의 액션은 가드할 수 없습니다.`)) return;
+                  void runAction("set_bullet_manual", {
+                    instance_id: instance.instance_id,
+                    owner_user_id: ownerId,
+                    enabled: nextEnabled,
+                  });
+                }}
+              >{manualBulletEnabled ? "불렛 수동 해제" : "불렛 수동 지정"}</button>
+              {manualBulletEnabled && <div style={{ color: "#fcd34d", fontSize: 8, lineHeight: 1.4 }}>수동 불렛 적용 중 · 이 캐릭터의 액션은 가드할 수 없습니다.</div>}
             </>}
           </div></details>
           <details style={{ marginTop: 5 }}><summary style={{ cursor: "pointer", fontSize: 8, color: "#8796ac" }}>카드 이동</summary><div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 4, marginTop: 5 }}>
