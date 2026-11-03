@@ -534,6 +534,21 @@ function chooseActivatedAbility(state: any, aiId: string) {
     }
     if (invalid) continue;
 
+    // Skip a rest-only ability entirely when every legal target is already
+    // rested/stunned. This prevents the AI from reopening a zero-value effect
+    // after it has already exhausted the active characters it could rest.
+    const hasAvailableRestTarget = selections.some(({ step, targets }) =>
+      Boolean(step.saveAs)
+      && restTargetVariables.has(String(step.saveAs))
+      && targets.length > 0
+    );
+    const hasIndependentNonRestEffect = definition.steps.some((step: any) =>
+      !["pay_cost", "select_cards", "offer_reaction", "rest_cards"].includes(String(step?.op || ""))
+    );
+    if (restTargetVariables.size > 0 && !hasAvailableRestTarget && !hasIndependentNonRestEffect) {
+      continue;
+    }
+
     // Do not pay an activation cost merely because a cost-selection target exists.
     // Check whether at least one selected variable actually feeds a useful effect
     // (remove/deploy/buff/contact/etc.), or whether the definition has a separate
