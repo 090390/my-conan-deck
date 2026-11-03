@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "source": "TorecaBirth",
-  "updatedAt": "2026-10-31T16:14:49Z",
+  "updatedAt": "2026-11-03T00:58:43Z",
   "items": [
     {
       "cardNumber": "0001",
@@ -29,7 +29,7 @@
       "title": "灰原哀【SR】《青》[型番 0002]【CT-P01】 [ 1弾:探偵たちの切札(ジョーカー) ]",
       "priceYen": 120,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/304",
       "sourceCategory": "https://www.torecabirth.jp/product-list/2"
     },
@@ -39,7 +39,7 @@
       "title": "灰原哀【SRP】《青》[型番 0002]【CT-P01】 [ 1弾:探偵たちの切札(ジョーカー) ]",
       "priceYen": 1580,
       "inStock": true,
-      "stockCount": 5,
+      "stockCount": 4,
       "url": "https://www.torecabirth.jp/product/297",
       "sourceCategory": "https://www.torecabirth.jp/product-list/2"
     },
@@ -208,8 +208,8 @@
       "rarity": "CP",
       "title": "灰原哀【CP】《青》[型番 0012]【CT-P01】 [ 1弾:探偵たちの切札(ジョーカー) ]",
       "priceYen": 480,
-      "inStock": true,
-      "stockCount": 3,
+      "inStock": false,
+      "stockCount": 0,
       "url": "https://www.torecabirth.jp/product/635",
       "sourceCategory": "https://www.torecabirth.jp/product-list/2"
     },
@@ -219,7 +219,7 @@
       "title": "灰原哀【D】《青》[型番 0012]【CT-D01】 [ Case-StartDeck 01 江戸川コナン ]",
       "priceYen": 50,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/15",
       "sourceCategory": "https://www.torecabirth.jp/product-list/9"
     },
@@ -259,7 +259,7 @@
       "title": "毛利蘭【C】[型番 0015]【CT-P01】 [ 1弾:探偵たちの切札(ジョーカー) ]",
       "priceYen": 120,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/687",
       "sourceCategory": "https://www.torecabirth.jp/product-list/2"
     },
@@ -317,7 +317,7 @@
       "cardNumber": "0018",
       "rarity": "C",
       "title": "少年探偵団【C】[型番 0018]【CT-P01】 [ 1弾:探偵たちの切札(ジョーカー) ]",
-      "priceYen": 180,
+      "priceYen": 220,
       "inStock": false,
       "stockCount": 0,
       "url": "https://www.torecabirth.jp/product/692",
@@ -669,7 +669,7 @@
       "title": "怪盗キッド【SR】《白》[型番 0036]【CT-P01】 [ 1弾:探偵たちの切札(ジョーカー) ]",
       "priceYen": 280,
       "inStock": true,
-      "stockCount": 11,
+      "stockCount": 10,
       "url": "https://www.torecabirth.jp/product/312",
       "sourceCategory": "https://www.torecabirth.jp/product-list/2"
     },
@@ -679,7 +679,7 @@
       "title": "怪盗キッド【SRP】《白》[型番 0036]【CT-P01】 [ 1弾:探偵たちの切札(ジョーカー) ]",
       "priceYen": 1280,
       "inStock": true,
-      "stockCount": 2,
+      "stockCount": 6,
       "url": "https://www.torecabirth.jp/product/299",
       "sourceCategory": "https://www.torecabirth.jp/product-list/2"
     },
@@ -689,7 +689,7 @@
       "title": "中森青子【SR】《白》[型番 0037]【CT-P01】 [ 1弾:探偵たちの切札(ジョーカー) ]",
       "priceYen": 120,
       "inStock": true,
-      "stockCount": 4,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/313",
       "sourceCategory": "https://www.torecabirth.jp/product-list/2"
     },
@@ -859,7 +859,7 @@
       "title": "白馬探【C】[型番 0048]【CT-P01】 [ 1弾:探偵たちの切札(ジョーカー) ]",
       "priceYen": 120,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 5,
       "url": "https://www.torecabirth.jp/product/715",
       "sourceCategory": "https://www.torecabirth.jp/product-list/2"
     },
@@ -889,7 +889,7 @@
       "title": "トッ【C】[型番 0050]【CT-P01】 [ 1弾:探偵たちの切札(ジョーカー) ]",
       "priceYen": 50,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/717",
       "sourceCategory": "https://www.torecabirth.jp/product-list/2"
     },
@@ -1089,7 +1089,7 @@
       "title": "世良真純【PR】《赤》[型番 0063][プロモーションパックVol.7]",
       "priceYen": 1280,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 2,
       "url": "https://www.torecabirth.jp/product/4178",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -1299,7 +1299,7 @@
       "title": "佐藤美和子【C】[型番 0077]【CT-P01】 [ 1弾:探偵たちの切札(ジョーカー) ]",
       "priceYen": 80,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 2,
       "url": "https://www.torecabirth.jp/product/745",
       "sourceCategory": "https://www.torecabirth.jp/product-list/2"
     },
@@ -1339,7 +1339,7 @@
       "title": "高木渉【C】[型番 0079]【CT-P01】 [ 1弾:探偵たちの切札(ジョーカー) ]",
       "priceYen": 120,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 2,
       "url": "https://www.torecabirth.jp/product/747",
       "sourceCategory": "https://www.torecabirth.jp/product-list/2"
     },
@@ -1508,8 +1508,8 @@
       "rarity": "CP",
       "title": "怪盗キッドの絡繰箱【CP】《青白》[型番 0088]【CT-P01】 [ 1弾:探偵たちの切札(ジョーカー) ]",
       "priceYen": 380,
-      "inStock": true,
-      "stockCount": 1,
+      "inStock": false,
+      "stockCount": 0,
       "url": "https://www.torecabirth.jp/product/580",
       "sourceCategory": "https://www.torecabirth.jp/product-list/2"
     },
@@ -1759,7 +1759,7 @@
       "title": "小嶋元太【D】[型番 0100]【CT-D01】 [ Case-StartDeck 01 江戸川コナン ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 1,
+      "stockCount": 10,
       "url": "https://www.torecabirth.jp/product/13",
       "sourceCategory": "https://www.torecabirth.jp/product-list/9"
     },
@@ -1769,7 +1769,7 @@
       "title": "灰原哀【D】《青》[型番 0101]【CT-D01】 [ Case-StartDeck 01 江戸川コナン ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 10,
+      "stockCount": 4,
       "url": "https://www.torecabirth.jp/product/14",
       "sourceCategory": "https://www.torecabirth.jp/product-list/9"
     },
@@ -1867,7 +1867,7 @@
       "cardNumber": "0106",
       "rarity": "PR",
       "title": "服部平次【PR】《緑》[型番 0106][少年サンデーS 2024年9月号付録]",
-      "priceYen": 1480,
+      "priceYen": 1280,
       "inStock": true,
       "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/200",
@@ -1897,7 +1897,7 @@
       "cardNumber": "0108",
       "rarity": "PR",
       "title": "遠山和葉【PR】《緑》[型番 0108][少年サンデーS 2024年10月号付録]",
-      "priceYen": 1480,
+      "priceYen": 1280,
       "inStock": true,
       "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/213",
@@ -2059,7 +2059,7 @@
       "title": "怪盗キッド【D】《白》[型番 0119]【CT-D03】 [ Case-StartDeck 03 怪盗キッド ]",
       "priceYen": 380,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 5,
       "url": "https://www.torecabirth.jp/product/38",
       "sourceCategory": "https://www.torecabirth.jp/product-list/11"
     },
@@ -2109,7 +2109,7 @@
       "title": "中森青子【D】《白》[型番 0122]【CT-D03】 [ Case-StartDeck 03 怪盗キッド ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 2,
       "url": "https://www.torecabirth.jp/product/42",
       "sourceCategory": "https://www.torecabirth.jp/product-list/11"
     },
@@ -2129,7 +2129,7 @@
       "title": "中森青子【PR】《白》[型番 0122][プロモーションパックVol.5]",
       "priceYen": 1480,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 2,
       "url": "https://www.torecabirth.jp/product/1990",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -2179,7 +2179,7 @@
       "title": "白馬探【D】《白》[型番 0124]【CT-D03】 [ Case-StartDeck 03 怪盗キッド ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 22,
+      "stockCount": 19,
       "url": "https://www.torecabirth.jp/product/44",
       "sourceCategory": "https://www.torecabirth.jp/product-list/11"
     },
@@ -2189,7 +2189,7 @@
       "title": "白馬探【D】《白》[型番 0125]【CT-D03】 [ Case-StartDeck 03 怪盗キッド ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 23,
+      "stockCount": 22,
       "url": "https://www.torecabirth.jp/product/45",
       "sourceCategory": "https://www.torecabirth.jp/product-list/11"
     },
@@ -2259,7 +2259,7 @@
       "title": "「Ladies? and… Gentlemen!!」【R】《白》[型番0130]【CT-P04】 [ 4弾:信義の絆（パートナー） ]",
       "priceYen": 580,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 1,
       "url": "https://www.torecabirth.jp/product/2498",
       "sourceCategory": "https://www.torecabirth.jp/product-list/68"
     },
@@ -2629,7 +2629,7 @@
       "title": "プライベートアイ【R】《黄》[型番0158]【CT-P04】 [ 4弾:信義の絆（パートナー） ]",
       "priceYen": 780,
       "inStock": true,
-      "stockCount": 9,
+      "stockCount": 8,
       "url": "https://www.torecabirth.jp/product/2565",
       "sourceCategory": "https://www.torecabirth.jp/product-list/68"
     },
@@ -2669,7 +2669,7 @@
       "title": "江戸川コナン【PR】《青》[型番 0161][少年サンデー付録]",
       "priceYen": 380,
       "inStock": true,
-      "stockCount": 1,
+      "stockCount": 6,
       "url": "https://www.torecabirth.jp/product/151",
       "sourceCategory": "https://www.torecabirth.jp/product-list/49"
     },
@@ -2679,7 +2679,7 @@
       "title": "……なるほどな…【C】《青》[型番0162]【CT-P04】 [ 4弾:信義の絆（パートナー） ]",
       "priceYen": 80,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/2463",
       "sourceCategory": "https://www.torecabirth.jp/product-list/68"
     },
@@ -2689,7 +2689,7 @@
       "title": "……なるほどな… 【PR】《青》[型番 0162][プロモーションパックVol.1]",
       "priceYen": 180,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 2,
       "url": "https://www.torecabirth.jp/product/174",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -2779,7 +2779,7 @@
       "title": "なるほど…【PR】《赤》[型番 0165][プロモーションパックVol.1]",
       "priceYen": 250,
       "inStock": true,
-      "stockCount": 5,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/181",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -2809,7 +2809,7 @@
       "title": "拳銃か！！【PR】《黄》[型番 0166][プロモーションパックVol.1]",
       "priceYen": 180,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 2,
       "url": "https://www.torecabirth.jp/product/182",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -3149,7 +3149,7 @@
       "title": "灰原哀【C】[型番 0183]【CT-P02】 [ 2弾:西と東の大決戦(コンタクト) ]",
       "priceYen": 280,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/474",
       "sourceCategory": "https://www.torecabirth.jp/product-list/7"
     },
@@ -3167,9 +3167,9 @@
       "cardNumber": "0183",
       "rarity": "PR",
       "title": "灰原哀(サッカー)【PR】《青》[型番 0183][ プロモーションパックVol.15]",
-      "priceYen": 1780,
-      "inStock": false,
-      "stockCount": 0,
+      "priceYen": 1980,
+      "inStock": true,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/8721",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -3179,7 +3179,7 @@
       "title": "灰原哀(アリス柄) 【PR】《青》[型番 0183][プロモーションパックVol.9]",
       "priceYen": 2580,
       "inStock": true,
-      "stockCount": 1,
+      "stockCount": 2,
       "url": "https://www.torecabirth.jp/product/4920",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -3257,7 +3257,7 @@
       "cardNumber": "0186",
       "rarity": "C",
       "title": "少年探偵団の活躍【C】[型番 0186]【CT-P02】 [ 2弾:西と東の大決戦(コンタクト) ]",
-      "priceYen": 150,
+      "priceYen": 180,
       "inStock": false,
       "stockCount": 0,
       "url": "https://www.torecabirth.jp/product/478",
@@ -3329,7 +3329,7 @@
       "title": "大岡紅葉【SR】《緑》[型番 0190]【CT-P02】 [ 2弾:西と東の大決戦(コンタクト) ]",
       "priceYen": 120,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 9,
       "url": "https://www.torecabirth.jp/product/365",
       "sourceCategory": "https://www.torecabirth.jp/product-list/7"
     },
@@ -3448,8 +3448,8 @@
       "rarity": "PR",
       "title": "伊織無我【PR】《緑》[型番 0197][ プロモーションパックVol.15]",
       "priceYen": 880,
-      "inStock": false,
-      "stockCount": 0,
+      "inStock": true,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/8722",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -3487,9 +3487,9 @@
       "cardNumber": "0198",
       "rarity": "PR",
       "title": "大岡紅葉【PR】《緑》[型番 0198][プロモーションパックVol.8]",
-      "priceYen": 380,
-      "inStock": false,
-      "stockCount": 0,
+      "priceYen": 680,
+      "inStock": true,
+      "stockCount": 1,
       "url": "https://www.torecabirth.jp/product/4692",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -3639,7 +3639,7 @@
       "title": "黒羽盗一【SR】《白》[型番 0207]【CT-P02】 [ 2弾:西と東の大決戦(コンタクト) ]",
       "priceYen": 80,
       "inStock": true,
-      "stockCount": 2,
+      "stockCount": 6,
       "url": "https://www.torecabirth.jp/product/368",
       "sourceCategory": "https://www.torecabirth.jp/product-list/7"
     },
@@ -3749,7 +3749,7 @@
       "title": "黒羽盗一【PR】《白》[型番 0212][少年サンデーS 2024年12月号付録]",
       "priceYen": 1480,
       "inStock": true,
-      "stockCount": 2,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/1447",
       "sourceCategory": "https://www.torecabirth.jp/product-list/49"
     },
@@ -3769,7 +3769,7 @@
       "title": "鈴木園子【C】[型番 0214]【CT-P02】 [ 2弾:西と東の大決戦(コンタクト) ]",
       "priceYen": 150,
       "inStock": true,
-      "stockCount": 2,
+      "stockCount": 9,
       "url": "https://www.torecabirth.jp/product/495",
       "sourceCategory": "https://www.torecabirth.jp/product-list/7"
     },
@@ -3788,8 +3788,8 @@
       "rarity": "PR",
       "title": "鈴木園子【PR】《白》[型番 0214][プロモーションパックVol.8]",
       "priceYen": 680,
-      "inStock": false,
-      "stockCount": 0,
+      "inStock": true,
+      "stockCount": 2,
       "url": "https://www.torecabirth.jp/product/4693",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -3819,7 +3819,7 @@
       "title": "中森青子【C】[型番 0215]【CT-P02】 [ 2弾:西と東の大決戦(コンタクト) ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 14,
+      "stockCount": 13,
       "url": "https://www.torecabirth.jp/product/496",
       "sourceCategory": "https://www.torecabirth.jp/product-list/7"
     },
@@ -3889,7 +3889,7 @@
       "title": "沖矢昴【SR】《赤》[型番 0220]【CT-P02】 [ 2弾:西と東の大決戦(コンタクト) ]",
       "priceYen": 220,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 4,
       "url": "https://www.torecabirth.jp/product/369",
       "sourceCategory": "https://www.torecabirth.jp/product-list/7"
     },
@@ -3979,7 +3979,7 @@
       "title": "世良真純【C】[型番 0225]【CT-P02】 [ 2弾:西と東の大決戦(コンタクト) ]",
       "priceYen": 50,
       "inStock": true,
-      "stockCount": 7,
+      "stockCount": 6,
       "url": "https://www.torecabirth.jp/product/513",
       "sourceCategory": "https://www.torecabirth.jp/product-list/7"
     },
@@ -4067,9 +4067,9 @@
       "cardNumber": "0229",
       "rarity": "CP",
       "title": "メアリー【CP】《赤》[型番 0229]【CT-P02】 [ 2弾:西と東の大決戦(コンタクト) ]",
-      "priceYen": 280,
-      "inStock": false,
-      "stockCount": 0,
+      "priceYen": 380,
+      "inStock": true,
+      "stockCount": 1,
       "url": "https://www.torecabirth.jp/product/397",
       "sourceCategory": "https://www.torecabirth.jp/product-list/7"
     },
@@ -4149,7 +4149,7 @@
       "title": "上原由衣【SP】《黄》[型番 0234]【エグゼクティブコレクション [01] Flashback of 2025】",
       "priceYen": 980,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 2,
       "url": "https://www.torecabirth.jp/product/6220",
       "sourceCategory": "https://www.torecabirth.jp/product-list/141"
     },
@@ -4179,7 +4179,7 @@
       "title": "諸伏高明【R】《黄》[型番 0236]【CT-P02】 [ 2弾:西と東の大決戦(コンタクト) ]",
       "priceYen": 50,
       "inStock": true,
-      "stockCount": 5,
+      "stockCount": 12,
       "url": "https://www.torecabirth.jp/product/463",
       "sourceCategory": "https://www.torecabirth.jp/product-list/7"
     },
@@ -4279,7 +4279,7 @@
       "title": "降谷零【C】[型番 0239]【CT-P02】 [ 2弾:西と東の大決戦(コンタクト) ]",
       "priceYen": 120,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 10,
       "url": "https://www.torecabirth.jp/product/523",
       "sourceCategory": "https://www.torecabirth.jp/product-list/7"
     },
@@ -4288,8 +4288,8 @@
       "rarity": "CP",
       "title": "降谷零【CP】《黄》[型番 0239]【CT-P02】 [ 2弾:西と東の大決戦(コンタクト) ]",
       "priceYen": 380,
-      "inStock": false,
-      "stockCount": 0,
+      "inStock": true,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/400",
       "sourceCategory": "https://www.torecabirth.jp/product-list/7"
     },
@@ -4339,7 +4339,7 @@
       "title": "山村ミサオ【SP】[型番 0243]【エグゼクティブコレクション [01] Flashback of 2025】",
       "priceYen": 280,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 4,
       "url": "https://www.torecabirth.jp/product/6224",
       "sourceCategory": "https://www.torecabirth.jp/product-list/141"
     },
@@ -4369,7 +4369,7 @@
       "title": "安室の愛車【CP】《黄》[型番 0245]【CT-P02】 [ 2弾:西と東の大決戦(コンタクト) ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 5,
       "url": "https://www.torecabirth.jp/product/401",
       "sourceCategory": "https://www.torecabirth.jp/product-list/7"
     },
@@ -4377,9 +4377,9 @@
       "cardNumber": "0246",
       "rarity": "CP",
       "title": "囚われた刑事【CP】《黄》[型番 0246]【CT-P02】 [ 2弾:西と東の大決戦(コンタクト) ]",
-      "priceYen": 120,
+      "priceYen": 180,
       "inStock": true,
-      "stockCount": 1,
+      "stockCount": 2,
       "url": "https://www.torecabirth.jp/product/434",
       "sourceCategory": "https://www.torecabirth.jp/product-list/7"
     },
@@ -4389,7 +4389,7 @@
       "title": "ベルモット【SR】《黒》[型番 0247]【CT-P02】 [ 2弾:西と東の大決戦(コンタクト) ]",
       "priceYen": 180,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/371",
       "sourceCategory": "https://www.torecabirth.jp/product-list/7"
     },
@@ -4397,9 +4397,9 @@
       "cardNumber": "0247",
       "rarity": "SRP",
       "title": "ベルモット【SRP】《黒》[型番 0247]【CT-P02】 [ 2弾:西と東の大決戦(コンタクト) ]",
-      "priceYen": 1280,
-      "inStock": false,
-      "stockCount": 0,
+      "priceYen": 1580,
+      "inStock": true,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/347",
       "sourceCategory": "https://www.torecabirth.jp/product-list/7"
     },
@@ -4427,7 +4427,7 @@
       "cardNumber": "0249",
       "rarity": "C",
       "title": "犯人【C】[型番 0249]【CT-P02】 [ 2弾:西と東の大決戦(コンタクト) ]",
-      "priceYen": 30,
+      "priceYen": 80,
       "inStock": true,
       "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/533",
@@ -4469,7 +4469,7 @@
       "title": "毛利蘭【PR】《青》[型番 0253][プロモーションパックVol.2]",
       "priceYen": 120,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 2,
       "url": "https://www.torecabirth.jp/product/201",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -4509,7 +4509,7 @@
       "title": "白馬探【PR】《白》[型番 0254][プロモーションパックVol.2 キラバージョン]",
       "priceYen": 480,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 2,
       "url": "https://www.torecabirth.jp/product/206",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -4519,7 +4519,7 @@
       "title": "ジョディ・スターリング【PR】《赤》[型番 0255][プロモーションパックVol.2]",
       "priceYen": 120,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 1,
       "url": "https://www.torecabirth.jp/product/203",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -4549,7 +4549,7 @@
       "title": "白鳥任三郎【PR】《黄》[型番 0256][プロモーションパックVol.2]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 4,
       "url": "https://www.torecabirth.jp/product/204",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -4569,7 +4569,7 @@
       "title": "毛利蘭【PR】《青》[型番 0257][少年サンデー37・38合併号付録]",
       "priceYen": 1980,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 4,
       "url": "https://www.torecabirth.jp/product/210",
       "sourceCategory": "https://www.torecabirth.jp/product-list/49"
     },
@@ -4708,8 +4708,8 @@
       "rarity": "R",
       "title": "結成 少年探偵団【R】《青》[型番 0264]【CT-P03】 [ 3弾:黒影の襲来（カットイン） ]",
       "priceYen": 50,
-      "inStock": false,
-      "stockCount": 0,
+      "inStock": true,
+      "stockCount": 6,
       "url": "https://www.torecabirth.jp/product/1311",
       "sourceCategory": "https://www.torecabirth.jp/product-list/25"
     },
@@ -4819,7 +4819,7 @@
       "title": "津川秀治【C】《青》[型番 0273]【CT-P03】 [ 3弾:黒影の襲来（カットイン） ]",
       "priceYen": 280,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/1320",
       "sourceCategory": "https://www.torecabirth.jp/product-list/25"
     },
@@ -4989,7 +4989,7 @@
       "title": "服部平次【SR】《緑》[型番 0285]【CT-P03】 [ 3弾:黒影の襲来（カットイン） ]",
       "priceYen": 80,
       "inStock": true,
-      "stockCount": 5,
+      "stockCount": 2,
       "url": "https://www.torecabirth.jp/product/1333",
       "sourceCategory": "https://www.torecabirth.jp/product-list/25"
     },
@@ -5007,9 +5007,9 @@
       "cardNumber": "0286",
       "rarity": "SR",
       "title": "遠山和葉【SR】《緑》[型番 0286]【CT-P03】 [ 3弾:黒影の襲来（カットイン） ]",
-      "priceYen": 120,
+      "priceYen": 180,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 6,
       "url": "https://www.torecabirth.jp/product/1334",
       "sourceCategory": "https://www.torecabirth.jp/product-list/25"
     },
@@ -5067,9 +5067,9 @@
       "cardNumber": "0289",
       "rarity": "C",
       "title": "服部平次【C】《緑》[型番 0289]【CT-P03】 [ 3弾:黒影の襲来（カットイン） ]",
-      "priceYen": 120,
-      "inStock": true,
-      "stockCount": 3,
+      "priceYen": 180,
+      "inStock": false,
+      "stockCount": 0,
       "url": "https://www.torecabirth.jp/product/1337",
       "sourceCategory": "https://www.torecabirth.jp/product-list/25"
     },
@@ -5078,8 +5078,8 @@
       "rarity": "CP",
       "title": "服部平次【CP】《緑》[型番 0289]【CT-P03】 [ 3弾:黒影の襲来（カットイン） ]",
       "priceYen": 380,
-      "inStock": true,
-      "stockCount": 1,
+      "inStock": false,
+      "stockCount": 0,
       "url": "https://www.torecabirth.jp/product/1490",
       "sourceCategory": "https://www.torecabirth.jp/product-list/25"
     },
@@ -5539,7 +5539,7 @@
       "title": "沖矢昴【R】《赤》[型番 0321]【CT-P03】 [ 3弾:黒影の襲来（カットイン） ]",
       "priceYen": 180,
       "inStock": true,
-      "stockCount": 8,
+      "stockCount": 7,
       "url": "https://www.torecabirth.jp/product/1372",
       "sourceCategory": "https://www.torecabirth.jp/product-list/25"
     },
@@ -5769,7 +5769,7 @@
       "title": "降谷零【SR】《黄》[型番 0337]【CT-P03】 [ 3弾:黒影の襲来（カットイン） ]",
       "priceYen": 380,
       "inStock": true,
-      "stockCount": 1,
+      "stockCount": 10,
       "url": "https://www.torecabirth.jp/product/1389",
       "sourceCategory": "https://www.torecabirth.jp/product-list/25"
     },
@@ -5949,7 +5949,7 @@
       "title": "高木長介【C】《黄》[型番 0344]【CT-P03】 [ 3弾:黒影の襲来（カットイン） ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 30,
+      "stockCount": 29,
       "url": "https://www.torecabirth.jp/product/1396",
       "sourceCategory": "https://www.torecabirth.jp/product-list/25"
     },
@@ -6069,7 +6069,7 @@
       "title": "大和敢助【C】《黄》[型番 0352]【CT-P03】 [ 3弾:黒影の襲来（カットイン） ]",
       "priceYen": 50,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 5,
       "url": "https://www.torecabirth.jp/product/1404",
       "sourceCategory": "https://www.torecabirth.jp/product-list/25"
     },
@@ -6278,8 +6278,8 @@
       "rarity": "C",
       "title": "ウォッカ【C】《黒》[型番 0365]【CT-P03】 [ 3弾:黒影の襲来（カットイン） ]",
       "priceYen": 380,
-      "inStock": true,
-      "stockCount": 1,
+      "inStock": false,
+      "stockCount": 0,
       "url": "https://www.torecabirth.jp/product/1421",
       "sourceCategory": "https://www.torecabirth.jp/product-list/25"
     },
@@ -6288,8 +6288,8 @@
       "rarity": "CP",
       "title": "ウォッカ【CP】《黒》[型番 0365]【CT-P03】 [ 3弾:黒影の襲来（カットイン） ]",
       "priceYen": 580,
-      "inStock": true,
-      "stockCount": 3,
+      "inStock": false,
+      "stockCount": 0,
       "url": "https://www.torecabirth.jp/product/1533",
       "sourceCategory": "https://www.torecabirth.jp/product-list/25"
     },
@@ -6457,7 +6457,7 @@
       "cardNumber": "0375",
       "rarity": "C",
       "title": "犯人【C】《黒》[型番 0375]【CT-P03】 [ 3弾:黒影の襲来（カットイン） ]",
-      "priceYen": 80,
+      "priceYen": 100,
       "inStock": true,
       "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/1431",
@@ -6539,7 +6539,7 @@
       "title": "烏丸蓮耶の影【C】《黒》[型番 0381]【CT-P03】 [ 3弾:黒影の襲来（カットイン） ]",
       "priceYen": 120,
       "inStock": true,
-      "stockCount": 5,
+      "stockCount": 2,
       "url": "https://www.torecabirth.jp/product/1437",
       "sourceCategory": "https://www.torecabirth.jp/product-list/25"
     },
@@ -6559,7 +6559,7 @@
       "title": "烏丸蓮耶の影【D】《黒》[型番 0381]【CT-D07 ThemeDeck 02】 [ Case-ThemeDeck 02 黒ずくめの組織 ]",
       "priceYen": 80,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 2,
       "url": "https://www.torecabirth.jp/product/1032",
       "sourceCategory": "https://www.torecabirth.jp/product-list/42"
     },
@@ -6837,9 +6837,9 @@
       "cardNumber": "0399",
       "rarity": "PR",
       "title": "大岡紅葉【PR】《緑》[型番 0399][プロモーションパックVol.3]",
-      "priceYen": 220,
+      "priceYen": 280,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 1,
       "url": "https://www.torecabirth.jp/product/227",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -6949,7 +6949,7 @@
       "title": "諸伏高明 【PR】《黄》[型番 0402] [チャレンジ戦 他] 未開封",
       "priceYen": 29980,
       "inStock": true,
-      "stockCount": 1,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/4915",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -6988,8 +6988,8 @@
       "rarity": "SP",
       "title": "毛利小五郎【SP】《青》[型番 0403]【エグゼクティブコレクション [01] Flashback of 2025】",
       "priceYen": 480,
-      "inStock": false,
-      "stockCount": 0,
+      "inStock": true,
+      "stockCount": 2,
       "url": "https://www.torecabirth.jp/product/6217",
       "sourceCategory": "https://www.torecabirth.jp/product-list/141"
     },
@@ -7006,6 +7006,16 @@
     {
       "cardNumber": "0404",
       "rarity": "PR",
+      "title": "服部平次【PR】《緑》[型番 0404][プロモーションパックVol.4 キラバージョン]",
+      "priceYen": 2980,
+      "inStock": true,
+      "stockCount": 3,
+      "url": "https://www.torecabirth.jp/product/1547",
+      "sourceCategory": "https://www.torecabirth.jp/product-list/48"
+    },
+    {
+      "cardNumber": "0404",
+      "rarity": "PR",
       "title": "服部平次【PR】《緑》[型番 0404][ サンデーS 2025年8月号付録]",
       "priceYen": 2980,
       "inStock": true,
@@ -7014,22 +7024,12 @@
       "sourceCategory": "https://www.torecabirth.jp/product-list/49"
     },
     {
-      "cardNumber": "0404",
-      "rarity": "PR",
-      "title": "服部平次【PR】《緑》[型番 0404][プロモーションパックVol.4 キラバージョン]",
-      "priceYen": 3280,
-      "inStock": true,
-      "stockCount": 3,
-      "url": "https://www.torecabirth.jp/product/1547",
-      "sourceCategory": "https://www.torecabirth.jp/product-list/48"
-    },
-    {
       "cardNumber": "0405",
       "rarity": "PR",
       "title": "中森銀三【PR】《白》[型番 0405][プロモーションパックVol.4 ]",
       "priceYen": 180,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 2,
       "url": "https://www.torecabirth.jp/product/1544",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -7127,9 +7127,9 @@
       "cardNumber": "0410",
       "rarity": "R",
       "title": "江戸川コナン【R】《青》[型番0410]【CT-P04】 [ 4弾:信義の絆（パートナー） ]",
-      "priceYen": 280,
+      "priceYen": 380,
       "inStock": true,
-      "stockCount": 4,
+      "stockCount": 6,
       "url": "https://www.torecabirth.jp/product/2450",
       "sourceCategory": "https://www.torecabirth.jp/product-list/68"
     },
@@ -7149,7 +7149,7 @@
       "title": "工藤新一【C】《青》[型番0411]【CT-P04】 [ 4弾:信義の絆（パートナー） ]",
       "priceYen": 80,
       "inStock": true,
-      "stockCount": 10,
+      "stockCount": 8,
       "url": "https://www.torecabirth.jp/product/2452",
       "sourceCategory": "https://www.torecabirth.jp/product-list/68"
     },
@@ -7189,7 +7189,7 @@
       "title": "工藤新一【PR】《青》[型番 0411][ プロモーションパックVol.14]",
       "priceYen": 1280,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 2,
       "url": "https://www.torecabirth.jp/product/8673",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -7269,7 +7269,7 @@
       "title": "最後の切り札【C】《青》[型番0417]【CT-P04】 [ 4弾:信義の絆（パートナー） ]",
       "priceYen": 50,
       "inStock": true,
-      "stockCount": 4,
+      "stockCount": 1,
       "url": "https://www.torecabirth.jp/product/2461",
       "sourceCategory": "https://www.torecabirth.jp/product-list/68"
     },
@@ -7278,8 +7278,8 @@
       "rarity": "CP",
       "title": "最後の切り札【CP】《青》[型番0417]【CT-P04】 [ 4弾:信義の絆（パートナー） ]",
       "priceYen": 280,
-      "inStock": true,
-      "stockCount": 3,
+      "inStock": false,
+      "stockCount": 0,
       "url": "https://www.torecabirth.jp/product/2462",
       "sourceCategory": "https://www.torecabirth.jp/product-list/68"
     },
@@ -7359,7 +7359,7 @@
       "title": "光本兵我【C】《緑》[型番0423]【CT-P04】 [ 4弾:信義の絆（パートナー） ]",
       "priceYen": 120,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/2473",
       "sourceCategory": "https://www.torecabirth.jp/product-list/68"
     },
@@ -7429,7 +7429,7 @@
       "title": "黒羽快斗【SR】《白》[型番0428]【CT-P04】 [ 4弾:信義の絆（パートナー） ]",
       "priceYen": 280,
       "inStock": true,
-      "stockCount": 9,
+      "stockCount": 8,
       "url": "https://www.torecabirth.jp/product/2484",
       "sourceCategory": "https://www.torecabirth.jp/product-list/68"
     },
@@ -7469,7 +7469,7 @@
       "title": "白馬探【R】《白》[型番0430]【CT-P04】 [ 4弾:信義の絆（パートナー） ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 13,
+      "stockCount": 10,
       "url": "https://www.torecabirth.jp/product/2488",
       "sourceCategory": "https://www.torecabirth.jp/product-list/68"
     },
@@ -7479,7 +7479,7 @@
       "title": "白馬探【RP】《白》[型番0430]【CT-P04】 [ 4弾:信義の絆（パートナー） ]",
       "priceYen": 180,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 1,
       "url": "https://www.torecabirth.jp/product/2489",
       "sourceCategory": "https://www.torecabirth.jp/product-list/68"
     },
@@ -7517,7 +7517,7 @@
       "cardNumber": "0431",
       "rarity": "PR",
       "title": "怪盗キッド【PR】《白》[型番 0431][ プロモーションパックVol.13 キラバージョン]",
-      "priceYen": 3980,
+      "priceYen": 2980,
       "inStock": true,
       "stockCount": 4,
       "url": "https://www.torecabirth.jp/product/7985",
@@ -7599,7 +7599,7 @@
       "title": "「よォ名探偵…」【C】《白》[型番0437]【CT-P04】 [ 4弾:信義の絆（パートナー） ]",
       "priceYen": 50,
       "inStock": true,
-      "stockCount": 4,
+      "stockCount": 1,
       "url": "https://www.torecabirth.jp/product/2500",
       "sourceCategory": "https://www.torecabirth.jp/product-list/68"
     },
@@ -7619,7 +7619,7 @@
       "title": "赤井秀一【SR】《赤》[型番0438]【CT-P04】 [ 4弾:信義の絆（パートナー） ]",
       "priceYen": 2780,
       "inStock": true,
-      "stockCount": 1,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/2508",
       "sourceCategory": "https://www.torecabirth.jp/product-list/68"
     },
@@ -7759,7 +7759,7 @@
       "title": "赤井秀一【PR】《赤》[型番 0445][ プロモーションパックVol.14]",
       "priceYen": 1380,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 5,
       "url": "https://www.torecabirth.jp/product/8674",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -7827,9 +7827,9 @@
       "cardNumber": "0448",
       "rarity": "CP",
       "title": "アンドレ・キャメル【CP】《赤》[型番0448]【CT-P04】 [ 4弾:信義の絆（パートナー） ]",
-      "priceYen": 180,
-      "inStock": false,
-      "stockCount": 0,
+      "priceYen": 280,
+      "inStock": true,
+      "stockCount": 1,
       "url": "https://www.torecabirth.jp/product/2526",
       "sourceCategory": "https://www.torecabirth.jp/product-list/68"
     },
@@ -7919,7 +7919,7 @@
       "title": "佐藤美和子【SR】《黄》[型番0455]【CT-P04】 [ 4弾:信義の絆（パートナー） ]",
       "priceYen": 980,
       "inStock": true,
-      "stockCount": 9,
+      "stockCount": 6,
       "url": "https://www.torecabirth.jp/product/2544",
       "sourceCategory": "https://www.torecabirth.jp/product-list/68"
     },
@@ -7939,7 +7939,7 @@
       "title": "高木渉【SR】《黄》[型番0456]【CT-P04】 [ 4弾:信義の絆（パートナー） ]",
       "priceYen": 780,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 10,
       "url": "https://www.torecabirth.jp/product/2546",
       "sourceCategory": "https://www.torecabirth.jp/product-list/68"
     },
@@ -8189,7 +8189,7 @@
       "title": "スコッチ【SR】《黒》[型番0470]【CT-P04】 [ 4弾:信義の絆（パートナー） ]",
       "priceYen": 680,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 10,
       "url": "https://www.torecabirth.jp/product/2572",
       "sourceCategory": "https://www.torecabirth.jp/product-list/68"
     },
@@ -8209,7 +8209,7 @@
       "title": "ベルモット【R】《黒》[型番0471]【CT-P04】 [ 4弾:信義の絆（パートナー） ]",
       "priceYen": 120,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/2574",
       "sourceCategory": "https://www.torecabirth.jp/product-list/68"
     },
@@ -8238,8 +8238,8 @@
       "rarity": "C",
       "title": "ウォッカ【C】《黒》[型番0473]【CT-P04】 [ 4弾:信義の絆（パートナー） ]",
       "priceYen": 30,
-      "inStock": true,
-      "stockCount": 3,
+      "inStock": false,
+      "stockCount": 0,
       "url": "https://www.torecabirth.jp/product/2577",
       "sourceCategory": "https://www.torecabirth.jp/product-list/68"
     },
@@ -8299,7 +8299,7 @@
       "title": "バーボン【C】《黒》[型番0477]【CT-P04】 [ 4弾:信義の絆（パートナー） ]",
       "priceYen": 220,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 4,
       "url": "https://www.torecabirth.jp/product/2583",
       "sourceCategory": "https://www.torecabirth.jp/product-list/68"
     },
@@ -8347,9 +8347,9 @@
       "cardNumber": "0480",
       "rarity": "PR",
       "title": "妃英理【PR】《青》[型番 0480][プロモーションパックVol.5キラバージョン]",
-      "priceYen": 580,
-      "inStock": false,
-      "stockCount": 0,
+      "priceYen": 680,
+      "inStock": true,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/1998",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -8388,8 +8388,8 @@
       "rarity": "PR",
       "title": "伊達航【PR】《黄》[型番 0482][プロモーションパックVol.5キラバージョン]",
       "priceYen": 680,
-      "inStock": false,
-      "stockCount": 0,
+      "inStock": true,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/1996",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -8399,7 +8399,7 @@
       "title": "バーボン【PR】《黒》[型番 0483][プロモーションパックVol.5]",
       "priceYen": 780,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 6,
       "url": "https://www.torecabirth.jp/product/1994",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -8418,8 +8418,8 @@
       "rarity": "PR",
       "title": "安室透【PR】《黄》[型番 0484][週刊少年サンデー2025年13号付録]",
       "priceYen": 3280,
-      "inStock": true,
-      "stockCount": 2,
+      "inStock": false,
+      "stockCount": 0,
       "url": "https://www.torecabirth.jp/product/2597",
       "sourceCategory": "https://www.torecabirth.jp/product-list/49"
     },
@@ -8437,9 +8437,9 @@
       "cardNumber": "0485",
       "rarity": "PR",
       "title": "遠山和葉【PR】《緑》[型番 0485][プロモーションパックVol.6キラバージョン]",
-      "priceYen": 980,
-      "inStock": true,
-      "stockCount": 3,
+      "priceYen": 1080,
+      "inStock": false,
+      "stockCount": 0,
       "url": "https://www.torecabirth.jp/product/3027",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -8467,7 +8467,7 @@
       "cardNumber": "0487",
       "rarity": "PR",
       "title": "宮野厚司【PR】《赤》[型番 0487][プロモーションパックVol.6]",
-      "priceYen": 150,
+      "priceYen": 180,
       "inStock": true,
       "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/3023",
@@ -8479,7 +8479,7 @@
       "title": "宮野厚司【PR】《赤》[型番 0487][プロモーションパックVol.6キラバージョン]",
       "priceYen": 580,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 2,
       "url": "https://www.torecabirth.jp/product/3029",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -8489,7 +8489,7 @@
       "title": "萩原研二【PR】《黄》[型番 0488][プロモーションパックVol.6]",
       "priceYen": 380,
       "inStock": true,
-      "stockCount": 2,
+      "stockCount": 10,
       "url": "https://www.torecabirth.jp/product/3024",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -8568,8 +8568,8 @@
       "rarity": "D",
       "title": "吉田歩美【D】《青》[型番0491]【CT-D08 ThemeDeck 03】 [ Case-ThemeDeck 03 青の古城探索事件 ]",
       "priceYen": 380,
-      "inStock": true,
-      "stockCount": 3,
+      "inStock": false,
+      "stockCount": 0,
       "url": "https://www.torecabirth.jp/product/3046",
       "sourceCategory": "https://www.torecabirth.jp/product-list/73"
     },
@@ -8599,7 +8599,7 @@
       "title": "小嶋元太【D】《青》[型番0492] キラ加工【CT-D08 ThemeDeck 03】 [ Case-ThemeDeck 03 青の古城探索事件 ]",
       "priceYen": 480,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 2,
       "url": "https://www.torecabirth.jp/product/3047",
       "sourceCategory": "https://www.torecabirth.jp/product-list/73"
     },
@@ -8659,7 +8659,7 @@
       "title": "小嶋元太【D】《青》[型番0495] キラ加工【CT-D08 ThemeDeck 03】 [ Case-ThemeDeck 03 青の古城探索事件 ]",
       "priceYen": 480,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 2,
       "url": "https://www.torecabirth.jp/product/3053",
       "sourceCategory": "https://www.torecabirth.jp/product-list/73"
     },
@@ -8729,7 +8729,7 @@
       "title": "大和敢助【D】《黄》[型番0500]【CT-D09 ThemeDeck 04】 [ Case-ThemeDeck 04 死亡の館、赤い壁 ]",
       "priceYen": 480,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 1,
       "url": "https://www.torecabirth.jp/product/3069",
       "sourceCategory": "https://www.torecabirth.jp/product-list/74"
     },
@@ -8769,7 +8769,7 @@
       "title": "諸伏高明【D】《黄》[型番0501]【CT-D09 ThemeDeck 04】 [ Case-ThemeDeck 04 死亡の館、赤い壁 ]",
       "priceYen": 680,
       "inStock": true,
-      "stockCount": 9,
+      "stockCount": 4,
       "url": "https://www.torecabirth.jp/product/3071",
       "sourceCategory": "https://www.torecabirth.jp/product-list/74"
     },
@@ -8929,7 +8929,7 @@
       "title": "上原由衣【D】《黄》[型番0507]【CT-D09 ThemeDeck 04】 [ Case-ThemeDeck 04 死亡の館、赤い壁 ]",
       "priceYen": 380,
       "inStock": true,
-      "stockCount": 5,
+      "stockCount": 4,
       "url": "https://www.torecabirth.jp/product/3083",
       "sourceCategory": "https://www.torecabirth.jp/product-list/74"
     },
@@ -8989,7 +8989,7 @@
       "title": "上原由衣 【SP】《黄》[型番 0507] 【エグゼクティブコレクション [01] Flashback of 2025】",
       "priceYen": 980,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 5,
       "url": "https://www.torecabirth.jp/product/6223",
       "sourceCategory": "https://www.torecabirth.jp/product-list/141"
     },
@@ -8999,7 +8999,7 @@
       "title": "高木渉【D】《黄》[型番0508]【CT-D09 ThemeDeck 04】 [ Case-ThemeDeck 04 死亡の館、赤い壁 ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 36,
+      "stockCount": 33,
       "url": "https://www.torecabirth.jp/product/3087",
       "sourceCategory": "https://www.torecabirth.jp/product-list/74"
     },
@@ -9019,7 +9019,7 @@
       "title": "空城の計【D】《黄》[型番0509]【CT-D09 ThemeDeck 04】 [ Case-ThemeDeck 04 死亡の館、赤い壁 ]",
       "priceYen": 280,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 4,
       "url": "https://www.torecabirth.jp/product/3089",
       "sourceCategory": "https://www.torecabirth.jp/product-list/74"
     },
@@ -9079,7 +9079,7 @@
       "title": "毛利小五郎【SRCP】《青》[型番0512]【CT-P05】 [ 5弾:新たなる謎 ]",
       "priceYen": 3280,
       "inStock": true,
-      "stockCount": 2,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/3980",
       "sourceCategory": "https://www.torecabirth.jp/product-list/75"
     },
@@ -9197,9 +9197,9 @@
       "cardNumber": "0516",
       "rarity": "PR",
       "title": "江戸川コナン【PR】《青》[型番 0516][チャレンジ戦 他] 未開封 ※カード表記型番:0957",
-      "priceYen": 16980,
+      "priceYen": 14980,
       "inStock": true,
-      "stockCount": 2,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/8699",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -9389,7 +9389,7 @@
       "title": "妃弁護士SOS【CP】《青》[型番0530]【CT-P05】 [ 5弾:新たなる謎 ]",
       "priceYen": 380,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 2,
       "url": "https://www.torecabirth.jp/product/4006",
       "sourceCategory": "https://www.torecabirth.jp/product-list/75"
     },
@@ -9627,9 +9627,9 @@
       "cardNumber": "0546",
       "rarity": "C",
       "title": "ラブリースポット【C】《緑》[型番0546]【CT-P05】 [ 5弾:新たなる謎 ]",
-      "priceYen": 50,
-      "inStock": false,
-      "stockCount": 0,
+      "priceYen": 80,
+      "inStock": true,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/4031",
       "sourceCategory": "https://www.torecabirth.jp/product-list/75"
     },
@@ -9747,9 +9747,9 @@
       "cardNumber": "0554",
       "rarity": "C",
       "title": "工藤優作【C】《白》[型番0554]【CT-P05】 [ 5弾:新たなる謎 ]",
-      "priceYen": 120,
-      "inStock": false,
-      "stockCount": 0,
+      "priceYen": 180,
+      "inStock": true,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/4047",
       "sourceCategory": "https://www.torecabirth.jp/product-list/75"
     },
@@ -9759,7 +9759,7 @@
       "title": "工藤有希子【C】《白》[型番0555]【CT-P05】 [ 5弾:新たなる謎 ]",
       "priceYen": 80,
       "inStock": true,
-      "stockCount": 10,
+      "stockCount": 7,
       "url": "https://www.torecabirth.jp/product/4048",
       "sourceCategory": "https://www.torecabirth.jp/product-list/75"
     },
@@ -9819,7 +9819,7 @@
       "title": "白馬探【C】《白》[型番0561]【CT-P05】 [ 5弾:新たなる謎 ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 7,
+      "stockCount": 5,
       "url": "https://www.torecabirth.jp/product/4054",
       "sourceCategory": "https://www.torecabirth.jp/product-list/75"
     },
@@ -9959,7 +9959,7 @@
       "title": "赤井秀一【C】《赤》[型番0570]【CT-P05】 [ 5弾:新たなる謎 ]",
       "priceYen": 280,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 10,
       "url": "https://www.torecabirth.jp/product/4072",
       "sourceCategory": "https://www.torecabirth.jp/product-list/75"
     },
@@ -10079,7 +10079,7 @@
       "title": "羽田秀吉【C】《赤》[型番0580]【CT-P05】 [ 5弾:新たなる謎 ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/4084",
       "sourceCategory": "https://www.torecabirth.jp/product-list/75"
     },
@@ -10177,7 +10177,7 @@
       "cardNumber": "0585",
       "rarity": "SRP",
       "title": "★1周年記念 諸伏高明【SRP】《黄》[型番0585]【CT-P05】 [ 5弾:新たなる謎 ]",
-      "priceYen": 15980,
+      "priceYen": 14980,
       "inStock": true,
       "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/4101",
@@ -10299,7 +10299,7 @@
       "title": "★1周年記念 榎本梓【CP】《黄》[型番0591]【CT-P05】 [ 5弾:新たなる謎 ]",
       "priceYen": 480,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 2,
       "url": "https://www.torecabirth.jp/product/4114",
       "sourceCategory": "https://www.torecabirth.jp/product-list/75"
     },
@@ -10458,8 +10458,8 @@
       "rarity": "SR",
       "title": "ウォッカ【SR】《黒》[型番0603]【CT-P05】 [ 5弾:新たなる謎 ]",
       "priceYen": 380,
-      "inStock": true,
-      "stockCount": 3,
+      "inStock": false,
+      "stockCount": 0,
       "url": "https://www.torecabirth.jp/product/4134",
       "sourceCategory": "https://www.torecabirth.jp/product-list/75"
     },
@@ -10469,7 +10469,7 @@
       "title": "ウォッカ【SRP】《黒》[型番0603]【CT-P05】 [ 5弾:新たなる謎 ]",
       "priceYen": 4280,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 1,
       "url": "https://www.torecabirth.jp/product/4135",
       "sourceCategory": "https://www.torecabirth.jp/product-list/75"
     },
@@ -10479,7 +10479,7 @@
       "title": "バーボン【R】《黒》[型番0604]【CT-P05】 [ 5弾:新たなる謎 ]",
       "priceYen": 180,
       "inStock": true,
-      "stockCount": 8,
+      "stockCount": 7,
       "url": "https://www.torecabirth.jp/product/4136",
       "sourceCategory": "https://www.torecabirth.jp/product-list/75"
     },
@@ -10499,7 +10499,7 @@
       "title": "スコッチ【C】《黒》[型番0606]【CT-P05】 [ 5弾:新たなる謎 ]",
       "priceYen": 80,
       "inStock": true,
-      "stockCount": 12,
+      "stockCount": 10,
       "url": "https://www.torecabirth.jp/product/4138",
       "sourceCategory": "https://www.torecabirth.jp/product-list/75"
     },
@@ -10537,9 +10537,9 @@
       "cardNumber": "0609",
       "rarity": "C",
       "title": "ベルモット【C】《黒》[型番0609]【CT-P05】 [ 5弾:新たなる謎 ]",
-      "priceYen": 80,
+      "priceYen": 120,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 12,
       "url": "https://www.torecabirth.jp/product/4142",
       "sourceCategory": "https://www.torecabirth.jp/product-list/75"
     },
@@ -10769,7 +10769,7 @@
       "title": "諸伏景光【SP】《黄》[型番 0619]【エグゼクティブコレクション [01] Flashback of 2025】",
       "priceYen": 4280,
       "inStock": true,
-      "stockCount": 2,
+      "stockCount": 4,
       "url": "https://www.torecabirth.jp/product/6225",
       "sourceCategory": "https://www.torecabirth.jp/product-list/141"
     },
@@ -10779,7 +10779,7 @@
       "title": "灰原哀【PR】《青》[型番 0620][プロモーションパックVol.7]",
       "priceYen": 680,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 2,
       "url": "https://www.torecabirth.jp/product/4173",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -10817,9 +10817,9 @@
       "cardNumber": "0622",
       "rarity": "PR",
       "title": "工藤優作【PR】《白》[型番 0622][プロモーションパックVol.7]",
-      "priceYen": 980,
-      "inStock": false,
-      "stockCount": 0,
+      "priceYen": 1380,
+      "inStock": true,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/4175",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -10839,7 +10839,7 @@
       "title": "ラム【PR】《黒》[型番 0623][プロモーションパックVol.7]",
       "priceYen": 980,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 1,
       "url": "https://www.torecabirth.jp/product/4176",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -10847,9 +10847,9 @@
       "cardNumber": "0623",
       "rarity": "PR",
       "title": "ラム【PR】《黒》[型番 0623][プロモーションパックVol.7キラバージョン]",
-      "priceYen": 1280,
-      "inStock": false,
-      "stockCount": 0,
+      "priceYen": 1480,
+      "inStock": true,
+      "stockCount": 1,
       "url": "https://www.torecabirth.jp/product/4182",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -10879,7 +10879,7 @@
       "title": "「もう少し引き付けろ…」【PR】《赤》[型番 0625][プロモーションパックVol.8]",
       "priceYen": 120,
       "inStock": true,
-      "stockCount": 2,
+      "stockCount": 1,
       "url": "https://www.torecabirth.jp/product/4689",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -10909,7 +10909,7 @@
       "title": "安室透【PR】《黄》[型番 0626][プロモーションパックVol.8キラバージョン]",
       "priceYen": 880,
       "inStock": true,
-      "stockCount": 2,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/4696",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -10917,9 +10917,9 @@
       "cardNumber": "0627",
       "rarity": "PR",
       "title": "犯人【PR】《黒》[型番 0627][プロモーションパックVol.8]",
-      "priceYen": 1580,
+      "priceYen": 1780,
       "inStock": true,
-      "stockCount": 4,
+      "stockCount": 6,
       "url": "https://www.torecabirth.jp/product/4691",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -11139,7 +11139,7 @@
       "title": "鬼丸猛(YAIBA)【SR】《緑》[型番0639]【CT-P06】 [ 6弾:交錯する刃 ]",
       "priceYen": 680,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 11,
       "url": "https://www.torecabirth.jp/product/4751",
       "sourceCategory": "https://www.torecabirth.jp/product-list/83"
     },
@@ -11149,7 +11149,7 @@
       "title": "鬼丸猛(YAIBA)【SRCP】《緑》[型番0639]【CT-P06】 [ 6弾:交錯する刃 ]",
       "priceYen": 4580,
       "inStock": true,
-      "stockCount": 1,
+      "stockCount": 2,
       "url": "https://www.torecabirth.jp/product/4752",
       "sourceCategory": "https://www.torecabirth.jp/product-list/83"
     },
@@ -11259,7 +11259,7 @@
       "title": "黒鬼【C】《緑》[型番0647]【CT-P06】 [ 6弾:交錯する刃 ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 4,
+      "stockCount": 1,
       "url": "https://www.torecabirth.jp/product/4763",
       "sourceCategory": "https://www.torecabirth.jp/product-list/83"
     },
@@ -11348,8 +11348,8 @@
       "rarity": "CP",
       "title": "松尾芭蕉【CP】《緑》[型番0653]【CT-P06】 [ 6弾:交錯する刃 ]",
       "priceYen": 180,
-      "inStock": true,
-      "stockCount": 3,
+      "inStock": false,
+      "stockCount": 0,
       "url": "https://www.torecabirth.jp/product/4772",
       "sourceCategory": "https://www.torecabirth.jp/product-list/83"
     },
@@ -11459,7 +11459,7 @@
       "title": "服部平次＆沖田総司【MR】《緑》[型番0660]【CT-P06】 [ 6弾:交錯する刃 ]",
       "priceYen": 1580,
       "inStock": true,
-      "stockCount": 2,
+      "stockCount": 6,
       "url": "https://www.torecabirth.jp/product/4783",
       "sourceCategory": "https://www.torecabirth.jp/product-list/83"
     },
@@ -11479,7 +11479,7 @@
       "title": "鬼丸猛(高校生)【SR】《緑》[型番0661]【CT-P06】 [ 6弾:交錯する刃 ]",
       "priceYen": 980,
       "inStock": true,
-      "stockCount": 1,
+      "stockCount": 6,
       "url": "https://www.torecabirth.jp/product/4785",
       "sourceCategory": "https://www.torecabirth.jp/product-list/83"
     },
@@ -11589,7 +11589,7 @@
       "title": "鉄刃【SR】《白》[型番0667]【CT-P06】 [ 6弾:交錯する刃 ]",
       "priceYen": 480,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 6,
       "url": "https://www.torecabirth.jp/product/4802",
       "sourceCategory": "https://www.torecabirth.jp/product-list/83"
     },
@@ -11879,7 +11879,7 @@
       "title": "怪盗キッド＆白馬探【MR】《白》[型番0687]【CT-P06】 [ 6弾:交錯する刃 ]",
       "priceYen": 1980,
       "inStock": true,
-      "stockCount": 2,
+      "stockCount": 6,
       "url": "https://www.torecabirth.jp/product/4831",
       "sourceCategory": "https://www.torecabirth.jp/product-list/83"
     },
@@ -11888,8 +11888,8 @@
       "rarity": "MRP",
       "title": "怪盗キッド＆白馬探【MRP】《白》[型番0687]【CT-P06】 [ 6弾:交錯する刃 ]",
       "priceYen": 7980,
-      "inStock": true,
-      "stockCount": 1,
+      "inStock": false,
+      "stockCount": 0,
       "url": "https://www.torecabirth.jp/product/4832",
       "sourceCategory": "https://www.torecabirth.jp/product-list/83"
     },
@@ -11907,9 +11907,9 @@
       "cardNumber": "0688",
       "rarity": "SRP",
       "title": "中森銀三【SRP】《白》[型番0688]【CT-P06】 [ 6弾:交錯する刃 ]",
-      "priceYen": 3980,
+      "priceYen": 3280,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 6,
       "url": "https://www.torecabirth.jp/product/4834",
       "sourceCategory": "https://www.torecabirth.jp/product-list/83"
     },
@@ -11957,9 +11957,9 @@
       "cardNumber": "0691",
       "rarity": "C",
       "title": "工藤有希子【C】《白》[型番0691]【CT-P06】 [ 6弾:交錯する刃 ]",
-      "priceYen": 150,
-      "inStock": false,
-      "stockCount": 0,
+      "priceYen": 180,
+      "inStock": true,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/4839",
       "sourceCategory": "https://www.torecabirth.jp/product-list/83"
     },
@@ -12149,7 +12149,7 @@
       "title": "安室透＆榎本梓【MR】《黄》[型番0703]【CT-P06】 [ 6弾:交錯する刃 ]",
       "priceYen": 5980,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 6,
       "url": "https://www.torecabirth.jp/product/4862",
       "sourceCategory": "https://www.torecabirth.jp/product-list/83"
     },
@@ -12167,9 +12167,9 @@
       "cardNumber": "0704",
       "rarity": "SR",
       "title": "松田陣平【SR】《黄》[型番0704]【CT-P06】 [ 6弾:交錯する刃 ]",
-      "priceYen": 3980,
+      "priceYen": 1980,
       "inStock": true,
-      "stockCount": 15,
+      "stockCount": 7,
       "url": "https://www.torecabirth.jp/product/4864",
       "sourceCategory": "https://www.torecabirth.jp/product-list/83"
     },
@@ -12239,7 +12239,7 @@
       "title": "萩原千速【R】《黄》[型番0706]【CT-P06】 [ 6弾:交錯する刃 ]",
       "priceYen": 1280,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 2,
       "url": "https://www.torecabirth.jp/product/4868",
       "sourceCategory": "https://www.torecabirth.jp/product-list/83"
     },
@@ -12349,7 +12349,7 @@
       "title": "高木君のおごり【C】《黄》[型番0713]【CT-P06】 [ 6弾:交錯する刃 ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 5,
+      "stockCount": 4,
       "url": "https://www.torecabirth.jp/product/4878",
       "sourceCategory": "https://www.torecabirth.jp/product-list/83"
     },
@@ -12419,7 +12419,7 @@
       "title": "ラム【SRP】《黒》[型番0716]【CT-P06】 [ 6弾:交錯する刃 ]",
       "priceYen": 3980,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 6,
       "url": "https://www.torecabirth.jp/product/4889",
       "sourceCategory": "https://www.torecabirth.jp/product-list/83"
     },
@@ -12429,7 +12429,7 @@
       "title": "ベルモット【R】《黒》[型番0717]【CT-P06】 [ 6弾:交錯する刃 ]",
       "priceYen": 780,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 4,
       "url": "https://www.torecabirth.jp/product/4890",
       "sourceCategory": "https://www.torecabirth.jp/product-list/83"
     },
@@ -12469,7 +12469,7 @@
       "title": "ジン【C】《黒》[型番0720]【CT-P06】 [ 6弾:交錯する刃 ]",
       "priceYen": 480,
       "inStock": true,
-      "stockCount": 8,
+      "stockCount": 1,
       "url": "https://www.torecabirth.jp/product/4894",
       "sourceCategory": "https://www.torecabirth.jp/product-list/83"
     },
@@ -12489,7 +12489,7 @@
       "title": "カッ【C】《黒》[型番0721]【CT-P06】 [ 6弾:交錯する刃 ]",
       "priceYen": 280,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 4,
       "url": "https://www.torecabirth.jp/product/4896",
       "sourceCategory": "https://www.torecabirth.jp/product-list/83"
     },
@@ -12518,8 +12518,8 @@
       "rarity": "RP",
       "title": "ブラックインパクト！【RP】《黒》[型番0722]【CT-P06】 [ 6弾:交錯する刃 ]",
       "priceYen": 980,
-      "inStock": true,
-      "stockCount": 1,
+      "inStock": false,
+      "stockCount": 0,
       "url": "https://www.torecabirth.jp/product/4899",
       "sourceCategory": "https://www.torecabirth.jp/product-list/83"
     },
@@ -12739,7 +12739,7 @@
       "title": "江戸川コナン【SR】《青》[型番0734] [ 【CT-P07】7弾:魅惑のマジック ]",
       "priceYen": 380,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 9,
       "url": "https://www.torecabirth.jp/product/5370",
       "sourceCategory": "https://www.torecabirth.jp/product-list/84"
     },
@@ -12759,7 +12759,7 @@
       "title": "工藤新一【R】《青》[型番0735] [ 【CT-P07】7弾:魅惑のマジック ]",
       "priceYen": 380,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 4,
       "url": "https://www.torecabirth.jp/product/5372",
       "sourceCategory": "https://www.torecabirth.jp/product-list/84"
     },
@@ -12769,7 +12769,7 @@
       "title": "工藤新一【RP】《青》[型番0735] [ 【CT-P07】7弾:魅惑のマジック ]",
       "priceYen": 880,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 5,
       "url": "https://www.torecabirth.jp/product/5373",
       "sourceCategory": "https://www.torecabirth.jp/product-list/84"
     },
@@ -12847,9 +12847,9 @@
       "cardNumber": "0740",
       "rarity": "C",
       "title": "小嶋元太【C】《青》[型番0740] [ 【CT-P07】7弾:魅惑のマジック ]",
-      "priceYen": 80,
+      "priceYen": 150,
       "inStock": true,
-      "stockCount": 4,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/5381",
       "sourceCategory": "https://www.torecabirth.jp/product-list/84"
     },
@@ -12867,9 +12867,9 @@
       "cardNumber": "0741",
       "rarity": "CP",
       "title": "小林澄子【CP】《青》[型番0741] [ 【CT-P07】7弾:魅惑のマジック ]",
-      "priceYen": 80,
+      "priceYen": 120,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 6,
       "url": "https://www.torecabirth.jp/product/5383",
       "sourceCategory": "https://www.torecabirth.jp/product-list/84"
     },
@@ -12879,7 +12879,7 @@
       "title": "円谷光彦【C】《青》[型番0742] [ 【CT-P07】7弾:魅惑のマジック ]",
       "priceYen": 120,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 6,
       "url": "https://www.torecabirth.jp/product/5384",
       "sourceCategory": "https://www.torecabirth.jp/product-list/84"
     },
@@ -12948,8 +12948,8 @@
       "rarity": "MR",
       "title": "遠山和葉＆大岡紅葉【MR】《緑》[型番0747] [ 【CT-P07】7弾:魅惑のマジック ]",
       "priceYen": 2180,
-      "inStock": true,
-      "stockCount": 3,
+      "inStock": false,
+      "stockCount": 0,
       "url": "https://www.torecabirth.jp/product/5391",
       "sourceCategory": "https://www.torecabirth.jp/product-list/84"
     },
@@ -12959,7 +12959,7 @@
       "title": "遠山和葉＆大岡紅葉【MRP】《緑》[型番0747] [ 【CT-P07】7弾:魅惑のマジック ]",
       "priceYen": 6980,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 1,
       "url": "https://www.torecabirth.jp/product/5392",
       "sourceCategory": "https://www.torecabirth.jp/product-list/84"
     },
@@ -12988,8 +12988,8 @@
       "rarity": "SRP",
       "title": "服部平次【SRP】《緑》[型番0748] [ 【CT-P07】7弾:魅惑のマジック ]",
       "priceYen": 1980,
-      "inStock": true,
-      "stockCount": 1,
+      "inStock": false,
+      "stockCount": 0,
       "url": "https://www.torecabirth.jp/product/5394",
       "sourceCategory": "https://www.torecabirth.jp/product-list/84"
     },
@@ -13069,7 +13069,7 @@
       "title": "マロちゃん【C】《緑》[型番0753] [ 【CT-P07】7弾:魅惑のマジック ]",
       "priceYen": 50,
       "inStock": true,
-      "stockCount": 9,
+      "stockCount": 8,
       "url": "https://www.torecabirth.jp/product/5403",
       "sourceCategory": "https://www.torecabirth.jp/product-list/84"
     },
@@ -13389,7 +13389,7 @@
       "title": "式部鹿紫子【C】《白》[型番0771] [ 【CT-P07】7弾:魅惑のマジック ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 30,
+      "stockCount": 29,
       "url": "https://www.torecabirth.jp/product/5444",
       "sourceCategory": "https://www.torecabirth.jp/product-list/84"
     },
@@ -13549,7 +13549,7 @@
       "title": "紅の盟約【CP】《白》[型番0784] [ 【CT-P07】7弾:魅惑のマジック ]",
       "priceYen": 280,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 1,
       "url": "https://www.torecabirth.jp/product/5460",
       "sourceCategory": "https://www.torecabirth.jp/product-list/84"
     },
@@ -13649,7 +13649,7 @@
       "title": "クリスタル・マザー【CP】《白》[型番0789] [ 【CT-P07】7弾:魅惑のマジック ]",
       "priceYen": 480,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 2,
       "url": "https://www.torecabirth.jp/product/5470",
       "sourceCategory": "https://www.torecabirth.jp/product-list/84"
     },
@@ -13669,7 +13669,7 @@
       "title": "日輪の後光の巻【CP】《白》[型番0790] [ 【CT-P07】7弾:魅惑のマジック ]",
       "priceYen": 380,
       "inStock": true,
-      "stockCount": 1,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/5472",
       "sourceCategory": "https://www.torecabirth.jp/product-list/84"
     },
@@ -13978,8 +13978,8 @@
       "rarity": "R",
       "title": "高木渉【R】《黄》[型番0810] [ 【CT-P07】7弾:魅惑のマジック ]",
       "priceYen": 80,
-      "inStock": true,
-      "stockCount": 4,
+      "inStock": false,
+      "stockCount": 0,
       "url": "https://www.torecabirth.jp/product/5505",
       "sourceCategory": "https://www.torecabirth.jp/product-list/84"
     },
@@ -13988,8 +13988,8 @@
       "rarity": "RP",
       "title": "高木渉【RP】《黄》[型番0810] [ 【CT-P07】7弾:魅惑のマジック ]",
       "priceYen": 480,
-      "inStock": true,
-      "stockCount": 3,
+      "inStock": false,
+      "stockCount": 0,
       "url": "https://www.torecabirth.jp/product/5506",
       "sourceCategory": "https://www.torecabirth.jp/product-list/84"
     },
@@ -14069,7 +14069,7 @@
       "title": "白鳥任三郎【CP】《黄》[型番0815] [ 【CT-P07】7弾:魅惑のマジック ]",
       "priceYen": 50,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 5,
       "url": "https://www.torecabirth.jp/product/5514",
       "sourceCategory": "https://www.torecabirth.jp/product-list/84"
     },
@@ -14109,7 +14109,7 @@
       "title": "「えええええ!?」【CP】《黄》[型番0818] [ 【CT-P07】7弾:魅惑のマジック ]",
       "priceYen": 180,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 2,
       "url": "https://www.torecabirth.jp/product/5518",
       "sourceCategory": "https://www.torecabirth.jp/product-list/84"
     },
@@ -14159,7 +14159,7 @@
       "title": "ジン【SR】《黒》[型番0821] [ 【CT-P07】7弾:魅惑のマジック ]",
       "priceYen": 780,
       "inStock": true,
-      "stockCount": 7,
+      "stockCount": 8,
       "url": "https://www.torecabirth.jp/product/5525",
       "sourceCategory": "https://www.torecabirth.jp/product-list/84"
     },
@@ -14179,7 +14179,7 @@
       "title": "ベルモット【SR】《黒》[型番0822] [ 【CT-P07】7弾:魅惑のマジック ]",
       "priceYen": 880,
       "inStock": true,
-      "stockCount": 12,
+      "stockCount": 11,
       "url": "https://www.torecabirth.jp/product/5527",
       "sourceCategory": "https://www.torecabirth.jp/product-list/84"
     },
@@ -14279,7 +14279,7 @@
       "title": "犯人【C】《黒》[型番0829] [ 【CT-P07】7弾:魅惑のマジック ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 9,
+      "stockCount": 6,
       "url": "https://www.torecabirth.jp/product/5537",
       "sourceCategory": "https://www.torecabirth.jp/product-list/84"
     },
@@ -14408,8 +14408,8 @@
       "rarity": "PR",
       "title": "キール【PR】《黒》[型番 0836][ プロモーションパックVol.10]",
       "priceYen": 280,
-      "inStock": true,
-      "stockCount": 3,
+      "inStock": false,
+      "stockCount": 0,
       "url": "https://www.torecabirth.jp/product/5552",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -14417,7 +14417,7 @@
       "cardNumber": "0836",
       "rarity": "PR",
       "title": "キール【PR】《黒》[型番 0836][ プロモーションパックVol.10キラバージョン]",
-      "priceYen": 680,
+      "priceYen": 880,
       "inStock": true,
       "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/5558",
@@ -14569,7 +14569,7 @@
       "title": "江戸川コナン【RP】《青》[型番0845] [ 8弾:哀色の宿命 ]",
       "priceYen": 580,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 2,
       "url": "https://www.torecabirth.jp/product/6736",
       "sourceCategory": "https://www.torecabirth.jp/product-list/111"
     },
@@ -14699,7 +14699,7 @@
       "title": "毛利蘭【CP】《青》[型番0855] [ 8弾:哀色の宿命 ]",
       "priceYen": 80,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/6749",
       "sourceCategory": "https://www.torecabirth.jp/product-list/111"
     },
@@ -14757,7 +14757,7 @@
       "cardNumber": "0859",
       "rarity": "MRP",
       "title": "大岡紅葉＆伊織無我【MRP】《緑》[型番0859] [ 8弾:哀色の宿命 ]",
-      "priceYen": 2080,
+      "priceYen": 1980,
       "inStock": true,
       "stockCount": 6,
       "url": "https://www.torecabirth.jp/product/6757",
@@ -14769,7 +14769,7 @@
       "title": "遠山和葉【SR】《緑》[型番0860] [ 8弾:哀色の宿命 ]",
       "priceYen": 220,
       "inStock": true,
-      "stockCount": 12,
+      "stockCount": 10,
       "url": "https://www.torecabirth.jp/product/6758",
       "sourceCategory": "https://www.torecabirth.jp/product-list/111"
     },
@@ -14779,7 +14779,7 @@
       "title": "遠山和葉【SRP】《緑》[型番0860] [ 8弾:哀色の宿命 ]",
       "priceYen": 1780,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 4,
       "url": "https://www.torecabirth.jp/product/6759",
       "sourceCategory": "https://www.torecabirth.jp/product-list/111"
     },
@@ -14789,7 +14789,7 @@
       "title": "服部平次【R】《緑》[型番0861] [ 8弾:哀色の宿命 ]",
       "priceYen": 180,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/6760",
       "sourceCategory": "https://www.torecabirth.jp/product-list/111"
     },
@@ -14797,9 +14797,9 @@
       "cardNumber": "0861",
       "rarity": "RP",
       "title": "服部平次【RP】《緑》[型番0861] [ 8弾:哀色の宿命 ]",
-      "priceYen": 580,
+      "priceYen": 680,
       "inStock": true,
-      "stockCount": 1,
+      "stockCount": 6,
       "url": "https://www.torecabirth.jp/product/6761",
       "sourceCategory": "https://www.torecabirth.jp/product-list/111"
     },
@@ -14819,7 +14819,7 @@
       "title": "大岡紅葉【R】《緑》[型番0863] [ 8弾:哀色の宿命 ]",
       "priceYen": 50,
       "inStock": true,
-      "stockCount": 4,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/6763",
       "sourceCategory": "https://www.torecabirth.jp/product-list/111"
     },
@@ -14829,7 +14829,7 @@
       "title": "大岡紅葉【RP】《緑》[型番0863] [ 8弾:哀色の宿命 ]",
       "priceYen": 220,
       "inStock": true,
-      "stockCount": 5,
+      "stockCount": 4,
       "url": "https://www.torecabirth.jp/product/6764",
       "sourceCategory": "https://www.torecabirth.jp/product-list/111"
     },
@@ -14937,7 +14937,7 @@
       "cardNumber": "0871",
       "rarity": "MR",
       "title": "鈴木園子＆京極真【MR】《白》[型番0871] [ 8弾:哀色の宿命 ]",
-      "priceYen": 480,
+      "priceYen": 380,
       "inStock": true,
       "stockCount": 11,
       "url": "https://www.torecabirth.jp/product/6777",
@@ -14979,7 +14979,7 @@
       "title": "工藤優作【R】《白》[型番0873] [ 8弾:哀色の宿命 ]",
       "priceYen": 180,
       "inStock": true,
-      "stockCount": 7,
+      "stockCount": 6,
       "url": "https://www.torecabirth.jp/product/6781",
       "sourceCategory": "https://www.torecabirth.jp/product-list/111"
     },
@@ -15009,7 +15009,7 @@
       "title": "クリス・ヴィンヤード【R】《白》[型番0875] [ 8弾:哀色の宿命 ]",
       "priceYen": 50,
       "inStock": true,
-      "stockCount": 5,
+      "stockCount": 4,
       "url": "https://www.torecabirth.jp/product/6784",
       "sourceCategory": "https://www.torecabirth.jp/product-list/111"
     },
@@ -15129,7 +15129,7 @@
       "title": "江戸川コナン誘拐事件【CP】《白》[型番0883] [ 8弾:哀色の宿命 ]",
       "priceYen": 120,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 2,
       "url": "https://www.torecabirth.jp/product/6796",
       "sourceCategory": "https://www.torecabirth.jp/product-list/111"
     },
@@ -15329,7 +15329,7 @@
       "title": "宮野志保【CP】《赤》[型番0896] [ 8弾:哀色の宿命 ]",
       "priceYen": 120,
       "inStock": true,
-      "stockCount": 4,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/6818",
       "sourceCategory": "https://www.torecabirth.jp/product-list/111"
     },
@@ -15379,7 +15379,7 @@
       "title": "佐藤美和子＆高木渉【MR】《黄》[型番0899] [ 8弾:哀色の宿命 ]",
       "priceYen": 680,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 9,
       "url": "https://www.torecabirth.jp/product/6825",
       "sourceCategory": "https://www.torecabirth.jp/product-list/111"
     },
@@ -15439,7 +15439,7 @@
       "title": "大和敢助【RP】《黄》[型番0902] [ 8弾:哀色の宿命 ]",
       "priceYen": 680,
       "inStock": true,
-      "stockCount": 9,
+      "stockCount": 8,
       "url": "https://www.torecabirth.jp/product/6831",
       "sourceCategory": "https://www.torecabirth.jp/product-list/111"
     },
@@ -15459,7 +15459,7 @@
       "title": "上原由衣【RP】《黄》[型番0903] [ 8弾:哀色の宿命 ]",
       "priceYen": 880,
       "inStock": true,
-      "stockCount": 8,
+      "stockCount": 7,
       "url": "https://www.torecabirth.jp/product/6833",
       "sourceCategory": "https://www.torecabirth.jp/product-list/111"
     },
@@ -15519,7 +15519,7 @@
       "title": "小橋葵【C】《黄》[型番0907] [ 8弾:哀色の宿命 ]",
       "priceYen": 50,
       "inStock": true,
-      "stockCount": 4,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/6839",
       "sourceCategory": "https://www.torecabirth.jp/product-list/111"
     },
@@ -15539,7 +15539,7 @@
       "title": "佐藤美和子【C】《黄》[型番0909] [ 8弾:哀色の宿命 ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/6841",
       "sourceCategory": "https://www.torecabirth.jp/product-list/111"
     },
@@ -15549,7 +15549,7 @@
       "title": "高木渉【C】《黄》[型番0910] [ 8弾:哀色の宿命 ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 4,
       "url": "https://www.torecabirth.jp/product/6842",
       "sourceCategory": "https://www.torecabirth.jp/product-list/111"
     },
@@ -15619,7 +15619,7 @@
       "title": "ジン【SRCP】《黒》[型番0914] [ 8弾:哀色の宿命 ]",
       "priceYen": 3280,
       "inStock": true,
-      "stockCount": 1,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/6851",
       "sourceCategory": "https://www.torecabirth.jp/product-list/111"
     },
@@ -15629,7 +15629,7 @@
       "title": "ピンガ【SR】《黒》[型番0915] [ 8弾:哀色の宿命 ]",
       "priceYen": 380,
       "inStock": true,
-      "stockCount": 9,
+      "stockCount": 5,
       "url": "https://www.torecabirth.jp/product/6852",
       "sourceCategory": "https://www.torecabirth.jp/product-list/111"
     },
@@ -15757,9 +15757,9 @@
       "cardNumber": "0925",
       "rarity": "C",
       "title": "ヘルエンジェル【C】《黒》[型番0925] [ 8弾:哀色の宿命 ]",
-      "priceYen": 30,
+      "priceYen": 50,
       "inStock": true,
-      "stockCount": 9,
+      "stockCount": 4,
       "url": "https://www.torecabirth.jp/product/6865",
       "sourceCategory": "https://www.torecabirth.jp/product-list/111"
     },
@@ -15838,8 +15838,8 @@
       "rarity": "RP",
       "title": "裏切りの街角【RP】《青》, 《黒》[型番0930] [ 8弾:哀色の宿命 ]",
       "priceYen": 380,
-      "inStock": true,
-      "stockCount": 1,
+      "inStock": false,
+      "stockCount": 0,
       "url": "https://www.torecabirth.jp/product/6873",
       "sourceCategory": "https://www.torecabirth.jp/product-list/111"
     },
@@ -15859,7 +15859,7 @@
       "title": "毛利蘭【PR】《青》[型番 0932][ プロモーションパックVol.11]",
       "priceYen": 580,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 5,
       "url": "https://www.torecabirth.jp/product/6229",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -15919,7 +15919,7 @@
       "title": "犯人【PR】《黒》[型番 0935][ プロモーションパックVol.11]",
       "priceYen": 280,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 5,
       "url": "https://www.torecabirth.jp/product/6232",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -16009,7 +16009,7 @@
       "title": "松田陣平【SP】《黄》[型番 0938]【エグゼクティブコレクション [02]Highway in 2026】",
       "priceYen": 980,
       "inStock": true,
-      "stockCount": 2,
+      "stockCount": 6,
       "url": "https://www.torecabirth.jp/product/8692",
       "sourceCategory": "https://www.torecabirth.jp/product-list/142"
     },
@@ -16039,7 +16039,7 @@
       "title": "萩原研二【SP】《黄》[型番 0939]【エグゼクティブコレクション [02]Highway in 2026】",
       "priceYen": 880,
       "inStock": true,
-      "stockCount": 2,
+      "stockCount": 6,
       "url": "https://www.torecabirth.jp/product/8693",
       "sourceCategory": "https://www.torecabirth.jp/product-list/142"
     },
@@ -16339,7 +16339,7 @@
       "title": "江戸川コナン【C】《青》[型番0957] [ 9弾:疾風の煌めき ]",
       "priceYen": 50,
       "inStock": true,
-      "stockCount": 8,
+      "stockCount": 6,
       "url": "https://www.torecabirth.jp/product/7267",
       "sourceCategory": "https://www.torecabirth.jp/product-list/122"
     },
@@ -16549,7 +16549,7 @@
       "title": "★2周年記念 大岡紅葉【CP】《緑》[型番0971] [ 9弾:疾風の煌めき ]",
       "priceYen": 280,
       "inStock": true,
-      "stockCount": 9,
+      "stockCount": 7,
       "url": "https://www.torecabirth.jp/product/7290",
       "sourceCategory": "https://www.torecabirth.jp/product-list/122"
     },
@@ -16669,7 +16669,7 @@
       "title": "怪盗キッド【SR】《白》[型番0979] [ 9弾:疾風の煌めき ]",
       "priceYen": 480,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 5,
       "url": "https://www.torecabirth.jp/product/7303",
       "sourceCategory": "https://www.torecabirth.jp/product-list/122"
     },
@@ -16699,7 +16699,7 @@
       "title": "★2周年記念 工藤優作【RP】《白》[型番0980] [ 9弾:疾風の煌めき ]",
       "priceYen": 180,
       "inStock": true,
-      "stockCount": 8,
+      "stockCount": 2,
       "url": "https://www.torecabirth.jp/product/7306",
       "sourceCategory": "https://www.torecabirth.jp/product-list/122"
     },
@@ -16719,7 +16719,7 @@
       "title": "★2周年記念 黒羽盗一【RP】《白》[型番0981] [ 9弾:疾風の煌めき ]",
       "priceYen": 180,
       "inStock": true,
-      "stockCount": 8,
+      "stockCount": 5,
       "url": "https://www.torecabirth.jp/product/7308",
       "sourceCategory": "https://www.torecabirth.jp/product-list/122"
     },
@@ -16729,7 +16729,7 @@
       "title": "中森青子【R】《白》[型番0982] [ 9弾:疾風の煌めき ]",
       "priceYen": 80,
       "inStock": true,
-      "stockCount": 20,
+      "stockCount": 19,
       "url": "https://www.torecabirth.jp/product/7309",
       "sourceCategory": "https://www.torecabirth.jp/product-list/122"
     },
@@ -17029,7 +17029,7 @@
       "title": "★2周年記念 羽田秀吉【RP】《赤》[型番1000] [ 9弾:疾風の煌めき ]",
       "priceYen": 120,
       "inStock": true,
-      "stockCount": 12,
+      "stockCount": 9,
       "url": "https://www.torecabirth.jp/product/7340",
       "sourceCategory": "https://www.torecabirth.jp/product-list/122"
     },
@@ -17249,7 +17249,7 @@
       "title": "萩原研二【SP】《黄》[型番 1013]【エグゼクティブコレクション [02]Highway in 2026】",
       "priceYen": 180,
       "inStock": true,
-      "stockCount": 8,
+      "stockCount": 6,
       "url": "https://www.torecabirth.jp/product/8690",
       "sourceCategory": "https://www.torecabirth.jp/product-list/142"
     },
@@ -17309,7 +17309,7 @@
       "title": "宮本由美【R】《黄》[型番1015] [ 9弾:疾風の煌めき ]",
       "priceYen": 150,
       "inStock": true,
-      "stockCount": 17,
+      "stockCount": 11,
       "url": "https://www.torecabirth.jp/product/7373",
       "sourceCategory": "https://www.torecabirth.jp/product-list/122"
     },
@@ -17319,7 +17319,7 @@
       "title": "★2周年記念 宮本由美【RP】《黄》[型番1015] [ 9弾:疾風の煌めき ]",
       "priceYen": 280,
       "inStock": true,
-      "stockCount": 7,
+      "stockCount": 5,
       "url": "https://www.torecabirth.jp/product/7374",
       "sourceCategory": "https://www.torecabirth.jp/product-list/122"
     },
@@ -17339,7 +17339,7 @@
       "title": "★2周年記念 三池苗子【CP】《黄》[型番1016] [ 9弾:疾風の煌めき ]",
       "priceYen": 480,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 4,
       "url": "https://www.torecabirth.jp/product/7376",
       "sourceCategory": "https://www.torecabirth.jp/product-list/122"
     },
@@ -17399,7 +17399,7 @@
       "title": "高木渉【C】《黄》[型番1020] [ 9弾:疾風の煌めき ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 2,
+      "stockCount": 10,
       "url": "https://www.torecabirth.jp/product/7381",
       "sourceCategory": "https://www.torecabirth.jp/product-list/122"
     },
@@ -17547,9 +17547,9 @@
       "cardNumber": "1030",
       "rarity": "CP2",
       "title": "風の女神【CP2】《黄》[型番1030] ※金加工 [ 9弾:疾風の煌めき ]",
-      "priceYen": 1980,
+      "priceYen": 1780,
       "inStock": true,
-      "stockCount": 2,
+      "stockCount": 4,
       "url": "https://www.torecabirth.jp/product/7396",
       "sourceCategory": "https://www.torecabirth.jp/product-list/122"
     },
@@ -17709,7 +17709,7 @@
       "title": "バーボン【C】《黒》[型番1038] [ 9弾:疾風の煌めき ]",
       "priceYen": 50,
       "inStock": true,
-      "stockCount": 5,
+      "stockCount": 2,
       "url": "https://www.torecabirth.jp/product/7412",
       "sourceCategory": "https://www.torecabirth.jp/product-list/122"
     },
@@ -17719,7 +17719,7 @@
       "title": "犯人【C】《黒》[型番1039] [ 9弾:疾風の煌めき ]",
       "priceYen": 50,
       "inStock": true,
-      "stockCount": 12,
+      "stockCount": 11,
       "url": "https://www.torecabirth.jp/product/7413",
       "sourceCategory": "https://www.torecabirth.jp/product-list/122"
     },
@@ -17879,7 +17879,7 @@
       "title": "★2周年記念 赤井秀一&ジン【MRP】《赤》, 《黒》[型番1049] [ 9弾:疾風の煌めき ]",
       "priceYen": 2080,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 5,
       "url": "https://www.torecabirth.jp/product/7429",
       "sourceCategory": "https://www.torecabirth.jp/product-list/122"
     },
@@ -17969,7 +17969,7 @@
       "title": "怪盗キッド【PR】《白》[型番 1054][プロモーションパックVol.12]",
       "priceYen": 380,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 5,
       "url": "https://www.torecabirth.jp/product/7213",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -17987,7 +17987,7 @@
       "cardNumber": "1055",
       "rarity": "PR",
       "title": "宮野明美【PR】《赤》[型番 1055][プロモーションパックVol.12]",
-      "priceYen": 380,
+      "priceYen": 480,
       "inStock": true,
       "stockCount": 6,
       "url": "https://www.torecabirth.jp/product/7214",
@@ -18009,7 +18009,7 @@
       "title": "風見裕也【PR】《黄》[型番 1056][プロモーションパックVol.12]",
       "priceYen": 80,
       "inStock": true,
-      "stockCount": 10,
+      "stockCount": 6,
       "url": "https://www.torecabirth.jp/product/7215",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -18059,7 +18059,7 @@
       "title": "萩原千速【SP】《黄》[型番 1058]【エグゼクティブコレクション [02]Highway in 2026】",
       "priceYen": 1280,
       "inStock": true,
-      "stockCount": 1,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/8659",
       "sourceCategory": "https://www.torecabirth.jp/product-list/142"
     },
@@ -18079,7 +18079,7 @@
       "title": "円谷光彦【PR】《青》[型番 1060][ プロモーションパックVol.13]",
       "priceYen": 580,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 1,
       "url": "https://www.torecabirth.jp/product/7975",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -18087,9 +18087,9 @@
       "cardNumber": "1060",
       "rarity": "PR",
       "title": "円谷光彦【PR】《青》[型番 1060][ プロモーションパックVol.13 キラバージョン]",
-      "priceYen": 1280,
+      "priceYen": 1080,
       "inStock": true,
-      "stockCount": 2,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/7981",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -18159,7 +18159,7 @@
       "title": "TVアニメ「名探偵コナン」放送30周年！【PR】《青》[型番 1064][ 名探偵コナンランド 物販購入特典]",
       "priceYen": 580,
       "inStock": true,
-      "stockCount": 4,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/8156",
       "sourceCategory": "https://www.torecabirth.jp/product-list/49"
     },
@@ -18169,7 +18169,7 @@
       "title": "工藤新一【SR】《青》[型番1065] [ 10弾:追憶の盟友 ]",
       "priceYen": 280,
       "inStock": true,
-      "stockCount": 11,
+      "stockCount": 8,
       "url": "https://www.torecabirth.jp/product/8497",
       "sourceCategory": "https://www.torecabirth.jp/product-list/134"
     },
@@ -18259,7 +18259,7 @@
       "title": "上村直樹【C】《青》[型番1070] [ 10弾:追憶の盟友 ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 9,
+      "stockCount": 6,
       "url": "https://www.torecabirth.jp/product/8506",
       "sourceCategory": "https://www.torecabirth.jp/product-list/134"
     },
@@ -18369,7 +18369,7 @@
       "title": "レイ・カーティス【C】《青》[型番1078] [ 10弾:追憶の盟友 ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 9,
+      "stockCount": 7,
       "url": "https://www.torecabirth.jp/product/8517",
       "sourceCategory": "https://www.torecabirth.jp/product-list/134"
     },
@@ -18429,7 +18429,7 @@
       "title": "プロサッカー選手脅迫事件【RP】《青》[型番1081] [ 10弾:追憶の盟友 ]",
       "priceYen": 180,
       "inStock": true,
-      "stockCount": 9,
+      "stockCount": 8,
       "url": "https://www.torecabirth.jp/product/8523",
       "sourceCategory": "https://www.torecabirth.jp/product-list/134"
     },
@@ -18599,7 +18599,7 @@
       "title": "箕輪奨兵【C】《緑》[型番1092] [ 10弾:追憶の盟友 ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 8,
+      "stockCount": 7,
       "url": "https://www.torecabirth.jp/product/8542",
       "sourceCategory": "https://www.torecabirth.jp/product-list/134"
     },
@@ -18719,7 +18719,7 @@
       "title": "黒羽快斗【RP】《白》[型番1098] [ 10弾:追憶の盟友 ]",
       "priceYen": 480,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 5,
       "url": "https://www.torecabirth.jp/product/8556",
       "sourceCategory": "https://www.torecabirth.jp/product-list/134"
     },
@@ -18729,7 +18729,7 @@
       "title": "白馬探【R】《白》[型番1099] [ 10弾:追憶の盟友 ]",
       "priceYen": 50,
       "inStock": true,
-      "stockCount": 8,
+      "stockCount": 6,
       "url": "https://www.torecabirth.jp/product/8557",
       "sourceCategory": "https://www.torecabirth.jp/product-list/134"
     },
@@ -18739,7 +18739,7 @@
       "title": "白馬探【RP】《白》[型番1099] [ 10弾:追憶の盟友 ]",
       "priceYen": 380,
       "inStock": true,
-      "stockCount": 5,
+      "stockCount": 4,
       "url": "https://www.torecabirth.jp/product/8558",
       "sourceCategory": "https://www.torecabirth.jp/product-list/134"
     },
@@ -18899,7 +18899,7 @@
       "title": "宮野エレーナ【R】《赤》[型番1112] [ 10弾:追憶の盟友 ]",
       "priceYen": 50,
       "inStock": true,
-      "stockCount": 14,
+      "stockCount": 11,
       "url": "https://www.torecabirth.jp/product/8576",
       "sourceCategory": "https://www.torecabirth.jp/product-list/134"
     },
@@ -18979,7 +18979,7 @@
       "title": "宮野明美【C】《赤》[型番1118] [ 10弾:追憶の盟友 ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 13,
+      "stockCount": 10,
       "url": "https://www.torecabirth.jp/product/8583",
       "sourceCategory": "https://www.torecabirth.jp/product-list/134"
     },
@@ -19099,7 +19099,7 @@
       "title": "降谷零【SRCP】《黄》[型番1123] [ 10弾:追憶の盟友 ]",
       "priceYen": 5280,
       "inStock": true,
-      "stockCount": 4,
+      "stockCount": 6,
       "url": "https://www.torecabirth.jp/product/8605",
       "sourceCategory": "https://www.torecabirth.jp/product-list/134"
     },
@@ -19159,7 +19159,7 @@
       "title": "高木渉【R】《黄》[型番1125] [ 10弾:追憶の盟友 ]",
       "priceYen": 80,
       "inStock": true,
-      "stockCount": 8,
+      "stockCount": 7,
       "url": "https://www.torecabirth.jp/product/8609",
       "sourceCategory": "https://www.torecabirth.jp/product-list/134"
     },
@@ -19169,7 +19169,7 @@
       "title": "萩原千速【R】《黄》[型番1126] [ 10弾:追憶の盟友 ]",
       "priceYen": 50,
       "inStock": true,
-      "stockCount": 11,
+      "stockCount": 10,
       "url": "https://www.torecabirth.jp/product/8610",
       "sourceCategory": "https://www.torecabirth.jp/product-list/134"
     },
@@ -19179,7 +19179,7 @@
       "title": "萩原千速【RP】《黄》[型番1126] [ 10弾:追憶の盟友 ]",
       "priceYen": 680,
       "inStock": true,
-      "stockCount": 12,
+      "stockCount": 11,
       "url": "https://www.torecabirth.jp/product/8611",
       "sourceCategory": "https://www.torecabirth.jp/product-list/134"
     },
@@ -19529,7 +19529,7 @@
       "title": "毛利蘭＆ベルモット【MRP】《青,黒》[型番1152] [ 10弾:追憶の盟友 ]",
       "priceYen": 6980,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 4,
       "url": "https://www.torecabirth.jp/product/8648",
       "sourceCategory": "https://www.torecabirth.jp/product-list/134"
     },
@@ -19539,7 +19539,7 @@
       "title": "服部平次＆怪盗キッド【MR】《緑,白》[型番1153] [ 10弾:追憶の盟友 ]",
       "priceYen": 680,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 5,
       "url": "https://www.torecabirth.jp/product/8649",
       "sourceCategory": "https://www.torecabirth.jp/product-list/134"
     },
@@ -19589,7 +19589,7 @@
       "title": "工藤新一NYの事件【RP】《青,黒》[型番1155] [ 10弾:追憶の盟友 ]",
       "priceYen": 180,
       "inStock": true,
-      "stockCount": 8,
+      "stockCount": 7,
       "url": "https://www.torecabirth.jp/product/8654",
       "sourceCategory": "https://www.torecabirth.jp/product-list/134"
     },
@@ -19637,7 +19637,7 @@
       "cardNumber": "1158",
       "rarity": "PR",
       "title": "萩原研二【PR】《黄》[型番 1158][ 週刊少年サンデー 2026年34号付録]",
-      "priceYen": 1480,
+      "priceYen": 1080,
       "inStock": true,
       "stockCount": 6,
       "url": "https://www.torecabirth.jp/product/8682",
@@ -19657,7 +19657,7 @@
       "cardNumber": "1160",
       "rarity": "PR",
       "title": "灰原哀【PR】《青》[型番 1160][ プロモーションパックVol.14]",
-      "priceYen": 680,
+      "priceYen": 580,
       "inStock": true,
       "stockCount": 9,
       "url": "https://www.torecabirth.jp/product/8669",
@@ -19667,9 +19667,9 @@
       "cardNumber": "1160",
       "rarity": "PR",
       "title": "灰原哀【PR】《青》[型番 1160][ プロモーションパックVol.14 キラバージョン]",
-      "priceYen": 1080,
+      "priceYen": 980,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 1,
       "url": "https://www.torecabirth.jp/product/8675",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -19699,7 +19699,7 @@
       "title": "降谷零【PR】《黄》[型番 1162][ プロモーションパックVol.14]",
       "priceYen": 580,
       "inStock": true,
-      "stockCount": 8,
+      "stockCount": 7,
       "url": "https://www.torecabirth.jp/product/8671",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -19708,8 +19708,8 @@
       "rarity": "PR",
       "title": "降谷零【PR】《黄》[型番 1162][ プロモーションパックVol.14キラバージョン]",
       "priceYen": 1080,
-      "inStock": false,
-      "stockCount": 0,
+      "inStock": true,
+      "stockCount": 1,
       "url": "https://www.torecabirth.jp/product/8677",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -19717,9 +19717,9 @@
       "cardNumber": "1163",
       "rarity": "PR",
       "title": "ベルモット【PR】《黒》[型番 1163][ プロモーションパックVol.14]",
-      "priceYen": 580,
+      "priceYen": 780,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 4,
       "url": "https://www.torecabirth.jp/product/8672",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -19727,9 +19727,9 @@
       "cardNumber": "1163",
       "rarity": "PR",
       "title": "ベルモット【PR】《黒》[型番 1163][ プロモーションパックVol.14キラバージョン]",
-      "priceYen": 980,
+      "priceYen": 1280,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 2,
       "url": "https://www.torecabirth.jp/product/8678",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -19748,8 +19748,8 @@
       "rarity": "PR",
       "title": "遠山和葉【PR】《緑》[型番 1165][ プロモーションパックVol.15]",
       "priceYen": 380,
-      "inStock": false,
-      "stockCount": 0,
+      "inStock": true,
+      "stockCount": 1,
       "url": "https://www.torecabirth.jp/product/8717",
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
@@ -19824,12 +19824,22 @@
       "sourceCategory": "https://www.torecabirth.jp/product-list/48"
     },
     {
+      "cardNumber": "1169",
+      "rarity": "PR",
+      "title": "怪盗キッド【PR】《白》[型番 1169][ 週刊少年サンデー 2026年48号付録]",
+      "priceYen": 9999,
+      "inStock": false,
+      "stockCount": 0,
+      "url": "https://www.torecabirth.jp/product/9401",
+      "sourceCategory": "https://www.torecabirth.jp/product-list/49"
+    },
+    {
       "cardNumber": "1170",
       "rarity": "SR",
       "title": "江戸川コナン【SR】《青》[型番1170] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 180,
       "inStock": true,
-      "stockCount": 29,
+      "stockCount": 28,
       "url": "https://www.torecabirth.jp/product/9233",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -19837,7 +19847,7 @@
       "cardNumber": "1170",
       "rarity": "SRCP",
       "title": "江戸川コナン【SRCP】《青》[型番1170] [ 11弾:月下のSHOW TIME! ]",
-      "priceYen": 3780,
+      "priceYen": 2980,
       "inStock": true,
       "stockCount": 15,
       "url": "https://www.torecabirth.jp/product/9235",
@@ -19849,7 +19859,7 @@
       "title": "江戸川コナン【SRP】《青》[型番1170] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 1580,
       "inStock": true,
-      "stockCount": 14,
+      "stockCount": 10,
       "url": "https://www.torecabirth.jp/product/9234",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -19859,7 +19869,7 @@
       "title": "灰原哀【SR】《青》[型番1171] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 320,
       "inStock": true,
-      "stockCount": 30,
+      "stockCount": 29,
       "url": "https://www.torecabirth.jp/product/9236",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -19867,9 +19877,9 @@
       "cardNumber": "1171",
       "rarity": "SRP",
       "title": "灰原哀【SRP】《青》[型番1171] [ 11弾:月下のSHOW TIME! ]",
-      "priceYen": 2580,
+      "priceYen": 2780,
       "inStock": true,
-      "stockCount": 12,
+      "stockCount": 7,
       "url": "https://www.torecabirth.jp/product/9237",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -19879,7 +19889,7 @@
       "title": "工藤新一【R】《青》[型番1172] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 50,
       "inStock": true,
-      "stockCount": 15,
+      "stockCount": 10,
       "url": "https://www.torecabirth.jp/product/9238",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -19889,7 +19899,7 @@
       "title": "毛利蘭【R】《青》[型番1173] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 50,
       "inStock": true,
-      "stockCount": 17,
+      "stockCount": 10,
       "url": "https://www.torecabirth.jp/product/9239",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -19899,7 +19909,7 @@
       "title": "毛利蘭【RP】《青》[型番1173] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 680,
       "inStock": true,
-      "stockCount": 15,
+      "stockCount": 10,
       "url": "https://www.torecabirth.jp/product/9240",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -19909,7 +19919,7 @@
       "title": "阿笠博士【R】《青》[型番1174] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 20,
+      "stockCount": 16,
       "url": "https://www.torecabirth.jp/product/9241",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -19919,7 +19929,7 @@
       "title": "阿笠博士【RP】《青》[型番1174] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 180,
       "inStock": true,
-      "stockCount": 11,
+      "stockCount": 19,
       "url": "https://www.torecabirth.jp/product/9242",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -19937,9 +19947,9 @@
       "cardNumber": "1175",
       "rarity": "CP",
       "title": "吉田歩美【CP】《青》[型番1175] [ 11弾:月下のSHOW TIME! ]",
-      "priceYen": 280,
+      "priceYen": 320,
       "inStock": true,
-      "stockCount": 15,
+      "stockCount": 16,
       "url": "https://www.torecabirth.jp/product/9244",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -19957,9 +19967,9 @@
       "cardNumber": "1176",
       "rarity": "CP",
       "title": "小嶋元太【CP】《青》[型番1176] [ 11弾:月下のSHOW TIME! ]",
-      "priceYen": 150,
+      "priceYen": 180,
       "inStock": true,
-      "stockCount": 20,
+      "stockCount": 26,
       "url": "https://www.torecabirth.jp/product/9246",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -19977,9 +19987,9 @@
       "cardNumber": "1177",
       "rarity": "CP",
       "title": "円谷光彦【CP】《青》[型番1177] [ 11弾:月下のSHOW TIME! ]",
-      "priceYen": 150,
+      "priceYen": 180,
       "inStock": true,
-      "stockCount": 20,
+      "stockCount": 26,
       "url": "https://www.torecabirth.jp/product/9248",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20009,7 +20019,7 @@
       "title": "小林澄子【CP】《青》[型番1179] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 50,
       "inStock": true,
-      "stockCount": 20,
+      "stockCount": 30,
       "url": "https://www.torecabirth.jp/product/9251",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20029,7 +20039,7 @@
       "title": "間宮マス代【C】《青》[型番1181] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 20,
+      "stockCount": 17,
       "url": "https://www.torecabirth.jp/product/9253",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20069,7 +20079,7 @@
       "title": "「お前を巨匠にしてやるよ怪盗キッド…監獄という墓場に入れてな…」【CP】《青》[型番1184] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 120,
       "inStock": true,
-      "stockCount": 16,
+      "stockCount": 13,
       "url": "https://www.torecabirth.jp/product/9257",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20077,9 +20087,9 @@
       "cardNumber": "1184",
       "rarity": "CP2",
       "title": "「お前を巨匠にしてやるよ怪盗キッド…監獄という墓場に入れてな…」【CP2】《青》[型番1184] [ 11弾:月下のSHOW TIME! ]",
-      "priceYen": 1280,
+      "priceYen": 2280,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 1,
       "url": "https://www.torecabirth.jp/product/9258",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20097,9 +20107,9 @@
       "cardNumber": "1185",
       "rarity": "CP",
       "title": "五人囃子【CP】《青》[型番1185] [ 11弾:月下のSHOW TIME! ]",
-      "priceYen": 80,
+      "priceYen": 180,
       "inStock": true,
-      "stockCount": 14,
+      "stockCount": 10,
       "url": "https://www.torecabirth.jp/product/9260",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20109,7 +20119,7 @@
       "title": "大岡紅葉【SR】《緑》[型番1186] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 380,
       "inStock": true,
-      "stockCount": 30,
+      "stockCount": 29,
       "url": "https://www.torecabirth.jp/product/9263",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20117,9 +20127,9 @@
       "cardNumber": "1186",
       "rarity": "SRP",
       "title": "大岡紅葉【SRP】《緑》[型番1186] [ 11弾:月下のSHOW TIME! ]",
-      "priceYen": 1780,
+      "priceYen": 1680,
       "inStock": true,
-      "stockCount": 12,
+      "stockCount": 1,
       "url": "https://www.torecabirth.jp/product/9264",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20127,9 +20137,9 @@
       "cardNumber": "1187",
       "rarity": "R",
       "title": "伊織無我【R】《緑》[型番1187] [ 11弾:月下のSHOW TIME! ]",
-      "priceYen": 30,
+      "priceYen": 50,
       "inStock": true,
-      "stockCount": 20,
+      "stockCount": 14,
       "url": "https://www.torecabirth.jp/product/9265",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20139,7 +20149,7 @@
       "title": "伊織無我【RP】《緑》[型番1187] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 280,
       "inStock": true,
-      "stockCount": 12,
+      "stockCount": 11,
       "url": "https://www.torecabirth.jp/product/9266",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20147,9 +20157,9 @@
       "cardNumber": "1188",
       "rarity": "R",
       "title": "服部平次【R】《緑》[型番1188] [ 11弾:月下のSHOW TIME! ]",
-      "priceYen": 50,
+      "priceYen": 120,
       "inStock": true,
-      "stockCount": 20,
+      "stockCount": 18,
       "url": "https://www.torecabirth.jp/product/9267",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20157,9 +20167,9 @@
       "cardNumber": "1188",
       "rarity": "RP",
       "title": "服部平次【RP】《緑》[型番1188] [ 11弾:月下のSHOW TIME! ]",
-      "priceYen": 220,
+      "priceYen": 580,
       "inStock": true,
-      "stockCount": 9,
+      "stockCount": 11,
       "url": "https://www.torecabirth.jp/product/9268",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20167,7 +20177,7 @@
       "cardNumber": "1189",
       "rarity": "R",
       "title": "遠山和葉【R】《緑》[型番1189] [ 11弾:月下のSHOW TIME! ]",
-      "priceYen": 50,
+      "priceYen": 80,
       "inStock": true,
       "stockCount": 20,
       "url": "https://www.torecabirth.jp/product/9269",
@@ -20177,9 +20187,9 @@
       "cardNumber": "1189",
       "rarity": "RP",
       "title": "遠山和葉【RP】《緑》[型番1189] [ 11弾:月下のSHOW TIME! ]",
-      "priceYen": 350,
+      "priceYen": 480,
       "inStock": true,
-      "stockCount": 12,
+      "stockCount": 10,
       "url": "https://www.torecabirth.jp/product/9270",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20219,7 +20229,7 @@
       "title": "和田進一【C】《緑》[型番1193] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 20,
+      "stockCount": 19,
       "url": "https://www.torecabirth.jp/product/9274",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20237,9 +20247,9 @@
       "cardNumber": "1194",
       "rarity": "CP",
       "title": "「平次…」「カッコエ－－ッ♡」【CP】《緑》[型番1194] [ 11弾:月下のSHOW TIME! ]",
-      "priceYen": 180,
-      "inStock": true,
-      "stockCount": 17,
+      "priceYen": 280,
+      "inStock": false,
+      "stockCount": 0,
       "url": "https://www.torecabirth.jp/product/9276",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20259,7 +20269,7 @@
       "title": "私のとてもとても大好きなお酒【CP】《緑》[型番1195] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 50,
       "inStock": true,
-      "stockCount": 20,
+      "stockCount": 17,
       "url": "https://www.torecabirth.jp/product/9278",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20267,9 +20277,9 @@
       "cardNumber": "1196",
       "rarity": "MR",
       "title": "工藤優作＆黒羽盗一【MR】《白》[型番1196] [ 11弾:月下のSHOW TIME! ]",
-      "priceYen": 680,
+      "priceYen": 580,
       "inStock": true,
-      "stockCount": 24,
+      "stockCount": 28,
       "url": "https://www.torecabirth.jp/product/9281",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20277,9 +20287,9 @@
       "cardNumber": "1196",
       "rarity": "MRP",
       "title": "工藤優作＆黒羽盗一【MRP】《白》[型番1196] [ 11弾:月下のSHOW TIME! ]",
-      "priceYen": 1480,
+      "priceYen": 1280,
       "inStock": true,
-      "stockCount": 20,
+      "stockCount": 19,
       "url": "https://www.torecabirth.jp/product/9282",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20287,7 +20297,7 @@
       "cardNumber": "1197",
       "rarity": "SR",
       "title": "怪盗キッド【SR】《白》[型番1197] [ 11弾:月下のSHOW TIME! ]",
-      "priceYen": 180,
+      "priceYen": 220,
       "inStock": true,
       "stockCount": 29,
       "url": "https://www.torecabirth.jp/product/9283",
@@ -20297,9 +20307,9 @@
       "cardNumber": "1197",
       "rarity": "SRCP",
       "title": "怪盗キッド【SRCP】《白》[型番1197] [ 11弾:月下のSHOW TIME! ]",
-      "priceYen": 4780,
+      "priceYen": 3980,
       "inStock": true,
-      "stockCount": 15,
+      "stockCount": 16,
       "url": "https://www.torecabirth.jp/product/9285",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20307,7 +20317,7 @@
       "cardNumber": "1197",
       "rarity": "SRP",
       "title": "怪盗キッド【SRP】《白》[型番1197] [ 11弾:月下のSHOW TIME! ]",
-      "priceYen": 1280,
+      "priceYen": 1380,
       "inStock": true,
       "stockCount": 13,
       "url": "https://www.torecabirth.jp/product/9284",
@@ -20317,9 +20327,9 @@
       "cardNumber": "1198",
       "rarity": "SR",
       "title": "中森銀三【SR】《白》[型番1198] [ 11弾:月下のSHOW TIME! ]",
-      "priceYen": 180,
+      "priceYen": 150,
       "inStock": true,
-      "stockCount": 30,
+      "stockCount": 27,
       "url": "https://www.torecabirth.jp/product/9286",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20327,9 +20337,9 @@
       "cardNumber": "1198",
       "rarity": "SRP",
       "title": "中森銀三【SRP】《白》[型番1198] [ 11弾:月下のSHOW TIME! ]",
-      "priceYen": 780,
+      "priceYen": 680,
       "inStock": true,
-      "stockCount": 12,
+      "stockCount": 9,
       "url": "https://www.torecabirth.jp/product/9287",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20339,7 +20349,7 @@
       "title": "黒羽快斗【R】《白》[型番1199] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 50,
       "inStock": true,
-      "stockCount": 15,
+      "stockCount": 13,
       "url": "https://www.torecabirth.jp/product/9288",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20359,7 +20369,7 @@
       "title": "中森青子【R】《白》[型番1200] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 50,
       "inStock": true,
-      "stockCount": 13,
+      "stockCount": 8,
       "url": "https://www.torecabirth.jp/product/9290",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20369,7 +20379,7 @@
       "title": "中森青子【RP】《白》[型番1200] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 380,
       "inStock": true,
-      "stockCount": 12,
+      "stockCount": 11,
       "url": "https://www.torecabirth.jp/product/9291",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20379,7 +20389,7 @@
       "title": "白馬探【R】《白》[型番1201] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 20,
+      "stockCount": 18,
       "url": "https://www.torecabirth.jp/product/9292",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20389,7 +20399,7 @@
       "title": "白馬探【RP】《白》[型番1201] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 180,
       "inStock": true,
-      "stockCount": 19,
+      "stockCount": 18,
       "url": "https://www.torecabirth.jp/product/9293",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20409,7 +20419,7 @@
       "title": "工藤優作【C】《白》[型番1203] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 20,
+      "stockCount": 19,
       "url": "https://www.torecabirth.jp/product/9295",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20439,7 +20449,7 @@
       "title": "シャロン・ヴィンヤード【C】《白》[型番1206] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 20,
+      "stockCount": 19,
       "url": "https://www.torecabirth.jp/product/9298",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20477,9 +20487,9 @@
       "cardNumber": "1209",
       "rarity": "CP",
       "title": "鈴木園子【CP】《白》[型番1209] [ 11弾:月下のSHOW TIME! ]",
-      "priceYen": 480,
+      "priceYen": 280,
       "inStock": true,
-      "stockCount": 17,
+      "stockCount": 19,
       "url": "https://www.torecabirth.jp/product/9302",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20549,7 +20559,7 @@
       "title": "「探偵はその跡を見てなんくせつける……ただの批評家に過ぎねーんだぜ？」【CP】《白》[型番1215] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 180,
       "inStock": true,
-      "stockCount": 18,
+      "stockCount": 15,
       "url": "https://www.torecabirth.jp/product/9309",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20557,9 +20567,9 @@
       "cardNumber": "1215",
       "rarity": "CP2",
       "title": "「探偵はその跡を見てなんくせつける……ただの批評家に過ぎねーんだぜ？」【CP2】《白》[型番1215] [ 11弾:月下のSHOW TIME! ]",
-      "priceYen": 1880,
+      "priceYen": 3080,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 2,
       "url": "https://www.torecabirth.jp/product/9310",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20579,7 +20589,7 @@
       "title": "漆黒の星【CP】《白》[型番1216] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 80,
       "inStock": true,
-      "stockCount": 17,
+      "stockCount": 13,
       "url": "https://www.torecabirth.jp/product/9312",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20589,7 +20599,7 @@
       "title": "宮野志保＆宮野明美【MR】《赤》[型番1217] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 480,
       "inStock": true,
-      "stockCount": 30,
+      "stockCount": 29,
       "url": "https://www.torecabirth.jp/product/9315",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20597,9 +20607,9 @@
       "cardNumber": "1217",
       "rarity": "MRP",
       "title": "宮野志保＆宮野明美【MRP】《赤》[型番1217] [ 11弾:月下のSHOW TIME! ]",
-      "priceYen": 4280,
+      "priceYen": 3980,
       "inStock": true,
-      "stockCount": 12,
+      "stockCount": 8,
       "url": "https://www.torecabirth.jp/product/9316",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20609,7 +20619,7 @@
       "title": "沖矢昴【SR】《赤》[型番1218] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 80,
       "inStock": true,
-      "stockCount": 27,
+      "stockCount": 28,
       "url": "https://www.torecabirth.jp/product/9317",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20617,9 +20627,9 @@
       "cardNumber": "1218",
       "rarity": "SRP",
       "title": "沖矢昴【SRP】《赤》[型番1218] [ 11弾:月下のSHOW TIME! ]",
-      "priceYen": 580,
+      "priceYen": 480,
       "inStock": true,
-      "stockCount": 14,
+      "stockCount": 7,
       "url": "https://www.torecabirth.jp/product/9318",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20629,7 +20639,7 @@
       "title": "ジョディ・スターリング【R】《赤》[型番1219] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 50,
       "inStock": true,
-      "stockCount": 16,
+      "stockCount": 12,
       "url": "https://www.torecabirth.jp/product/9319",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20649,7 +20659,7 @@
       "title": "世良真純【RP】《赤》[型番1220] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 250,
       "inStock": true,
-      "stockCount": 16,
+      "stockCount": 18,
       "url": "https://www.torecabirth.jp/product/9321",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20659,7 +20669,7 @@
       "title": "羽田秀𠮷【R】《赤》[型番1221] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 50,
       "inStock": true,
-      "stockCount": 17,
+      "stockCount": 13,
       "url": "https://www.torecabirth.jp/product/9322",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20669,7 +20679,7 @@
       "title": "羽田秀𠮷【RP】《赤》[型番1221] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 50,
       "inStock": true,
-      "stockCount": 19,
+      "stockCount": 16,
       "url": "https://www.torecabirth.jp/product/9323",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20679,7 +20689,7 @@
       "title": "赤井秀一【C】《赤》[型番1222] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 80,
       "inStock": true,
-      "stockCount": 18,
+      "stockCount": 11,
       "url": "https://www.torecabirth.jp/product/9324",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20719,7 +20729,7 @@
       "title": "ジェイムズ・ブラック【C】《赤》[型番1226] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 18,
+      "stockCount": 17,
       "url": "https://www.torecabirth.jp/product/9328",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20729,7 +20739,7 @@
       "title": "宮野エレーナ【C】《赤》[型番1227] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 20,
+      "stockCount": 17,
       "url": "https://www.torecabirth.jp/product/9329",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20739,7 +20749,7 @@
       "title": "宮野厚司【C】《赤》[型番1228] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 20,
+      "stockCount": 17,
       "url": "https://www.torecabirth.jp/product/9330",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20749,7 +20759,7 @@
       "title": "レイチェル・浅香【C】《赤》[型番1229] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 20,
+      "stockCount": 19,
       "url": "https://www.torecabirth.jp/product/9331",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20759,7 +20769,7 @@
       "title": "消毒と絆創膏【C】《赤》[型番1230] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 20,
+      "stockCount": 16,
       "url": "https://www.torecabirth.jp/product/9332",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20777,9 +20787,9 @@
       "cardNumber": "1231",
       "rarity": "SR",
       "title": "高木渉【SR】《黄》[型番1231] [ 11弾:月下のSHOW TIME! ]",
-      "priceYen": 280,
+      "priceYen": 180,
       "inStock": true,
-      "stockCount": 30,
+      "stockCount": 26,
       "url": "https://www.torecabirth.jp/product/9336",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20787,9 +20797,9 @@
       "cardNumber": "1231",
       "rarity": "SRP",
       "title": "高木渉【SRP】《黄》[型番1231] [ 11弾:月下のSHOW TIME! ]",
-      "priceYen": 780,
+      "priceYen": 980,
       "inStock": true,
-      "stockCount": 16,
+      "stockCount": 6,
       "url": "https://www.torecabirth.jp/product/9337",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20799,7 +20809,7 @@
       "title": "佐藤美和子【R】《黄》[型番1232] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 120,
       "inStock": true,
-      "stockCount": 17,
+      "stockCount": 8,
       "url": "https://www.torecabirth.jp/product/9338",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20809,7 +20819,7 @@
       "title": "佐藤美和子【RP】《黄》[型番1232] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 280,
       "inStock": true,
-      "stockCount": 19,
+      "stockCount": 8,
       "url": "https://www.torecabirth.jp/product/9339",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20819,7 +20829,7 @@
       "title": "宮本由美【R】《黄》[型番1233] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 16,
+      "stockCount": 15,
       "url": "https://www.torecabirth.jp/product/9340",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20829,7 +20839,7 @@
       "title": "宮本由美【RP】《黄》[型番1233] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 180,
       "inStock": true,
-      "stockCount": 20,
+      "stockCount": 15,
       "url": "https://www.torecabirth.jp/product/9341",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20839,7 +20849,7 @@
       "title": "三池苗子【R】《黄》[型番1234] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 50,
       "inStock": true,
-      "stockCount": 17,
+      "stockCount": 12,
       "url": "https://www.torecabirth.jp/product/9342",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20847,9 +20857,9 @@
       "cardNumber": "1234",
       "rarity": "RP",
       "title": "三池苗子【RP】《黄》[型番1234] [ 11弾:月下のSHOW TIME! ]",
-      "priceYen": 380,
+      "priceYen": 320,
       "inStock": true,
-      "stockCount": 19,
+      "stockCount": 18,
       "url": "https://www.torecabirth.jp/product/9343",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20869,7 +20879,7 @@
       "title": "千葉和伸【CP】《黄》[型番1235] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 80,
       "inStock": true,
-      "stockCount": 19,
+      "stockCount": 18,
       "url": "https://www.torecabirth.jp/product/9345",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20879,7 +20889,7 @@
       "title": "安室透【C】《黄》[型番1236] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 16,
+      "stockCount": 15,
       "url": "https://www.torecabirth.jp/product/9346",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20889,7 +20899,7 @@
       "title": "安室透【CP】《黄》[型番1236] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 280,
       "inStock": true,
-      "stockCount": 19,
+      "stockCount": 17,
       "url": "https://www.torecabirth.jp/product/9347",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20909,7 +20919,7 @@
       "title": "榎本梓【CP】《黄》[型番1237] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 180,
       "inStock": true,
-      "stockCount": 20,
+      "stockCount": 18,
       "url": "https://www.torecabirth.jp/product/9349",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20919,7 +20929,7 @@
       "title": "上原由衣【C】《黄》[型番1238] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 50,
       "inStock": true,
-      "stockCount": 14,
+      "stockCount": 15,
       "url": "https://www.torecabirth.jp/product/9350",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20939,7 +20949,7 @@
       "title": "白鳥任三郎【CP】《黄》[型番1239] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 80,
       "inStock": true,
-      "stockCount": 20,
+      "stockCount": 18,
       "url": "https://www.torecabirth.jp/product/9352",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20959,7 +20969,7 @@
       "title": "諸伏高明【C】《黄》[型番1241] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 50,
       "inStock": true,
-      "stockCount": 20,
+      "stockCount": 18,
       "url": "https://www.torecabirth.jp/product/9354",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20967,7 +20977,7 @@
       "cardNumber": "1242",
       "rarity": "C",
       "title": "大和敢助【C】《黄》[型番1242] [ 11弾:月下のSHOW TIME! ]",
-      "priceYen": 30,
+      "priceYen": 50,
       "inStock": true,
       "stockCount": 14,
       "url": "https://www.torecabirth.jp/product/9355",
@@ -20989,7 +20999,7 @@
       "title": "「うるさい!!これは警察の仕事だ!!」【CP】《黄》[型番1243] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 80,
       "inStock": true,
-      "stockCount": 20,
+      "stockCount": 14,
       "url": "https://www.torecabirth.jp/product/9357",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -20999,7 +21009,7 @@
       "title": "「まだ配属先は決まってないけどね…」【C】《黄》[型番1244] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 15,
+      "stockCount": 14,
       "url": "https://www.torecabirth.jp/product/9358",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -21009,7 +21019,7 @@
       "title": "「まだ配属先は決まってないけどね…」【CP】《黄》[型番1244] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 80,
       "inStock": true,
-      "stockCount": 19,
+      "stockCount": 12,
       "url": "https://www.torecabirth.jp/product/9359",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -21017,9 +21027,9 @@
       "cardNumber": "1245",
       "rarity": "MR",
       "title": "ジン＆ベルモット【MR】《黒》[型番1245] [ 11弾:月下のSHOW TIME! ]",
-      "priceYen": 780,
+      "priceYen": 880,
       "inStock": true,
-      "stockCount": 28,
+      "stockCount": 30,
       "url": "https://www.torecabirth.jp/product/9362",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -21027,7 +21037,7 @@
       "cardNumber": "1245",
       "rarity": "MRP",
       "title": "ジン＆ベルモット【MRP】《黒》[型番1245] [ 11弾:月下のSHOW TIME! ]",
-      "priceYen": 6480,
+      "priceYen": 5980,
       "inStock": true,
       "stockCount": 12,
       "url": "https://www.torecabirth.jp/product/9363",
@@ -21037,9 +21047,9 @@
       "cardNumber": "1246",
       "rarity": "SR",
       "title": "バーボン【SR】《黒》[型番1246] [ 11弾:月下のSHOW TIME! ]",
-      "priceYen": 380,
+      "priceYen": 480,
       "inStock": true,
-      "stockCount": 28,
+      "stockCount": 29,
       "url": "https://www.torecabirth.jp/product/9364",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -21047,9 +21057,9 @@
       "cardNumber": "1246",
       "rarity": "SRP",
       "title": "バーボン【SRP】《黒》[型番1246] [ 11弾:月下のSHOW TIME! ]",
-      "priceYen": 1980,
+      "priceYen": 1780,
       "inStock": true,
-      "stockCount": 14,
+      "stockCount": 10,
       "url": "https://www.torecabirth.jp/product/9365",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -21057,9 +21067,9 @@
       "cardNumber": "1247",
       "rarity": "R",
       "title": "スコッチ【R】《黒》[型番1247] [ 11弾:月下のSHOW TIME! ]",
-      "priceYen": 180,
+      "priceYen": 220,
       "inStock": true,
-      "stockCount": 19,
+      "stockCount": 6,
       "url": "https://www.torecabirth.jp/product/9366",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -21069,7 +21079,7 @@
       "title": "ウォッカ【R】《黒》[型番1248] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 50,
       "inStock": true,
-      "stockCount": 17,
+      "stockCount": 12,
       "url": "https://www.torecabirth.jp/product/9367",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -21079,7 +21089,7 @@
       "title": "ウォッカ【RP】《黒》[型番1248] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 180,
       "inStock": true,
-      "stockCount": 16,
+      "stockCount": 17,
       "url": "https://www.torecabirth.jp/product/9368",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -21089,7 +21099,7 @@
       "title": "ベルモット【R】《黒》[型番1249] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 50,
       "inStock": true,
-      "stockCount": 13,
+      "stockCount": 7,
       "url": "https://www.torecabirth.jp/product/9369",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -21099,7 +21109,7 @@
       "title": "ベルモット【RP】《黒》[型番1249] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 980,
       "inStock": true,
-      "stockCount": 19,
+      "stockCount": 18,
       "url": "https://www.torecabirth.jp/product/9370",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -21119,7 +21129,7 @@
       "title": "キール【C】《黒》[型番1251] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 17,
+      "stockCount": 14,
       "url": "https://www.torecabirth.jp/product/9372",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -21149,7 +21159,7 @@
       "title": "火傷の男【C】《黒》[型番1254] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 20,
+      "stockCount": 19,
       "url": "https://www.torecabirth.jp/product/9375",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -21169,7 +21179,7 @@
       "title": "「黒と黒が混ざっても…黒にしかならねぇよ…」【C】《黒》[型番1256] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 17,
+      "stockCount": 12,
       "url": "https://www.torecabirth.jp/product/9377",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -21189,7 +21199,7 @@
       "title": "ドライマティーニ【C】《黒》[型番1257] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 20,
+      "stockCount": 18,
       "url": "https://www.torecabirth.jp/product/9379",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -21199,7 +21209,7 @@
       "title": "ドライマティーニ【CP】《黒》[型番1257] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 280,
       "inStock": true,
-      "stockCount": 12,
+      "stockCount": 14,
       "url": "https://www.torecabirth.jp/product/9380",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -21207,9 +21217,9 @@
       "cardNumber": "1258",
       "rarity": "MR",
       "title": "江戸川コナン＆怪盗キッド【MR】《青,白》[型番1258] [ 11弾:月下のSHOW TIME! ]",
-      "priceYen": 580,
+      "priceYen": 480,
       "inStock": true,
-      "stockCount": 27,
+      "stockCount": 29,
       "url": "https://www.torecabirth.jp/product/9381",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -21217,9 +21227,9 @@
       "cardNumber": "1258",
       "rarity": "MRP",
       "title": "江戸川コナン＆怪盗キッド【MRP】《青,白》[型番1258] [ 11弾:月下のSHOW TIME! ]",
-      "priceYen": 2580,
+      "priceYen": 2180,
       "inStock": true,
-      "stockCount": 19,
+      "stockCount": 14,
       "url": "https://www.torecabirth.jp/product/9382",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -21227,7 +21237,7 @@
       "cardNumber": "1258",
       "rarity": "SEC",
       "title": "江戸川コナン＆怪盗キッド【SEC】《青,白》[型番1258] レンガ [ 11弾:月下のSHOW TIME! ]",
-      "priceYen": 16980,
+      "priceYen": 14980,
       "inStock": true,
       "stockCount": 6,
       "url": "https://www.torecabirth.jp/product/9383",
@@ -21247,7 +21257,7 @@
       "cardNumber": "1258",
       "rarity": "SEC",
       "title": "江戸川コナン＆怪盗キッド【SEC】《青,白》[型番1258]青山剛昌先生サイン入り「開ける前から中身がわかってる宝箱なんてつまんねーぜ？」 [ 11弾:月下のSHOW TIME! ]",
-      "priceYen": 99980,
+      "priceYen": 89980,
       "inStock": true,
       "stockCount": 1,
       "url": "https://www.torecabirth.jp/product/9385",
@@ -21259,7 +21269,7 @@
       "title": "服部平次＆ジョディ・スターリング【MR】《緑,赤》[型番1259] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 680,
       "inStock": true,
-      "stockCount": 30,
+      "stockCount": 29,
       "url": "https://www.torecabirth.jp/product/9386",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -21269,7 +21279,7 @@
       "title": "服部平次＆ジョディ・スターリング【MRP】《緑,赤》[型番1259] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 1480,
       "inStock": true,
-      "stockCount": 12,
+      "stockCount": 10,
       "url": "https://www.torecabirth.jp/product/9387",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -21277,9 +21287,9 @@
       "cardNumber": "1260",
       "rarity": "MR",
       "title": "諸伏景光＆スコッチ【MR】《黄,黒》[型番1260] [ 11弾:月下のSHOW TIME! ]",
-      "priceYen": 1180,
+      "priceYen": 980,
       "inStock": true,
-      "stockCount": 28,
+      "stockCount": 30,
       "url": "https://www.torecabirth.jp/product/9388",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -21287,7 +21297,7 @@
       "cardNumber": "1260",
       "rarity": "MRP",
       "title": "諸伏景光＆スコッチ【MRP】《黄,黒》[型番1260] [ 11弾:月下のSHOW TIME! ]",
-      "priceYen": 4780,
+      "priceYen": 3980,
       "inStock": true,
       "stockCount": 14,
       "url": "https://www.torecabirth.jp/product/9389",
@@ -21299,7 +21309,7 @@
       "title": "コナンVS怪盗キッド【R】《青,白》[型番1261] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 50,
       "inStock": true,
-      "stockCount": 20,
+      "stockCount": 18,
       "url": "https://www.torecabirth.jp/product/9390",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -21309,7 +21319,7 @@
       "title": "コナンVS怪盗キッド【RP】《青,白》[型番1261] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 80,
       "inStock": true,
-      "stockCount": 19,
+      "stockCount": 10,
       "url": "https://www.torecabirth.jp/product/9391",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -21329,7 +21339,7 @@
       "title": "あんた何者や【CP】《緑,赤》[型番1262] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 120,
       "inStock": true,
-      "stockCount": 20,
+      "stockCount": 13,
       "url": "https://www.torecabirth.jp/product/9393",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -21339,7 +21349,7 @@
       "title": "警視庁公安部の潜入捜査官【C】《黄,黒》[型番1263] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 17,
+      "stockCount": 16,
       "url": "https://www.torecabirth.jp/product/9394",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -21347,9 +21357,9 @@
       "cardNumber": "1263",
       "rarity": "CP",
       "title": "警視庁公安部の潜入捜査官【CP】《黄,黒》[型番1263] [ 11弾:月下のSHOW TIME! ]",
-      "priceYen": 80,
+      "priceYen": 120,
       "inStock": true,
-      "stockCount": 18,
+      "stockCount": 8,
       "url": "https://www.torecabirth.jp/product/9395",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -21369,7 +21379,7 @@
       "title": "江戸川コナン【C】《青》[型番P001] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 20,
+      "stockCount": 19,
       "url": "https://www.torecabirth.jp/product/9231",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -21379,7 +21389,7 @@
       "title": "江戸川コナン【CP】《青》[型番P001] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 50,
       "inStock": true,
-      "stockCount": 18,
+      "stockCount": 9,
       "url": "https://www.torecabirth.jp/product/9232",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -21399,7 +21409,7 @@
       "title": "江戸川コナン【CP】《青》[型番 P001]【CT-P02】 [ 2弾:西と東の大決戦(コンタクト) ]",
       "priceYen": 120,
       "inStock": true,
-      "stockCount": 5,
+      "stockCount": 4,
       "url": "https://www.torecabirth.jp/product/406",
       "sourceCategory": "https://www.torecabirth.jp/product-list/7"
     },
@@ -21459,7 +21469,7 @@
       "title": "江戸川コナン【PR】《青》[型番 P001][月刊コロコロコミック付録]",
       "priceYen": 1280,
       "inStock": true,
-      "stockCount": 2,
+      "stockCount": 1,
       "url": "https://www.torecabirth.jp/product/194",
       "sourceCategory": "https://www.torecabirth.jp/product-list/49"
     },
@@ -21789,7 +21799,7 @@
       "title": "怪盗キッド【CP】《白》[型番P004] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 120,
       "inStock": true,
-      "stockCount": 19,
+      "stockCount": 14,
       "url": "https://www.torecabirth.jp/product/9280",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -21829,7 +21839,7 @@
       "title": "怪盗キッド【CP】《白》[型番 P004]【CT-P02】 [ 2弾:西と東の大決戦(コンタクト) ]",
       "priceYen": 380,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 5,
       "url": "https://www.torecabirth.jp/product/409",
       "sourceCategory": "https://www.torecabirth.jp/product-list/7"
     },
@@ -21847,9 +21857,9 @@
       "cardNumber": "P004",
       "rarity": "D",
       "title": "怪盗キッド【D】《白》[型番 P004]【CT-D06 ThemeDeck 01 】 [ Case-ThemeDeck 01 服部平次VS怪盗キッド ]",
-      "priceYen": 280,
-      "inStock": false,
-      "stockCount": 0,
+      "priceYen": 380,
+      "inStock": true,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/106",
       "sourceCategory": "https://www.torecabirth.jp/product-list/26"
     },
@@ -21877,7 +21887,7 @@
       "cardNumber": "P004",
       "rarity": "PR",
       "title": "怪盗キッド【PR】《白》[型番 P004][サプライズパートナーパック]",
-      "priceYen": 1980,
+      "priceYen": 1480,
       "inStock": true,
       "stockCount": 2,
       "url": "https://www.torecabirth.jp/product/6214",
@@ -21999,7 +22009,7 @@
       "title": "安室透【CP】《黄》[型番 P006]【CT-P01】 [ 1弾:探偵たちの切札(ジョーカー) ]",
       "priceYen": 380,
       "inStock": true,
-      "stockCount": 2,
+      "stockCount": 1,
       "url": "https://www.torecabirth.jp/product/616",
       "sourceCategory": "https://www.torecabirth.jp/product-list/2"
     },
@@ -22016,21 +22026,21 @@
     {
       "cardNumber": "P006",
       "rarity": "PR",
-      "title": "安室透【PR】《黄》[型番 P006][【CT-P05】BOX特典プロモーションパック]",
-      "priceYen": 680,
-      "inStock": false,
-      "stockCount": 0,
-      "url": "https://www.torecabirth.jp/product/4162",
-      "sourceCategory": "https://www.torecabirth.jp/product-list/49"
-    },
-    {
-      "cardNumber": "P006",
-      "rarity": "PR",
       "title": "安室透【PR】《黄》未開封 [型番 P006][セブンイレブンキャンペーン]",
       "priceYen": 780,
       "inStock": true,
       "stockCount": 1,
       "url": "https://www.torecabirth.jp/product/167",
+      "sourceCategory": "https://www.torecabirth.jp/product-list/49"
+    },
+    {
+      "cardNumber": "P006",
+      "rarity": "PR",
+      "title": "安室透【PR】《黄》[型番 P006][【CT-P05】BOX特典プロモーションパック]",
+      "priceYen": 880,
+      "inStock": true,
+      "stockCount": 1,
+      "url": "https://www.torecabirth.jp/product/4162",
       "sourceCategory": "https://www.torecabirth.jp/product-list/49"
     },
     {
@@ -22099,7 +22109,7 @@
       "title": "工藤新一【CP】《青》[型番P007]【CT-P04】 [ 4弾:信義の絆（パートナー） ]",
       "priceYen": 880,
       "inStock": true,
-      "stockCount": 2,
+      "stockCount": 1,
       "url": "https://www.torecabirth.jp/product/2439",
       "sourceCategory": "https://www.torecabirth.jp/product-list/68"
     },
@@ -22118,8 +22128,8 @@
       "rarity": "SEC",
       "title": "工藤新一【SEC】《青》[型番P007] レンガ【CT-P04】 [ 4弾:信義の絆（パートナー） ]",
       "priceYen": 23980,
-      "inStock": false,
-      "stockCount": 0,
+      "inStock": true,
+      "stockCount": 1,
       "url": "https://www.torecabirth.jp/product/2440",
       "sourceCategory": "https://www.torecabirth.jp/product-list/68"
     },
@@ -22149,7 +22159,7 @@
       "title": "灰原哀【CP】《青》[型番 P008]【CT-P01】 [ 1弾:探偵たちの切札(ジョーカー) ]",
       "priceYen": 680,
       "inStock": true,
-      "stockCount": 2,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/598",
       "sourceCategory": "https://www.torecabirth.jp/product-list/2"
     },
@@ -22157,9 +22167,9 @@
       "cardNumber": "P008",
       "rarity": "CP",
       "title": "灰原哀【CP】《青》[型番 P008]【CT-P03】 [ 3弾:黒影の襲来（カットイン） ]",
-      "priceYen": 1080,
+      "priceYen": 980,
       "inStock": true,
-      "stockCount": 1,
+      "stockCount": 6,
       "url": "https://www.torecabirth.jp/product/1475",
       "sourceCategory": "https://www.torecabirth.jp/product-list/25"
     },
@@ -22177,7 +22187,7 @@
       "cardNumber": "P008",
       "rarity": "SEC",
       "title": "灰原哀【SEC】《青》[型番P008] レンガ [ 8弾:哀色の宿命 ]",
-      "priceYen": 30980,
+      "priceYen": 32980,
       "inStock": true,
       "stockCount": 1,
       "url": "https://www.torecabirth.jp/product/6729",
@@ -22227,9 +22237,9 @@
       "cardNumber": "P011",
       "rarity": "CP",
       "title": "白馬探【CP】《白》[型番 P011]【CT-P01】 [ 1弾:探偵たちの切札(ジョーカー) ]",
-      "priceYen": 580,
+      "priceYen": 680,
       "inStock": true,
-      "stockCount": 1,
+      "stockCount": 2,
       "url": "https://www.torecabirth.jp/product/609",
       "sourceCategory": "https://www.torecabirth.jp/product-list/2"
     },
@@ -22329,7 +22339,7 @@
       "title": "黒羽盗一【CP】《白》[型番 P016]【CT-P02】 [ 2弾:西と東の大決戦(コンタクト) ]",
       "priceYen": 80,
       "inStock": true,
-      "stockCount": 6,
+      "stockCount": 5,
       "url": "https://www.torecabirth.jp/product/410",
       "sourceCategory": "https://www.torecabirth.jp/product-list/7"
     },
@@ -22339,7 +22349,7 @@
       "title": "工藤優作【CP】《白》[型番 P017]【CT-P02】 [ 2弾:西と東の大決戦(コンタクト) ]",
       "priceYen": 120,
       "inStock": true,
-      "stockCount": 2,
+      "stockCount": 1,
       "url": "https://www.torecabirth.jp/product/411",
       "sourceCategory": "https://www.torecabirth.jp/product-list/7"
     },
@@ -22369,7 +22379,7 @@
       "title": "降谷零【CP】《黄》[型番 P020 ]【CT-P02】 [ 2弾:西と東の大決戦(コンタクト) ]",
       "priceYen": 680,
       "inStock": true,
-      "stockCount": 1,
+      "stockCount": 2,
       "url": "https://www.torecabirth.jp/product/414",
       "sourceCategory": "https://www.torecabirth.jp/product-list/7"
     },
@@ -22529,7 +22539,7 @@
       "title": "ジン【CP】《黒》[型番P028] [ 9弾:疾風の煌めき ]",
       "priceYen": 180,
       "inStock": true,
-      "stockCount": 7,
+      "stockCount": 6,
       "url": "https://www.torecabirth.jp/product/7398",
       "sourceCategory": "https://www.torecabirth.jp/product-list/122"
     },
@@ -22577,7 +22587,7 @@
       "cardNumber": "P028",
       "rarity": "SEC",
       "title": "ジン【SEC】《黒》[型番P028] 青山剛昌先生サイン入り [ 8弾:哀色の宿命 ]",
-      "priceYen": 67980,
+      "priceYen": 69980,
       "inStock": true,
       "stockCount": 1,
       "url": "https://www.torecabirth.jp/product/6849",
@@ -22697,9 +22707,9 @@
       "cardNumber": "P031",
       "rarity": "SEC",
       "title": "毛利蘭【SEC】《青》[型番P031] レンガ【CT-P04】 [ 4弾:信義の絆（パートナー） ]",
-      "priceYen": 22980,
-      "inStock": false,
-      "stockCount": 0,
+      "priceYen": 24980,
+      "inStock": true,
+      "stockCount": 1,
       "url": "https://www.torecabirth.jp/product/2444",
       "sourceCategory": "https://www.torecabirth.jp/product-list/68"
     },
@@ -22729,7 +22739,7 @@
       "title": "遠山和葉【CP】《緑》[型番P032]【CT-P04】 [ 4弾:信義の絆（パートナー） ]",
       "priceYen": 480,
       "inStock": true,
-      "stockCount": 1,
+      "stockCount": 2,
       "url": "https://www.torecabirth.jp/product/2465",
       "sourceCategory": "https://www.torecabirth.jp/product-list/68"
     },
@@ -22829,7 +22839,7 @@
       "title": "メアリー【CP】《赤》[型番P035]【CT-P04】 [ 4弾:信義の絆（パートナー） ]",
       "priceYen": 480,
       "inStock": true,
-      "stockCount": 1,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/2505",
       "sourceCategory": "https://www.torecabirth.jp/product-list/68"
     },
@@ -22859,7 +22869,7 @@
       "title": "高木渉【C】《黄》[型番P037]【CT-P04】 [ 4弾:信義の絆（パートナー） ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 26,
+      "stockCount": 25,
       "url": "https://www.torecabirth.jp/product/2536",
       "sourceCategory": "https://www.torecabirth.jp/product-list/68"
     },
@@ -22869,7 +22879,7 @@
       "title": "高木渉【CP】《黄》[型番P037]【CT-P04】 [ 4弾:信義の絆（パートナー） ]",
       "priceYen": 280,
       "inStock": true,
-      "stockCount": 1,
+      "stockCount": 2,
       "url": "https://www.torecabirth.jp/product/2537",
       "sourceCategory": "https://www.torecabirth.jp/product-list/68"
     },
@@ -22939,7 +22949,7 @@
       "title": "目暮十三【CP】《黄》[型番P039]【CT-P04】 [ 4弾:信義の絆（パートナー） ]",
       "priceYen": 180,
       "inStock": true,
-      "stockCount": 2,
+      "stockCount": 1,
       "url": "https://www.torecabirth.jp/product/2541",
       "sourceCategory": "https://www.torecabirth.jp/product-list/68"
     },
@@ -22989,7 +22999,7 @@
       "title": "大和敢助【CP】《黄》[型番P042]【CT-P05】 [ 5弾:新たなる謎 ]",
       "priceYen": 280,
       "inStock": true,
-      "stockCount": 1,
+      "stockCount": 2,
       "url": "https://www.torecabirth.jp/product/4091",
       "sourceCategory": "https://www.torecabirth.jp/product-list/75"
     },
@@ -23209,7 +23219,7 @@
       "title": "吉田歩美【CP】《青》[型番P050]【CT-P05】 [ 5弾:新たなる謎 ]",
       "priceYen": 180,
       "inStock": true,
-      "stockCount": 3,
+      "stockCount": 2,
       "url": "https://www.torecabirth.jp/product/3974",
       "sourceCategory": "https://www.torecabirth.jp/product-list/75"
     },
@@ -23239,7 +23249,7 @@
       "title": "綾小路文麿【C】《緑》[型番P052]【CT-P05】 [ 5弾:新たなる謎 ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 9,
+      "stockCount": 8,
       "url": "https://www.torecabirth.jp/product/4009",
       "sourceCategory": "https://www.torecabirth.jp/product-list/75"
     },
@@ -23269,7 +23279,7 @@
       "title": "黒羽快斗【CP】《白》[型番P053]【CT-P05】 [ 5弾:新たなる謎 ]",
       "priceYen": 180,
       "inStock": true,
-      "stockCount": 2,
+      "stockCount": 1,
       "url": "https://www.torecabirth.jp/product/4033",
       "sourceCategory": "https://www.torecabirth.jp/product-list/75"
     },
@@ -23309,7 +23319,7 @@
       "title": "中森青子【CP】《白》[型番P054]【CT-P05】 [ 5弾:新たなる謎 ]",
       "priceYen": 380,
       "inStock": true,
-      "stockCount": 2,
+      "stockCount": 1,
       "url": "https://www.torecabirth.jp/product/4035",
       "sourceCategory": "https://www.torecabirth.jp/product-list/75"
     },
@@ -23369,7 +23379,7 @@
       "title": "宮野明美【CP】《赤》[型番P056]【CT-P05】 [ 5弾:新たなる謎 ]",
       "priceYen": 380,
       "inStock": true,
-      "stockCount": 1,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/4065",
       "sourceCategory": "https://www.torecabirth.jp/product-list/75"
     },
@@ -23569,7 +23579,7 @@
       "title": "白鳥任三郎【CP】《黄》[型番P064]【CT-P06】 [ 6弾:交錯する刃 ]",
       "priceYen": 180,
       "inStock": true,
-      "stockCount": 1,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/4861",
       "sourceCategory": "https://www.torecabirth.jp/product-list/83"
     },
@@ -23607,7 +23617,7 @@
       "cardNumber": "P066",
       "rarity": "CP",
       "title": "コルン【CP】《黒》[型番P066]【CT-P06】 [ 6弾:交錯する刃 ]",
-      "priceYen": 280,
+      "priceYen": 380,
       "inStock": true,
       "stockCount": 1,
       "url": "https://www.torecabirth.jp/product/4885",
@@ -23839,7 +23849,7 @@
       "title": "萩原千速【PR】《黄》[型番 P076][【CT-P09】BOX特典プロモーションパック]",
       "priceYen": 480,
       "inStock": true,
-      "stockCount": 4,
+      "stockCount": 3,
       "url": "https://www.torecabirth.jp/product/7468",
       "sourceCategory": "https://www.torecabirth.jp/product-list/49"
     },
@@ -23848,8 +23858,8 @@
       "rarity": "SEC",
       "title": "萩原千速【SEC】《黄》[型番P076] レンガ [ 9弾:疾風の煌めき ]",
       "priceYen": 19980,
-      "inStock": true,
-      "stockCount": 1,
+      "inStock": false,
+      "stockCount": 0,
       "url": "https://www.torecabirth.jp/product/7354",
       "sourceCategory": "https://www.torecabirth.jp/product-list/122"
     },
@@ -23908,8 +23918,8 @@
       "rarity": "SEC",
       "title": "横溝重悟【SEC】《黄》[型番P077] レンガ [ 9弾:疾風の煌めき ]",
       "priceYen": 4980,
-      "inStock": true,
-      "stockCount": 1,
+      "inStock": false,
+      "stockCount": 0,
       "url": "https://www.torecabirth.jp/product/7358",
       "sourceCategory": "https://www.torecabirth.jp/product-list/122"
     },
@@ -23959,7 +23969,7 @@
       "title": "萩原研二【PR】《黄》[型番 P079][【CT-P09】BOX特典プロモーションパック]",
       "priceYen": 480,
       "inStock": true,
-      "stockCount": 7,
+      "stockCount": 6,
       "url": "https://www.torecabirth.jp/product/7471",
       "sourceCategory": "https://www.torecabirth.jp/product-list/49"
     },
@@ -24039,7 +24049,7 @@
       "title": "比護隆佑【CP】《青》[型番P083] [ 10弾:追憶の盟友 ]",
       "priceYen": 50,
       "inStock": true,
-      "stockCount": 7,
+      "stockCount": 6,
       "url": "https://www.torecabirth.jp/product/8496",
       "sourceCategory": "https://www.torecabirth.jp/product-list/134"
     },
@@ -24119,7 +24129,7 @@
       "title": "伊達航【CP】《黄》[型番P087] [ 10弾:追憶の盟友 ]",
       "priceYen": 180,
       "inStock": true,
-      "stockCount": 8,
+      "stockCount": 7,
       "url": "https://www.torecabirth.jp/product/8595",
       "sourceCategory": "https://www.torecabirth.jp/product-list/134"
     },
@@ -24149,7 +24159,7 @@
       "title": "遠山銀司郎【C】《緑》[型番P089] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 30,
+      "stockCount": 29,
       "url": "https://www.torecabirth.jp/product/9261",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -24159,7 +24169,7 @@
       "title": "遠山銀司郎【CP】《緑》[型番P089] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 18,
+      "stockCount": 15,
       "url": "https://www.torecabirth.jp/product/9262",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -24179,7 +24189,7 @@
       "title": "イーサン・本堂【CP】《赤》[型番P090] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 19,
+      "stockCount": 18,
       "url": "https://www.torecabirth.jp/product/9314",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -24199,7 +24209,7 @@
       "title": "宮本由美【CP】《黄》[型番P091] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 120,
       "inStock": true,
-      "stockCount": 18,
+      "stockCount": 17,
       "url": "https://www.torecabirth.jp/product/9335",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -24209,7 +24219,7 @@
       "title": "犯人【C】《黒》[型番P092] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 30,
       "inStock": true,
-      "stockCount": 20,
+      "stockCount": 19,
       "url": "https://www.torecabirth.jp/product/9360",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -24219,7 +24229,7 @@
       "title": "犯人【CP】《黒》[型番P092] [ 11弾:月下のSHOW TIME! ]",
       "priceYen": 120,
       "inStock": true,
-      "stockCount": 18,
+      "stockCount": 17,
       "url": "https://www.torecabirth.jp/product/9361",
       "sourceCategory": "https://www.torecabirth.jp/product-list/145"
     },
@@ -24229,7 +24239,7 @@
       "title": "工藤新一・灰原哀・小さくなった新一【PR】《青》[型番 P093][ CT-P11 Case-Booster 11 月下のSHOW TIME! BOX封入特典] 未開封",
       "priceYen": 180,
       "inStock": true,
-      "stockCount": 9,
+      "stockCount": 6,
       "url": "https://www.torecabirth.jp/product/9397",
       "sourceCategory": "https://www.torecabirth.jp/product-list/49"
     },
@@ -24247,7 +24257,7 @@
   "meta": {
     "sourceType": "online listing price",
     "categoryCount": 26,
-    "itemCount": 2424,
+    "itemCount": 2425,
     "note": "Price and stock are collected from public product-list pages; they can change and may differ from final order availability."
   }
 }
