@@ -5,7 +5,7 @@ const C = {
   bg: "#080d17", panel: "#101827", panel2: "#0b1220", border: "rgba(148,163,184,.22)",
   text: "#e8edf7", muted: "#94a3b8", blue: "#93c5fd", red: "#fda4af", green: "#86efac", gold: "#fcd34d",
 };
-const HAND_TO_PARTNER_LABEL = "파트너로";
+const HAND_TO_PARTNER_LABEL = "파트너A로";
 
 function n(value, fallback = 0) {
   const valueNumber = Number(value);
@@ -1694,7 +1694,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
                   {pile.label === "내 리무브" && !gameState.game_over && !pending && <div style={{ display: "grid", gap: 3, marginTop: 5 }}>
                     <button type="button" style={st.smallButton} disabled={loading} onClick={() => void runAction("move_remove_card_to_hand", { instance_id: card.instance_id })}>손패로 가져오기</button>
                     <button type="button" style={st.smallButton} disabled={loading || myFieldCharacterCount >= 5} onClick={() => void runAction("play_remove_character", { instance_id: card.instance_id })}>현장에 등장</button>
-                    <button type="button" style={st.smallButton} disabled={loading || Boolean(myBoard?.partner_mr_card)} onClick={() => void runAction("move_card_to_mr_partner", { source: "remove", instance_id: card.instance_id })}>파트너로</button>
+                    <button type="button" style={st.smallButton} disabled={loading || Boolean(myBoard?.partner_mr_card)} onClick={() => void runAction("move_card_to_mr_partner", { source: "remove", instance_id: card.instance_id })}>파트너A로</button>
                   </div>}
                 </article>;
               })}</div>{!pile.cards.length && <p style={st.muted}>비어 있습니다.</p>}</div>)}</div>
