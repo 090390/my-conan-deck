@@ -112,3 +112,12 @@ npm run validate:card-effects
 초기 구현은 뱀남자(ID:0652), 오니마루 타케시(ID:0661), 토야마 카즈하(ID:0860), 핫토리 헤이지(ID:0861), 핫토리 헤이지(ID:0404), 쿠니스에 테루아키(ID:1090), 이벤트(ID:0427, ID:0729), 사건(ID:0666)의 정의를 추가했습니다. ID:0666은 해결편 진입 시 손패 리무브와, 해결편에서 핫토리 헤이지 또는 토야마 카즈하가 현장에 있을 때 사용하는 턴 1회 선언 능력을 별도 트리거로 처리합니다.
 
 ID:0860의 녹색 이벤트 사용 후 제거 효과는 `event.resolved`를 사용합니다. ID:0652의 등장 효과에서 증거를 뒷면으로 놓는 처리는 `move_cards.faceUp: false`로 표현합니다. 아직 타깃 범위나 원래 능력 무효화처럼 의미 확인 또는 추가 런타임 구현이 필요한 정의는 검토 완료로 간주하지 않습니다.
+
+
+## 손패 수 계산과 동적 드로우
+
+- `calculate_hand_difference`는 현재 손패 수와 `targetCount`의 차이를 계산합니다. `mode: "deficit"`은 목표보다 부족한 장수, `mode: "excess"`는 목표보다 많은 장수를 `saveAs` 숫자 변수에 저장합니다.
+- `draw_cards`는 고정 `count` 외에 `countFrom: "vars.name"`으로 계산된 장수만큼 드로우할 수 있습니다. 손패를 2장으로 보충하거나 2장까지 줄이는 효과에 사용합니다.
+- `select_cards.excludeSource: true`는 후보 목록에서 효과 발동 원본 캐릭터를 제외합니다.
+- `offer_reaction.reactionId`는 AI가 선택지를 카드별로 판단하도록 전달되는 안정적인 선택 ID입니다.
+- 일반적인 선언 능력은 원본 캐릭터가 슬립 상태여도 발동할 수 있습니다. 단, 능력에 `pay_cost: sleep_source_character`가 있으면 액티브 상태에서 비용을 지불해야 합니다. `allowStunnedSource: true`는 카드 문구가 스턴 상태 발동을 명시적으로 허용하는 경우에만 사용합니다.

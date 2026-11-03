@@ -52,8 +52,13 @@ function cardCutInBonusForSubject(
   ownField: any[] = [],
   removeArea: any[] = [],
   eventKey = "",
+  ownHand: any[] = [],
 ): number {
   let bonus = cardCutInBonus(card);
+  if (matchesInternalCardId(card, "1117")) {
+    if (partnerColor !== "red") return 0;
+    return Math.max(0, ownHand.length - 1) <= 2 ? 3000 : 1000;
+  }
 
   // Card-specific legality modifiers. These are conditions for whether the cut-in
   // can be used at all, not just changes to its AP bonus.
@@ -408,9 +413,14 @@ function chooseActivatedAbility(state: any, aiId: string) {
       || ["rested", "sleep", "slumber", "sleeping", "슬립"].includes(sourceStatus);
     const sourceIsStunned = Boolean(source.stunned || source.stun || source.is_stunned)
       || ["stunned", "stun", "스턴"].includes(sourceStatus);
+    const abilityHasSleepCost = definition.steps.some((step: any) =>
+      step?.op === "pay_cost" && step?.cost === "sleep_source_character");
+    const canUseWhileRested = sourceIsRested && !sourceIsStunned
+      && !abilityHasSleepCost && definition.requiresActiveSource !== true;
+    const canUseWhileStunned = sourceIsStunned && definition.allowStunnedSource === true;
     const canReadyRestedSource = sourceIsRested && !sourceIsStunned
       && definition.steps.some((step: any) => step?.op === "ready_source_character");
-    if (!isActive(source) && !canReadyRestedSource) continue;
+    if (!isActive(source) && !canUseWhileRested && !canUseWhileStunned && !canReadyRestedSource) continue;
 
     // Preflight follow-up contacts before opening an effect chooser. The SQL
     // effect runner rejects a newly summoned source when start_contact does
@@ -676,6 +686,7 @@ function describeAction(decision: any, state: any, aiId: string) {
         cutin, subject, state?.current_turn_user_id === aiId,
         normalizedColor(state?.ai_partner_color || me?.partner_color || ""), field,
         Array.isArray(state?.my_remove_cards) ? state.my_remove_cards : [], String(me?.event_key || ""),
+        Array.isArray(state?.my_hand) ? state.my_hand : [],
       );
       return `AI 탐정: 컷인을 사용해 AP를 ${bonus} 올렸습니다.`;
     }
@@ -767,6 +778,7 @@ function chooseResponse(state: any, aiId: string) {
     const partnerColor = normalizedColor(state.ai_partner_color || me?.partner_color || "");
     const cutinBonus = (card: any) => cardCutInBonusForSubject(
       card, contactSubject, isAiOwnerTurn, partnerColor, field, removeArea, String(me?.event_key || ""),
+      Array.isArray(state?.my_hand) ? state.my_hand : [],
     );
     const cutin = hand.filter((card: any) => {
       const bonus = cutinBonus(card);
@@ -1022,7 +1034,7 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
     const canWinWithoutCost = attackerAp >= targetAp;
     const canWinByD11007 = hand.length > 0 && attackerAp < targetAp && attackerAp + 3000 >= targetAp;
     const canWinByCutin = hand.some((card: any) => {
-      const bonus = cardCutInBonusForSubject(card, specialTargetAttacker, true, partnerColor, field, removeArea, String(me?.event_key || ""));
+      const bonus = cardCutInBonusForSubject(card, specialTargetAttacker, true, partnerColor, field, removeArea, String(me?.event_key || ""), Array.isArray(state?.my_hand) ? state.my_hand : []);
       return bonus > 0 && attackerAp + bonus >= targetAp;
     });
     if (canWinWithoutCost || canWinByD11007 || canWinByCutin) {
@@ -1050,7 +1062,7 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
       const canUseMatsudaContactEffect = matchesInternalCardId(candidate, "0938")
         && hand.length > 0 && attackerAp < targetAp && attackerAp + 3000 >= targetAp;
       return attackerAp >= targetAp || canUseMatsudaContactEffect || hand.some((card: any) => {
-        const bonus = cardCutInBonusForSubject(card, candidate, true, partnerColor, field, removeArea, String(me?.event_key || ""));
+        const bonus = cardCutInBonusForSubject(card, candidate, true, partnerColor, field, removeArea, String(me?.event_key || ""), Array.isArray(state?.my_hand) ? state.my_hand : []);
         return bonus > 0 && attackerAp + bonus >= targetAp;
       });
     });
@@ -1276,6 +1288,12 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
         // For field removal, prefer a card that is still active and represents
         // the largest remaining threat. A rested low-AP character is normally
         // a much less valuable removal than an active high-AP character.
+        const isReviveSelection = String(pending.effect_id || "") === "card-0797-on-enter-revive-red-level5"
+          && options.some((option: any) => String(option?.zone || "") === "remove_area");
+        if (isReviveSelection) {
+          targetOptions = [...targetOptions].sort((left: any, right: any) =>
+            cardStrength(right?.card || right) - cardStrength(left?.card || left));
+        }
         const isRemovalSelection = isFieldTargetSelection
           && /(?:리무브|제거)/u.test(String(pending.prompt || ""));
         if (isRemovalSelection) {
@@ -1309,6 +1327,40 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
         if (reactionId === "b05052-cost-zone") {
           if (hand.length > 0 && choices.includes("hand")) choice = "hand";
           else if (choices.includes("attachment")) choice = "attachment";
+        }
+        if (reactionId === "card-0797-revive-red-level5") {
+          const hasEligibleRevive = removeArea.some((card: any) =>
+            isCharacter(card)
+            && normalizedColor(card?.color || card?.color_key || card?.colorKo || card?.color_ja) === "red"
+            && cardCost(card) <= 5
+          );
+          choice = hasEligibleRevive && choices.includes("yes") ? "yes" : "no";
+        }
+        if (reactionId === "card-0224-offer-opponent-evidence-and-charge-case") {
+          const hasFreshRedCharacter = ownField.some((card: any) =>
+            isCharacter(card)
+            && normalizedColor(card?.color || card?.color_key || card?.colorKo || card?.color_ja) === "red"
+            && Boolean(card?.summoned_this_turn)
+            && isActive(card)
+          );
+          choice = hasFreshRedCharacter && choices.includes("yes") ? "yes" : "no";
+        }
+        if (reactionId === "card-0802-discard-search-red") {
+          choice = hand.length > 0 && choices.includes("yes") ? "yes" : "no";
+        }
+        if (reactionId === "card-0220-keyword-choice") {
+          const enemyBoard = (Array.isArray(state?.boards) ? state.boards : [])
+            .find((board: any) => String(board?.user_id || "") !== String(battle.ai_user_id));
+          const hasRestedEnemy = (Array.isArray(enemyBoard?.field_cards) ? enemyBoard.field_cards : [])
+            .some((card: any) => isCharacter(card) && !isActive(card));
+          const hasFreshOwnCharacter = ownField.some((card: any) =>
+            isCharacter(card) && Boolean(card?.summoned_this_turn) && isActive(card));
+          choice = hasRestedEnemy && choices.includes("bullet")
+            ? "bullet"
+            : hasFreshOwnCharacter && choices.includes("charge_case") ? "charge_case" : choices[0];
+        }
+        if (reactionId === "card-1120-antique-tray-mode") {
+          choice = choices.includes("draw") ? "draw" : "ap";
         }
         if (reactionId === "card-0531-choose-ready-or-charge") {
           const boards = Array.isArray(state?.boards) ? state.boards : [];

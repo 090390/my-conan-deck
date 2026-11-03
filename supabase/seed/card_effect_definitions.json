@@ -4102,7 +4102,9 @@
         }
       ],
       "oncePerTurn": true,
-      "activationLabelKo": "레벨 7 이하 캐릭터 리무브"
+      "activationLabelKo": "레벨 7 이하 캐릭터 리무브",
+      "allowStunnedSource": true,
+      "allowRestedSource": true
     },
     {
       "steps": [
@@ -10292,6 +10294,1563 @@
         "sourceText": "【宣言】【ターン1】〚現場にいるカード名［服部平次］か【緑】の特徴［警察］のキャラに裏向きでセットされているカードを合わせて2枚リムーブする〛：レベル7以下のスリープ状態のキャラを1枚まで選び、リムーブする。",
         "interpretation": "턴당 1회. 자신의 현장에 있는 핫토리 헤이지 또는 녹색·경찰 특징 캐릭터에 뒷면으로 세트된 카드 2장을 리무브합니다. 두 장은 한 캐릭터에 모두 세트되어 있어도 되고, 두 캐릭터에 나누어 세트되어 있어도 됩니다. 이후 레벨 7 이하의 슬립 캐릭터 1장까지 리무브합니다."
       }
+    },
+    {
+      "effectId": "card-0794-activated-discard-hand-remove-character",
+      "cardIds": [
+        "0794"
+      ],
+      "cardNameKo": "세라 마스미&메리",
+      "cardNameJa": "世良真純＆メアリー",
+      "trigger": {
+        "event": "character.activated_ability",
+        "timing": "after"
+      },
+      "conditions": [
+        {
+          "fact": "turn.is_source_controller_turn",
+          "operator": "equals",
+          "value": true
+        },
+        {
+          "fact": "player.partner.color",
+          "operator": "equals",
+          "value": "red"
+        },
+        {
+          "fact": "player.hand.count",
+          "operator": "greater_than_or_equal",
+          "value": 1
+        }
+      ],
+      "steps": [
+        {
+          "op": "select_cards",
+          "from": "hand",
+          "min": 1,
+          "max": 1,
+          "optional": false,
+          "saveAs": "hand_cost",
+          "prompt": "비용으로 자신의 손패 1장을 선택해 리무브하세요."
+        },
+        {
+          "op": "move_cards",
+          "from": "hand_cost",
+          "to": "remove_area"
+        },
+        {
+          "op": "select_cards",
+          "from": "opponent_field",
+          "min": 0,
+          "max": 1,
+          "optional": true,
+          "saveAs": "target",
+          "filter": {
+            "field": "card_type",
+            "operator": "equals",
+            "value": "character"
+          },
+          "prompt": "리무브할 상대 캐릭터를 최대 1장 선택하세요."
+        },
+        {
+          "op": "move_cards",
+          "from": "target",
+          "to": "remove_area",
+          "when": {
+            "fact": "vars.target.count",
+            "operator": "greater_than",
+            "value": 0
+          }
+        }
+      ],
+      "oncePerTurn": true,
+      "allowRestedSource": true,
+      "activationLabelKo": "손패 1장 리무브 후 캐릭터 리무브"
+    },
+    {
+      "effectId": "card-0794-activated-draw-at-hand-two",
+      "cardIds": [
+        "0794"
+      ],
+      "cardNameKo": "세라 마스미&메리",
+      "cardNameJa": "世良真純＆メアリー",
+      "trigger": {
+        "event": "character.activated_ability",
+        "timing": "after"
+      },
+      "conditions": [
+        {
+          "fact": "turn.is_source_controller_turn",
+          "operator": "equals",
+          "value": true
+        },
+        {
+          "fact": "player.hand.count",
+          "operator": "less_than_or_equal",
+          "value": 2
+        }
+      ],
+      "steps": [
+        {
+          "op": "draw_cards",
+          "count": 1,
+          "destination": "hand"
+        }
+      ],
+      "oncePerTurn": true,
+      "allowPartnerArea": true,
+      "allowRestedSource": true,
+      "activationLabelKo": "손패 2장 이하일 때 1장 드로우"
+    },
+    {
+      "effectId": "card-0220-partner-red-end-turn-remove-ap8000",
+      "cardIds": [
+        "0220"
+      ],
+      "cardNameKo": "오키야 스바루",
+      "cardNameJa": "沖矢昴",
+      "trigger": {
+        "event": "player.turn_ended",
+        "timing": "after"
+      },
+      "conditions": [
+        {
+          "fact": "turn.is_source_controller_turn",
+          "operator": "equals",
+          "value": true
+        },
+        {
+          "fact": "player.partner.color",
+          "operator": "equals",
+          "value": "red"
+        },
+        {
+          "fact": "source.status",
+          "operator": "in",
+          "value": [
+            "rested",
+            "stunned"
+          ]
+        }
+      ],
+      "steps": [
+        {
+          "op": "select_cards",
+          "from": "opponent_field",
+          "min": 0,
+          "max": 1,
+          "optional": true,
+          "saveAs": "target",
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "operator": "equals",
+                "value": "character"
+              },
+              {
+                "field": "ap_current",
+                "operator": "less_than_or_equal",
+                "value": 8000
+              }
+            ]
+          },
+          "prompt": "AP 8000 이하인 상대 캐릭터를 최대 1장 선택해 리무브하세요."
+        },
+        {
+          "op": "move_cards",
+          "from": "target",
+          "to": "remove_area",
+          "when": {
+            "fact": "vars.target.count",
+            "operator": "greater_than",
+            "value": 0
+          }
+        }
+      ],
+      "scope": "field_watch"
+    },
+    {
+      "effectId": "card-0220-activated-grant-bullet-or-charge-case",
+      "cardIds": [
+        "0220"
+      ],
+      "cardNameKo": "오키야 스바루",
+      "cardNameJa": "沖矢昴",
+      "trigger": {
+        "event": "character.activated_ability",
+        "timing": "after"
+      },
+      "conditions": [
+        {
+          "fact": "turn.is_source_controller_turn",
+          "operator": "equals",
+          "value": true
+        }
+      ],
+      "steps": [
+        {
+          "op": "pay_cost",
+          "cost": "sleep_source_character"
+        },
+        {
+          "op": "select_cards",
+          "from": "field",
+          "targetController": "self",
+          "min": 0,
+          "max": 1,
+          "optional": true,
+          "saveAs": "target",
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "operator": "equals",
+                "value": "character"
+              },
+              {
+                "field": "color",
+                "operator": "equals",
+                "value": "red"
+              },
+              {
+                "field": "level",
+                "operator": "less_than_or_equal",
+                "value": 7
+              }
+            ]
+          },
+          "prompt": "자신의 현장에서 레벨 7 이하 적 캐릭터를 최대 1장 선택하세요."
+        },
+        {
+          "op": "offer_reaction",
+          "reactionId": "card-0220-keyword-choice",
+          "actor": "controller",
+          "choices": [
+            "bullet",
+            "charge_case"
+          ],
+          "saveAs": "keyword_choice",
+          "when": {
+            "fact": "vars.target.count",
+            "operator": "greater_than",
+            "value": 0
+          },
+          "prompt": "선택한 캐릭터에 부여할 키워드를 선택하세요."
+        },
+        {
+          "op": "grant_keyword",
+          "target": "vars.target",
+          "keyword": "bullet",
+          "duration": "turn_end",
+          "displayNameKo": "브렛",
+          "when": {
+            "fact": "vars.keyword_choice",
+            "operator": "equals",
+            "value": "bullet"
+          }
+        },
+        {
+          "op": "grant_keyword",
+          "target": "vars.target",
+          "keyword": "charge_case",
+          "duration": "turn_end",
+          "displayNameKo": "돌격 [사건]",
+          "when": {
+            "fact": "vars.keyword_choice",
+            "operator": "equals",
+            "value": "charge_case"
+          }
+        }
+      ],
+      "oncePerTurn": true,
+      "activationLabelKo": "브렛 또는 돌격 [사건] 부여"
+    },
+    {
+      "effectId": "card-0798-activated-remove-level8-hand-two",
+      "cardIds": [
+        "0798"
+      ],
+      "cardNameKo": "혼도 히데미",
+      "cardNameJa": "本堂瑛海",
+      "trigger": {
+        "event": "character.activated_ability",
+        "timing": "after"
+      },
+      "conditions": [
+        {
+          "fact": "turn.is_source_controller_turn",
+          "operator": "equals",
+          "value": true
+        },
+        {
+          "fact": "player.partner.color",
+          "operator": "equals",
+          "value": "red"
+        },
+        {
+          "fact": "player.hand.count",
+          "operator": "less_than_or_equal",
+          "value": 2
+        }
+      ],
+      "steps": [
+        {
+          "op": "select_cards",
+          "from": "opponent_field",
+          "min": 0,
+          "max": 1,
+          "optional": true,
+          "saveAs": "target",
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "operator": "equals",
+                "value": "character"
+              },
+              {
+                "field": "level",
+                "operator": "less_than_or_equal",
+                "value": 8
+              }
+            ]
+          },
+          "prompt": "리무브할 상대 레벨 8 이하 캐릭터를 최대 1장 선택하세요."
+        },
+        {
+          "op": "move_cards",
+          "from": "target",
+          "to": "remove_area",
+          "when": {
+            "fact": "vars.target.count",
+            "operator": "greater_than",
+            "value": 0
+          }
+        }
+      ],
+      "oncePerTurn": true,
+      "allowRestedSource": true,
+      "activationLabelKo": "손패 2장 이하일 때 레벨 8 이하 리무브"
+    },
+    {
+      "effectId": "card-0798-activated-revive-red-from-remove-file8",
+      "cardIds": [
+        "0798"
+      ],
+      "cardNameKo": "혼도 히데미",
+      "cardNameJa": "本堂瑛海",
+      "trigger": {
+        "event": "character.activated_ability",
+        "timing": "after"
+      },
+      "conditions": [
+        {
+          "fact": "turn.is_source_controller_turn",
+          "operator": "equals",
+          "value": true
+        },
+        {
+          "fact": "player.partner.color",
+          "operator": "equals",
+          "value": "red"
+        },
+        {
+          "fact": "player.file.count",
+          "operator": "greater_than_or_equal",
+          "value": 8
+        },
+        {
+          "fact": "player.hand.count",
+          "operator": "greater_than_or_equal",
+          "value": 1
+        }
+      ],
+      "steps": [
+        {
+          "op": "pay_cost",
+          "cost": "sleep_source_character"
+        },
+        {
+          "op": "select_cards",
+          "from": "hand",
+          "min": 1,
+          "max": 1,
+          "optional": false,
+          "saveAs": "hand_cost",
+          "prompt": "비용으로 손패 1장을 선택해 리무브하세요."
+        },
+        {
+          "op": "move_cards",
+          "from": "hand_cost",
+          "to": "remove_area"
+        },
+        {
+          "op": "move_top_file_cards",
+          "count": 1,
+          "to": "remove_area"
+        },
+        {
+          "op": "select_cards",
+          "from": "remove_area",
+          "min": 0,
+          "max": 1,
+          "optional": true,
+          "saveAs": "deployment",
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "operator": "equals",
+                "value": "character"
+              },
+              {
+                "field": "color",
+                "operator": "equals",
+                "value": "red"
+              },
+              {
+                "field": "level",
+                "operator": "less_than_or_equal",
+                "value": 7
+              }
+            ]
+          },
+          "prompt": "리무브 에이리어에서 레벨 7 이하 적 캐릭터를 최대 1장 선택해 등장시키세요."
+        },
+        {
+          "op": "move_cards",
+          "from": "deployment",
+          "to": "field",
+          "when": {
+            "fact": "vars.deployment.count",
+            "operator": "greater_than",
+            "value": 0
+          },
+          "entryMethod": "character_ability"
+        },
+        {
+          "op": "rest_cards",
+          "target": "vars.deployment",
+          "when": {
+            "fact": "vars.deployment.count",
+            "operator": "greater_than",
+            "value": 0
+          }
+        },
+        {
+          "op": "ready_source_character",
+          "when": {
+            "allOf": [
+              {
+                "fact": "vars.deployment.count",
+                "operator": "greater_than",
+                "value": 0
+              },
+              {
+                "fact": "player.hand.count",
+                "operator": "less_than_or_equal",
+                "value": 2
+              }
+            ]
+          }
+        },
+        {
+          "op": "ready_cards",
+          "target": "vars.deployment",
+          "when": {
+            "allOf": [
+              {
+                "fact": "vars.deployment.count",
+                "operator": "greater_than",
+                "value": 0
+              },
+              {
+                "fact": "player.hand.count",
+                "operator": "less_than_or_equal",
+                "value": 2
+              }
+            ]
+          }
+        }
+      ],
+      "oncePerTurn": true,
+      "activationLabelKo": "파일 1장과 손패 1장을 리무브해 적 캐릭터 재등장"
+    },
+    {
+      "effectId": "card-0797-on-enter-revive-red-level5",
+      "cardIds": [
+        "0797"
+      ],
+      "cardNameKo": "하네다 슈키치",
+      "cardNameJa": "羽田秀𠮷",
+      "trigger": {
+        "event": "character.entered_field",
+        "timing": "after"
+      },
+      "conditions": [
+        {
+          "fact": "player.partner.color",
+          "operator": "equals",
+          "value": "red"
+        }
+      ],
+      "steps": [
+        {
+          "op": "filter_cards",
+          "from": "remove_area",
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "operator": "equals",
+                "value": "character"
+              },
+              {
+                "field": "color",
+                "operator": "equals",
+                "value": "red"
+              },
+              {
+                "field": "level",
+                "operator": "less_than_or_equal",
+                "value": 5
+              }
+            ]
+          },
+          "saveAs": "available_deployments"
+        },
+        {
+          "op": "offer_reaction",
+          "reactionId": "card-0797-revive-red-level5",
+          "actor": "controller",
+          "choices": [
+            "yes",
+            "no"
+          ],
+          "saveAs": "revive_choice",
+          "when": {
+            "allOf": [
+              {
+                "fact": "vars.available_deployments.count",
+                "operator": "greater_than",
+                "value": 0
+              },
+              {
+                "fact": "player.hand.count",
+                "operator": "greater_than_or_equal",
+                "value": 1
+              }
+            ]
+          },
+          "prompt": "하네다 슈키치를 슬립시키고 손패 1장을 리무브해 적 레벨 5 이하 캐릭터를 재등장시킬까요?"
+        },
+        {
+          "op": "pay_cost",
+          "cost": "sleep_source_character",
+          "when": {
+            "fact": "vars.revive_choice",
+            "operator": "equals",
+            "value": "yes"
+          }
+        },
+        {
+          "op": "select_cards",
+          "from": "hand",
+          "min": 1,
+          "max": 1,
+          "optional": false,
+          "saveAs": "hand_cost",
+          "when": {
+            "fact": "vars.revive_choice",
+            "operator": "equals",
+            "value": "yes"
+          },
+          "prompt": "비용으로 손패 1장을 선택해 리무브하세요."
+        },
+        {
+          "op": "move_cards",
+          "from": "hand_cost",
+          "to": "remove_area",
+          "when": {
+            "fact": "vars.revive_choice",
+            "operator": "equals",
+            "value": "yes"
+          }
+        },
+        {
+          "op": "select_cards",
+          "from": "remove_area",
+          "min": 0,
+          "max": 1,
+          "optional": true,
+          "saveAs": "deployment",
+          "when": {
+            "fact": "vars.revive_choice",
+            "operator": "equals",
+            "value": "yes"
+          },
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "operator": "equals",
+                "value": "character"
+              },
+              {
+                "field": "color",
+                "operator": "equals",
+                "value": "red"
+              },
+              {
+                "field": "level",
+                "operator": "less_than_or_equal",
+                "value": 5
+              }
+            ]
+          },
+          "prompt": "리무브 에이리어에서 레벨 5 이하 적 캐릭터를 최대 1장 선택해 등장시키세요."
+        },
+        {
+          "op": "move_cards",
+          "from": "deployment",
+          "to": "field",
+          "entryMethod": "character_ability",
+          "when": {
+            "allOf": [
+              {
+                "fact": "vars.revive_choice",
+                "operator": "equals",
+                "value": "yes"
+              },
+              {
+                "fact": "vars.deployment.count",
+                "operator": "greater_than",
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "op": "rest_cards",
+          "target": "vars.deployment",
+          "when": {
+            "allOf": [
+              {
+                "fact": "vars.revive_choice",
+                "operator": "equals",
+                "value": "yes"
+              },
+              {
+                "fact": "vars.deployment.count",
+                "operator": "greater_than",
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "op": "ready_source_character",
+          "when": {
+            "allOf": [
+              {
+                "fact": "vars.revive_choice",
+                "operator": "equals",
+                "value": "yes"
+              },
+              {
+                "fact": "vars.deployment.count",
+                "operator": "greater_than",
+                "value": 0
+              },
+              {
+                "fact": "player.hand.count",
+                "operator": "less_than_or_equal",
+                "value": 2
+              }
+            ]
+          }
+        },
+        {
+          "op": "ready_cards",
+          "target": "vars.deployment",
+          "when": {
+            "allOf": [
+              {
+                "fact": "vars.revive_choice",
+                "operator": "equals",
+                "value": "yes"
+              },
+              {
+                "fact": "vars.deployment.count",
+                "operator": "greater_than",
+                "value": 0
+              },
+              {
+                "fact": "player.hand.count",
+                "operator": "less_than_or_equal",
+                "value": 2
+              }
+            ]
+          }
+        }
+      ],
+      "activationLabelKo": "손패 1장 리무브 후 적 캐릭터 재등장"
+    },
+    {
+      "effectId": "card-0797-hirameki-draw",
+      "cardIds": [
+        "0797"
+      ],
+      "cardNameKo": "하네다 슈키치",
+      "cardNameJa": "羽田秀𠮷",
+      "trigger": {
+        "event": "evidence.card_removed",
+        "timing": "after"
+      },
+      "conditions": [],
+      "steps": [
+        {
+          "op": "draw_cards",
+          "count": 1,
+          "destination": "hand"
+        }
+      ]
+    },
+    {
+      "effectId": "card-0885-end-turn-draw-until-two",
+      "cardIds": [
+        "0885"
+      ],
+      "cardNameKo": "오키야 스바루",
+      "cardNameJa": "沖矢昴",
+      "trigger": {
+        "event": "player.turn_ended",
+        "timing": "after"
+      },
+      "conditions": [
+        {
+          "fact": "turn.is_source_controller_turn",
+          "operator": "equals",
+          "value": true
+        }
+      ],
+      "steps": [
+        {
+          "op": "calculate_hand_difference",
+          "mode": "deficit",
+          "targetCount": 2,
+          "saveAs": "draw_count"
+        },
+        {
+          "op": "draw_cards",
+          "countFrom": "vars.draw_count",
+          "destination": "hand"
+        }
+      ],
+      "scope": "field_watch"
+    },
+    {
+      "effectId": "card-0885-activated-discard-until-two-remove-character",
+      "cardIds": [
+        "0885"
+      ],
+      "cardNameKo": "오키야 스바루",
+      "cardNameJa": "沖矢昴",
+      "trigger": {
+        "event": "character.activated_ability",
+        "timing": "after"
+      },
+      "conditions": [
+        {
+          "fact": "turn.is_source_controller_turn",
+          "operator": "equals",
+          "value": true
+        },
+        {
+          "fact": "player.partner.color",
+          "operator": "equals",
+          "value": "red"
+        }
+      ],
+      "steps": [
+        {
+          "op": "pay_cost",
+          "cost": "sleep_source_character"
+        },
+        {
+          "op": "calculate_hand_difference",
+          "mode": "excess",
+          "targetCount": 2,
+          "saveAs": "discard_count"
+        },
+        {
+          "op": "select_cards",
+          "from": "hand",
+          "minFrom": "vars.discard_count",
+          "maxFrom": "vars.discard_count",
+          "min": 0,
+          "max": 0,
+          "optional": true,
+          "saveAs": "hand_cost",
+          "prompt": "손패가 2장이 될 때까지 리무브할 카드를 선택하세요."
+        },
+        {
+          "op": "move_cards",
+          "from": "hand_cost",
+          "to": "remove_area",
+          "when": {
+            "fact": "vars.hand_cost.count",
+            "operator": "greater_than",
+            "value": 0
+          }
+        },
+        {
+          "op": "select_cards",
+          "from": "opponent_field",
+          "min": 0,
+          "max": 1,
+          "optional": true,
+          "saveAs": "target",
+          "filter": {
+            "field": "card_type",
+            "operator": "equals",
+            "value": "character"
+          },
+          "prompt": "리무브할 상대 캐릭터를 최대 1장 선택하세요."
+        },
+        {
+          "op": "move_cards",
+          "from": "target",
+          "to": "remove_area",
+          "when": {
+            "fact": "vars.target.count",
+            "operator": "greater_than",
+            "value": 0
+          }
+        }
+      ],
+      "activationLabelKo": "손패를 2장으로 맞추고 캐릭터 리무브"
+    },
+    {
+      "effectId": "card-0134-continuous-red-partner-swift",
+      "cardIds": [
+        "0134"
+      ],
+      "cardNameKo": "아카이 슈이치",
+      "cardNameJa": "赤井秀一",
+      "trigger": {
+        "event": "continuous.recalculate",
+        "timing": "continuous"
+      },
+      "conditions": [
+        {
+          "fact": "player.partner.color",
+          "operator": "equals",
+          "value": "red"
+        }
+      ],
+      "steps": [
+        {
+          "op": "set_continuous_keyword",
+          "target": "source_character",
+          "keyword": "swift",
+          "duration": "while_condition_true",
+          "modifierId": "red-handless-partner-swift",
+          "displayNameKo": "신속"
+        }
+      ],
+      "continuous": true
+    },
+    {
+      "effectId": "card-0696-on-enter-solution-return-level5",
+      "cardIds": [
+        "0696"
+      ],
+      "cardNameKo": "제임스 블랙",
+      "cardNameJa": "ジェイムズ・ブラック",
+      "trigger": {
+        "event": "character.entered_field",
+        "timing": "after"
+      },
+      "conditions": [
+        {
+          "fact": "player.case_phase",
+          "operator": "equals",
+          "value": "solution"
+        }
+      ],
+      "steps": [
+        {
+          "op": "select_cards",
+          "from": "opponent_field",
+          "min": 0,
+          "max": 1,
+          "optional": true,
+          "saveAs": "target",
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "operator": "equals",
+                "value": "character"
+              },
+              {
+                "field": "level",
+                "operator": "less_than_or_equal",
+                "value": 5
+              }
+            ]
+          },
+          "prompt": "상대 현장에서 레벨 5 이하 캐릭터를 최대 1장 선택해 상대 손패로 돌리세요."
+        },
+        {
+          "op": "move_cards",
+          "from": "target",
+          "to": "hand",
+          "when": {
+            "fact": "vars.target.count",
+            "operator": "greater_than",
+            "value": 0
+          }
+        }
+      ],
+      "activationLabelKo": "해결편 등장 시 레벨 5 이하 상대 캐릭터 패로 이동"
+    },
+    {
+      "effectId": "card-0696-activated-opponent-discards-hand",
+      "cardIds": [
+        "0696"
+      ],
+      "cardNameKo": "제임스 블랙",
+      "cardNameJa": "ジェイムズ・ブラック",
+      "trigger": {
+        "event": "character.activated_ability",
+        "timing": "after"
+      },
+      "conditions": [
+        {
+          "fact": "turn.is_source_controller_turn",
+          "operator": "equals",
+          "value": true
+        },
+        {
+          "fact": "opponent.hand.count",
+          "operator": "greater_than_or_equal",
+          "value": 4
+        }
+      ],
+      "steps": [
+        {
+          "op": "pay_cost",
+          "cost": "sleep_source_character"
+        },
+        {
+          "op": "select_cards",
+          "from": "opponent_hand",
+          "chooser": "opponent",
+          "min": 1,
+          "max": 1,
+          "optional": false,
+          "saveAs": "opponent_hand_cost",
+          "prompt": "상대가 자신의 손패 1장을 선택해 리무브합니다."
+        },
+        {
+          "op": "move_cards",
+          "from": "opponent_hand_cost",
+          "to": "remove_area"
+        }
+      ],
+      "activationLabelKo": "상대 손패 4장 이상일 때 손패 1장 리무브"
+    },
+    {
+      "effectId": "card-0696-hirameki-draw",
+      "cardIds": [
+        "0696"
+      ],
+      "cardNameKo": "제임스 블랙",
+      "cardNameJa": "ジェイムズ・ブラック",
+      "trigger": {
+        "event": "evidence.card_removed",
+        "timing": "after"
+      },
+      "conditions": [],
+      "steps": [
+        {
+          "op": "draw_cards",
+          "count": 1,
+          "destination": "hand"
+        }
+      ]
+    },
+    {
+      "effectId": "card-0224-on-enter-give-evidence-grant-charge-case",
+      "cardIds": [
+        "0224"
+      ],
+      "cardNameKo": "세라 마스미",
+      "cardNameJa": "世良真純",
+      "trigger": {
+        "event": "character.entered_field",
+        "timing": "after"
+      },
+      "conditions": [],
+      "steps": [
+        {
+          "op": "offer_reaction",
+          "reactionId": "card-0224-offer-opponent-evidence-and-charge-case",
+          "actor": "controller",
+          "choices": [
+            "yes",
+            "no"
+          ],
+          "saveAs": "give_evidence",
+          "prompt": "상대에게 증거 1개를 주고, 다른 적 캐릭터 1장까지 돌격 [사건]을 부여할까요?"
+        },
+        {
+          "op": "gain_evidence",
+          "count": 1,
+          "targetOwner": "opponent",
+          "when": {
+            "fact": "vars.give_evidence",
+            "operator": "equals",
+            "value": "yes"
+          }
+        },
+        {
+          "op": "select_cards",
+          "from": "field",
+          "targetController": "self",
+          "excludeSource": true,
+          "min": 0,
+          "max": 1,
+          "optional": true,
+          "saveAs": "target",
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "operator": "equals",
+                "value": "character"
+              },
+              {
+                "field": "color",
+                "operator": "equals",
+                "value": "red"
+              }
+            ]
+          },
+          "prompt": "이 캐릭터 이외의 자신의 적 캐릭터를 최대 1장 선택해 돌격 [사건]을 부여하세요.",
+          "when": {
+            "fact": "vars.give_evidence",
+            "operator": "equals",
+            "value": "yes"
+          }
+        },
+        {
+          "op": "grant_keyword",
+          "target": "vars.target",
+          "keyword": "charge_case",
+          "duration": "turn_end",
+          "displayNameKo": "돌격 [사건]",
+          "when": {
+            "allOf": [
+              {
+                "fact": "vars.give_evidence",
+                "operator": "equals",
+                "value": "yes"
+              },
+              {
+                "fact": "vars.target.count",
+                "operator": "greater_than",
+                "value": 0
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "effectId": "card-0224-hirameki-draw",
+      "cardIds": [
+        "0224"
+      ],
+      "cardNameKo": "세라 마스미",
+      "cardNameJa": "世良真純",
+      "trigger": {
+        "event": "evidence.card_removed",
+        "timing": "after"
+      },
+      "conditions": [],
+      "steps": [
+        {
+          "op": "draw_cards",
+          "count": 1,
+          "destination": "hand"
+        }
+      ]
+    },
+    {
+      "effectId": "card-0799-on-enter-hand-two-red-level7-charge",
+      "cardIds": [
+        "0799"
+      ],
+      "cardNameKo": "아라이데 토모아키",
+      "cardNameJa": "新出智明",
+      "trigger": {
+        "event": "character.entered_field",
+        "timing": "after"
+      },
+      "conditions": [
+        {
+          "fact": "player.hand.count",
+          "operator": "less_than_or_equal",
+          "value": 2
+        }
+      ],
+      "steps": [
+        {
+          "op": "select_cards",
+          "from": "field",
+          "targetController": "self",
+          "min": 0,
+          "max": 1,
+          "optional": true,
+          "saveAs": "target",
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "operator": "equals",
+                "value": "character"
+              },
+              {
+                "field": "color",
+                "operator": "equals",
+                "value": "red"
+              },
+              {
+                "field": "level",
+                "operator": "greater_than_or_equal",
+                "value": 7
+              }
+            ]
+          },
+          "prompt": "자신의 레벨 7 이상 적 캐릭터를 최대 1장 선택해 AP+1000과 돌격을 부여하세요."
+        },
+        {
+          "op": "modify_stat",
+          "target": "vars.target",
+          "stat": "ap",
+          "amount": 1000,
+          "duration": "turn_end",
+          "stacking": "additive",
+          "when": {
+            "fact": "vars.target.count",
+            "operator": "greater_than",
+            "value": 0
+          }
+        },
+        {
+          "op": "grant_keyword",
+          "target": "vars.target",
+          "keyword": "charge",
+          "duration": "turn_end",
+          "displayNameKo": "돌격",
+          "when": {
+            "fact": "vars.target.count",
+            "operator": "greater_than",
+            "value": 0
+          }
+        }
+      ],
+      "activationLabelKo": "손패 2장 이하일 때 레벨 7 이상 적 캐릭터 강화"
+    },
+    {
+      "effectId": "card-0143-continuous-red-partner-charge",
+      "cardIds": [
+        "0143"
+      ],
+      "cardNameKo": "안드레 캐멀",
+      "cardNameJa": "アンドレ・キャメル",
+      "trigger": {
+        "event": "continuous.recalculate",
+        "timing": "continuous"
+      },
+      "conditions": [
+        {
+          "fact": "player.partner.color",
+          "operator": "equals",
+          "value": "red"
+        }
+      ],
+      "steps": [
+        {
+          "op": "set_continuous_keyword",
+          "target": "source_character",
+          "keyword": "charge",
+          "duration": "while_condition_true",
+          "modifierId": "red-handless-partner-charge",
+          "displayNameKo": "돌격"
+        }
+      ],
+      "continuous": true
+    },
+    {
+      "effectId": "card-0802-on-enter-mislead-and-search-red",
+      "cardIds": [
+        "0802"
+      ],
+      "cardNameKo": "제임스 블랙",
+      "cardNameJa": "ジェイムズ・ブラック",
+      "trigger": {
+        "event": "character.entered_field",
+        "timing": "after"
+      },
+      "conditions": [],
+      "steps": [
+        {
+          "op": "set_mislead_value",
+          "target": "source_character",
+          "value": 1,
+          "duration": "while_in_field"
+        },
+        {
+          "op": "offer_reaction",
+          "reactionId": "card-0802-discard-search-red",
+          "actor": "controller",
+          "choices": [
+            "yes",
+            "no"
+          ],
+          "saveAs": "search_choice",
+          "when": {
+            "fact": "player.hand.count",
+            "operator": "greater_than_or_equal",
+            "value": 1
+          },
+          "prompt": "손패 1장을 리무브하고 덱 위 4장에서 적 카드를 찾아볼까요?"
+        },
+        {
+          "op": "select_cards",
+          "from": "hand",
+          "min": 1,
+          "max": 1,
+          "optional": false,
+          "saveAs": "hand_cost",
+          "when": {
+            "fact": "vars.search_choice",
+            "operator": "equals",
+            "value": "yes"
+          },
+          "prompt": "비용으로 손패 1장을 선택해 리무브하세요."
+        },
+        {
+          "op": "move_cards",
+          "from": "hand_cost",
+          "to": "remove_area",
+          "when": {
+            "fact": "vars.search_choice",
+            "operator": "equals",
+            "value": "yes"
+          }
+        },
+        {
+          "op": "peek_top_cards",
+          "count": 4,
+          "allowFewer": true,
+          "saveAs": "seen",
+          "when": {
+            "fact": "vars.search_choice",
+            "operator": "equals",
+            "value": "yes"
+          }
+        },
+        {
+          "op": "select_cards",
+          "from": "seen",
+          "min": 0,
+          "max": 1,
+          "optional": true,
+          "saveAs": "selected_red",
+          "filter": {
+            "field": "color",
+            "operator": "equals",
+            "value": "red"
+          },
+          "prompt": "공개해 손패에 추가할 적 카드를 최대 1장 선택하세요.",
+          "when": {
+            "fact": "vars.search_choice",
+            "operator": "equals",
+            "value": "yes"
+          }
+        },
+        {
+          "op": "reveal_cards",
+          "from": "selected_red",
+          "to": [
+            "opponent"
+          ],
+          "awaitAcknowledgement": true,
+          "when": {
+            "allOf": [
+              {
+                "fact": "vars.search_choice",
+                "operator": "equals",
+                "value": "yes"
+              },
+              {
+                "fact": "vars.selected_red.count",
+                "operator": "greater_than",
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "op": "move_cards",
+          "from": "selected_red",
+          "to": "hand",
+          "when": {
+            "allOf": [
+              {
+                "fact": "vars.search_choice",
+                "operator": "equals",
+                "value": "yes"
+              },
+              {
+                "fact": "vars.selected_red.count",
+                "operator": "greater_than",
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "op": "move_unselected_to_deck_bottom",
+          "from": "seen",
+          "selectedVariable": "selected_red",
+          "order": "player_choice",
+          "when": {
+            "fact": "vars.search_choice",
+            "operator": "equals",
+            "value": "yes"
+          }
+        },
+        {
+          "op": "select_cards",
+          "from": "hand",
+          "min": 1,
+          "max": 1,
+          "optional": false,
+          "saveAs": "second_hand_cost",
+          "prompt": "적 카드를 손패에 추가했다면 손패 1장을 추가로 리무브하세요.",
+          "when": {
+            "allOf": [
+              {
+                "fact": "vars.search_choice",
+                "operator": "equals",
+                "value": "yes"
+              },
+              {
+                "fact": "vars.selected_red.count",
+                "operator": "greater_than",
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "op": "move_cards",
+          "from": "second_hand_cost",
+          "to": "remove_area",
+          "when": {
+            "allOf": [
+              {
+                "fact": "vars.search_choice",
+                "operator": "equals",
+                "value": "yes"
+              },
+              {
+                "fact": "vars.selected_red.count",
+                "operator": "greater_than",
+                "value": 0
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "effectId": "card-1120-case-solution-discard-hand",
+      "cardIds": [
+        "1120"
+      ],
+      "cardNameKo": "골동품 쟁반은 숨길 수 없다",
+      "cardNameJa": "骨董盆は隠せない",
+      "trigger": {
+        "event": "case.solution_entered",
+        "timing": "after"
+      },
+      "conditions": [
+        {
+          "fact": "player.hand.count",
+          "operator": "greater_than_or_equal",
+          "value": 1
+        }
+      ],
+      "steps": [
+        {
+          "op": "select_cards",
+          "from": "hand",
+          "min": 1,
+          "max": 1,
+          "optional": false,
+          "saveAs": "hand_cost",
+          "when": {
+            "fact": "player.hand.count",
+            "operator": "greater_than_or_equal",
+            "value": 1
+          },
+          "prompt": "사건이 해결편이 되었으므로 손패 1장을 리무브하세요."
+        },
+        {
+          "op": "move_cards",
+          "from": "hand_cost",
+          "to": "remove_area"
+        }
+      ]
+    },
+    {
+      "effectId": "card-1120-antique-tray-case-effect",
+      "cardIds": [
+        "1120"
+      ],
+      "cardNameKo": "골동품 쟁반은 숨길 수 없다",
+      "cardNameJa": "骨董盆は隠せない",
+      "trigger": {
+        "event": "case.activated_ability",
+        "timing": "after"
+      },
+      "conditions": [
+        {
+          "fact": "player.case_phase",
+          "operator": "equals",
+          "value": "solution"
+        }
+      ],
+      "steps": [
+        {
+          "op": "select_cards",
+          "from": "hand",
+          "min": 1,
+          "max": 1,
+          "optional": false,
+          "saveAs": "hand_cost",
+          "prompt": "비용으로 손패 1장을 선택해 리무브하세요."
+        },
+        {
+          "op": "move_cards",
+          "from": "hand_cost",
+          "to": "remove_area"
+        },
+        {
+          "op": "peek_top_cards",
+          "count": 2,
+          "allowFewer": true,
+          "saveAs": "top_two"
+        },
+        {
+          "op": "move_cards",
+          "from": "top_two",
+          "to": "remove_area"
+        },
+        {
+          "op": "offer_reaction",
+          "reactionId": "card-1120-antique-tray-mode",
+          "actor": "controller",
+          "choices": [
+            "ap",
+            "draw"
+          ],
+          "saveAs": "mode",
+          "when": {
+            "fact": "player.hand.count",
+            "operator": "less_than_or_equal",
+            "value": 2
+          },
+          "prompt": "사건 효과: 캐릭터 AP+2000 또는 손패 2장 이하일 때 1장 드로우 중 하나를 선택하세요."
+        },
+        {
+          "op": "offer_reaction",
+          "reactionId": "card-1120-antique-tray-mode",
+          "actor": "controller",
+          "choices": [
+            "ap"
+          ],
+          "saveAs": "mode",
+          "when": {
+            "fact": "player.hand.count",
+            "operator": "greater_than",
+            "value": 2
+          },
+          "prompt": "사건 효과: 캐릭터 AP+2000을 선택하세요."
+        },
+        {
+          "op": "select_cards",
+          "from": "both_fields",
+          "targetController": "any",
+          "min": 0,
+          "max": 1,
+          "optional": true,
+          "saveAs": "ap_target",
+          "filter": {
+            "field": "card_type",
+            "operator": "equals",
+            "value": "character"
+          },
+          "when": {
+            "fact": "vars.mode",
+            "operator": "equals",
+            "value": "ap"
+          },
+          "prompt": "턴 종료 시까지 AP를 +2000할 캐릭터를 최대 1장 선택하세요."
+        },
+        {
+          "op": "modify_stat",
+          "target": "vars.ap_target",
+          "stat": "ap",
+          "amount": 2000,
+          "duration": "turn_end",
+          "stacking": "additive",
+          "when": {
+            "allOf": [
+              {
+                "fact": "vars.mode",
+                "operator": "equals",
+                "value": "ap"
+              },
+              {
+                "fact": "vars.ap_target.count",
+                "operator": "greater_than",
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "op": "draw_cards",
+          "count": 1,
+          "destination": "hand",
+          "when": {
+            "fact": "vars.mode",
+            "operator": "equals",
+            "value": "draw"
+          }
+        }
+      ],
+      "oncePerTurn": true,
+      "activationLabelKo": "손패와 덱 위 카드 2장 리무브 후 모드 선택"
     }
   ]
 }

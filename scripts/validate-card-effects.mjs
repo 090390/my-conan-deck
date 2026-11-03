@@ -27,6 +27,7 @@ const allowedOps = new Set([
   "ready_cards_that_used_keyword", "mark_keyword_activated", "shuffle_deck",
   "set_continuous_stat", "set_continuous_keyword",
   "rest_cards", "ready_source_character", "schedule_move_to_deck_bottom",
+  "calculate_hand_difference", "move_top_file_cards", "calculate_switch_count",
   "attach_top_card", "flip_evidence", "win_game", "start_contact",
   "modify_contact_ap", "grant_bond_alias",
 ]);
@@ -155,7 +156,12 @@ function checkStep(step, location, vars, def) {
   }
   if (step.op === "set_mislead_value") need(Number.isInteger(step.value) && step.value >= 0 && step.value <= 3 && step.duration === "while_in_field", `${location}: 미스리드는 0~3의 정수이며 while_in_field 지속이어야 합니다.`);
   if (step.op === "draw_cards" || step.op === "gain_evidence") {
-    need(Number.isInteger(step.count) && step.count > 0 && step.count <= 10, `${location}: count는 1~10 정수여야 합니다.`);
+    const hasStaticCount = Number.isInteger(step.count) && step.count > 0 && step.count <= 10;
+    const hasDynamicCount = step.op === "draw_cards" && typeof step.countFrom === "string" && step.countFrom.startsWith("vars.");
+    need(hasStaticCount || hasDynamicCount, `${location}: count는 1~10 정수이거나 draw_cards의 countFrom이어야 합니다.`);
+  }
+  if (step.op === "calculate_hand_difference") {
+    need(["deficit", "excess"].includes(step.mode) && Number.isInteger(step.targetCount) && step.targetCount >= 0 && typeof step.saveAs === "string", `${location}: calculate_hand_difference 구성이 올바르지 않습니다.`);
   }
   if (step.op === "set_continuous_stat") need(step.duration === "while_condition_true" && Number.isInteger(step.amount), `${location}: continuous stat 정의가 올바르지 않습니다.`);
   if (step.op === "set_continuous_keyword") need(step.duration === "while_condition_true", `${location}: continuous keyword 정의가 올바르지 않습니다.`);
