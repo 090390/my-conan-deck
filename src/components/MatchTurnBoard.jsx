@@ -1219,8 +1219,10 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   );
   const contactAttackerBoard = boards.find((board) => board.user_id === pending?.attacker_user_id);
   const contactTargetBoard = boards.find((board) => board.user_id === pending?.target_user_id);
-  const contactAttackerCard = (contactAttackerBoard?.field_cards || []).find((card) => card.instance_id === pending?.attacker_instance_id);
-  const contactTargetCard = (contactTargetBoard?.field_cards || []).find((card) => card.instance_id === pending?.target_instance_id);
+  const pendingAttackerInstanceId = pending?.attacker_instance_id || pending?.attacker_id || pending?.source_instance_id || pending?.instance_id;
+  const pendingTargetInstanceId = pending?.target_instance_id || pending?.target_id || pending?.target_card_instance_id;
+  const contactAttackerCard = (contactAttackerBoard?.field_cards || []).find((card) => String(card.instance_id) === String(pendingAttackerInstanceId || ""));
+  const contactTargetCard = (contactTargetBoard?.field_cards || []).find((card) => String(card.instance_id) === String(pendingTargetInstanceId || ""));
 
   if (!game) {
     return (
@@ -1338,6 +1340,24 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
       {pending?.type === "evidence_attack" && <div style={{ position: "fixed", inset: 0, zIndex: 100140, padding: 12, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,.86)", backdropFilter: "blur(5px)" }}>
         <section role="dialog" aria-modal="true" aria-label="증거 공격 가드 선택" style={{ width: "min(100%, 620px)", maxHeight: "90dvh", overflowY: "auto", ...st.panel, borderColor: "rgba(252,211,77,.55)", boxShadow: "0 24px 70px rgba(0,0,0,.72)" }}>
           <h2 style={{ ...st.zoneTitle, color: C.gold, fontSize: 16 }}>증거 공격 · 가드 선택</h2>
+          <div aria-label="현재 증거 공격 정보" style={{ display: "grid", gap: 6, margin: "8px 0 11px", padding: 10, border: "1px solid rgba(252,211,77,.35)", borderRadius: 9, background: "rgba(120,83,10,.12)" }}>
+            <strong style={{ color: C.gold, fontSize: 10 }}>현재 공격 상황</strong>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 7 }}>
+              <div style={{ minWidth: 0, padding: 8, border: "1px solid rgba(255,255,255,.1)", borderRadius: 7, background: "#080d16" }}>
+                <span style={{ display: "block", color: C.muted, fontSize: 9 }}>공격자</span>
+                <strong style={{ display: "block", marginTop: 4, fontSize: 11, overflowWrap: "anywhere" }}>{contactAttackerBoard?.display_name || "상대"} · {contactAttackerCard ? nameOf(contactAttackerCard) : "공격 캐릭터"}</strong>
+                <span style={{ display: "block", marginTop: 4, color: C.gold, fontSize: 10 }}>AP {n(pending.attacker_ap) + n(pending.attacker_bonus)}</span>
+              </div>
+              <div style={{ minWidth: 0, padding: 8, border: "1px solid rgba(255,255,255,.1)", borderRadius: 7, background: "#080d16" }}>
+                <span style={{ display: "block", color: C.muted, fontSize: 9 }}>공격 대상</span>
+                <strong style={{ display: "block", marginTop: 4, fontSize: 11, overflowWrap: "anywhere" }}>{contactTargetBoard?.display_name || (pendingIsForMe ? "나" : "상대")} · 증거 에이리어</strong>
+                <span style={{ display: "block", marginTop: 4, color: C.gold, fontSize: 10 }}>증거 공격</span>
+              </div>
+            </div>
+            <p style={{ margin: 0, color: C.text, fontSize: 10, lineHeight: 1.5 }}>
+              {contactAttackerBoard?.display_name || "상대"}의 {contactAttackerCard ? nameOf(contactAttackerCard) : "공격 캐릭터"}가 {contactTargetBoard?.display_name || (pendingIsForMe ? "내" : "상대")}의 증거 에이리어를 공격했습니다.
+            </p>
+          </div>
           {pendingIsForMe ? <>
             <p style={{ ...st.muted, marginBottom: 12, fontSize: 11 }}>상대가 내 증거 에이리어를 공격했습니다. 액티브 캐릭터로 가드할 수 있습니다. 가드하면 공격자와 가드 캐릭터의 컷인 사용 여부를 정한 뒤 AP를 비교하며, 가드하지 않으면 증거 공개로 진행합니다.</p>
             <div style={{ display: "grid", gap: 7 }}>
@@ -1863,7 +1883,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
               ))}
             </div>
             <p style={{ margin: "8px 0 0", color: C.text, fontSize: 10, lineHeight: 1.5 }}>
-              {contactAttackerCard ? nameOf(contactAttackerCard) : "공격자"}가 {contactTargetCard ? nameOf(contactTargetCard) : "대상 캐릭터"}를 공격하고 있습니다. 아래에서 대신 가드할 액티브 캐릭터를 선택하세요.
+              공격자: {contactAttackerBoard?.display_name || "상대"} · {contactAttackerCard ? nameOf(contactAttackerCard) : "공격 캐릭터"} → 공격 대상: {contactTargetBoard?.display_name || "플레이어"} · {contactTargetCard ? nameOf(contactTargetCard) : "대상 캐릭터"}. 아래에서 대신 가드할 액티브 캐릭터를 선택하세요.
             </p>
           </div><p style={{ ...st.muted, marginBottom: 10 }}>{pending.target_user_id === userId ? "공격을 받을 캐릭터 대신 액티브 캐릭터로 가드할 수 있습니다. 가드한 캐릭터는 컨택 대결에서 패배하면 리무브되고, 승리하면 슬립 상태로 남습니다." : "상대가 공격 가드를 선택하고 있습니다."}</p>{pending.target_user_id === userId ? <><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(110px,1fr))", gap: 7 }}>{(myBoard?.field_cards || []).filter((card) => card.card_type === "character" && card.instance_id !== pending.target_instance_id && !card.rested && (card.status || "active") === "active").map((card) => <button key={card.instance_id} type="button" style={{ ...st.smallButton, padding: 7 }} disabled={loading} onClick={() => void runAction("guard_contact_with_character", { instance_id: card.instance_id })}>{infoFor(card)?.imageUrl ? <img src={infoFor(card).imageUrl} alt={nameOf(card)} style={{ width: "100%", aspectRatio: "3/4", objectFit: "contain" }} /> : <div style={st.faceDown} />}<span style={{ display: "block", marginTop: 4 }}>{nameOf(card)}<br/>AP {n(card.ap)+n(card.ap_bonus)}</span></button>)}</div><button type="button" style={{ ...st.button, width: "100%", marginTop: 10 }} disabled={loading} onClick={() => void runAction("decline_contact_guard")}>가드하지 않고 진행</button></> : <p style={{ marginTop: 10, color: C.gold, fontSize: 11 }}>수비자의 선택을 기다리는 중입니다.</p>}</section></div>}
 
