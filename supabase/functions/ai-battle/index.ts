@@ -168,6 +168,10 @@ function hasSwift(card: any): boolean {
   return dslKeywordValues(card).some((value) =>
     ["haya", "swift", "신속", "疾風", "질풍"].includes(value));
 }
+function hasBullet(card: any): boolean {
+  return dslKeywordValues(card).some((value) =>
+    ["bullet", "브렛", "ブレット"].includes(value));
+}
 function isDetectiveVsKidCycleEvent(card: any): boolean {
   return matchesInternalCardId(card, "1215");
 }
@@ -416,9 +420,12 @@ function chooseActivatedAbility(state: any, aiId: string) {
     const abilityHasSleepCost = definition.steps.some((step: any) =>
       step?.op === "pay_cost" && step?.cost === "sleep_source_character");
     const canUseWhileRested = sourceIsRested && !sourceIsStunned
-      && !abilityHasSleepCost && definition.requiresActiveSource !== true;
-    const canUseWhileStunned = sourceIsStunned && definition.allowStunnedSource === true;
+      && !abilityHasSleepCost && definition.allowRestedSource === true
+      && definition.requiresActiveSource !== true;
+    const canUseWhileStunned = sourceIsStunned && definition.allowStunnedSource === true
+      && definition.requiresActiveSource !== true;
     const canReadyRestedSource = sourceIsRested && !sourceIsStunned
+      && definition.requiresActiveSource !== true
       && definition.steps.some((step: any) => step?.op === "ready_source_character");
     if (!isActive(source) && !canUseWhileRested && !canUseWhileStunned && !canReadyRestedSource) continue;
 
@@ -732,6 +739,12 @@ function chooseResponse(state: any, aiId: string) {
     return acknowledged.includes(aiId) ? null : { action: acknowledgementAction };
   }
   if (pending.type === "character_contact_guard" && pending.target_user_id === aiId) {
+    const attackerBoard = boards.find((board: any) => String(board?.user_id || "") === String(pending.attacker_user_id || ""));
+    const attacker = (Array.isArray(attackerBoard?.field_cards) ? attackerBoard.field_cards : [])
+      .find((card: any) => String(card?.instance_id || "") === String(pending.attacker_instance_id || ""));
+    // A Bullet action cannot be guarded. This also safely handles a guard window
+    // created before the current runtime was deployed.
+    if (hasBullet(attacker)) return { action: "decline_contact_guard" };
     const attackerPower = Number(pending.attacker_ap || 0) + Number(pending.attacker_bonus || 0);
     const threatened = field.find((card: any) => card.instance_id === pending.target_instance_id);
     const guard = field.filter((card: any) => isCharacter(card) && isActive(card)
