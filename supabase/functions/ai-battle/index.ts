@@ -1324,6 +1324,16 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
             return cardAp(rightCard) - cardAp(leftCard);
           });
         }
+        const isReviveSlotSacrifice = String(pending.effect_id || "") === "card-0797-on-enter-revive-red-level5"
+          && /현장.*캐릭터.*리무브/u.test(String(pending.prompt || ""));
+        if (isReviveSlotSacrifice) {
+          targetOptions = options.filter((option: any) =>
+            String(option?.owner_user_id || option?.card?.owner_user_id || "") === String(battle.ai_user_id)
+            && String(option?.zone || "field") === "field"
+          ).sort((left: any, right: any) =>
+            cardStrength(left?.card || left) - cardStrength(right?.card || right)
+          );
+        }
         const ids = targetOptions.map((option: any) => String(option?.instance_id || option?.card?.instance_id || "")).filter(Boolean);
         if (pending.type === "card_effect_order") {
           decision = { action: "card_effect_continue", payload: { selected_instance_ids: ids } };
