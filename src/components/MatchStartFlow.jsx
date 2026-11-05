@@ -273,7 +273,7 @@ export default function MatchStartFlow({
       )}
 
       {phase === "playing" && (
-        <MatchTurnBoard roomId={roomId} userId={userId} cards={cards} inviteCode={inviteCode} onReturnToLobby={onReturnToLobby} />
+        <MatchTurnBoard roomId={roomId} userId={userId} cards={cards} inviteCode={inviteCode} isAIBattle={isAIBattle} onReturnToLobby={onReturnToLobby} />
       )}
 
       {notice && <p role="status" style={{ margin: "12px 0 0", color: "#86efac", fontSize: 12 }}>{notice}</p>}
