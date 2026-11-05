@@ -141,8 +141,7 @@ BEGIN
    PERFORM public.private_card_effect_queue_field_removal_triggers_v1(p_room_id,v_source_user,p_card);
  END IF;
 END;
-$function$
-
+$function$;
 
 UPDATE public.private_card_effect_catalog_v1 c
 SET definitions = (
