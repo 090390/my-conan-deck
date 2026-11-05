@@ -361,7 +361,7 @@ function getOpponentNextTurnThreat(state: any, aiId: string) {
   // A player places one file at the beginning of their next turn. Count that
   // file when checking whether they can enter the solution phase immediately.
   const canEnterSolution = alreadyInSolution
-    || (!isCulpritsCrimeCase && Number(opponent.file_count || 0) + 1 >= fileThreshold);
+    || Number(opponent.file_count || 0) + 1 >= fileThreshold;
   const enemyCharacters = (Array.isArray(opponent.field_cards) ? opponent.field_cards : [])
     .filter((card: any) => isCharacter(card));
   // Rested characters stand up at their owner's next turn; stun is the status
@@ -373,26 +373,42 @@ function getOpponentNextTurnThreat(state: any, aiId: string) {
     || opponent.partner_mr_card || opponent.partnerMRCard
     || (Array.isArray(opponent.partner_non_mr_cards) && opponent.partner_non_mr_cards.length > 0)
     || (Array.isArray(opponent.partnerNonMrCards) && opponent.partnerNonMrCards.length > 0));
-  // Partner deduction is available again on the opponent's next turn.
+  // Partner deduction is available again at the opponent's next turn.
   const partnerCapacity = hasPartner ? 1 : 0;
   const opponentEvidenceCount = evidenceCount;
   const nextTurnEvidencePotential = evidenceCount + fieldCapacity + partnerCapacity;
-  const canWinNextTurn = !isCulpritsCrimeCase && canEnterSolution
-    && nextTurnEvidencePotential >= threshold;
+  const publicEvidence = Array.isArray(opponent.evidence_public_cards) ? opponent.evidence_public_cards : [];
+  const visibleCulpritEvidenceCount = publicEvidence.filter((card: any) =>
+    hasTrait(card, "범인") || hasTrait(card, "犯人") || hasTrait(card, "culprit")).length;
+  // The opponent's facedown evidence is hidden. Count it as a possible culprit
+  // card rather than assuming it is harmless; also include evidence they could
+  // add with surviving characters and partner deduction on their next turn.
+  const hiddenEvidenceUpperBound = Math.max(0, evidenceCount - publicEvidence.length);
+  const culpritEvidencePotential = visibleCulpritEvidenceCount
+    + hiddenEvidenceUpperBound + fieldCapacity + partnerCapacity;
+  const opponentDeckCount = Math.max(0, Number(opponent.deck_count ?? 0));
+  const canWinNextTurn = canEnterSolution && (isCulpritsCrimeCase
+    ? opponentDeckCount > 0 && culpritEvidencePotential >= 8
+    : nextTurnEvidencePotential >= threshold);
   // Treat a one-evidence-short position as urgent too. This catches boards
   // where a small additional effect or partner action can turn a near-win into
   // a win, instead of letting the AI pass because its estimate is exactly one short.
-  const isNearWinNextTurn = !isCulpritsCrimeCase && canEnterSolution
-    && nextTurnEvidencePotential >= Math.max(0, threshold - 1);
+  const isNearWinNextTurn = canEnterSolution && (isCulpritsCrimeCase
+    ? opponentDeckCount > 0 && culpritEvidencePotential >= 7
+    : nextTurnEvidencePotential >= Math.max(0, threshold - 1));
 
   return {
     urgent: isNearWinNextTurn,
     canWinNextTurn,
     isNearWinNextTurn,
     nextTurnEvidencePotential,
+    culpritEvidencePotential,
+    visibleCulpritEvidenceCount,
+    hiddenEvidenceUpperBound,
+    opponentDeckCount,
     canEnterSolution,
     evidenceCount,
-    threshold,
+    threshold: isCulpritsCrimeCase ? 8 : threshold,
     fieldCapacity,
     partnerCapacity,
     remainingEvidence,
