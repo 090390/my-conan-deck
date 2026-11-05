@@ -453,10 +453,6 @@ function scoreThreatMitigation(definition: any, ownField: any[], enemyField: any
       bestScore = Math.max(bestScore, base + highestLp * 7 + countBonus);
     } else if (kind === "stun") {
       bestScore = Math.max(bestScore, 92 + highestLp * 6 + countBonus);
-    } else if (kind === "rest") {
-      // Rest is only a temporary interruption; prefer actual removal/stun,
-      // but still use it rather than passing when the opponent is about to win.
-      bestScore = Math.max(bestScore, 14 + highestLp * 2 + countBonus);
     }
   }
 
@@ -995,7 +991,7 @@ function chooseResponse(state: any, aiId: string) {
   }
   return null;
 }
-function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: number | null = null) {
+function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: number | null = null, skipNextHint = false) {
   const response = chooseResponse(state, aiId);
   if (response) return response;
   if (state?.pending_action) return null;
@@ -1213,7 +1209,7 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
   if (opponentThreat.urgent) {
     const defensiveAbility = chooseActivatedAbility(state, aiId, true);
     if (defensiveAbility) return defensiveAbility;
-    if (canPlanNextHint) {
+    if (!skipNextHint && canPlanNextHint) {
       const hasNextHintCharacter = hand.some((card: any) => isCharacter(card)
         && cardCost(card) <= level && characterCount < 5);
       const eventCandidates = Array.isArray(state?.ai_event_effect_candidates)
@@ -1671,13 +1667,42 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
     // 안전 장치: 넥스트 힌트 선언/등장이 규칙 검사에 막히면 AI의 턴이 영구 정지하지 않도록
     // 선언 단계는 턴 종료로, 이미 선언한 단계는 응급 취소로 복구를 시도합니다.
     if (actionError && decision.action === "next_hint_take_file") {
-      const fallback = await service.rpc("perform_private_ai_turn_action_v1", {
-        p_room_id: roomId, p_action: "end_turn", p_payload: {},
-      });
-      if (!fallback.error) {
-        return { is_ai: true, actions: ["end_turn"], message: "AI 탐정: 넥스트 힌트의 후속 전개를 안전하게 진행할 수 없어 파일을 더 소모하지 않고 턴을 종료했습니다." };
+      const urgentThreat = getOpponentNextTurnThreat(state, battle.ai_user_id).urgent;
+      if (urgentThreat) {
+        // If an emergency Next Hint is rejected by the rules engine, do not
+        // immediately concede. Re-run the normal action planner with Next Hint
+        // suppressed so it can still use partner actions, contacts, attacks,
+        // or any other legal line before deciding that the turn is over.
+        const fallbackDecision = chooseTurnAction(
+          state, battle.ai_user_id, battle.last_next_hint_turn_number, true,
+        );
+        if (fallbackDecision && fallbackDecision.action !== "next_hint_take_file") {
+          const fallbackAttempt = await service.rpc("perform_private_ai_turn_action_v1", {
+            p_room_id: roomId,
+            p_action: fallbackDecision.action,
+            p_payload: fallbackDecision.payload || {},
+          });
+          if (!fallbackAttempt.error) {
+            return {
+              is_ai: true,
+              actions: [fallbackDecision.action],
+              action: fallbackDecision.action,
+              message: "AI 탐정: 긴급 넥스트 힌트가 규칙 검사에서 막혀, 아직 가능한 다른 행동을 이어서 시도했습니다.",
+            };
+          }
+          actionError = fallbackAttempt.error;
+        } else {
+          actionError = actionError;
+        }
+      } else {
+        const fallback = await service.rpc("perform_private_ai_turn_action_v1", {
+          p_room_id: roomId, p_action: "end_turn", p_payload: {},
+        });
+        if (!fallback.error) {
+          return { is_ai: true, actions: ["end_turn"], message: "AI 탐정: 넥스트 힌트의 후속 전개를 안전하게 진행할 수 없어 파일을 더 소모하지 않고 턴을 종료했습니다." };
+        }
+        actionError = fallback.error;
       }
-      actionError = fallback.error;
     } else if (actionError && decision.action === "next_hint") {
       const fallback = await service.rpc("perform_private_ai_turn_action_v1", {
         p_room_id: roomId, p_action: "cancel_next_hint", p_payload: {},
