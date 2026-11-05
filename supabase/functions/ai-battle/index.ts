@@ -1248,6 +1248,12 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
       return { is_ai: true, actions: [] };
     }
 
+    const aiHand = Array.isArray(state.my_hand) ? state.my_hand : [];
+    const aiBoard = (Array.isArray(state.boards) ? state.boards : [])
+      .find((board: any) => String(board?.user_id || "") === String(battle.ai_user_id));
+    const ownField = Array.isArray(aiBoard?.field_cards) ? aiBoard.field_cards : [];
+    const removeArea = Array.isArray(state.my_remove_cards) ? state.my_remove_cards : [];
+
     let decision: any = null;
     if (pending?.chooser_user_id === battle.ai_user_id && String(pending?.type || "").startsWith("card_effect_")) {
       if (pending.type === "card_effect_selection" || pending.type === "card_effect_order") {
@@ -1338,7 +1344,7 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
         // This bond ability offers hand or attachment as the cost. Prefer hand only
         // when one is available; otherwise use an attached card if the effect offered it.
         if (reactionId === "b05052-cost-zone") {
-          if (hand.length > 0 && choices.includes("hand")) choice = "hand";
+          if (aiHand.length > 0 && choices.includes("hand")) choice = "hand";
           else if (choices.includes("attachment")) choice = "attachment";
         }
         if (reactionId === "card-0797-revive-red-level5") {
@@ -1359,7 +1365,7 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
           choice = hasFreshRedCharacter && choices.includes("yes") ? "yes" : "no";
         }
         if (reactionId === "card-0802-discard-search-red") {
-          choice = hand.length > 0 && choices.includes("yes") ? "yes" : "no";
+          choice = aiHand.length > 0 && choices.includes("yes") ? "yes" : "no";
         }
         if (reactionId === "card-0220-keyword-choice") {
           const enemyBoard = (Array.isArray(state?.boards) ? state.boards : [])
