@@ -387,14 +387,18 @@ function getOpponentNextTurnThreat(state: any, aiId: string) {
   const culpritEvidencePotential = visibleCulpritEvidenceCount
     + hiddenEvidenceUpperBound + fieldCapacity + partnerCapacity;
   const opponentDeckCount = Math.max(0, Number(opponent.deck_count ?? 0));
+  const opponentRemoveCount = Math.max(0, Number(opponent.remove_count ?? 0));
+  // A zero-deck player with cards in the remove area may manually refresh
+  // before using the special case effect, so keep that line in the threat model.
+  const canRefreshCulpritDeck = opponentDeckCount > 0 || opponentRemoveCount > 0;
   const canWinNextTurn = canEnterSolution && (isCulpritsCrimeCase
-    ? opponentDeckCount > 0 && culpritEvidencePotential >= 8
+    ? canRefreshCulpritDeck && culpritEvidencePotential >= 8
     : nextTurnEvidencePotential >= threshold);
   // Treat a one-evidence-short position as urgent too. This catches boards
   // where a small additional effect or partner action can turn a near-win into
   // a win, instead of letting the AI pass because its estimate is exactly one short.
   const isNearWinNextTurn = canEnterSolution && (isCulpritsCrimeCase
-    ? opponentDeckCount > 0 && culpritEvidencePotential >= 7
+    ? canRefreshCulpritDeck && culpritEvidencePotential >= 7
     : nextTurnEvidencePotential >= Math.max(0, threshold - 1));
 
   return {
@@ -406,6 +410,8 @@ function getOpponentNextTurnThreat(state: any, aiId: string) {
     visibleCulpritEvidenceCount,
     hiddenEvidenceUpperBound,
     opponentDeckCount,
+    opponentRemoveCount,
+    canRefreshCulpritDeck,
     canEnterSolution,
     evidenceCount,
     threshold: isCulpritsCrimeCase ? 8 : threshold,
