@@ -1687,12 +1687,12 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
               is_ai: true,
               actions: [fallbackDecision.action],
               action: fallbackDecision.action,
-              message: "AI 탐정: 긴급 넥스트 힌트가 규칙 검사에서 막혀, 아직 가능한 다른 행동을 이어서 시도했습니다.",
+              message: fallbackDecision.action === "end_turn"
+                ? "AI 탐정: 긴급 넥스트 힌트가 규칙 검사에서 막혀 다른 방어 수단과 행동을 확인했지만 더 진행할 수 없어 턴을 종료했습니다."
+                : "AI 탐정: 긴급 넥스트 힌트가 규칙 검사에서 막혀, 아직 가능한 다른 행동을 이어서 시도했습니다.",
             };
           }
           actionError = fallbackAttempt.error;
-        } else {
-          actionError = actionError;
         }
       } else {
         const fallback = await service.rpc("perform_private_ai_turn_action_v1", {
