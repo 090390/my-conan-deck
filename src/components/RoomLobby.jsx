@@ -129,7 +129,6 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
 
     async function restoreRoom() {
       try {
-        const restoredAiBattle = localStorage.getItem(AI_ROOM_STORAGE_KEY) === savedRoom.id;
         const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
         if (sessionError) throw sessionError;
         let session = sessionData?.session;
@@ -150,6 +149,15 @@ export default function RoomLobby({ deck = {}, partnerId = "", eventId = "", car
           localStorage.removeItem(ACTIVE_ROOM_STORAGE_KEY);
           return;
         }
+        // The server-side AI battle record is authoritative; browser storage may be stale or missing after reload.
+        const { data: serverAiBattle, error: aiBattleError } = await supabase.rpc("is_private_ai_battle_v1", {
+          p_room_id: savedRoom.id,
+        });
+        if (aiBattleError) throw aiBattleError;
+        const restoredAiBattle = serverAiBattle === true;
+        if (restoredAiBattle) localStorage.setItem(AI_ROOM_STORAGE_KEY, savedRoom.id);
+        else if (localStorage.getItem(AI_ROOM_STORAGE_KEY) === savedRoom.id) localStorage.removeItem(AI_ROOM_STORAGE_KEY);
+
         const { data: state, error: stateError } = await supabase.rpc("get_private_match_state", {
           p_room_id: savedRoom.id,
         });
