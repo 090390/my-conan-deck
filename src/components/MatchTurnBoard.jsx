@@ -1081,14 +1081,15 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
     const ownerLabel = ownerId === userId ? "내" : "상대";
     return (
       <article key={instance.instance_id} style={{ minWidth: 0, width: "100%", border: `1px solid ${canOfferContact ? "#fb7185" : "rgba(148,163,184,.16)"}`, borderRadius: 7, padding: 4, background: "#080d16" }}>
-        {mine && !isEvent && <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 4, margin: "0 1px 4px" }}>
-          <label title="액티브 상태 대상 공격 가능" style={{ display: "flex", alignItems: "center", gap: 3, color: "#93c5fd", cursor: "pointer", fontSize: 8, lineHeight: 1.2 }}>
-            <input type="checkbox" aria-label="액티브 상태 대상 공격 가능" title={cardHasRuleId(instance, "0938") ? "D11007 마츠다 진페이 효과: 레벨 7 이상 액티브 캐릭터를 자동으로 공격 대상으로 지정할 수 있습니다." : "액티브 상태 대상 공격 가능"} checked={Boolean(allowActiveTargetsByCard[instance.instance_id] || cardHasRuleId(instance, "0938"))} disabled={!canActMain || cardHasRuleId(instance, "0938")} onChange={(event) => setAllowActiveTargetsByCard((current) => ({ ...current, [instance.instance_id]: event.target.checked }))} style={{ width: 12, height: 12, margin: 0, accentColor: "#3b82f6" }} />
-            <span>액티브 대상</span>
+        {mine && !isEvent && <div style={{ display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", alignItems: "center", gap: 4, margin: "0 1px 4px" }}>
+          <label title="액티브 상태에게도 액션 가능" aria-label="액티브 상태에게도 액션 가능" style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 18, cursor: "pointer" }}>
+            <input type="checkbox" aria-label="액티브 상태에게도 액션 가능" title={cardHasRuleId(instance, "0938") ? "카드 효과 적용 중: 레벨 7 이상 액티브 캐릭터도 공격 대상으로 지정할 수 있습니다." : "액티브 상태에게도 액션 가능"} checked={Boolean(allowActiveTargetsByCard[instance.instance_id] || cardHasRuleId(instance, "0938"))} disabled={!canActMain || cardHasRuleId(instance, "0938")} onChange={(event) => setAllowActiveTargetsByCard((current) => ({ ...current, [instance.instance_id]: event.target.checked }))} style={{ width: 14, height: 14, margin: 0, accentColor: "#3b82f6" }} />
           </label>
-          <label title="등장한 턴부터 바로 행동 가능" style={{ display: "flex", alignItems: "center", gap: 3, color: "#fcd34d", cursor: "pointer", fontSize: 8, lineHeight: 1.2 }}>
-            <input type="checkbox" aria-label="등장한 턴부터 바로 행동 가능" title="등장한 턴부터 바로 행동 가능" checked={allowFreshForCard} disabled={!canActMain} onChange={(event) => setAllowFreshlyPlayedByCard((current) => ({ ...current, [instance.instance_id]: event.target.checked }))} style={{ width: 12, height: 12, margin: 0, accentColor: "#eab308" }} />
-            <span>즉시 행동</span>
+          <label title="해당 캐릭터의 공격은 가드 불가" aria-label="해당 캐릭터의 공격은 가드 불가" style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 18, cursor: canManage ? "pointer" : "not-allowed" }}>
+            <input type="checkbox" aria-label="해당 캐릭터의 공격은 가드 불가" title="해당 캐릭터의 공격은 가드 불가" checked={manualBulletEnabled} disabled={loading || !canManage} onChange={(event) => void runAction("set_bullet_manual", { instance_id: instance.instance_id, owner_user_id: ownerId, enabled: event.target.checked })} style={{ width: 14, height: 14, margin: 0, accentColor: "#ef4444" }} />
+          </label>
+          <label title="등장한 턴에 바로 행동 가능" aria-label="등장한 턴에 바로 행동 가능" style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 18, cursor: "pointer" }}>
+            <input type="checkbox" aria-label="등장한 턴에 바로 행동 가능" title="등장한 턴에 바로 행동 가능" checked={allowFreshForCard} disabled={!canActMain} onChange={(event) => setAllowFreshlyPlayedByCard((current) => ({ ...current, [instance.instance_id]: event.target.checked }))} style={{ width: 14, height: 14, margin: 0, accentColor: "#eab308" }} />
           </label>
         </div>}
         <button type="button" onClick={() => openDetails(instance)} title={`${nameOf(instance)} 상세 정보`} style={{ display: "block", width: "100%", border: 0, background: "transparent", color: C.text, padding: 0 }}>
@@ -1133,27 +1134,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
                 <button type="button" style={st.smallButton} disabled={loading} onClick={() => promptLevelAdjustment(instance, ownerId, 1)}>LV +N</button>
                 <button type="button" style={st.smallButton} disabled={loading} onClick={() => promptLevelAdjustment(instance, ownerId, -1)}>LV −N</button>
               </div>
-              <button
-                type="button"
-                style={{
-                  ...st.smallButton,
-                  borderColor: manualBulletEnabled ? "#fbbf24" : "rgba(255,255,255,.13)",
-                  color: manualBulletEnabled ? "#fcd34d" : "#dbe4f1",
-                  background: manualBulletEnabled ? "rgba(120,80,15,.22)" : "#17243a",
-                }}
-                disabled={loading}
-                onClick={() => {
-                  const nextEnabled = !manualBulletEnabled;
-                  const actionLabel = nextEnabled ? "불렛 능력을 수동 지정" : "수동 불렛 지정을 해제";
-                  if (!window.confirm(`${nameOf(instance)} 카드의 ${actionLabel}할까요?\n불렛이 적용된 캐릭터의 액션은 가드할 수 없습니다.`)) return;
-                  void runAction("set_bullet_manual", {
-                    instance_id: instance.instance_id,
-                    owner_user_id: ownerId,
-                    enabled: nextEnabled,
-                  });
-                }}
-              >{manualBulletEnabled ? "불렛 수동 해제" : "불렛 수동 지정"}</button>
-              {manualBulletEnabled && <div style={{ color: "#fcd34d", fontSize: 8, lineHeight: 1.4 }}>수동 불렛 적용 중 · 이 캐릭터의 액션은 가드할 수 없습니다.</div>}
+
             </>}
           </div></details>
           <details style={{ marginTop: 5 }}><summary style={{ cursor: "pointer", fontSize: 8, color: "#8796ac" }}>카드 이동</summary><div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 4, marginTop: 5 }}>
