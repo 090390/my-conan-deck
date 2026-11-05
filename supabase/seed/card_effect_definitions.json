@@ -10880,6 +10880,36 @@
         },
         {
           "op": "select_cards",
+          "from": "field",
+          "targetController": "self",
+          "min": 1,
+          "max": 1,
+          "optional": false,
+          "saveAs": "field_slot_cost",
+          "filter": {
+            "field": "card_type",
+            "operator": "equals",
+            "value": "character"
+          },
+          "prompt": "현장이 캐릭터 5장으로 가득 찼습니다. 재등장 자리를 만들기 위해 자신의 현장 캐릭터 1장을 리무브하세요.",
+          "when": {
+            "fact": "player.field.character.count",
+            "operator": "greater_than_or_equal",
+            "value": 5
+          }
+        },
+        {
+          "op": "move_cards",
+          "from": "field_slot_cost",
+          "to": "remove_area",
+          "when": {
+            "fact": "player.field.character.count",
+            "operator": "greater_than_or_equal",
+            "value": 5
+          }
+        },
+        {
+          "op": "select_cards",
           "from": "remove_area",
           "min": 0,
           "max": 1,
