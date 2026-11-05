@@ -1213,17 +1213,10 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
   // If no removal/stun/evidence-denial effect is available, spend the legal Next Hint
   // before ordinary utility actions so the AI does not concede while a rescue remains.
   if (opponentThreat.urgent) {
+    // Use immediate, already-available defensive effects before considering
+    // the more speculative Next Hint line.
     const defensiveAbility = chooseActivatedAbility(state, aiId, true);
     if (defensiveAbility) return defensiveAbility;
-    if (!skipNextHint && canConsiderEmergencyNextHint) {
-      const hasNextHintCharacter = hand.some((card: any) => isCharacter(card)
-        && cardCost(card) <= level && characterCount < 5);
-      // A legal event is played with play_event while next_hint_pending is true.
-      // Event deployment is not subject to the five-character field limit.
-      const hasNextHintEvent = hand.some((card: any) => isEvent(card)
-        && cardCost(card) <= level);
-      if (hasNextHintCharacter || hasNextHintEvent) return { action: "next_hint_take_file" };
-    }
   }
 
   // Activated abilities are evaluated only after the basic character play has been considered.
@@ -1237,7 +1230,7 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
 
   // 넥스트 힌트는 해결편에서만, 파일 소모 후에도 실제로 등장 가능한 카드가
   // 확인되고 이번 턴에 아직 사용하지 않은 경우에 한해 선언합니다.
-  if (canPlanNextHint) {
+  if (!opponentThreat.urgent && !skipNextHint && canPlanNextHint) {
     const canContinue = hand.some((card: any) => isCharacter(card)
       && cardCost(card) <= level && characterCount < 5);
     if (canContinue) return { action: "next_hint_take_file" };
@@ -1309,6 +1302,18 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
         allow_newly_played: hasCharge(evidenceAttackers[0]),
       },
     };
+  }
+
+  // Only after immediate removal contacts and other available actions have
+  // been exhausted, gamble on Next Hint as the final rescue attempt.
+  if (opponentThreat.urgent && !skipNextHint && canConsiderEmergencyNextHint) {
+    const hasNextHintCharacter = hand.some((card: any) => isCharacter(card)
+      && cardCost(card) <= level && characterCount < 5);
+    // Event cards can be played with play_event while next_hint_pending is true
+    // and do not need a free character slot.
+    const hasNextHintEvent = hand.some((card: any) => isEvent(card)
+      && cardCost(card) <= level);
+    if (hasNextHintCharacter || hasNextHintEvent) return { action: "next_hint_take_file" };
   }
 
   return { action: "end_turn" };
