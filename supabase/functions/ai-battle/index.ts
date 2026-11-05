@@ -1330,6 +1330,7 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
           targetOptions = options.filter((option: any) =>
             String(option?.owner_user_id || option?.card?.owner_user_id || "") === String(battle.ai_user_id)
             && String(option?.zone || "field") === "field"
+            && String(option?.instance_id || option?.card?.instance_id || "") !== String(pending.source_instance_id || "")
           ).sort((left: any, right: any) =>
             cardStrength(left?.card || left) - cardStrength(right?.card || right)
           );
