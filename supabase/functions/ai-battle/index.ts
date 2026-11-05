@@ -324,7 +324,175 @@ function matchesDslFilter(card: any, filter: any): boolean {
   if (op === "greater_than_or_equal") return Number(actual) >= Number(expected);
   return false;
 }
-function chooseActivatedAbility(state: any, aiId: string) {
+
+function cardLifePoints(card: any): number {
+  const value = Number(card?.lp ?? card?.life_points ?? card?.lifePoints ?? 0);
+  return Number.isFinite(value) ? Math.max(0, Math.min(3, value)) : 0;
+}
+
+function isStunnedCard(card: any): boolean {
+  const status = String(card?.status || "").toLocaleLowerCase();
+  return Boolean(card?.stunned || card?.stun || card?.is_stunned)
+    || ["stunned", "stun", "스턴"].includes(status);
+}
+
+function getOpponentNextTurnThreat(state: any, aiId: string) {
+  const boards = Array.isArray(state?.boards) ? state.boards : [];
+  const opponent = boards.find((board: any) => String(board?.user_id || "") !== String(aiId));
+  if (!opponent) {
+    return { urgent: false, canEnterSolution: false, evidenceCount: 0, threshold: 0,
+      fieldCapacity: 0, partnerCapacity: 0, remainingEvidence: 0, opponentEvidenceCount: 0 };
+  }
+
+  const eventKey = String(opponent.event_key || opponent.eventKey || opponent.event_rule_code
+    || opponent.eventRuleCode || "").toLocaleUpperCase().replace(/[^A-Z0-9]/gu, "");
+  const eventRule = String(opponent.event_rule_code || opponent.eventRuleCode || "");
+  const isConanVsKidCase = eventKey.includes("B11098") || eventKey.includes("1261")
+    || eventRule === "conan_vs_kid_1261";
+  const isCulpritsCrimeCase = eventKey.includes("B09107") || eventKey.includes("1046")
+    || eventRule === "culprits_1046";
+  const isFirstPlayer = String(state?.first_player_user_id || "") === String(opponent.user_id || "");
+  const threshold = isConanVsKidCase ? (isFirstPlayer ? 8 : 7) : (isFirstPlayer ? 7 : 6);
+  const evidenceCount = Math.max(0, Number(opponent.evidence_count || 0));
+  const remainingEvidence = Math.max(0, threshold - evidenceCount);
+  const phase = String(opponent.case_phase || "incident").toLocaleLowerCase();
+  const alreadyInSolution = phase === "solution";
+  const fileThreshold = isFirstPlayer ? 7 : 6;
+  // A player places one file at the beginning of their next turn. Count that
+  // file when checking whether they can enter the solution phase immediately.
+  const canEnterSolution = alreadyInSolution
+    || (!isCulpritsCrimeCase && Number(opponent.file_count || 0) + 1 >= fileThreshold);
+  const enemyCharacters = (Array.isArray(opponent.field_cards) ? opponent.field_cards : [])
+    .filter((card: any) => isCharacter(card));
+  // Rested characters stand up at their owner's next turn; stun is the status
+  // that persists. Therefore, exclude stunned characters but count rested ones.
+  const fieldCapacity = enemyCharacters
+    .filter((card: any) => !isStunnedCard(card))
+    .reduce((sum: number, card: any) => sum + cardLifePoints(card), 0);
+  const hasPartner = Boolean(opponent.partner_key || opponent.partner_card
+    || opponent.partner_mr_card || opponent.partnerMRCard
+    || (Array.isArray(opponent.partner_non_mr_cards) && opponent.partner_non_mr_cards.length > 0)
+    || (Array.isArray(opponent.partnerNonMrCards) && opponent.partnerNonMrCards.length > 0));
+  // Partner deduction is available again on the opponent's next turn.
+  const partnerCapacity = hasPartner ? 1 : 0;
+  const opponentEvidenceCount = evidenceCount;
+  const canWinNextTurn = !isCulpritsCrimeCase && canEnterSolution
+    && evidenceCount + fieldCapacity + partnerCapacity >= threshold;
+
+  return {
+    urgent: canWinNextTurn,
+    canEnterSolution,
+    evidenceCount,
+    threshold,
+    fieldCapacity,
+    partnerCapacity,
+    remainingEvidence,
+    opponentEvidenceCount,
+    enemyCharacterCount: enemyCharacters.filter((card: any) => !isStunnedCard(card)
+      && cardLifePoints(card) > 0).length,
+    opponentUserId: String(opponent.user_id || ""),
+  };
+}
+
+function effectStepReferencesVariable(step: any, variable: string): boolean {
+  const name = String(variable || "").replace(/^vars\./u, "");
+  if (!name) return false;
+  const from = String(step?.from || "").replace(/^vars\./u, "");
+  const target = String(step?.target || "").replace(/^vars\./u, "");
+  if (from === name || target === name || String(step?.selectedVariable || "").replace(/^vars\./u, "") === name) {
+    return true;
+  }
+  return JSON.stringify(step || {}).includes("vars." + name);
+}
+
+function getThreatMitigationKind(definition: any, selectionStep: any): string | null {
+  const steps = Array.isArray(definition?.steps) ? definition.steps : [];
+  const source = String(selectionStep?.from || "");
+  const variable = String(selectionStep?.saveAs || "");
+  if (!variable || !["opponent_field", "both_fields", "opponent_evidence"].includes(source)) return null;
+  const linked = steps.filter((step: any) => step !== selectionStep
+    && effectStepReferencesVariable(step, variable));
+  if (source === "opponent_evidence" && linked.some((step: any) =>
+    step?.op === "move_cards" && ["deck_bottom", "remove_area"].includes(String(step?.to || "")))) {
+    return "evidence_remove";
+  }
+  if (linked.some((step: any) => step?.op === "stun_cards")) return "stun";
+  if (linked.some((step: any) => step?.op === "move_cards"
+    && ["remove_area", "deck_bottom", "hand"].includes(String(step?.to || "")))) return "remove";
+  if (linked.some((step: any) => step?.op === "rest_cards")) return "rest";
+  return null;
+}
+
+function scoreThreatMitigation(definition: any, ownField: any[], enemyField: any[], threat: any): number {
+  if (!threat?.urgent || !Array.isArray(definition?.steps)) return 0;
+  const steps = definition.steps;
+  let bestScore = 0;
+
+  for (const selectionStep of steps.filter((step: any) => step?.op === "select_cards")) {
+    const kind = getThreatMitigationKind(definition, selectionStep);
+    if (!kind) continue;
+    const source = String(selectionStep.from || "");
+    if (source === "opponent_evidence") {
+      bestScore = Math.max(bestScore, 130 + Math.min(3, Number(threat.opponentEvidenceCount || 0)) * 8);
+      continue;
+    }
+
+    const candidates = enemyField.filter((card: any) =>
+      isCharacter(card) && matchesDslFilter({ ...card, controller: "opponent" }, selectionStep.filter));
+    if (!candidates.length) continue;
+    const highestLp = Math.max(...candidates.map(cardLifePoints));
+    const countBonus = Math.min(3, candidates.length) * 3;
+
+    if (kind === "remove") {
+      const variable = String(selectionStep.saveAs || "");
+      const move = steps.find((step: any) => step?.op === "move_cards"
+        && effectStepReferencesVariable(step, variable)
+        && ["remove_area", "deck_bottom", "hand"].includes(String(step?.to || "")));
+      const destination = String(move?.to || "");
+      const base = destination === "remove_area" ? 105 : destination === "deck_bottom" ? 98 : 72;
+      bestScore = Math.max(bestScore, base + highestLp * 7 + countBonus);
+    } else if (kind === "stun") {
+      bestScore = Math.max(bestScore, 92 + highestLp * 6 + countBonus);
+    } else if (kind === "rest") {
+      // Rest is only a temporary interruption; prefer actual removal/stun,
+      // but still use it rather than passing when the opponent is about to win.
+      bestScore = Math.max(bestScore, 14 + highestLp * 2 + countBonus);
+    }
+  }
+
+  if (steps.some((step: any) => step?.op === "remove_all_field_characters")) {
+    const enemyCount = enemyField.filter((card: any) => isCharacter(card)
+      && !isStunnedCard(card) && cardLifePoints(card) > 0).length;
+    const ownCount = ownField.filter((card: any) => isCharacter(card)).length;
+    if (enemyCount > 0) {
+      // A field wipe is a costly last resort, but stopping a lethal next turn
+      // is worth sacrificing some of the AI's own board.
+      bestScore = Math.max(bestScore, 76 + enemyCount * 10 - ownCount * 3);
+    }
+  }
+  return bestScore;
+}
+
+function findPendingThreatSelectionStep(definition: any, pending: any): any | null {
+  const steps = Array.isArray(definition?.steps) ? definition.steps : [];
+  const selections = steps.filter((step: any) => step?.op === "select_cards");
+  const variableHint = String(pending?.save_as || pending?.saveAs || pending?.selection_variable
+    || pending?.selectionVariable || pending?.variable || pending?.target_key || "");
+  if (variableHint) {
+    const byVariable = selections.find((step: any) => String(step?.saveAs || "") === variableHint);
+    if (byVariable) return byVariable;
+  }
+  const prompt = String(pending?.prompt || "").trim().replace(/\s+/gu, "");
+  if (prompt) {
+    const byPrompt = selections.find((step: any) =>
+      String(step?.prompt || "").trim().replace(/\s+/gu, "") === prompt);
+    if (byPrompt) return byPrompt;
+  }
+  const mitigation = selections.filter((step: any) => getThreatMitigationKind(definition, step));
+  return mitigation.length === 1 ? mitigation[0] : null;
+}
+
+function chooseActivatedAbility(state: any, aiId: string, threatOnly = false) {
   const activations = Array.isArray(state?.ai_card_effect_activations) ? state.ai_card_effect_activations : [];
   if (!activations.length) return null;
   const boards = Array.isArray(state?.boards) ? state.boards : [];
@@ -344,6 +512,10 @@ function chooseActivatedAbility(state: any, aiId: string) {
   const ownEvidenceCount = Math.max(0, Number(me.evidence_count ?? ownEvidenceCards.length));
   const opponentEvidenceCount = Math.max(0, Number(opponent.evidence_count || 0));
   const opponentHandCount = Math.max(0, Number(opponent.hand_count || opponent.hand_size || state?.opponent_hand_count || 0));
+  const opponentThreat = getOpponentNextTurnThreat(state, aiId);
+  if (threatOnly && !opponentThreat.urgent) return null;
+  let bestDecision: any = null;
+  let bestThreatScore = -1;
 
   for (const ability of activations) {
     const sourceId = String(ability?.source_instance_id || "");
@@ -389,7 +561,14 @@ function chooseActivatedAbility(state: any, aiId: string) {
         return valid.length < min;
       });
       if (missingRequiredSelection) continue;
-      return { action: "activate_case_effect", payload: { effect_id: String(ability?.effect_id || "") } };
+      const candidate = { action: "activate_case_effect", payload: { effect_id: String(ability?.effect_id || "") } };
+      const threatScore = scoreThreatMitigation(definition, ownField, enemyField, opponentThreat);
+      if (threatOnly && threatScore <= 0) continue;
+      if (threatScore > bestThreatScore) {
+        bestDecision = candidate;
+        bestThreatScore = threatScore;
+      }
+      continue;
     }
     const source = ownField.find((card: any) => String(card?.instance_id || "") === sourceId)
       || (String(me.partner_mr_card?.instance_id || "") === sourceId ? me.partner_mr_card : null)
@@ -618,9 +797,15 @@ function chooseActivatedAbility(state: any, aiId: string) {
       if (!hasTargetedPayoff && !hasIndependentPayoff) continue;
     }
 
-    return { action: "activate_card_effect", payload: { source_instance_id: sourceId, effect_id: ability.effect_id } };
+    const candidate = { action: "activate_card_effect", payload: { source_instance_id: sourceId, effect_id: ability.effect_id } };
+    const threatScore = scoreThreatMitigation(definition, ownField, enemyField, opponentThreat);
+    if (threatOnly && threatScore <= 0) continue;
+    if (threatScore > bestThreatScore) {
+      bestDecision = candidate;
+      bestThreatScore = threatScore;
+    }
   }
-  return null;
+  return bestDecision;
 }
 function chooseMulligan(hand: any[]) {
   const cheapCharacters = hand.filter((card) => isCharacter(card) && cardCost(card) <= 3).length;
@@ -825,6 +1010,7 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
   const enemyField = Array.isArray(opponent.field_cards) ? opponent.field_cards : [];
   const removeArea = Array.isArray(state?.my_remove_cards) ? state.my_remove_cards : [];
   const partnerColor = normalizedColor(state.ai_partner_color || me.partner_color || "");
+  const opponentThreat = getOpponentNextTurnThreat(state, aiId);
   const activeAttackers = field.filter((card: any) => isCharacter(card) && isActive(card)
     && (!card.summoned_this_turn || hasCharge(card)))
     .sort((a: any, b: any) => cardAp(b) - cardAp(a));
@@ -923,6 +1109,9 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
         const totalFieldCharacters = [...field, ...enemyField].filter((card: any) => isCharacter(card)).length;
         score += totalFieldCharacters * 16;
       }
+      if (opponentThreat.urgent) {
+        score += scoreThreatMitigation(candidate?.definition, field, enemyField, opponentThreat);
+      }
       eventScoreByInstance.set(instanceId, Math.max(eventScoreByInstance.get(instanceId) || 0, score));
     }
     const nextHintEvent = hand.filter((card: any) => isEvent(card)
@@ -1015,6 +1204,26 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
       && cardCost(card) <= level).sort((a: any, b: any) => cardCost(a) - cardCost(b))[0];
     if (cycleEvent && characterCount < 5 && partnerColor === "white" && isDetectiveVsKidCase) {
       return { action: "play_event", payload: { instance_id: cycleEvent.instance_id } };
+    }
+  }
+
+  // When the opponent can win on their next turn, use a real defensive ability first.
+  // If no removal/stun/evidence-denial effect is available, spend the legal Next Hint
+  // before ordinary utility actions so the AI does not concede while a rescue remains.
+  if (opponentThreat.urgent) {
+    const defensiveAbility = chooseActivatedAbility(state, aiId, true);
+    if (defensiveAbility) return defensiveAbility;
+    if (canPlanNextHint) {
+      const hasNextHintCharacter = hand.some((card: any) => isCharacter(card)
+        && cardCost(card) <= level && characterCount < 5);
+      const eventCandidates = Array.isArray(state?.ai_event_effect_candidates)
+        ? state.ai_event_effect_candidates : [];
+      const hasNextHintDefenseEvent = hand.some((card: any) => isEvent(card)
+        && cardCost(card) <= level + 1
+        && eventCandidates.some((candidate: any) =>
+          String(candidate?.source_instance_id || "") === String(card?.instance_id || "")
+          && scoreThreatMitigation(candidate?.definition, field, enemyField, opponentThreat) > 0));
+      if (hasNextHintCharacter || hasNextHintDefenseEvent) return { action: "next_hint_take_file" };
     }
   }
 
@@ -1262,6 +1471,14 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
         });
         if (optionsError) throw optionsError;
         const options = Array.isArray(effectOptions?.options) ? effectOptions.options : [];
+        const opponentThreat = getOpponentNextTurnThreat(state, battle.ai_user_id);
+        const activeEffect = [
+          ...(Array.isArray(state?.ai_card_effect_activations) ? state.ai_card_effect_activations : []),
+          ...(Array.isArray(state?.ai_event_effect_candidates) ? state.ai_event_effect_candidates : []),
+        ].find((entry: any) => String(entry?.effect_id || entry?.definition?.effectId || "") === String(pending.effect_id || ""));
+        const threatSelectionStep = findPendingThreatSelectionStep(activeEffect?.definition, pending);
+        const threatSelectionKind = threatSelectionStep
+          ? getThreatMitigationKind(activeEffect?.definition, threatSelectionStep) : null;
         const preferOpponentFieldTargetEffects = new Set([
           "card-0211-hirameki-rest-character",
           "card-0691-hirameki-rest-character",
@@ -1334,6 +1551,30 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
           ).sort((left: any, right: any) =>
             cardStrength(left?.card || left) - cardStrength(right?.card || right)
           );
+        }
+        if (opponentThreat.urgent && threatSelectionKind) {
+          if (threatSelectionKind === "evidence_remove") {
+            const opposingEvidence = options.filter((option: any) =>
+              String(option?.owner_user_id || option?.card?.owner_user_id || "") !== String(battle.ai_user_id)
+              && ["evidence", "evidence_area", "opponent_evidence"].includes(String(option?.zone || "evidence_area")));
+            if (opposingEvidence.length > 0) targetOptions = opposingEvidence;
+          } else if (["remove", "stun", "rest"].includes(threatSelectionKind) && isFieldTargetSelection) {
+            const opposingCharacters = options.filter((option: any) => {
+              const owner = String(option?.owner_user_id || option?.card?.owner_user_id || "");
+              const zone = String(option?.zone || "field");
+              return zone === "field" && (owner ? owner !== String(battle.ai_user_id)
+                : String(threatSelectionStep?.from || "") === "opponent_field");
+            });
+            if (opposingCharacters.length > 0) {
+              targetOptions = [...opposingCharacters].sort((left: any, right: any) => {
+                const lpDifference = cardLifePoints(right?.card || right) - cardLifePoints(left?.card || left);
+                if (lpDifference !== 0) return lpDifference;
+                const activeDifference = Number(isActive(right?.card || right)) - Number(isActive(left?.card || left));
+                if (activeDifference !== 0) return activeDifference;
+                return cardAp(right?.card || right) - cardAp(left?.card || left);
+              });
+            }
+          }
         }
         const ids = targetOptions.map((option: any) => String(option?.instance_id || option?.card?.instance_id || "")).filter(Boolean);
         if (pending.type === "card_effect_order") {
