@@ -1024,12 +1024,6 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
     basePlayed && !me.next_hint_used && !nextHintAlreadyUsedThisTurn
       && isSolution && Number(me.file_count || 0) >= 4 && characterCount < 5
   );
-  // Emergency Next Hint may be worth spending even with a full field when
-  // an event card can still disrupt the opponent's imminent win.
-  const canConsiderEmergencyNextHint = Boolean(
-    basePlayed && !me.next_hint_used && !nextHintAlreadyUsedThisTurn
-      && isSolution && Number(me.file_count || 0) >= 4
-  );
 
   if (state.turn_step === "begin") return { action: "begin_turn" };
   if (state.turn_step === "file") {
@@ -1215,15 +1209,12 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
   if (opponentThreat.urgent) {
     const defensiveAbility = chooseActivatedAbility(state, aiId, true);
     if (defensiveAbility) return defensiveAbility;
-    if (!skipNextHint && canConsiderEmergencyNextHint) {
+    if (!skipNextHint && canPlanNextHint) {
+      // The rules engine permits Next Hint to deploy a character only. Do not
+      // spend a file merely because an event card is in hand.
       const hasNextHintCharacter = hand.some((card: any) => isCharacter(card)
         && cardCost(card) <= level && characterCount < 5);
-      // Event candidates are populated after the file is spent and Next Hint
-      // becomes pending, so do not require them to exist at this decision point.
-      // The next AI step will then score the revealed legal event effects.
-      const hasNextHintEvent = hand.some((card: any) => isEvent(card)
-        && cardCost(card) <= level);
-      if (hasNextHintCharacter || hasNextHintEvent) return { action: "next_hint_take_file" };
+      if (hasNextHintCharacter) return { action: "next_hint_take_file" };
     }
   }
 
