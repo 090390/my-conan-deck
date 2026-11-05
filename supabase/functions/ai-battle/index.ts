@@ -376,11 +376,20 @@ function getOpponentNextTurnThreat(state: any, aiId: string) {
   // Partner deduction is available again on the opponent's next turn.
   const partnerCapacity = hasPartner ? 1 : 0;
   const opponentEvidenceCount = evidenceCount;
+  const nextTurnEvidencePotential = evidenceCount + fieldCapacity + partnerCapacity;
   const canWinNextTurn = !isCulpritsCrimeCase && canEnterSolution
-    && evidenceCount + fieldCapacity + partnerCapacity >= threshold;
+    && nextTurnEvidencePotential >= threshold;
+  // Treat a one-evidence-short position as urgent too. This catches boards
+  // where a small additional effect or partner action can turn a near-win into
+  // a win, instead of letting the AI pass because its estimate is exactly one short.
+  const isNearWinNextTurn = !isCulpritsCrimeCase && canEnterSolution
+    && nextTurnEvidencePotential >= Math.max(0, threshold - 1);
 
   return {
-    urgent: canWinNextTurn,
+    urgent: isNearWinNextTurn,
+    canWinNextTurn,
+    isNearWinNextTurn,
+    nextTurnEvidencePotential,
     canEnterSolution,
     evidenceCount,
     threshold,
