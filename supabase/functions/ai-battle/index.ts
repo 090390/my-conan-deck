@@ -1092,17 +1092,16 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
     return { action: "solve_case" };
   }
 
-  // [신속] and [돌격[사건]] can investigate immediately on the turn they enter.
-  // The server explicitly permits same-turn investigation for Charge[Case].
-  const newlyPlayedInvestigator = field.find((card: any) =>
-    isCharacter(card) && isActive(card) && Boolean(card.summoned_this_turn)
-      && (hasSwift(card) || hasCaseOnlyCharge(card)));
-  if (newlyPlayedInvestigator) {
+  // [신속] alone grants an immediate investigation after entering the field.
+  // [돌격] is handled by the character/evidence attack branches below, not by investigate.
+  const newlyPlayedSwift = field.find((card: any) =>
+    isCharacter(card) && isActive(card) && Boolean(card.summoned_this_turn) && hasSwift(card));
+  if (newlyPlayedSwift) {
     return {
       action: "investigate",
       payload: {
-        instance_id: newlyPlayedInvestigator.instance_id,
-        evidence_count: Math.max(0, Math.min(3, Number(newlyPlayedInvestigator.lp || 1))),
+        instance_id: newlyPlayedSwift.instance_id,
+        evidence_count: Math.max(0, Math.min(3, Number(newlyPlayedSwift.lp || 1))),
         allow_newly_played: true,
       },
     };
