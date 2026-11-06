@@ -195,6 +195,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   const [cardEffectOptions, setCardEffectOptions] = useState([]);
   const [cardEffectVisibleCards, setCardEffectVisibleCards] = useState([]);
   const [cardEffectSelectedIds, setCardEffectSelectedIds] = useState([]);
+  const [cardEffectOptionsReady, setCardEffectOptionsReady] = useState(false);
   const [setCardModal, setSetCardModal] = useState(null);
   const [handZoneChoice, setHandZoneChoice] = useState(null);
   const [handEvidenceChoice, setHandEvidenceChoice] = useState(null);
@@ -771,6 +772,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
     const pendingType = game?.pending_action?.type || "";
     const chooserId = game?.pending_action?.chooser_user_id || "";
     setCardEffectSelectedIds([]);
+    setCardEffectOptionsReady(false);
     const loadEffectState = async () => {
       if (!roomId || !userId || game?.game_over) {
         if (!cancelled) {
@@ -778,6 +780,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
           setCardEffectLockedActivations([]);
           setCardEffectOptions([]);
           setCardEffectVisibleCards([]);
+          setCardEffectOptionsReady(true);
         }
         return;
       }
@@ -787,17 +790,22 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
         if (!cancelled) setCardEffectLockedActivations(!error && Array.isArray(data?.locked_activations) ? data.locked_activations : []);
         if (!cancelled) setCardEffectOptions([]);
         if (!cancelled) setCardEffectVisibleCards([]);
+        if (!cancelled) setCardEffectOptionsReady(true);
         return;
       }
       setCardEffectActivations([]);
       setCardEffectLockedActivations([]);
       if (["card_effect_selection", "card_effect_order"].includes(pendingType) && chooserId === userId) {
         const { data, error } = await supabase.rpc("get_private_card_effect_options_v1", { p_room_id: roomId });
-        if (!cancelled) setCardEffectOptions(!error && Array.isArray(data?.options) ? data.options : []);
-        if (!cancelled) setCardEffectVisibleCards(!error && Array.isArray(data?.display_options) ? data.display_options : []);
+        if (!cancelled) {
+          setCardEffectOptions(!error && Array.isArray(data?.options) ? data.options : []);
+          setCardEffectVisibleCards(!error && Array.isArray(data?.display_options) ? data.display_options : []);
+          setCardEffectOptionsReady(true);
+        }
       } else if (!cancelled) {
         setCardEffectOptions([]);
         setCardEffectVisibleCards([]);
+        setCardEffectOptionsReady(true);
       }
     };
     void loadEffectState();
@@ -1842,11 +1850,22 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
                     <span style={{ display: "block", fontSize: 9, color: C.muted, marginTop: 3 }}>레벨 {card.cost ?? infoFor(card)?.cost ?? "-"} · AP {card.ap ?? "-"}</span>
                   </button>;
                 })}
-                {!cardEffectOptions.length && <p style={st.muted}>조건에 맞는 선택 대상이 없습니다.</p>}
+                {!cardEffectOptions.length && <p style={st.muted}>조건에 맞는 선택 대상이 없습니다. 단계 건너뛰기를 누르면 이 선택만 생략하고 게임을 계속합니다.</p>}
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
                 <span style={{ fontSize: 10, color: C.muted }}>선택 {cardEffectSelectedIds.length}장 · 최대 {pending.max}장</span>
-                <button type="button" style={st.button} disabled={loading || cardEffectSelectedIds.length < Number(pending.min || 0) || cardEffectSelectedIds.length > Number(pending.max || 1)} onClick={() => void runAction("card_effect_continue", { selected_instance_ids: cardEffectSelectedIds })}>선택 완료</button>
+                <button
+                  type="button"
+                  style={st.button}
+                  disabled={loading || !cardEffectOptionsReady
+                    || (cardEffectOptions.length > 0
+                      && (cardEffectSelectedIds.length < Number(pending.min || 0)
+                        || cardEffectSelectedIds.length > Number(pending.max || 1)))}
+                  title={cardEffectOptionsReady && cardEffectOptions.length === 0
+                    ? "조건에 맞는 대상이 없어 이 선택 단계만 건너뜁니다."
+                    : "선택한 카드로 효과 처리를 계속합니다."}
+                  onClick={() => void runAction("card_effect_continue", { selected_instance_ids: cardEffectSelectedIds })}
+                >{cardEffectOptionsReady && cardEffectOptions.length === 0 ? "대상 없음 · 단계 건너뛰기" : "선택 완료"}</button>
               </div>
             </>}
             {pending.type === "card_effect_order" && pending.chooser_user_id === userId && <>
