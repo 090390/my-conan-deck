@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
+import MatchDiagnosticsAdmin from "./MatchDiagnosticsAdmin";
 
 const PAGE_SIZE = 10;
 const PREVIEW_LENGTH = 220;
@@ -164,8 +165,11 @@ export default function FeedbackBoard() {
     {open && <div role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) { setOpen(false); closeSelectedPost(); } }} style={modalBackdrop}>
       <section role="dialog" aria-modal="true" aria-label="수정 제안 게시판" style={modalPanel}>
         <header style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", padding: "13px 15px", borderBottom: "1px solid rgba(255,255,255,.1)" }}>
-          <div><h2 style={{ margin: 0, fontSize: 17, fontWeight: 900 }}>수정 제안</h2><p style={{ margin: "4px 0 0", color: "#94a3b8", fontSize: 10 }}>익명 제안 게시판 · 새 글이 위에 표시됩니다.</p></div>
-          <button type="button" style={inlineButton()} onClick={() => { setOpen(false); closeSelectedPost(); }}>닫기 ✕</button>
+          <div style={{ minWidth: 0 }}><h2 style={{ margin: 0, fontSize: 17, fontWeight: 900 }}>수정 제안</h2><p style={{ margin: "4px 0 0", color: "#94a3b8", fontSize: 10 }}>익명 제안 게시판 · 새 글이 위에 표시됩니다.</p></div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 7, flexShrink: 0 }}>
+            <MatchDiagnosticsAdmin />
+            <button type="button" style={inlineButton()} onClick={() => { setOpen(false); closeSelectedPost(); }}>닫기 ✕</button>
+          </div>
         </header>
         <div style={{ padding: 13, overflowY: "auto", display: "grid", gap: 14 }}>
           <form onSubmit={submitPost} style={{ padding: 10, border: "1px solid rgba(148,163,184,.18)", borderRadius: 9, background: "#0b1220" }}>
