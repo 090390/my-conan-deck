@@ -1092,16 +1092,17 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
     return { action: "solve_case" };
   }
 
-  // [신속] alone grants an immediate investigation after entering the field.
-  // [돌격] variants are handled only by the character/evidence attack branches below.
-  const newlyPlayedSwift = field.find((card: any) =>
-    isCharacter(card) && isActive(card) && card.summoned_this_turn && hasSwift(card));
-  if (newlyPlayedSwift) {
+  // [신속] and [돌격[사건]] can investigate immediately on the turn they enter.
+  // The server explicitly permits same-turn investigation for Charge[Case].
+  const newlyPlayedInvestigator = field.find((card: any) =>
+    isCharacter(card) && isActive(card) && Boolean(card.summoned_this_turn)
+      && (hasSwift(card) || hasCaseOnlyCharge(card)));
+  if (newlyPlayedInvestigator) {
     return {
       action: "investigate",
       payload: {
-        instance_id: newlyPlayedSwift.instance_id,
-        evidence_count: Math.max(0, Math.min(3, Number(newlyPlayedSwift.lp || 1))),
+        instance_id: newlyPlayedInvestigator.instance_id,
+        evidence_count: Math.max(0, Math.min(3, Number(newlyPlayedInvestigator.lp || 1))),
         allow_newly_played: true,
       },
     };
@@ -1249,6 +1250,95 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
     const defensiveAbility = chooseActivatedAbility(state, aiId, true);
     if (defensiveAbility) return defensiveAbility;
   }
+
+  // A newly deployed Charge character should use its same-turn action before
+  // optional activated abilities, partner deduction, or a planned Next Hint.
+  const newlyPlayedChargeAttackers = activeAttackers.filter((card: any) =>
+    Boolean(card.summoned_this_turn) && hasCharge(card));
+  const newlyPlayedChargeCharacterAttackers = newlyPlayedChargeAttackers
+    .filter((card: any) => !hasCaseOnlyCharge(card));
+  const newlyPlayedChargeEvidenceAttackers = newlyPlayedChargeAttackers
+    .filter((card: any) => !hasCharacterOnlyCharge(card));
+
+  // Preserve D11007's special contact against an active level-7+ character,
+  // but only use it here when the Matsuda card itself is a newly played Charge attacker.
+  const newlyPlayedChargeMatsuda = newlyPlayedChargeCharacterAttackers
+    .find((card: any) => matchesInternalCardId(card, "0938"));
+  const newlyPlayedChargeActiveTarget = enemyField
+    .filter((card: any) => isCharacter(card) && isActive(card) && cardCost(card) >= 7)
+    .sort((a: any, b: any) => cardAp(a) - cardAp(b))[0];
+  if (newlyPlayedChargeMatsuda && newlyPlayedChargeActiveTarget) {
+    const attackerAp = cardAp(newlyPlayedChargeMatsuda);
+    const targetAp = cardAp(newlyPlayedChargeActiveTarget);
+    const canWinWithoutCost = attackerAp >= targetAp;
+    const canWinByD11007 = hand.length > 0 && attackerAp < targetAp && attackerAp + 3000 >= targetAp;
+    const canWinByCutin = hand.some((card: any) => {
+      const bonus = cardCutInBonusForSubject(
+        card, newlyPlayedChargeMatsuda, true, partnerColor, field, removeArea,
+        String(me?.event_key || ""), Array.isArray(state?.my_hand) ? state.my_hand : [],
+      );
+      return bonus > 0 && attackerAp + bonus >= targetAp;
+    });
+    if (canWinWithoutCost || canWinByD11007 || canWinByCutin) {
+      return {
+        action: "declare_contact",
+        payload: {
+          attacker_instance_id: newlyPlayedChargeMatsuda.instance_id,
+          target_user_id: opponent.user_id,
+          target_instance_id: newlyPlayedChargeActiveTarget.instance_id,
+          allow_active_target: true,
+          allow_newly_played: true,
+        },
+      };
+    }
+  }
+
+  const newlyPlayedChargeRestedTarget = enemyField
+    .filter((card: any) => isCharacter(card) && !isActive(card))
+    .sort((a: any, b: any) => cardAp(a) - cardAp(b))[0];
+  if (newlyPlayedChargeCharacterAttackers.length && newlyPlayedChargeRestedTarget) {
+    // Do not waste a same-turn Charge attack on a contact it cannot win,
+    // unless a legal cut-in or D11007's discard bonus can bridge the AP gap.
+    const attacker = newlyPlayedChargeCharacterAttackers.find((candidate: any) => {
+      const attackerAp = cardAp(candidate);
+      const targetAp = cardAp(newlyPlayedChargeRestedTarget);
+      const canUseMatsudaContactEffect = matchesInternalCardId(candidate, "0938")
+        && hand.length > 0 && attackerAp < targetAp && attackerAp + 3000 >= targetAp;
+      return attackerAp >= targetAp || canUseMatsudaContactEffect || hand.some((card: any) => {
+        const bonus = cardCutInBonusForSubject(
+          card, candidate, true, partnerColor, field, removeArea,
+          String(me?.event_key || ""), Array.isArray(state?.my_hand) ? state.my_hand : [],
+        );
+        return bonus > 0 && attackerAp + bonus >= targetAp;
+      });
+    });
+    if (attacker) {
+      return {
+        action: "declare_contact",
+        payload: {
+          attacker_instance_id: attacker.instance_id,
+          target_user_id: opponent.user_id,
+          target_instance_id: newlyPlayedChargeRestedTarget.instance_id,
+          allow_active_target: false,
+          allow_newly_played: true,
+        },
+      };
+    }
+  }
+
+  if (newlyPlayedChargeEvidenceAttackers.length && Number(opponent.evidence_count || 0) > 0) {
+    return {
+      action: "attack_evidence",
+      payload: {
+        attacker_instance_id: newlyPlayedChargeEvidenceAttackers[0].instance_id,
+        target_user_id: opponent.user_id,
+        allow_newly_played: true,
+      },
+    };
+  }
+
+  // Existing attackers remain available below when no new Charge attacker has
+  // a legal same-turn target.
 
   // Activated abilities are evaluated only after the basic character play has been considered.
   // The server supplies only cards whose partner/file/case/source conditions currently pass.
