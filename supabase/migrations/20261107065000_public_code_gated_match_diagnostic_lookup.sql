@@ -28,8 +28,6 @@ as $function$
   from (select upper(replace(gen_random_uuid()::text, '-', '')) as code) v
 $function$;
 
-drop function if exists private.lookup_private_match_diagnostics_core_v1(text, text);
-
 create or replace function private.lookup_private_match_diagnostics_core_v1(p_code text)
 returns jsonb
 language plpgsql
@@ -183,6 +181,8 @@ $function$;
 
 revoke all on function public.lookup_private_match_diagnostics_v1(text, text) from public;
 grant execute on function public.lookup_private_match_diagnostics_v1(text, text) to anon, authenticated;
+
+drop function if exists private.lookup_private_match_diagnostics_core_v1(text, text);
 
 create or replace function private.purge_match_diagnostics_v1()
 returns jsonb
