@@ -669,6 +669,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
             if (recoveryError) throw recoveryError;
             if (recovered && typeof recovered === "object") updatedGame = recovered;
           } catch (recoveryError) {
+            await reportDiagnosticError("remove_replaced_mr_partner", recoveryError);
             setError(recoveryError?.message || "새 MR 등장 시 기존 MR 파트너를 리무브로 이동하지 못했습니다.");
           }
         }
@@ -682,6 +683,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
             if (recoveryError) throw recoveryError;
             if (recovered && typeof recovered === "object") updatedGame = recovered;
           } catch (recoveryError) {
+            await reportDiagnosticError("auto_store_departed_mr_partner", recoveryError);
             setError(recoveryError?.message || "현장을 떠난 MR 카드를 MR 파트너 에이리어로 이동하지 못했습니다.");
           }
         }
@@ -733,12 +735,13 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
       if (data && typeof data === "object") setGame(data);
     } catch (err) {
       const message = err?.message || "중도 종료를 처리하지 못했습니다.";
+      await reportDiagnosticError("vote_private_match_cancel", err);
       setError(message);
       showBlockedReason(message);
     } finally {
       setLoading(false);
     }
-  }, [roomId, loading, game?.game_over, game?.cancel_requested_by, isAIBattle]);
+  }, [roomId, loading, game?.game_over, game?.cancel_requested_by, isAIBattle, reportDiagnosticError]);
 
   const respondToCancelMatch = useCallback(async (accept) => {
     if (!roomId || loading || game?.game_over) return;
@@ -757,12 +760,13 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
       if (!accept) setNotice("중도 종료 제안이 거절되었습니다. 게임을 계속 진행할 수 있습니다.");
     } catch (err) {
       const message = err?.message || "중도 종료 응답을 처리하지 못했습니다.";
+      await reportDiagnosticError("respond_private_match_cancel", err);
       setError(message);
       showBlockedReason(message);
     } finally {
       setLoading(false);
     }
-  }, [roomId, userId, loading, game?.game_over, game?.cancel_requested_by]);
+  }, [roomId, userId, loading, game?.game_over, game?.cancel_requested_by, reportDiagnosticError]);
 
 
 
