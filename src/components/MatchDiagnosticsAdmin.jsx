@@ -84,7 +84,7 @@ export default function MatchDiagnosticsAdmin() {
             </label>
             <button type="submit" disabled={loading} style={{ minHeight: 38, border: 0, borderRadius: 7, padding: "8px 14px", background: "#075985", color: "white", fontSize: 11, fontWeight: 850, cursor: loading ? "wait" : "pointer", opacity: loading ? .6 : 1 }}>{loading ? "조회 중…" : "기록 조회"}</button>
           </form>
-          <p style={{ margin: 0, color: "#94a3b8", fontSize: 10, lineHeight: 1.6 }}>오류 보고 코드는 발생 후 60일 동안 조회할 수 있습니다. 일반 행동 기록은 30일 보관하며, 오류가 기록된 대전의 전후 기록은 해당 오류의 60일 보존 기간에 맞춰 유지합니다.</p>
+          <p style={{ margin: 0, color: "#94a3b8", fontSize: 10, lineHeight: 1.6 }}>정확한 코드를 알고 있는 사람은 누구나 해당 대전의 기록을 조회할 수 있습니다. 따라서 코드는 기록 열람 키처럼 취급해 주세요. 오류 보고 코드는 발생 후 60일 동안 조회할 수 있습니다. 일반 행동 기록은 30일 보관하며, 오류가 기록된 대전의 전후 기록은 해당 오류의 60일 보존 기간에 맞춰 유지합니다. 조회는 IP별 1분에 10회까지 가능합니다.</p>
           {error && <p role="alert" style={{ margin: 0, padding: 9, border: "1px solid rgba(251,113,133,.3)", borderRadius: 7, background: "rgba(190,24,93,.08)", color: "#fda4af", fontSize: 11, lineHeight: 1.6 }}>{error}</p>}
           {result?.session && <section style={{ display: "grid", gap: 9 }}>
             <article style={{ display: "grid", gap: 7, padding: 11, border: "1px solid rgba(125,211,252,.28)", borderRadius: 9, background: "rgba(8,47,73,.2)" }}>
