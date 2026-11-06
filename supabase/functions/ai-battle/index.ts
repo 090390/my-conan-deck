@@ -338,7 +338,7 @@ function estimateEffectUtility(
       const valid = candidates.filter((card: any) => matchesDslFilter(card, step.filter));
       const max = step?.max === "all"
         ? valid.length
-        : Math.max(0, Number(step?.max ?? step?.min ?? 1));
+        : Math.max(0, Number(step?.max ?? Math.max(1, Number(step?.min ?? 1))));
       return { step, targets: valid.slice(0, max) };
     });
 
@@ -361,7 +361,7 @@ function estimateEffectUtility(
       if (!selection) return [];
       const max = selection.step?.max === "all"
         ? selection.targets.length
-        : Math.max(0, Number(selection.step?.max ?? selection.step?.min ?? 1));
+        : Math.max(0, Number(selection.step?.max ?? Math.max(1, Number(selection.step?.min ?? 1))));
       return selection.targets.slice(0, max);
     });
     if (linked.length) {
