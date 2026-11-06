@@ -24,6 +24,7 @@ export default function MatchStartFlow({
   const [selectedInstanceIds, setSelectedInstanceIds] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [diagnosticError, setDiagnosticError] = useState(null);
   const [notice, setNotice] = useState("");
 
   const cardsByKey = useMemo(
@@ -98,16 +99,35 @@ export default function MatchStartFlow({
     };
   }, [roomId, onPhaseChange]);
 
-  async function runAction(action) {
+  async function runAction(action, actionName = "match_start_flow") {
     if (loading) return;
     setLoading(true);
     setError("");
     setNotice("");
+    setDiagnosticError(null);
     try {
       await action();
       await refreshState();
     } catch (err) {
-      setError(err?.message || "요청을 처리하지 못했습니다.");
+      const message = err?.message || "요청을 처리하지 못했습니다.";
+      setError(message);
+      try {
+        const { data: report, error: reportError } = await supabase.rpc("report_private_match_diagnostic_error_v1", {
+          p_room_id: roomId,
+          p_action: actionName,
+          p_error_message: message,
+          p_error_code: err?.code || null,
+          p_error_context: {
+            component: "MatchStartFlow", client_action: actionName,
+            phase: matchState?.phase || "waiting",
+            turn_number: matchState?.turn_number == null ? "" : String(matchState.turn_number),
+            state_version: matchState?.state_version == null ? "" : String(matchState.state_version),
+          },
+        });
+        if (!reportError && report?.report_code) setDiagnosticError(report);
+      } catch (reportFailure) {
+        console.warn("failed to persist match start diagnostic report", reportFailure);
+      }
     } finally {
       setLoading(false);
     }
@@ -120,7 +140,7 @@ export default function MatchStartFlow({
       });
       if (rpcError) throw rpcError;
       setNotice("선후공 결정, 덱 셔플, 시작 손패 5장 배분을 완료했습니다.");
-    });
+    }, "start_private_match");
   }
 
   function submitMulligan() {
@@ -138,7 +158,7 @@ export default function MatchStartFlow({
         if (aiError) throw aiError;
       }
       setNotice("멀리건 선택을 확정했습니다.");
-    });
+    }, "submit_private_mulligan_or_ai_step");
   }
 
   const phase = matchState?.phase || "waiting";
@@ -277,7 +297,20 @@ export default function MatchStartFlow({
       )}
 
       {notice && <p role="status" style={{ margin: "12px 0 0", color: "#86efac", fontSize: 12 }}>{notice}</p>}
-      {error && <p role="alert" style={{ margin: "12px 0 0", color: "#fda4af", fontSize: 12, overflowWrap: "anywhere" }}>오류: {error}</p>}
+      {error && <div role="alert" style={{ margin: "12px 0 0", padding: 10, border: "1px solid rgba(253,164,175,.25)", borderRadius: 7, color: "#fda4af", background: "rgba(190,24,93,.07)", fontSize: 12, overflowWrap: "anywhere" }}>
+        오류: {error}
+        {diagnosticError?.report_code && <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 7, marginTop: 8 }}>
+          <strong>오류 보고 코드: {diagnosticError.report_code}</strong>
+          <button type="button" onClick={async () => {
+            try { await navigator.clipboard.writeText(diagnosticError.report_code); }
+            catch { window.prompt("오류 보고 코드를 복사해 주세요.", diagnosticError.report_code); }
+          }} style={{ border: "1px solid rgba(253,164,175,.35)", borderRadius: 5, padding: "4px 7px", background: "#4c1d2b", color: "#fecdd3", fontSize: 10 }}>오류 코드 복사</button>
+          {diagnosticError.trace_code && <><span>대전 추적 코드: {diagnosticError.trace_code}</span><button type="button" onClick={async () => {
+            try { await navigator.clipboard.writeText(diagnosticError.trace_code); }
+            catch { window.prompt("대전 추적 코드를 복사해 주세요.", diagnosticError.trace_code); }
+          }} style={{ border: "1px solid rgba(125,211,252,.35)", borderRadius: 5, padding: "4px 7px", background: "#0c2b43", color: "#bae6fd", fontSize: 10 }}>추적 코드 복사</button></>}
+        </div>}
+      </div>}
     </div>
   );
 }
