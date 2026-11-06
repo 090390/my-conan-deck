@@ -1268,13 +1268,14 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
   // [신속] alone grants an immediate investigation after entering the field.
   // [돌격] is handled by the character/evidence attack branches below, not by investigate.
   const newlyPlayedSwift = field.find((card: any) =>
-    isCharacter(card) && isActive(card) && Boolean(card.summoned_this_turn) && hasSwift(card));
+    isCharacter(card) && isActive(card) && Boolean(card.summoned_this_turn)
+      && hasSwift(card) && cardLifePoints(card) > 0);
   if (newlyPlayedSwift) {
     return {
       action: "investigate",
       payload: {
         instance_id: newlyPlayedSwift.instance_id,
-        evidence_count: Math.max(0, Math.min(3, Number(newlyPlayedSwift.lp || 1))),
+        evidence_count: cardLifePoints(newlyPlayedSwift),
         allow_newly_played: true,
       },
     };
@@ -1589,13 +1590,14 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
   // investigate. A character played this turn may investigate only through
   // the separate [신속] branch above.
   const investigator = field.find((card: any) =>
-    isCharacter(card) && isActive(card) && !Boolean(card.summoned_this_turn));
+    isCharacter(card) && isActive(card) && !Boolean(card.summoned_this_turn)
+      && cardLifePoints(card) > 0);
   if (investigator) {
     return {
       action: "investigate",
       payload: {
         instance_id: investigator.instance_id,
-        evidence_count: Math.max(0, Math.min(3, Number(investigator.lp || 1))),
+        evidence_count: cardLifePoints(investigator),
       },
     };
   }
