@@ -6,6 +6,26 @@ const C = {
   text: "#e8edf7", muted: "#94a3b8", blue: "#93c5fd", red: "#fda4af", green: "#86efac", gold: "#fcd34d",
 };
 const HAND_TO_PARTNER_LABEL = "파트너A로";
+const CHECKBOX_CHECKMARK = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='m3 8 3 3 7-7' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\")";
+function coloredCheckboxStyle(color, checked, disabled = false) {
+  return {
+    width: 14,
+    height: 14,
+    flex: "0 0 14px",
+    margin: 0,
+    appearance: "none",
+    WebkitAppearance: "none",
+    border: `1.5px solid ${color}`,
+    borderRadius: 3,
+    backgroundColor: checked ? color : "#080d17",
+    backgroundImage: checked ? CHECKBOX_CHECKMARK : "none",
+    backgroundRepeat: "no-repeat",
+    backgroundPosition: "center",
+    backgroundSize: "11px 11px",
+    boxShadow: `0 0 0 1px ${color}33`,
+    cursor: disabled ? "not-allowed" : "pointer",
+  };
+}
 
 function n(value, fallback = 0) {
   const valueNumber = Number(value);
@@ -1083,13 +1103,13 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
       <article key={instance.instance_id} style={{ minWidth: 0, width: "100%", border: `1px solid ${canOfferContact ? "#fb7185" : "rgba(148,163,184,.16)"}`, borderRadius: 7, padding: 4, background: "#080d16" }}>
         {mine && !isEvent && <div style={{ display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", alignItems: "center", gap: 4, margin: "0 1px 4px" }}>
           <label title="액티브 상태에게도 액션 가능" aria-label="액티브 상태에게도 액션 가능" style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 18, cursor: "pointer" }}>
-            <input type="checkbox" aria-label="액티브 상태에게도 액션 가능" title={cardHasRuleId(instance, "0938") ? "카드 효과 적용 중: 레벨 7 이상 액티브 캐릭터도 공격 대상으로 지정할 수 있습니다." : "액티브 상태에게도 액션 가능"} checked={Boolean(allowActiveTargetsByCard[instance.instance_id] || cardHasRuleId(instance, "0938"))} disabled={!canActMain || cardHasRuleId(instance, "0938")} onChange={(event) => setAllowActiveTargetsByCard((current) => ({ ...current, [instance.instance_id]: event.target.checked }))} style={{ width: 14, height: 14, margin: 0, accentColor: "#3b82f6" }} />
+            <input type="checkbox" aria-label="액티브 상태에게도 액션 가능" title={cardHasRuleId(instance, "0938") ? "카드 효과 적용 중: 레벨 7 이상 액티브 캐릭터도 공격 대상으로 지정할 수 있습니다." : "액티브 상태에게도 액션 가능"} checked={Boolean(allowActiveTargetsByCard[instance.instance_id] || cardHasRuleId(instance, "0938"))} disabled={!canActMain || cardHasRuleId(instance, "0938")} onChange={(event) => setAllowActiveTargetsByCard((current) => ({ ...current, [instance.instance_id]: event.target.checked }))} style={coloredCheckboxStyle("#3b82f6", Boolean(allowActiveTargetsByCard[instance.instance_id] || cardHasRuleId(instance, "0938")), !canActMain || cardHasRuleId(instance, "0938"))} />
           </label>
           <label title="해당 캐릭터의 공격은 가드 불가" aria-label="해당 캐릭터의 공격은 가드 불가" style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 18, cursor: canManage ? "pointer" : "not-allowed" }}>
-            <input type="checkbox" aria-label="해당 캐릭터의 공격은 가드 불가" title="해당 캐릭터의 공격은 가드 불가" checked={manualBulletEnabled} disabled={loading || !canManage} onChange={(event) => void runAction("set_bullet_manual", { instance_id: instance.instance_id, owner_user_id: ownerId, enabled: event.target.checked })} style={{ width: 14, height: 14, margin: 0, accentColor: "#ef4444" }} />
+            <input type="checkbox" aria-label="해당 캐릭터의 공격은 가드 불가" title="해당 캐릭터의 공격은 가드 불가" checked={manualBulletEnabled} disabled={loading || !canManage} onChange={(event) => void runAction("set_bullet_manual", { instance_id: instance.instance_id, owner_user_id: ownerId, enabled: event.target.checked })} style={coloredCheckboxStyle("#ef4444", manualBulletEnabled, loading || !canManage)} />
           </label>
           <label title="등장한 턴에 바로 행동 가능" aria-label="등장한 턴에 바로 행동 가능" style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 18, cursor: "pointer" }}>
-            <input type="checkbox" aria-label="등장한 턴에 바로 행동 가능" title="등장한 턴에 바로 행동 가능" checked={allowFreshForCard} disabled={!canActMain} onChange={(event) => setAllowFreshlyPlayedByCard((current) => ({ ...current, [instance.instance_id]: event.target.checked }))} style={{ width: 14, height: 14, margin: 0, accentColor: "#eab308" }} />
+            <input type="checkbox" aria-label="등장한 턴에 바로 행동 가능" title="등장한 턴에 바로 행동 가능" checked={allowFreshForCard} disabled={!canActMain} onChange={(event) => setAllowFreshlyPlayedByCard((current) => ({ ...current, [instance.instance_id]: event.target.checked }))} style={coloredCheckboxStyle("#eab308", allowFreshForCard, !canActMain)} />
           </label>
         </div>}
         <button type="button" onClick={() => openDetails(instance)} title={`${nameOf(instance)} 상세 정보`} style={{ display: "block", width: "100%", border: 0, background: "transparent", color: C.text, padding: 0 }}>
