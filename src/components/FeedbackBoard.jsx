@@ -173,7 +173,8 @@ export default function FeedbackBoard() {
         </header>
         <div style={{ padding: 13, overflowY: "auto", display: "grid", gap: 14 }}>
           <form onSubmit={submitPost} style={{ padding: 10, border: "1px solid rgba(148,163,184,.18)", borderRadius: 9, background: "#0b1220" }}>
-            <p style={{ margin: "0 0 8px", color: "#cbd5e1", fontSize: 11, lineHeight: 1.6 }}>수정 및 보완이 필요한 사항, 오역, 카드별로 흔히 쓰이는 애칭/별명 제보, 추가로 있었으면 하는 기능 등을 적어 주세요.</p>
+            <p style={{ margin: "0 0 6px", color: "#cbd5e1", fontSize: 11, lineHeight: 1.6 }}>수정 및 보완이 필요한 사항, 오역, 카드별로 흔히 쓰이는 애칭/별명 제보, 추가로 있었으면 하는 기능 등을 적어 주세요.</p>
+            <p style={{ margin: "0 0 8px", color: "#94a3b8", fontSize: 10, lineHeight: 1.6 }}>문제가 발생한 상황의 설명과 함께 오류 보고 코드 또는 대전 추적 코드를 제공해 주시면 보다 수월하게 해당 오류에 대해 검토할 수 있습니다.</p>
             <textarea value={body} onChange={(event) => setBody(event.target.value)} maxLength={MAX_POST_LENGTH} placeholder="수정 제안 내용을 입력해 주세요." style={textAreaStyle} />
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap", marginTop: 7 }}><span style={{ color: "#94a3b8", fontSize: 10 }}>{body.length}/{MAX_POST_LENGTH}자 · 작성자 이름은 표시되지 않습니다.</span><button type="submit" style={inlineButton("#164e63")} disabled={saving}>{saving ? "등록 중…" : "제안 등록"}</button></div>
           </form>
