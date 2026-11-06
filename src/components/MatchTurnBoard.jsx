@@ -1404,6 +1404,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
           {!isAIBattle && inviteCode && <button type="button" style={{ ...st.button, background: "#164e63", borderColor: "rgba(103,232,249,.3)" }} onClick={() => void copyRoomInviteCode()}>초대 코드 {inviteCode} · 복사</button>}
           <button type="button" style={st.button} disabled={loading} onClick={() => void refresh()}>상태 새로고침</button>
+          {traceInfo?.trace_code && <button type="button" style={{ ...st.button, background: "#164e63", borderColor: "rgba(125,211,252,.32)", color: "#bae6fd" }} onClick={() => void copyDiagnosticCode(traceInfo.trace_code, "대전 추적 코드")}>대전 추적 코드 복사</button>}
           {!isAIBattle && <button type="button" style={{ ...st.button, background: "#7f2935", borderColor: "rgba(248,113,113,.5)", opacity: loading || game?.game_over || (Array.isArray(game?.cancel_requested_by) && gameState.cancel_requested_by.length > 0) ? .65 : 1 }} disabled={loading || game?.game_over || (Array.isArray(game?.cancel_requested_by) && gameState.cancel_requested_by.length > 0)} onClick={() => void voteToCancelMatch()}>중도 종료</button>}
           {onLeaveField && <button type="button" style={{ ...st.button, background: "#273244" }} onClick={onLeaveField}>전체 화면 해제</button>}
         </div>
@@ -1419,10 +1420,6 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
         </section>
       </div>}
 
-      {traceInfo?.trace_code && <section aria-label="대전 진단 코드" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 9, padding: "8px 10px", border: "1px solid rgba(125,211,252,.22)", borderRadius: 7, background: "rgba(8,47,73,.16)" }}>
-        <div><span style={{ display: "block", color: "#94a3b8", fontSize: 9 }}>대전 추적 코드</span><code style={{ color: "#bae6fd", fontSize: 12, fontWeight: 900, letterSpacing: ".06em" }}>{traceInfo.trace_code}</code></div>
-        <button type="button" onClick={() => void copyDiagnosticCode(traceInfo.trace_code, "대전 추적 코드")} style={{ ...st.smallButton, borderColor: "rgba(125,211,252,.32)", color: "#bae6fd" }}>코드 복사</button>
-      </section>}
       {isAIBattle && aiStatusMessage && <section aria-live="polite" aria-atomic="true" style={{ marginBottom: 10, padding: "11px 12px", border: "1px solid rgba(56,189,248,.3)", borderRadius: 8, background: "linear-gradient(120deg,rgba(8,47,73,.55),rgba(15,23,42,.75))", color: "#e0f2fe" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 4 }}>
           <strong style={{ fontSize: 11, color: "#7dd3fc", letterSpacing: ".04em" }}>AI 탐정 · 행동 선언</strong>
@@ -1436,7 +1433,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
           <span style={{ color: "#fda4af", fontSize: 10, fontWeight: 800 }}>오류 보고 코드</span>
           <code style={{ color: "#fff1f2", fontSize: 11, fontWeight: 900 }}>{diagnosticError.report_code}</code>
           <button type="button" onClick={() => void copyDiagnosticCode(diagnosticError.report_code, "오류 보고 코드")} style={{ ...st.smallButton, borderColor: "rgba(253,164,175,.35)", color: "#fecdd3" }}>오류 코드 복사</button>
-          {diagnosticError.trace_code && <><span style={{ color: "#94a3b8", fontSize: 9 }}>대전 추적 {diagnosticError.trace_code}</span><button type="button" onClick={() => void copyDiagnosticCode(diagnosticError.trace_code, "대전 추적 코드")} style={st.smallButton}>추적 코드 복사</button></>}
+
         </div>}
       </div>}
       {gameState.last_action_label && <div style={{ display: "grid", gap: 4, marginBottom: 10 }}>
