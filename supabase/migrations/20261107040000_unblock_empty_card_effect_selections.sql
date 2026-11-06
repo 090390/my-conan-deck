@@ -3,33 +3,23 @@
 DO $migration$
 DECLARE
   v_definition text;
-  v_old_source_guard text := $old$
-     OR (
-       nullif(v_pending->>'source_instance_id', '') IS NOT NULL
-       AND v_run.source_instance_id IS DISTINCT FROM v_pending->>'source_instance_id'
-     )
-$old$;
-  v_new_source_guard text := $new$
-     OR (
-       nullif(v_pending->>'source_instance_id', '') IS NOT NULL
-       AND coalesce(
+  v_old_source_check text := $old$AND v_run.source_instance_id IS DISTINCT FROM v_pending->>'source_instance_id'$old$;
+  v_new_source_check text := $new$AND coalesce(
          nullif(v_run.effect_queue->v_run.effect_index->>'__source_instance_id',''),
          nullif(v_run.effect_queue->v_run.effect_index->'__source_card'->>'instance_id',''),
          nullif(v_run.effect_queue->v_run.effect_index->'__context'->'entry'->'source'->>'instance_id',''),
          v_run.source_instance_id
-       ) IS DISTINCT FROM v_pending->>'source_instance_id'
-     )
-$new$;
+       ) IS DISTINCT FROM v_pending->>'source_instance_id'$new$;
 BEGIN
   SELECT pg_get_functiondef(
     'public.get_private_card_effect_options_v1(uuid)'::regprocedure
   ) INTO v_definition;
 
-  IF position(v_new_source_guard IN v_definition)=0 THEN
-    IF position(v_old_source_guard IN v_definition)=0 THEN
-      RAISE EXCEPTION 'Could not locate the card-effect options source guard';
+  IF position(v_new_source_check IN v_definition)=0 THEN
+    IF position(v_old_source_check IN v_definition)=0 THEN
+      RAISE EXCEPTION 'Could not locate the card-effect options source check';
     END IF;
-    v_definition := replace(v_definition,v_old_source_guard,v_new_source_guard);
+    v_definition := replace(v_definition,v_old_source_check,v_new_source_check);
     EXECUTE v_definition;
   END IF;
 END
@@ -41,19 +31,14 @@ $migration$;
 DO $migration$
 DECLARE
   v_definition text;
-  v_old_min_guard text := $old$
-   IF v_count<v_min OR v_count>v_max THEN RAISE EXCEPTION '선택 장수가 허용 범위를 벗어났습니다. (%~%장)',v_min,v_max; END IF;
-$old$;
-  v_new_min_guard text := $new$
-   IF (v_count<v_min AND NOT (v_count=0 AND jsonb_array_length(coalesce(v_wait->'options','[]'::jsonb))=0))
+  v_old_min_guard text := $old$IF v_count<v_min OR v_count>v_max THEN RAISE EXCEPTION '선택 장수가 허용 범위를 벗어났습니다. (%~%장)',v_min,v_max; END IF;$old$;
+  v_new_min_guard text := $new$IF (v_count<v_min AND NOT (v_count=0 AND jsonb_array_length(coalesce(v_wait->'options','[]'::jsonb))=0))
       OR v_count>v_max THEN
      RAISE EXCEPTION '선택 장수가 허용 범위를 벗어났습니다. (%~%장)',v_min,v_max;
-   END IF;
-$new$;
+   END IF;$new$;
   v_old_save_anchor text := $old$v_save:=v_wait->>'save_as';
 
-   -- Special continuation: discard one card to allow the effect targeting Mouri Ran.
-$old$;
+   -- Special continuation: discard one card to allow the effect targeting Mouri Ran.$old$;
   v_new_save_anchor text := $new$v_save:=v_wait->>'save_as';
 
    -- An unavailable mandatory choice must not leave the match locked behind a modal.
@@ -77,8 +62,7 @@ $old$;
      RETURN;
    END IF;
 
-   -- Special continuation: discard one card to allow the effect targeting Mouri Ran.
-$new$;
+   -- Special continuation: discard one card to allow the effect targeting Mouri Ran.$new$;
 BEGIN
   SELECT pg_get_functiondef(
     'public.private_card_effect_continue_v1(uuid,jsonb)'::regprocedure
