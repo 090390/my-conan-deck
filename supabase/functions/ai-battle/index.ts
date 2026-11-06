@@ -193,33 +193,12 @@ function isBasicSearchEvent(card: any) {
 function cardStrength(card: any) {
   return cardAp(card) * 2 + Math.max(0, 4 - cardCost(card)) * 250 + Number(card?.lp || 0) * 20;
 }
-function estimateEventEffectScore(definition: any): number {
-  const steps = Array.isArray(definition?.steps) ? definition.steps : [];
-  return steps.reduce((score: number, step: any) => {
-    switch (String(step?.op || "")) {
-      case "peek_top_cards": return score + 4 + Math.min(4, Math.max(0, Number(step.count || 0))) * 0.5;
-      case "draw_cards": return score + 4 * Math.max(1, Number(step.count || 1));
-      case "move_cards":
-        if (step.to === "field") return score + (String(step.from || "").includes("deployment") ? 7 : 5);
-        if (step.to === "hand") return score + 2.5;
-        if (step.to === "evidence_area") return score + 3;
-        return score;
-      case "remove_all_field_characters": return score + 12;
-      case "move_top_file_cards": return score + (step.to === "hand" ? 2.5 : 1.5);
-      case "calculate_switch_count": return score + 1;
-      case "set_next_hint_disabled": return score + 0.5;
-      case "flip_evidence": return score + 2.5;
-      case "rest_cards": return score + 2;
-      case "modify_stat":
-      case "modify_contact_ap": return score + 1.5;
-      case "grant_keyword":
-      case "set_continuous_keyword": return score + 2.5;
-      case "attach_top_card": return score + 1.5;
-      case "select_cards": return score + (step.uniqueBy === "level" ? 3 : 0.5);
-      case "schedule_move_to_deck_bottom": return score + 1;
-      default: return score;
-    }
-  }, 0);
+function estimateEventEffectScore(definition: any, ownField: any[] = [], enemyField: any[] = []): number {
+  return estimateEffectUtility(
+    definition,
+    ownField.map((card: any) => ({ ...card, controller: "self" })),
+    enemyField.map((card: any) => ({ ...card, controller: "opponent" })),
+  );
 }
 function cardTraits(card: any): string[] {
   const source = card?.sourceData && typeof card.sourceData === "object" ? card.sourceData
@@ -323,6 +302,186 @@ function matchesDslFilter(card: any, filter: any): boolean {
   if (op === "greater_than") return Number(actual) > Number(expected);
   if (op === "greater_than_or_equal") return Number(actual) >= Number(expected);
   return false;
+}
+
+function estimateEffectUtility(
+  definition: any,
+  ownField: any[] = [],
+  enemyField: any[] = [],
+  precomputedSelections: Array<{ step: any; targets: any[] }> = [],
+  source: any = null,
+  opponentEvidenceCount = 0,
+  ownEvidenceCount = 0,
+): number {
+  const steps = Array.isArray(definition?.steps) ? definition.steps : [];
+  if (!steps.length) return 0;
+
+  const own = ownField.map((card: any) => ({ ...card, controller: card?.controller || "self" }));
+  const enemy = enemyField.map((card: any) => ({ ...card, controller: card?.controller || "opponent" }));
+  const selections = precomputedSelections.length ? precomputedSelections : steps
+    .filter((step: any) => step?.op === "select_cards")
+    .map((step: any) => {
+      const from = String(step?.from || "");
+      let candidates: any[] = [];
+      if (from === "opponent_field") candidates = enemy;
+      else if (["field", "own_field", "self_field"].includes(from)) candidates = own;
+      else if (from === "both_fields") candidates = [...own, ...enemy];
+      else if (from === "opponent_evidence") {
+        candidates = Array.from({ length: Math.max(0, opponentEvidenceCount) }, (_, index) => ({
+          instance_id: `opponent-evidence:${index}`, card_type: "evidence", controller: "opponent",
+        }));
+      } else if (from === "evidence_area") {
+        candidates = Array.from({ length: Math.max(0, ownEvidenceCount) }, (_, index) => ({
+          instance_id: `own-evidence:${index}`, card_type: "evidence", controller: "self",
+        }));
+      }
+      const valid = candidates.filter((card: any) => matchesDslFilter(card, step.filter));
+      const max = step?.max === "all"
+        ? valid.length
+        : Math.max(0, Number(step?.max ?? step?.min ?? 1));
+      return { step, targets: valid.slice(0, max) };
+    });
+
+  const selectionByVariable = new Map<string, { step: any; targets: any[] }>();
+  for (const selection of selections) {
+    const variable = String(selection?.step?.saveAs || "");
+    if (variable) selectionByVariable.set(variable, selection);
+  }
+
+  const variablesIn = (step: any): string[] => {
+    const serialized = JSON.stringify(step || {});
+    return [...serialized.matchAll(/vars\.([A-Za-z0-9_]+)/gu)]
+      .map((match: any) => String(match[1]))
+      .filter((value: string, index: number, all: string[]) => all.indexOf(value) === index);
+  };
+  const targetsFor = (step: any): any[] => {
+    const variables = variablesIn(step);
+    const linked = variables.flatMap((variable) => selectionByVariable.get(variable)?.targets || []);
+    if (linked.length) {
+      return linked.filter((card: any, index: number, all: any[]) =>
+        all.findIndex((entry: any) => String(entry?.instance_id || entry) === String(card?.instance_id || card)) === index);
+    }
+    const from = String(step?.from || step?.target || "").replace(/^vars\./u, "");
+    if (from === "opponent_field") return enemy.filter((card: any) => matchesDslFilter(card, step?.filter));
+    if (["field", "own_field", "self_field"].includes(from)) return own.filter((card: any) => matchesDslFilter(card, step?.filter));
+    if (from === "both_fields") return [...own, ...enemy].filter((card: any) => matchesDslFilter(card, step?.filter));
+    if (from === "opponent_evidence") {
+      return Array.from({ length: Math.max(0, opponentEvidenceCount) }, (_, index) => ({
+        instance_id: `opponent-evidence:${index}`, card_type: "evidence", controller: "opponent",
+      }));
+    }
+    return [];
+  };
+  const isOpponentTarget = (card: any) =>
+    String(card?.controller || "").toLowerCase() === "opponent"
+    || (card?.owner_user_id != null && String(card.owner_user_id) !== String(source?.owner_user_id || ""));
+  const targetValue = (card: any): number =>
+    22 + Math.max(0, cardAp(card)) / 700
+      + Math.max(0, cardCost(card)) * 2
+      + cardLifePoints(card) * 10
+      + (isActive(card) ? 10 : 0);
+
+  let score = 0;
+  for (const step of steps) {
+    const op = String(step?.op || "");
+    if (op === "remove_all_field_characters") {
+      const enemyCharacters = enemy.filter((card: any) => isCharacter(card) && cardLifePoints(card) > 0);
+      const ownCharacters = own.filter((card: any) => isCharacter(card) && cardLifePoints(card) > 0);
+      score += enemyCharacters.reduce((sum: number, card: any) => sum + 48 + targetValue(card) * 0.55, 0)
+        - ownCharacters.length * 42;
+      continue;
+    }
+    if (op === "move_cards") {
+      const targets = targetsFor(step);
+      const destination = String(step?.to || "");
+      const enemyTargets = targets.filter(isOpponentTarget);
+      const ownTargets = targets.filter((card: any) => !isOpponentTarget(card));
+      if (["remove_area", "deck_bottom", "hand"].includes(destination)) {
+        const base = destination === "remove_area" ? 88 : destination === "deck_bottom" ? 76 : 56;
+        for (const target of enemyTargets) score += base + targetValue(target) * 0.72;
+        for (const target of ownTargets) score -= 28 + targetValue(target) * 0.42;
+        if (!targets.length && String(step?.from || "").startsWith("vars.")) score += 3;
+      } else if (destination === "field") {
+        score += Math.max(1, targets.length) * 34;
+      } else if (destination === "evidence_area") {
+        score += Math.max(1, targets.length) * 20;
+      } else if (destination === "hand") {
+        score += Math.max(1, targets.length) * 5;
+      }
+      continue;
+    }
+    if (op === "rest_cards" || op === "stun_cards") {
+      const targets = targetsFor(step).filter((card: any) => isOpponentTarget(card));
+      const base = op === "stun_cards" ? 68 : 48;
+      score += targets.reduce((sum: number, card: any) => sum + base + targetValue(card) * 0.48, 0);
+      continue;
+    }
+    if (op === "draw_cards") {
+      score += 12 * Math.max(1, Number(step?.count || 1));
+      continue;
+    }
+    if (op === "peek_top_cards") {
+      score += 6 + Math.min(4, Math.max(0, Number(step?.count || 0))) * 2;
+      continue;
+    }
+    if (op === "move_top_file_cards") {
+      score += step?.to === "hand" ? 12 : 6;
+      continue;
+    }
+    if (op === "flip_evidence") {
+      score += 8 * Math.max(1, Number(step?.count || 1));
+      continue;
+    }
+    if (op === "modify_stat" || op === "modify_contact_ap") {
+      const amount = Number(step?.amount ?? step?.value ?? step?.by ?? 0);
+      const targets = targetsFor(step);
+      if (amount !== 0) score += targets.length ? targets.length * 16 : 8;
+      continue;
+    }
+    if (op === "grant_keyword" || op === "set_continuous_keyword") {
+      const targets = targetsFor(step);
+      const keyword = String(step?.keyword || "").toLowerCase();
+      const bonus = /charge|돌격|突撃|swift|신속|질풍|疾風/u.test(keyword) ? 30 : 14;
+      score += Math.max(1, targets.length) * bonus;
+      continue;
+    }
+    if (op === "start_contact") {
+      score += Math.max(1, targetsFor(step).filter(isOpponentTarget).length) * 34;
+      continue;
+    }
+    if (op === "ready_source_character") {
+      if (source && !isActive(source)) score += 28;
+      continue;
+    }
+    if (op === "attach_top_card") {
+      score += 15;
+      continue;
+    }
+    if (op === "calculate_switch_count") {
+      score += 3;
+      continue;
+    }
+    if (op === "set_next_hint_disabled") {
+      score += 2;
+      continue;
+    }
+    if (op === "schedule_move_to_deck_bottom") {
+      score += 8;
+    }
+  }
+
+  for (const step of steps.filter((entry: any) => entry?.op === "pay_cost")) {
+    const cost = String(step?.cost || "").toLowerCase();
+    if (cost === "sleep_source_character" && source) {
+      score -= 26 + Math.max(0, cardAp(source)) / 800;
+    } else if (cost.includes("discard")) {
+      score -= 9;
+    } else if (cost.includes("rest_partner")) {
+      score -= 22;
+    }
+  }
+
+  return Math.max(0, score);
 }
 
 function cardLifePoints(card: any): number {
@@ -542,7 +701,7 @@ function chooseActivatedAbility(state: any, aiId: string, threatOnly = false) {
   const opponentThreat = getOpponentNextTurnThreat(state, aiId);
   if (threatOnly && !opponentThreat.urgent) return null;
   let bestDecision: any = null;
-  let bestThreatScore = -1;
+  let bestActionScore = Number.NEGATIVE_INFINITY;
 
   for (const ability of activations) {
     const sourceId = String(ability?.source_instance_id || "");
@@ -591,9 +750,13 @@ function chooseActivatedAbility(state: any, aiId: string, threatOnly = false) {
       const candidate = { action: "activate_case_effect", payload: { effect_id: String(ability?.effect_id || "") } };
       const threatScore = scoreThreatMitigation(definition, ownField, enemyField, opponentThreat);
       if (threatOnly && threatScore <= 0) continue;
-      if (threatScore > bestThreatScore) {
+      const utilityScore = estimateEffectUtility(
+        definition, ownField, enemyField, [], null, opponentEvidenceCount, ownEvidenceCount,
+      );
+      const actionScore = utilityScore + threatScore * 2;
+      if (actionScore > bestActionScore) {
         bestDecision = candidate;
-        bestThreatScore = threatScore;
+        bestActionScore = actionScore;
       }
       continue;
     }
@@ -827,9 +990,13 @@ function chooseActivatedAbility(state: any, aiId: string, threatOnly = false) {
     const candidate = { action: "activate_card_effect", payload: { source_instance_id: sourceId, effect_id: ability.effect_id } };
     const threatScore = scoreThreatMitigation(definition, ownField, enemyField, opponentThreat);
     if (threatOnly && threatScore <= 0) continue;
-    if (threatScore > bestThreatScore) {
+    const utilityScore = estimateEffectUtility(
+      definition, ownField, enemyField, selections, source, opponentEvidenceCount, ownEvidenceCount,
+    );
+    const actionScore = utilityScore + threatScore * 2;
+    if (actionScore > bestActionScore) {
       bestDecision = candidate;
-      bestThreatScore = threatScore;
+      bestActionScore = actionScore;
     }
   }
   return bestDecision;
@@ -1128,7 +1295,7 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
     for (const candidate of eventCandidates) {
       const instanceId = String(candidate?.source_instance_id || "");
       if (!instanceId) continue;
-      let score = estimateEventEffectScore(candidate?.definition);
+      let score = estimateEventEffectScore(candidate?.definition, field, enemyField);
       const effectId = String(candidate?.effect_id || candidate?.definition?.effectId || "");
       if (effectId === "card-1044-event-deploy-different-level-culprits") {
         const distinctCulpritLevels = new Set(removeArea
@@ -1183,7 +1350,7 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
     for (const candidate of eventCandidates) {
       const instanceId = String(candidate?.source_instance_id || "");
       if (!instanceId) continue;
-      let score = estimateEventEffectScore(candidate?.definition);
+      let score = estimateEventEffectScore(candidate?.definition, field, enemyField);
       const effectId = String(candidate?.effect_id || candidate?.definition?.effectId || "");
       if (effectId === "card-1044-event-deploy-different-level-culprits") {
         const distinctCulpritLevels = new Set(removeArea
