@@ -372,9 +372,13 @@ function estimateEffectUtility(
     }
     return [];
   };
-  const isOpponentTarget = (card: any) =>
-    String(card?.controller || "").toLowerCase() === "opponent"
-    || (card?.owner_user_id != null && String(card.owner_user_id) !== String(source?.owner_user_id || ""));
+  const isOpponentTarget = (card: any) => {
+    const controller = String(card?.controller || "").toLowerCase();
+    if (controller === "opponent") return true;
+    if (controller === "self") return false;
+    return Boolean(source?.owner_user_id && card?.owner_user_id != null
+      && String(card.owner_user_id) !== String(source.owner_user_id));
+  };
   const targetValue = (card: any): number =>
     22 + Math.max(0, cardAp(card)) / 700
       + Math.max(0, cardCost(card)) * 2
@@ -1511,18 +1515,6 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
   const activatedAbility = chooseActivatedAbility(state, aiId);
   if (activatedAbility) return activatedAbility;
 
-  if (!me.partner_rested && !me.partner_deduction_used && me.partner_key && Number(me.evidence_count || 0) < 2) {
-    return { action: "partner_deduce", payload: { evidence_count: 1 } };
-  }
-
-  // 넥스트 힌트는 해결편에서만, 파일 소모 후에도 실제로 등장 가능한 카드가
-  // 확인되고 이번 턴에 아직 사용하지 않은 경우에 한해 선언합니다.
-  if (!opponentThreat.urgent && !skipNextHint && canPlanNextHint) {
-    const canContinue = hand.some((card: any) => isCharacter(card)
-      && cardCost(card) <= level && characterCount < 5);
-    if (canContinue) return { action: "next_hint_take_file" };
-  }
-
   // D11007 can select an active opposing character of level 7 or higher.
   // Its discard ability can bridge an AP deficit of less than 3000 during that contact.
   const specialTargetAttacker = activeAttackers.find((card: any) => matchesInternalCardId(card, "0938"));
@@ -1589,6 +1581,35 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
         allow_newly_played: hasCharge(evidenceAttackers[0]),
       },
     };
+  }
+
+  // After all useful attacks, use every older active character that can still
+  // investigate. A character played this turn may investigate only through
+  // the separate [신속] branch above.
+  const investigator = field.find((card: any) =>
+    isCharacter(card) && isActive(card) && !Boolean(card.summoned_this_turn));
+  if (investigator) {
+    return {
+      action: "investigate",
+      payload: {
+        instance_id: investigator.instance_id,
+        evidence_count: Math.max(0, Math.min(3, Number(investigator.lp || 1))),
+      },
+    };
+  }
+
+  // Partner deduction is an independent evidence action. Do not stop at an
+  // arbitrary evidence-count cutoff: the solve threshold was checked above.
+  if (!me.partner_rested && !me.partner_deduction_used && me.partner_key) {
+    return { action: "partner_deduce", payload: { evidence_count: 1 } };
+  }
+
+  // Next Hint is a follow-on deployment, not a substitute for attacks,
+  // removals, investigations, or partner deduction already available this turn.
+  if (!opponentThreat.urgent && !skipNextHint && canPlanNextHint) {
+    const canContinue = hand.some((card: any) => isCharacter(card)
+      && cardCost(card) <= level && characterCount < 5);
+    if (canContinue) return { action: "next_hint_take_file" };
   }
 
   // Only after immediate removal contacts and other available actions have
