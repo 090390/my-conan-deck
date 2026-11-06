@@ -25,6 +25,7 @@ export default function MatchStartFlow({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [diagnosticError, setDiagnosticError] = useState(null);
+  const [traceInfo, setTraceInfo] = useState(null);
   const [notice, setNotice] = useState("");
 
   const cardsByKey = useMemo(
@@ -152,16 +153,31 @@ export default function MatchStartFlow({
       if (rpcError) throw rpcError;
       setSelectedInstanceIds([]);
       if (isAIBattle) {
-        const { error: aiError } = await supabase.functions.invoke("ai-battle", {
+        const { data: aiData, error: aiError } = await supabase.functions.invoke("ai-battle", {
           body: { action: "step", room_id: roomId },
         });
         if (aiError) throw aiError;
+        if (aiData?.diagnostic_report?.report_code) setDiagnosticError(aiData.diagnostic_report);
+        if (aiData?.blocked_action) {
+          setError(aiData.message || "AI의 행동이 규칙 검사에서 거부되었습니다.");
+          return;
+        }
       }
       setNotice("멀리건 선택을 확정했습니다.");
     }, "submit_private_mulligan_or_ai_step");
   }
 
   const phase = matchState?.phase || "waiting";
+  useEffect(() => {
+    if (!roomId || !["mulligan", "playing"].includes(phase)) return undefined;
+    let active = true;
+    supabase.rpc("get_private_match_trace_info_v1", { p_room_id: roomId })
+      .then(({ data, error: traceError }) => {
+        if (active && !traceError && data?.trace_code) setTraceInfo(data);
+      })
+      .catch((traceError) => console.warn("failed to load match trace code", traceError));
+    return () => { active = false; };
+  }, [roomId, phase]);
   const allReady = players.length === 2 && players.every((player) => player.is_ready === true);
   const myHand = matchState?.my_hand || [];
   const myMulliganDone = matchState?.my_mulligan_done === true;
@@ -207,6 +223,14 @@ export default function MatchStartFlow({
           {phase === "waiting" ? "1 / 3 · 시작" : phase === "mulligan" ? "2 / 3 · 멀리건" : "3 / 3 · 완료"}
         </span>
       </div>
+
+      {phase !== "waiting" && phase !== "playing" && traceInfo?.trace_code && <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap", marginTop: 12, padding: "8px 10px", border: "1px solid rgba(125,211,252,.22)", borderRadius: 7, background: "rgba(8,47,73,.16)" }}>
+        <div><span style={{ display: "block", color: "#94a3b8", fontSize: 9 }}>대전 추적 코드</span><code style={{ color: "#bae6fd", fontSize: 12, fontWeight: 900 }}>{traceInfo.trace_code}</code></div>
+        <button type="button" onClick={async () => {
+          try { await navigator.clipboard.writeText(traceInfo.trace_code); }
+          catch { window.prompt("대전 추적 코드를 복사해 주세요.", traceInfo.trace_code); }
+        }} style={{ border: "1px solid rgba(125,211,252,.35)", borderRadius: 6, padding: "5px 8px", background: "#0c2b43", color: "#bae6fd", fontSize: 10 }}>추적 코드 복사</button>
+      </div>}
 
       {phase === "waiting" && (
         <div style={{ marginTop: 14 }}>
