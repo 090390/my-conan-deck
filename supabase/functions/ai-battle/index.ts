@@ -356,7 +356,14 @@ function estimateEffectUtility(
   };
   const targetsFor = (step: any): any[] => {
     const variables = variablesIn(step);
-    const linked = variables.flatMap((variable) => selectionByVariable.get(variable)?.targets || []);
+    const linked = variables.flatMap((variable) => {
+      const selection = selectionByVariable.get(variable);
+      if (!selection) return [];
+      const max = selection.step?.max === "all"
+        ? selection.targets.length
+        : Math.max(0, Number(selection.step?.max ?? selection.step?.min ?? 1));
+      return selection.targets.slice(0, max);
+    });
     if (linked.length) {
       return linked.filter((card: any, index: number, all: any[]) =>
         all.findIndex((entry: any) => String(entry?.instance_id || entry) === String(card?.instance_id || card)) === index);
@@ -474,6 +481,40 @@ function estimateEffectUtility(
     if (op === "schedule_move_to_deck_bottom") {
       score += 8;
     }
+  }
+
+  // Strategic objective: finish the AI turn with at most three opposing field
+  // cards, and prefer zero or one whenever an available effect can achieve it.
+  // Count only cards that will actually leave the opponent's field; resting or
+  // stunning a character is useful control, but does not reduce the field count.
+  const plannedOpponentRemovals = new Map<string, any>();
+  for (const step of steps) {
+    const op = String(step?.op || "");
+    if (op === "remove_all_field_characters") {
+      for (const target of enemy.filter((card: any) => isCharacter(card) && cardLifePoints(card) > 0)) {
+        const id = String(target?.instance_id || "");
+        if (id) plannedOpponentRemovals.set(id, target);
+      }
+      continue;
+    }
+    if (op !== "move_cards" || !["remove_area", "deck_bottom", "hand"].includes(String(step?.to || ""))) {
+      continue;
+    }
+    for (const target of targetsFor(step)) {
+      if (!isOpponentTarget(target)) continue;
+      const id = String(target?.instance_id || "");
+      if (!id || !enemy.some((card: any) => String(card?.instance_id || "") === id)) continue;
+      plannedOpponentRemovals.set(id, target);
+    }
+  }
+  const opponentFieldCount = enemy.length;
+  const plannedRemovalCount = Math.min(opponentFieldCount, plannedOpponentRemovals.size);
+  if (plannedRemovalCount > 0) {
+    const remainingOpponentField = Math.max(0, opponentFieldCount - plannedRemovalCount);
+    const perCardRemovalBonus = 125 + Math.min(6, opponentFieldCount) * 10;
+    const targetCountBonus = remainingOpponentField <= 1 ? 150
+      : remainingOpponentField <= 3 ? 90 : 0;
+    score += plannedRemovalCount * perCardRemovalBonus + targetCountBonus;
   }
 
   for (const step of steps.filter((entry: any) => entry?.op === "pay_cost")) {
@@ -1430,9 +1471,6 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
     Boolean(card.summoned_this_turn) && hasCharge(card));
   const newlyPlayedChargeCharacterAttackers = newlyPlayedChargeAttackers
     .filter((card: any) => !hasCaseOnlyCharge(card));
-  const newlyPlayedChargeEvidenceAttackers = newlyPlayedChargeAttackers
-    .filter((card: any) => !hasCharacterOnlyCharge(card));
-
   // Preserve D11007's special contact against an active level-7+ character,
   // but only use it here when the Matsuda card itself is a newly played Charge attacker.
   const newlyPlayedChargeMatsuda = newlyPlayedChargeCharacterAttackers
@@ -1499,24 +1537,8 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
     }
   }
 
-  if (newlyPlayedChargeEvidenceAttackers.length && Number(opponent.evidence_count || 0) > 0) {
-    return {
-      action: "attack_evidence",
-      payload: {
-        attacker_instance_id: newlyPlayedChargeEvidenceAttackers[0].instance_id,
-        target_user_id: opponent.user_id,
-        allow_newly_played: true,
-      },
-    };
-  }
-
   // Existing attackers remain available below when no new Charge attacker has
   // a legal same-turn target.
-
-  // Activated abilities are evaluated only after the basic character play has been considered.
-  // The server supplies only cards whose partner/file/case/source conditions currently pass.
-  const activatedAbility = chooseActivatedAbility(state, aiId);
-  if (activatedAbility) return activatedAbility;
 
   // D11007 can select an active opposing character of level 7 or higher.
   // Its discard ability can bridge an AP deficit of less than 3000 during that contact.
@@ -1575,6 +1597,12 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
       };
     }
   }
+  // Clear or suppress the opponent's remaining field before spending attacks
+  // on evidence. Event, character, and case effects share the same field-control
+  // scoring, so the strongest available removal effect is chosen here.
+  const activatedAbility = chooseActivatedAbility(state, aiId);
+  if (activatedAbility) return activatedAbility;
+
   if (evidenceAttackers.length && Number(opponent.evidence_count || 0) > 0) {
     return {
       action: "attack_evidence",
@@ -1846,14 +1874,28 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
           targetOptions = [...targetOptions].sort((left: any, right: any) =>
             cardStrength(right?.card || right) - cardStrength(left?.card || left));
         }
+        const currentSelectionVariable = String(threatSelectionStep?.saveAs || "");
+        const removesSelectedFieldCards = Boolean(currentSelectionVariable)
+          && (Array.isArray(activeEffect?.definition?.steps) ? activeEffect.definition.steps : []).some((step: any) =>
+            step?.op === "move_cards"
+            && effectStepReferencesVariable(step, currentSelectionVariable)
+            && ["remove_area", "deck_bottom", "hand"].includes(String(step?.to || "")));
         const isRemovalSelection = isFieldTargetSelection
-          && /(?:리무브|제거)/u.test(String(pending.prompt || ""));
+          && (/(?:리무브|제거)/u.test(String(pending.prompt || "")) || removesSelectedFieldCards);
         if (isRemovalSelection) {
+          const opponentOptions = targetOptions.filter((option: any) => {
+            const card = option?.card || option;
+            const owner = String(option?.owner_user_id || card?.owner_user_id || "");
+            return owner && owner !== String(battle.ai_user_id);
+          });
+          if (opponentOptions.length > 0) targetOptions = opponentOptions;
           targetOptions = [...targetOptions].sort((left: any, right: any) => {
             const leftCard = left?.card || left;
             const rightCard = right?.card || right;
             const activePriority = Number(isActive(rightCard)) - Number(isActive(leftCard));
             if (activePriority !== 0) return activePriority;
+            const lpDifference = cardLifePoints(rightCard) - cardLifePoints(leftCard);
+            if (lpDifference !== 0) return lpDifference;
             return cardAp(rightCard) - cardAp(leftCard);
           });
         }
