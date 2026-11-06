@@ -379,11 +379,13 @@ function estimateEffectUtility(
     return Boolean(source?.owner_user_id && card?.owner_user_id != null
       && String(card.owner_user_id) !== String(source.owner_user_id));
   };
-  const targetValue = (card: any): number =>
-    22 + Math.max(0, cardAp(card)) / 700
+  const targetValue = (card: any): number => {
+    if (!isCharacter(card)) return 24;
+    return 22 + Math.max(0, cardAp(card)) / 700
       + Math.max(0, cardCost(card)) * 2
       + cardLifePoints(card) * 10
       + (isActive(card) ? 10 : 0);
+  };
 
   let score = 0;
   for (const step of steps) {
