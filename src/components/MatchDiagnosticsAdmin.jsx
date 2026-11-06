@@ -11,6 +11,7 @@ const field = {
   border: "1px solid rgba(148,163,184,.28)", borderRadius: 7,
   background: "#080d16", color: "#f1f5f9", font: "inherit", fontSize: 12,
 };
+const DIAGNOSTIC_CODE_PATTERN = /^(MT|ER)-(?:[0-9A-F]{4}-[0-9A-F]{4}|[0-9A-F]{8}-[0-9A-F]{8}-[0-9A-F]{8}-[0-9A-F]{8})$/;
 
 function dateLabel(value) {
   if (!value) return "기록 없음";
@@ -32,7 +33,6 @@ function JsonDetails({ title, value }) {
 export default function MatchDiagnosticsAdmin() {
   const [open, setOpen] = useState(false);
   const [code, setCode] = useState("");
-  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
@@ -40,27 +40,25 @@ export default function MatchDiagnosticsAdmin() {
   async function lookup(event) {
     event.preventDefault();
     const normalizedCode = code.trim().toUpperCase();
-    if (!/^(MT|ER)-[0-9A-F]{4}-[0-9A-F]{4}$/.test(normalizedCode)) {
-      setError("대전 추적 코드(MT-XXXX-XXXX) 또는 오류 보고 코드(ER-XXXX-XXXX)를 입력해 주세요.");
+    if (!DIAGNOSTIC_CODE_PATTERN.test(normalizedCode)) {
+      setError("대전 추적 코드(MT-…) 또는 오류 보고 코드(ER-…)를 정확히 입력해 주세요.");
       setResult(null);
       return;
     }
-    if (!password) { setError("관리자 비밀번호를 입력해 주세요."); return; }
     setLoading(true);
     setError("");
     setResult(null);
     try {
       const { data, error: rpcError } = await supabase.rpc("lookup_private_match_diagnostics_v1", {
-        p_code: normalizedCode, p_admin_password: password,
+        p_code: normalizedCode,
       });
       if (rpcError) throw rpcError;
-      if (!data?.ok) setError(data?.message || "관리자 인증을 완료하지 못했습니다.");
+      if (!data?.ok) setError(data?.message || "진단 기록을 조회하지 못했습니다.");
       else if (!data?.found) setError(data?.message || "해당 코드의 기록을 찾지 못했습니다.");
       else setResult(data);
     } catch (err) {
       setError(err?.message || "진단 기록을 조회하지 못했습니다.");
     } finally {
-      setPassword("");
       setLoading(false);
     }
   }
@@ -76,16 +74,13 @@ export default function MatchDiagnosticsAdmin() {
       <section role="dialog" aria-modal="true" aria-label="대전 진단 기록 조회" style={panel}>
         <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: 14, borderBottom: "1px solid rgba(255,255,255,.1)" }}>
           <div><h2 style={{ margin: 0, fontSize: 17, fontWeight: 900 }}>대전 진단 기록 조회</h2>
-            <p style={{ margin: "4px 0 0", color: "#94a3b8", fontSize: 10, lineHeight: 1.5 }}>관리자 인증 후 대전 전후 행동과 오류 상세를 확인합니다.</p></div>
+            <p style={{ margin: "4px 0 0", color: "#94a3b8", fontSize: 10, lineHeight: 1.5 }}>정확한 진단 코드를 알고 있으면 누구나 해당 대전의 행동 기록과 오류 상세를 확인할 수 있습니다.</p></div>
           <button type="button" onClick={() => setOpen(false)} style={{ border: "1px solid rgba(148,163,184,.24)", borderRadius: 7, padding: "7px 10px", background: "#1e293b", color: "#e2e8f0", fontSize: 11 }}>닫기 ✕</button>
         </header>
         <div style={{ minHeight: 0, overflowY: "auto", padding: 13, display: "grid", gap: 12 }}>
-          <form onSubmit={lookup} style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr) auto", alignItems: "end", gap: 8, padding: 10, border: "1px solid rgba(148,163,184,.18)", borderRadius: 9, background: "#0b1220" }}>
+          <form onSubmit={lookup} style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) auto", alignItems: "end", gap: 8, padding: 10, border: "1px solid rgba(148,163,184,.18)", borderRadius: 9, background: "#0b1220" }}>
             <label style={{ display: "grid", gap: 5, color: "#cbd5e1", fontSize: 10 }}>진단 코드
-              <input value={code} onChange={(event) => setCode(event.target.value.toUpperCase())} placeholder="MT-1234-ABCD / ER-1234-ABCD" style={field} autoCapitalize="characters" spellCheck={false} />
-            </label>
-            <label style={{ display: "grid", gap: 5, color: "#cbd5e1", fontSize: 10 }}>관리자 비밀번호
-              <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="조회할 때마다 확인" style={field} autoComplete="current-password" />
+              <input value={code} onChange={(event) => setCode(event.target.value.toUpperCase())} placeholder="MT-… / ER-…" style={field} autoCapitalize="characters" spellCheck={false} />
             </label>
             <button type="submit" disabled={loading} style={{ minHeight: 38, border: 0, borderRadius: 7, padding: "8px 14px", background: "#075985", color: "white", fontSize: 11, fontWeight: 850, cursor: loading ? "wait" : "pointer", opacity: loading ? .6 : 1 }}>{loading ? "조회 중…" : "기록 조회"}</button>
           </form>
