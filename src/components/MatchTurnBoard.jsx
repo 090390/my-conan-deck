@@ -172,6 +172,8 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   const gameState = game || {};
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [traceInfo, setTraceInfo] = useState(null);
+  const [diagnosticError, setDiagnosticError] = useState(null);
   const [notice, setNotice] = useState("");
   const [selectedNextHint, setSelectedNextHint] = useState("");
   const [localBaseCardPlayLocked, setLocalBaseCardPlayLocked] = useState(false);
@@ -211,6 +213,45 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   const [aiIsWaiting, setAiIsWaiting] = useState(false);
   const aiStepBusyRef = useRef(false);
   const aiMountedRef = useRef(false);
+
+  const reportDiagnosticError = useCallback(async (action, errorValue, component = "MatchTurnBoard") => {
+    try {
+      const { data, error: reportError } = await supabase.rpc("report_private_match_diagnostic_error_v1", {
+        p_room_id: roomId,
+        p_action: String(action || "unknown"),
+        p_error_message: errorValue?.message || String(errorValue || "오류 내용 미상"),
+        p_error_code: errorValue?.code || null,
+        p_error_context: {
+          component,
+          client_action: String(action || "unknown"),
+          phase: game?.phase || "",
+          turn_step: game?.turn_step || "",
+          turn_number: game?.turn_number == null ? "" : String(game.turn_number),
+          state_version: game?.state_version == null ? "" : String(game.state_version),
+          pending_action_type: game?.pending_action?.type || "",
+          last_action_label: game?.last_action_label || "",
+        },
+      });
+      if (!reportError && data?.report_code) {
+        setDiagnosticError(data);
+        return data;
+      }
+    } catch (reportFailure) {
+      console.warn("failed to persist match diagnostic report", reportFailure);
+    }
+    return null;
+  }, [roomId, game?.phase, game?.turn_step, game?.turn_number, game?.state_version, game?.pending_action?.type, game?.last_action_label]);
+
+  useEffect(() => {
+    if (!roomId) return undefined;
+    let active = true;
+    supabase.rpc("get_private_match_trace_info_v1", { p_room_id: roomId })
+      .then(({ data, error: traceError }) => {
+        if (active && !traceError && data?.trace_code) setTraceInfo(data);
+      })
+      .catch((traceError) => console.warn("failed to load match trace code", traceError));
+    return () => { active = false; };
+  }, [roomId]);
 
   useEffect(() => {
     aiMountedRef.current = true;
@@ -280,6 +321,16 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
     const started = await runAction("begin_turn");
     if (!started) return;
     await runAction("place_files");
+  }
+
+  async function copyDiagnosticCode(value, label) {
+    if (!value) return;
+    try {
+      await navigator.clipboard.writeText(value);
+      setNotice(label + "를 복사했습니다.");
+    } catch {
+      window.prompt("이 코드를 직접 복사해 주세요.", value);
+    }
   }
 
   async function copyRoomInviteCode() {
@@ -450,6 +501,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
           }
           consecutiveBusyResponses = 0;
 
+          if (data?.diagnostic_report?.report_code) setDiagnosticError(data.diagnostic_report);
           if (typeof data?.message === "string" && data.message.trim()) {
             setAiStatusMessage(data.message.trim());
           }
@@ -486,7 +538,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
 
   const runAction = useCallback(async (action, payload = {}) => {
     if (loading) return false;
-    setLoading(true); setError(""); setNotice("");
+    setLoading(true); setError(""); setNotice(""); setDiagnosticError(null);
     try {
       const { data, error: rpcError } = action === "request_opponent_hand"
         ? await supabase.rpc("request_opponent_hand_operation_v1", { p_room_id: roomId, p_operation: payload.operation, p_count: payload.count, p_selection_mode: payload.selection_mode || "target" })
@@ -644,11 +696,12 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
       return true;
     } catch (err) {
       const message = err?.message || "행동을 처리하지 못했습니다.";
+      await reportDiagnosticError(action, err);
       setError(message);
       showBlockedReason(message);
       return false;
     } finally { setLoading(false); }
-  }, [roomId, userId, loading, game, cardsByKey]);
+  }, [roomId, userId, loading, game, cardsByKey, reportDiagnosticError]);
 
   const voteToCancelMatch = useCallback(async () => {
     if (!roomId || loading || game?.game_over) return;
@@ -1360,6 +1413,10 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
         </section>
       </div>}
 
+      {traceInfo?.trace_code && <section aria-label="대전 진단 코드" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 9, padding: "8px 10px", border: "1px solid rgba(125,211,252,.22)", borderRadius: 7, background: "rgba(8,47,73,.16)" }}>
+        <div><span style={{ display: "block", color: "#94a3b8", fontSize: 9 }}>대전 추적 코드</span><code style={{ color: "#bae6fd", fontSize: 12, fontWeight: 900, letterSpacing: ".06em" }}>{traceInfo.trace_code}</code></div>
+        <button type="button" onClick={() => void copyDiagnosticCode(traceInfo.trace_code, "대전 추적 코드")} style={{ ...st.smallButton, borderColor: "rgba(125,211,252,.32)", color: "#bae6fd" }}>코드 복사</button>
+      </section>}
       {isAIBattle && aiStatusMessage && <section aria-live="polite" aria-atomic="true" style={{ marginBottom: 10, padding: "11px 12px", border: "1px solid rgba(56,189,248,.3)", borderRadius: 8, background: "linear-gradient(120deg,rgba(8,47,73,.55),rgba(15,23,42,.75))", color: "#e0f2fe" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 4 }}>
           <strong style={{ fontSize: 11, color: "#7dd3fc", letterSpacing: ".04em" }}>AI 탐정 · 행동 선언</strong>
@@ -1367,7 +1424,15 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
         </div>
         <p style={{ margin: 0, fontSize: 12, lineHeight: 1.7 }}>{displayActionLabel(aiStatusMessage, cardNamesForParticles)}</p>
       </section>}
-      {(error || notice) && <div role={error ? "alert" : "status"} style={{ marginBottom: 10, padding: 9, borderRadius: 6, border: `1px solid ${error ? "rgba(253,164,175,.3)" : "rgba(134,239,172,.24)"}`, color: error ? C.red : C.green, background: error ? "rgba(190,24,93,.07)" : "rgba(22,101,52,.07)", fontSize: 11 }}>{error || notice}</div>}
+      {(error || notice) && <div role={error ? "alert" : "status"} style={{ marginBottom: 10, padding: 9, borderRadius: 6, border: `1px solid ${error ? "rgba(253,164,175,.3)" : "rgba(134,239,172,.24)"}`, color: error ? C.red : C.green, background: error ? "rgba(190,24,93,.07)" : "rgba(22,101,52,.07)", fontSize: 11 }}>
+        {error || notice}
+        {error && diagnosticError?.report_code && <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 7, marginTop: 8, paddingTop: 7, borderTop: "1px solid rgba(253,164,175,.18)" }}>
+          <span style={{ color: "#fda4af", fontSize: 10, fontWeight: 800 }}>오류 보고 코드</span>
+          <code style={{ color: "#fff1f2", fontSize: 11, fontWeight: 900 }}>{diagnosticError.report_code}</code>
+          <button type="button" onClick={() => void copyDiagnosticCode(diagnosticError.report_code, "오류 보고 코드")} style={{ ...st.smallButton, borderColor: "rgba(253,164,175,.35)", color: "#fecdd3" }}>오류 코드 복사</button>
+          {diagnosticError.trace_code && <><span style={{ color: "#94a3b8", fontSize: 9 }}>대전 추적 {diagnosticError.trace_code}</span><button type="button" onClick={() => void copyDiagnosticCode(diagnosticError.trace_code, "대전 추적 코드")} style={st.smallButton}>추적 코드 복사</button></>}
+        </div>}
+      </div>}
       {gameState.last_action_label && <div style={{ display: "grid", gap: 4, marginBottom: 10 }}>
         <button type="button" onClick={() => void openActionLog()} style={{ ...st.muted, textAlign: "left", padding: "7px 9px", border: "1px solid rgba(148,163,184,.24)", borderRadius: 5, background: "rgba(71,85,105,.22)", color: C.text, cursor: "pointer" }} title="눌러서 전체 게임 행동 로그를 최신순으로 확인">
           전체 게임 행동 내역: {displayActionLabel(actionLog[0]?.action_label || gameState.last_action_label, cardNamesForParticles)}
