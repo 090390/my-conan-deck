@@ -2092,11 +2092,32 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
       actionError = fallback.error;
     }
     if (actionError) {
+      const { data: diagnosticReport, error: diagnosticError } = await service.rpc("report_private_match_diagnostic_error_internal_v1", {
+        p_room_id: roomId,
+        p_actor_user_id: humanId,
+        p_action: `AI:${decision.action}`,
+        p_error_message: actionError.message || "AI 행동이 규칙 검사에서 거부되었습니다.",
+        p_error_code: actionError.code || null,
+        p_error_context: {
+          component: "ai-battle",
+          ai_action: decision.action,
+          blocked_action: decision.action,
+          turn_number: state?.turn_number == null ? "" : String(state.turn_number),
+          phase: state?.phase || "",
+          turn_step: state?.turn_step || "",
+          state_version: state?.state_version == null ? "" : String(state.state_version),
+          pending_action_type: state?.pending_action?.type || "",
+          last_action_label: state?.last_action_label || "",
+        },
+      });
+      if (diagnosticError) console.error("failed to persist AI diagnostic report", diagnosticError);
+      const failureMessage = `AI 탐정: ${decision.action} 행동이 규칙 검사에서 거부되어 진행을 멈췄습니다. ${actionError.message || "상태를 다시 확인해 주세요."}`;
       return {
         is_ai: true,
         actions: [],
         blocked_action: decision.action,
-        message: `AI 탐정: ${decision.action} 행동이 규칙 검사에서 거부되어 진행을 멈췄습니다. ${actionError.message || "상태를 다시 확인해 주세요."}`,
+        message: failureMessage,
+        diagnostic_report: diagnosticReport || null,
       };
     }
 
@@ -2132,11 +2153,16 @@ Deno.serve(async (req: Request) => {
   });
   const service = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
 
+  let requestBody: any = {};
+  let diagnosticUserId: string | null = null;
+  let diagnosticRoomId: string | null = null;
   try {
     const { data: userData, error: userError } = await userClient.auth.getUser(token);
     const user = userData?.user;
     if (userError || !user) return json({ error: "로그인 세션을 확인할 수 없습니다." }, 401);
-    const body = await req.json();
+    diagnosticUserId = user.id;
+    requestBody = await req.json();
+    const body = requestBody;
 
     if (body.action === "create") {
       const humanDeck = Array.isArray(body.main_deck) ? body.main_deck : [];
@@ -2149,6 +2175,7 @@ Deno.serve(async (req: Request) => {
       if (roomError) throw roomError;
       const room = Array.isArray(newRoom) ? newRoom[0] : newRoom;
       if (!room?.out_room_id || !room?.out_invite_code) throw new Error("AI 대전용 방을 생성하지 못했습니다.");
+      diagnosticRoomId = room.out_room_id;
 
       const { error: deckError } = await userClient.rpc("submit_private_room_deck_with_metadata_v1", {
         p_room_id: room.out_room_id,
@@ -2203,6 +2230,7 @@ Deno.serve(async (req: Request) => {
     if (body.action === "step" || body.action === "cancel") {
       const roomId = String(body.room_id || "");
       if (!roomId) return json({ error: "대전 방 ID가 없습니다." }, 400);
+      diagnosticRoomId = roomId;
       const { data: isAi, error: isAiError } = await userClient.rpc("is_private_ai_battle_v1", { p_room_id: roomId });
       if (isAiError) throw isAiError;
       if (isAi !== true) return json({ is_ai: false });
@@ -2219,6 +2247,33 @@ Deno.serve(async (req: Request) => {
     return json({ error: "지원하지 않는 AI 대전 요청입니다." }, 400);
   } catch (error) {
     console.error("ai-battle error", error);
-    return json({ error: getReadableErrorMessage(error) }, 500);
+    let diagnosticReport: any = null;
+    if (diagnosticRoomId && diagnosticUserId) {
+      try {
+        const { data, error: reportError } = await service.rpc("report_private_match_diagnostic_error_internal_v1", {
+          p_room_id: diagnosticRoomId,
+          p_actor_user_id: diagnosticUserId,
+          p_action: String(requestBody?.action || "ai-battle"),
+          p_error_message: getReadableErrorMessage(error),
+          p_error_code: (error as any)?.code || null,
+          p_error_context: {
+            component: "ai-battle-edge",
+            edge_action: String(requestBody?.action || "unknown"),
+          },
+        });
+        if (reportError) console.error("failed to save ai-battle request diagnostic", reportError);
+        else diagnosticReport = data;
+      } catch (reportFailure) {
+        console.error("failed to persist ai-battle diagnostic", reportFailure);
+      }
+    }
+    const readable = getReadableErrorMessage(error);
+    return json({
+      error: readable,
+      diagnostic_report: diagnosticReport,
+      diagnostic_notice: diagnosticReport?.report_code
+        ? "오류 보고 코드: " + diagnosticReport.report_code
+        : null,
+    }, 500);
   }
 });
