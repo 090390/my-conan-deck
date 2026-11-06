@@ -31,12 +31,8 @@ $old_grant$;
       END IF;
 $new_grant$;
   v_ai_definition text;
-  v_old_action_allowlist text := $old_actions$
-if p_action not in ('begin_turn','play_character','partner_assist','partner_deduce','investigate','attack_character','attack_evidence','guard_with_character','decline_guard','end_turn','declare_solution','solve_case','culprits_crime','acknowledge_culprits_crime','rest_partner_manual','acknowledge_evidence_remove') then
-$old_actions$;
-  v_new_action_allowlist text := $new_actions$
-if p_action not in ('begin_turn','play_character','partner_assist','partner_deduce','investigate','attack_character','attack_evidence','guard_with_character','decline_guard','end_turn','declare_solution','solve_case','culprits_crime','acknowledge_culprits_crime','rest_partner_manual','acknowledge_evidence_remove','cancel_next_hint') then
-$new_actions$;
+  v_old_action_allowlist text := $old_actions$if p_action not in ('begin_turn','play_character','partner_assist','partner_deduce','investigate','attack_character','attack_evidence','guard_with_character','decline_guard','end_turn','declare_solution','solve_case','culprits_crime','acknowledge_culprits_crime','rest_partner_manual','acknowledge_evidence_remove') then$old_actions$;
+  v_new_action_allowlist text := $new_actions$if p_action not in ('begin_turn','play_character','partner_assist','partner_deduce','investigate','attack_character','attack_evidence','guard_with_character','decline_guard','end_turn','declare_solution','solve_case','culprits_crime','acknowledge_culprits_crime','rest_partner_manual','acknowledge_evidence_remove','cancel_next_hint') then$new_actions$;
 BEGIN
   SELECT pg_get_functiondef('public.private_card_effect_run_v1(uuid)'::regprocedure)
     INTO v_effect_definition;
