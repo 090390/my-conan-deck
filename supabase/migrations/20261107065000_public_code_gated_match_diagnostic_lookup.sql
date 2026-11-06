@@ -2,6 +2,10 @@
 -- New codes use a full UUID (122 bits of effective entropy); legacy MT/ER codes remain valid.
 -- Anonymous lookups are rate-limited to 10 attempts per client IP per minute.
 
+-- Remove the legacy password-bearing wrapper before replacing its private helper.
+drop function if exists public.lookup_private_match_diagnostics_v1(text, text);
+drop function if exists private.lookup_private_match_diagnostics_core_v1(text, text);
+
 create table if not exists private.match_diagnostic_lookup_attempts (
   client_hash text primary key check (client_hash ~ '^[0-9a-f]{32}$'),
   window_started_at timestamptz not null default now(),
@@ -46,9 +50,9 @@ declare
   v_events jsonb;
 begin
   v_client_ip := coalesce(
+    nullif(trim(split_part(coalesce(v_headers ->> 'x-forwarded-for', ''), ',', 1)), ''),
     nullif(trim(v_headers ->> 'cf-connecting-ip'), ''),
-    nullif(trim(v_headers ->> 'x-real-ip'), ''),
-    nullif(trim(split_part(coalesce(v_headers ->> 'x-forwarded-for', ''), ',', 1)), '')
+    nullif(trim(v_headers ->> 'x-real-ip'), '')
   );
 
   if v_client_ip is null then
@@ -181,8 +185,6 @@ $function$;
 
 revoke all on function public.lookup_private_match_diagnostics_v1(text, text) from public;
 grant execute on function public.lookup_private_match_diagnostics_v1(text, text) to anon, authenticated;
-
-drop function if exists private.lookup_private_match_diagnostics_core_v1(text, text);
 
 create or replace function private.purge_match_diagnostics_v1()
 returns jsonb
