@@ -2270,10 +2270,12 @@ Deno.serve(async (req: Request) => {
     const readable = getReadableErrorMessage(error);
     return json({
       error: readable,
+      message: readable,
+      blocked_action: diagnosticReport?.report_code ? "edge_error" : null,
       diagnostic_report: diagnosticReport,
       diagnostic_notice: diagnosticReport?.report_code
         ? "오류 보고 코드: " + diagnosticReport.report_code
         : null,
-    }, 500);
+    }, diagnosticReport?.report_code ? 200 : 500);
   }
 });
