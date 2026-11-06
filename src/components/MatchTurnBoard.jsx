@@ -520,6 +520,8 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
           // The next loop iteration waits 2.5 seconds before making the next decision.
         }
       } catch (err) {
+        const diagnostic = await reportDiagnosticError("ai-battle-step", err, "MatchTurnBoard AI worker");
+        if (diagnostic?.report_code) setDiagnosticError(diagnostic);
         if (aiMountedRef.current) {
           const message = err?.message || "AI의 다음 행동을 처리하지 못했습니다.";
           setAiStatusMessage(`AI 탐정: ${message}`);
@@ -533,7 +535,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   }, [
     isAIBattle, roomId, userId, game?.boards, game?.state_version, game?.current_turn_user_id,
     game?.turn_number, game?.turn_step, game?.pending_action, game?.game_over,
-    game?.opponent_remove_cards, refresh,
+    game?.opponent_remove_cards, refresh, reportDiagnosticError,
   ]);
 
   const runAction = useCallback(async (action, payload = {}) => {
