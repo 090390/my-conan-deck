@@ -12900,6 +12900,416 @@
         "rationale": "파트너 황 조건. 상대 캐릭터를 최대 1장 선택한다. 자신의 현장 캐릭터가 5장 이상이면 해당 캐릭터를 리무브하고, 5장 미만이면 스턴한다. 스턴된 캐릭터가 액티브화될 때는 슬립으로 대신 처리하는 기존 전역 스턴 규칙을 사용한다.",
         "sourceText": "【パートナー黄】相手の現場にいるキャラを1枚まで選び、スタンさせる。（スタン状態のキャラをアクティブにする場合、代わりにスリープさせる）自分の現場にキャラが5枚以上いる場合、代わりにそのキャラをリムーブする。"
       }
+    },
+    {
+      "effectId": "card-0147-on-enter-discard-hand-remove-ap8000",
+      "cardIds": [
+        "0147"
+      ],
+      "cardNameJa": "降谷零",
+      "cardNameKo": "후루야 레이",
+      "trigger": {
+        "event": "character.entered_field",
+        "timing": "after"
+      },
+      "conditions": [
+        {
+          "fact": "player.partner.color",
+          "operator": "equals",
+          "value": "yellow"
+        },
+        {
+          "fact": "player.hand.count",
+          "operator": "greater_than_or_equal",
+          "value": 1
+        }
+      ],
+      "steps": [
+        {
+          "op": "offer_reaction",
+          "actor": "controller",
+          "reactionId": "card-0147-discard-hand-remove-ap8000",
+          "choices": [
+            "yes",
+            "no"
+          ],
+          "saveAs": "remove_choice",
+          "prompt": "손패 1장을 리무브하고 AP 8000 이하 캐릭터 1장까지 리무브할까요?"
+        },
+        {
+          "op": "select_cards",
+          "from": "hand",
+          "min": 1,
+          "max": 1,
+          "optional": false,
+          "saveAs": "hand_cost",
+          "when": {
+            "fact": "vars.remove_choice",
+            "operator": "equals",
+            "value": "yes"
+          },
+          "prompt": "비용으로 리무브할 손패 1장을 선택하세요."
+        },
+        {
+          "op": "move_cards",
+          "from": "hand_cost",
+          "to": "remove_area",
+          "when": {
+            "fact": "vars.remove_choice",
+            "operator": "equals",
+            "value": "yes"
+          }
+        },
+        {
+          "op": "select_cards",
+          "from": "both_fields",
+          "min": 0,
+          "max": 1,
+          "optional": true,
+          "saveAs": "target",
+          "when": {
+            "allOf": [
+              {
+                "fact": "vars.remove_choice",
+                "operator": "equals",
+                "value": "yes"
+              },
+              {
+                "fact": "vars.hand_cost.count",
+                "operator": "greater_than",
+                "value": 0
+              }
+            ]
+          },
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "operator": "equals",
+                "value": "character"
+              },
+              {
+                "field": "ap_current",
+                "operator": "less_than_or_equal",
+                "value": 8000
+              }
+            ]
+          },
+          "prompt": "리무브할 AP 8000 이하 캐릭터를 최대 1장 선택하세요."
+        },
+        {
+          "op": "move_cards",
+          "from": "target",
+          "to": "remove_area",
+          "when": {
+            "fact": "vars.target.count",
+            "operator": "greater_than",
+            "value": 0
+          }
+        }
+      ],
+      "reviewNotes": {
+        "sourceText": "【파트너 황】【등장 시】 - 패 1장을 리무브할 수 있다. 그렇게 할 경우, AP 8000 이하의 캐릭터 1장까지 선택하여 리무브한다.",
+        "rationale": "파트너 황 조건을 만족하는 등장 시 선택형 손패 비용을 지불한 경우에만 양쪽 현장에서 AP 8000 이하 캐릭터를 최대 1장 리무브한다."
+      }
+    },
+    {
+      "effectId": "card-1162-partner-yellow-charge-character",
+      "cardIds": [
+        "1162"
+      ],
+      "cardNameJa": "降谷零",
+      "cardNameKo": "후루야 레이",
+      "trigger": {
+        "event": "continuous.recalculate",
+        "timing": "continuous"
+      },
+      "continuous": true,
+      "conditions": [
+        {
+          "fact": "player.partner.color",
+          "operator": "equals",
+          "value": "yellow"
+        }
+      ],
+      "steps": [
+        {
+          "op": "set_continuous_keyword",
+          "target": "source_character",
+          "keyword": "charge_character",
+          "duration": "while_condition_true",
+          "modifierId": "police-academy-1162-partner-yellow-charge-character",
+          "displayNameKo": "돌격[캐릭터]"
+        }
+      ],
+      "reviewNotes": {
+        "sourceText": "【パートナー黄】突撃[キャラ]",
+        "rationale": "파트너 색상이 황일 때 이 캐릭터가 상시 돌격[캐릭터]을 갖도록 연속 효과로 처리한다."
+      }
+    },
+    {
+      "effectId": "card-1162-opponent-turn-field-remove-peek-top",
+      "cardIds": [
+        "1162"
+      ],
+      "cardNameJa": "降谷零",
+      "cardNameKo": "후루야 레이",
+      "trigger": {
+        "event": "character.removed_from_field",
+        "timing": "after"
+      },
+      "conditions": [
+        {
+          "fact": "turn.is_opponent_turn",
+          "operator": "equals",
+          "value": true
+        }
+      ],
+      "steps": [
+        {
+          "op": "peek_top_cards",
+          "count": 1,
+          "allowFewer": true,
+          "saveAs": "seen"
+        },
+        {
+          "op": "select_cards",
+          "from": "seen",
+          "min": 0,
+          "max": 1,
+          "optional": true,
+          "saveAs": "to_remove",
+          "displayVariable": "seen",
+          "prompt": "확인한 덱 맨 위 카드를 리무브 에이리어로 옮길까요? 선택하지 않으면 원래 위치로 되돌아갑니다."
+        },
+        {
+          "op": "move_cards",
+          "from": "to_remove",
+          "to": "remove_area",
+          "when": {
+            "fact": "vars.to_remove.count",
+            "operator": "greater_than",
+            "value": 0
+          }
+        },
+        {
+          "op": "return_unselected_to_deck_top",
+          "from": "seen",
+          "selectedVariable": "to_remove"
+        }
+      ],
+      "reviewNotes": {
+        "sourceText": "【相手ターン中】【場からリムーブされた時】デッキの上のカードを1枚確認し、それをリムーブエリアに置いてもよい。置かなかった場合、元の位置に戻す。",
+        "rationale": "상대 턴 중 현장에서 리무브될 때 덱 맨 위 한 장을 비공개로 확인한다. 선택하면 리무브하고, 선택하지 않으면 확인한 카드를 덱 맨 위에 원래 순서대로 복귀시키는 전용 연산을 사용한다."
+      }
+    },
+    {
+      "effectId": "card-1162-hirameki-solution-stun-action-character",
+      "cardIds": [
+        "1162"
+      ],
+      "cardNameJa": "降谷零",
+      "cardNameKo": "후루야 레이",
+      "trigger": {
+        "event": "evidence.card_removed",
+        "timing": "after"
+      },
+      "conditions": [
+        {
+          "fact": "player.case_phase",
+          "operator": "equals",
+          "value": "solution"
+        }
+      ],
+      "steps": [
+        {
+          "op": "stun_action_character"
+        }
+      ],
+      "reviewNotes": {
+        "sourceText": "【ひらめき】【解決編】行動中のキャラを1枚まで選び、スタンさせる。",
+        "rationale": "해결편 중 이 카드가 증거에서 리무브되면, 해당 증거 제거를 유발한 진행 중 액션의 캐릭터를 스턴한다. 증거 제거 이벤트 문맥에 액션 캐릭터 인스턴스를 전달해 대상을 특정한다."
+      }
+    },
+    {
+      "effectId": "card-1164-case-solution-discard-hand",
+      "cardIds": [
+        "1164"
+      ],
+      "cardNameJa": "警察学校の風呂掃除",
+      "cardNameKo": "경찰학교의 목욕탕 청소",
+      "trigger": {
+        "event": "case.solution_entered",
+        "timing": "after"
+      },
+      "conditions": [
+        {
+          "fact": "player.hand.count",
+          "operator": "greater_than_or_equal",
+          "value": 1
+        }
+      ],
+      "steps": [
+        {
+          "op": "select_cards",
+          "from": "hand",
+          "min": 1,
+          "max": 1,
+          "optional": false,
+          "saveAs": "hand_cost",
+          "prompt": "사건이 해결편이 되었으므로 손패 1장을 리무브하세요."
+        },
+        {
+          "op": "move_cards",
+          "from": "hand_cost",
+          "to": "remove_area"
+        }
+      ],
+      "reviewNotes": {
+        "sourceText": "이 사건이 해결편이 되었을 때, 나는 패 1장을 리무브한다.",
+        "rationale": "PR320 사건이 사건편에서 해결편으로 전환되는 시점에 손패가 있을 경우 1장을 필수로 선택해 리무브한다."
+      }
+    },
+    {
+      "effectId": "card-1164-police-academy-case-effect",
+      "cardIds": [
+        "1164"
+      ],
+      "cardNameJa": "警察学校の風呂掃除",
+      "cardNameKo": "경찰학교의 목욕탕 청소",
+      "trigger": {
+        "event": "case.activated_ability",
+        "timing": "after"
+      },
+      "activationTiming": "turn",
+      "activationLabelKo": "경찰학교의 목욕탕 청소 효과",
+      "oncePerTurn": true,
+      "conditions": [
+        {
+          "fact": "player.case_phase",
+          "operator": "equals",
+          "value": "solution"
+        },
+        {
+          "fact": "player.field.has_card_name",
+          "operator": "equals",
+          "value": "降谷零"
+        },
+        {
+          "fact": "player.evidence.facedown_count",
+          "operator": "greater_than_or_equal",
+          "value": 2
+        }
+      ],
+      "steps": [
+        {
+          "op": "select_cards",
+          "from": "evidence_area",
+          "min": 2,
+          "max": 2,
+          "optional": false,
+          "saveAs": "evidence_to_flip",
+          "filter": {
+            "field": "face_up",
+            "operator": "equals",
+            "value": false
+          },
+          "prompt": "앞면으로 뒤집을 뒷면 증거 2장을 선택하세요."
+        },
+        {
+          "op": "flip_evidence",
+          "from": "vars.evidence_to_flip",
+          "count": 2
+        },
+        {
+          "op": "peek_top_cards",
+          "count": 2,
+          "allowFewer": true,
+          "saveAs": "seen"
+        },
+        {
+          "op": "select_cards",
+          "from": "seen",
+          "min": 0,
+          "max": 1,
+          "optional": true,
+          "saveAs": "selected",
+          "displayVariable": "seen",
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "operator": "equals",
+                "value": "character"
+              },
+              {
+                "anyOf": [
+                  {
+                    "field": "card_name",
+                    "operator": "name_matches",
+                    "value": "降谷零"
+                  },
+                  {
+                    "field": "card_name",
+                    "operator": "name_matches",
+                    "value": "諸伏景光"
+                  },
+                  {
+                    "field": "card_name",
+                    "operator": "name_matches",
+                    "value": "伊達航"
+                  },
+                  {
+                    "field": "card_name",
+                    "operator": "name_matches",
+                    "value": "萩原研二"
+                  },
+                  {
+                    "field": "card_name",
+                    "operator": "name_matches",
+                    "value": "松田陣平"
+                  }
+                ]
+              }
+            ]
+          },
+          "prompt": "공개하여 패에 추가할 경찰학교 동기 캐릭터를 최대 1장 선택하세요."
+        },
+        {
+          "op": "reveal_cards",
+          "from": "selected",
+          "to": [
+            "opponent"
+          ],
+          "awaitAcknowledgement": true,
+          "when": {
+            "fact": "vars.selected.count",
+            "operator": "greater_than",
+            "value": 0
+          }
+        },
+        {
+          "op": "move_cards",
+          "from": "selected",
+          "to": "hand",
+          "when": {
+            "fact": "vars.selected.count",
+            "operator": "greater_than",
+            "value": 0
+          }
+        },
+        {
+          "op": "move_unselected_to_zone",
+          "from": "seen",
+          "to": "remove_area",
+          "selectedVariable": "selected",
+          "order": "preserve"
+        }
+      ],
+      "reviewNotes": {
+        "sourceText": "【解決編】【宣言】【ターン1】裏向きの証拠2つを表向きにする。デッキの上から2枚を確認し、その中から「降谷零」「諸伏景光」「伊達航」「萩原研二」「松田陣平」のいずれか1枚まで公開して手札に加え、残りをリムーブエリアに置く。自分の現場に「降谷零」がいる場合に宣言できる。",
+        "rationale": "해결편에서 턴 1회, 뒷면 증거 2장을 선택해 앞면으로 바꾼 뒤 덱 위 2장을 확인한다. 경찰학교 동기 캐릭터를 최대 1장 공개하여 손패에 넣고 나머지는 리무브한다. 후루야 레이의 현장 존재 조건을 활성화 가능 조건으로 검사."
+      }
     }
   ]
 }
