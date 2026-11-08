@@ -210,6 +210,17 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   const [showActionLog, setShowActionLog] = useState(false);
   const [loadingActionLog, setLoadingActionLog] = useState(false);
   const [actionLogError, setActionLogError] = useState("");
+  useEffect(() => {
+    if (game?.pending_action?.type === "card_effect_trait_selection") {
+      setCardEffectTrait("경찰");
+    }
+  }, [
+    roomId,
+    game?.pending_action?.type,
+    game?.pending_action?.effect_id,
+    game?.pending_action?.source_instance_id,
+  ]);
+
   const [aiStatusMessage, setAiStatusMessage] = useState("");
   const [aiIsWaiting, setAiIsWaiting] = useState(false);
   const aiStepBusyRef = useRef(false);
