@@ -12004,6 +12004,11 @@
           "fact": "player.field.has_card_name",
           "operator": "equals",
           "value": "降谷零"
+        },
+        {
+          "fact": "turn.is_source_controller_turn",
+          "operator": "equals",
+          "value": true
         }
       ],
       "steps": [
