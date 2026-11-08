@@ -28,18 +28,18 @@ BEGIN
   v_old := $old$    ELSIF v_op='disable_original_abilities' THEN$old$;
   v_new := $new$    ELSIF v_op='stun_action_character' THEN
       v_target_owner:=nullif(v_effect_context->>'action_character_user_id','')::uuid;
-      v_target_id:=coalesce(nullif(v_effect_context->>'action_character_instance_id',''),
+      v_contact_instance:=coalesce(nullif(v_effect_context->>'action_character_instance_id',''),
         nullif(v_effect_context->>'attacker_instance_id',''));
-      IF v_target_owner IS NOT NULL AND v_target_id IS NOT NULL THEN
+      IF v_target_owner IS NOT NULL AND v_contact_instance IS NOT NULL THEN
         SELECT e.value INTO v_card
         FROM public.room_player_turn_boards b
         CROSS JOIN LATERAL jsonb_array_elements(coalesce(b.field_cards,'[]'::jsonb)) e(value)
         WHERE b.room_id=p_room_id AND b.user_id=v_target_owner
-          AND e.value->>'instance_id'=v_target_id LIMIT 1;
+          AND e.value->>'instance_id'=v_contact_instance LIMIT 1;
         IF v_card IS NOT NULL AND public.private_card_effect_is_character_v1(v_card)
           AND lower(coalesce(v_card->>'status','')) NOT IN ('stunned','stun','스턴') THEN
           PERFORM public.private_card_effect_patch_card_v1(
-            p_room_id,v_target_owner,v_target_id,jsonb_build_object('rested',false,'status','stunned')
+            p_room_id,v_target_owner,v_contact_instance,jsonb_build_object('rested',false,'status','stunned')
           );
         END IF;
       END IF;
