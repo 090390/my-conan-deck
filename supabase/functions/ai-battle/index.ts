@@ -1862,6 +1862,7 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
           "card-0211-hirameki-rest-character",
           "card-0691-hirameki-rest-character",
           "card-0704-hirameki-rest-character",
+          "card-1121-field-watch-remove-level9-on-police-academy-enter",
           "card-1197-activated-ready-ap-minus2000-and-rest-character",
           "card-0531-when-heiji-or-self-enters-rest-character",
           "card-0971-activated-face-down-set-or-hand-cost-stun-rested-character",
