@@ -41,7 +41,7 @@
 - `continuous.recalculate`: 지속 효과를 다시 계산할 때.
 - `opponent.deduction.declared`: 상대가 추리를 선언하고 반응을 받을 수 있는 시점.
 
-조건의 `fact`는 서버 이벤트 문맥에서 읽는 경로입니다. 예: `player.partner.color`, `player.case_phase`, `entry.method`, `entry.action_type`, `entry.source.level`, `entry.source.color`, `source.is_active`, `vars.selected_red.count`.
+조건의 `fact`는 서버 이벤트 문맥에서 읽는 경로입니다. 예: `player.partner.color`, `player.case_phase`, `player.evidence.facedown_count`, `entry.method`, `entry.action_type`, `entry.source.level`, `entry.source.color`, `source.is_active`, `vars.selected_red.count`.
 
 지원 조건 연산자:
 
@@ -64,6 +64,9 @@
 | `move_cards` | 카드 인스턴스를 `from`에서 `to` 영역으로 이동합니다. 증거로 이동할 때 `faceUp: false`를 지정하면 뒷면 증거로 놓습니다. |
 | `filter_cards` | 앞 단계 변수 `from`에서 `filter` 조건에 맞는 카드만 선택 UI 없이 골라 `saveAs` 변수에 저장합니다. 카드를 실제로 이동하지 않으며, 적격 카드 수는 `vars.변수명.count`으로 조건 판정에 사용할 수 있습니다. |
 | `move_unselected_to_deck_bottom` | 확인한 카드 중 `selectedVariable`에 포함되지 않은 카드를 덱 아래로 옮깁니다. `order: player_choice`는 사용자가 순서를 정한다는 뜻입니다. |
+| `move_unselected_to_zone` | 확인한 카드 중 선택 변수에 포함되지 않은 카드를 지정한 영역으로 이동합니다. `to`, `selectedVariable`, `order`를 사용합니다. |
+| `return_unselected_to_deck_top` | 확인한 카드 중 선택 변수에 포함되지 않은 카드를 원래 덱의 맨 위에 원래 순서대로 복귀시킵니다. `from`, `selectedVariable`을 사용합니다. |
+| `stun_action_character` | `evidence.card_removed` 문맥에 전달된 현재 액션 캐릭터 인스턴스를 스턴시킵니다. 대상 인스턴스가 없으면 아무것도 변경하지 않습니다. |
 | `grant_keyword` | 카드에 임시 키워드를 부여합니다. `target`, `keyword`, `duration`을 사용합니다. 지속 키워드는 턴 종료 때 만료되어야 합니다. |
 | `modify_stat` | 대상 카드의 수치를 바꿉니다. `stat`, `amount`, `duration`, `stacking`을 사용합니다. 기존 기본 AP를 덮어쓰지 말고 임시 보정으로 저장합니다. |
 | `offer_reaction` | 반응 선택 창을 만들고 플레이어 선택까지 실행을 일시 정지합니다. 선택 결과는 `saveAs`에 저장합니다. |
@@ -121,3 +124,11 @@ ID:0860의 녹색 이벤트 사용 후 제거 효과는 `event.resolved`를 사�
 - `select_cards.excludeSource: true`는 후보 목록에서 효과 발동 원본 캐릭터를 제외합니다.
 - `offer_reaction.reactionId`는 AI가 선택지를 카드별로 판단하도록 전달되는 안정적인 선택 ID입니다.
 - 일반적인 선언 능력은 원본 캐릭터가 슬립 상태여도 발동할 수 있습니다. 단, 능력에 `pay_cost: sleep_source_character`가 있으면 액티브 상태에서 비용을 지불해야 합니다. `allowStunnedSource: true`는 카드 문구가 스턴 상태 발동을 명시적으로 허용하는 경우에만 사용합니다.
+
+
+## 경동조 덱 추가 구현
+
+- **ID:0147 후루야 레이**: 파트너 색이 황일 때 등장 시 손패 1장 리무브를 선택 비용으로 제시합니다. 비용을 지불하면 기본 대상 규칙에 따라 상대 현장의 AP 8000 이하 캐릭터를 최대 1장 리무브합니다.
+- **ID:1162 후루야 레이**: 황색 파트너 조건에서 `charge_character`를 지속 부여합니다. 상대 턴 중 현장에서 리무브되면 덱 위 1장을 비공개로 확인하고, 선택하지 않은 카드는 `return_unselected_to_deck_top`으로 원래 위치에 복귀시킵니다. 해결편 히라메키는 증거 제거 이벤트 문맥의 액션 캐릭터를 `stun_action_character`로 스턴시킵니다.
+- **ID:1164 경찰학교의 목욕탕 청소(PR320)**: 해결편 진입 시 손패 1장을 리무브합니다. 해결편에서 후루야 레이가 현장에 있고 뒷면 증거가 2장 이상이면 턴 1회 선언 능력을 노출해 증거 2장을 뒤집고, 덱 위 2장에서 경찰학교 동기 캐릭터를 최대 1장 공개·패에 추가하며 나머지를 리무브합니다.
+- `player.evidence.facedown_count`는 앞면이 아닌 증거 수를 반환하는 fact입니다. `character.removed_from_field` 및 `evidence.card_removed` 이벤트의 선택/후속 효과는 서버 이벤트 문맥을 통해 실행됩니다.
