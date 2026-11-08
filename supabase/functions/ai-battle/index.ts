@@ -1996,6 +1996,20 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
           if (aiHand.length > 0 && choices.includes("hand")) choice = "hand";
           else if (choices.includes("attachment")) choice = "attachment";
         }
+        // ID:0147 (PR151) spends a hand card only when the AI can actually
+        // pay the cost and there is a legal AP<=8000 character to remove.
+        // Avoid accepting the optional cost merely because "yes" is listed first.
+        if (reactionId === "card-0147-discard-hand-remove-ap8000") {
+          const hasHandCost = aiHand.length > 0;
+          const hasLegalRemovalTarget = [...ownField, ...(
+            (Array.isArray(state?.boards) ? state.boards : [])
+              .find((board: any) => String(board?.user_id || "") !== String(battle.ai_user_id))
+              ?.field_cards || []
+          )].some((card: any) => isCharacter(card) && cardAp(card) <= 8000);
+          choice = hasHandCost && hasLegalRemovalTarget && choices.includes("yes")
+            ? "yes"
+            : choices.includes("no") ? "no" : choice;
+        }
         if (reactionId === "card-0797-revive-red-level5") {
           const hasEligibleRevive = removeArea.some((card: any) =>
             isCharacter(card)
