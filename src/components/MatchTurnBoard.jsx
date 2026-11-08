@@ -198,6 +198,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
   const [cardEffectVisibleCards, setCardEffectVisibleCards] = useState([]);
   const [cardEffectSelectedIds, setCardEffectSelectedIds] = useState([]);
   const [cardEffectOptionsReady, setCardEffectOptionsReady] = useState(false);
+  const [cardEffectTrait, setCardEffectTrait] = useState("경찰");
   const [setCardModal, setSetCardModal] = useState(null);
   const [handZoneChoice, setHandZoneChoice] = useState(null);
   const [handEvidenceChoice, setHandEvidenceChoice] = useState(null);
@@ -1902,6 +1903,25 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
             {pending.chooser_user_id && pending.chooser_user_id !== userId && <p style={{ color: C.gold, fontSize: 11, margin: "8px 0 0" }}>상대 플레이어의 선택을 기다리는 중입니다.</p>}
           </header>
           <div style={{ padding: 12, overflowY: "auto", minHeight: 0 }}>
+            {pending.type === "card_effect_trait_selection" && pending.chooser_user_id === userId && <>
+              <p style={{ ...st.muted, marginBottom: 10 }}>상대 덱을 조사할 특징을 하나 지정하세요. 카드 효과가 지정한 특징과 일치하는 카드 수를 확인합니다.</p>
+              <label htmlFor="card-effect-trait" style={{ display: "block", color: C.blue, fontSize: 11, fontWeight: 800, marginBottom: 6 }}>조사할 특징</label>
+              <input
+                id="card-effect-trait"
+                type="text"
+                value={cardEffectTrait}
+                maxLength={80}
+                onChange={(event) => setCardEffectTrait(event.target.value)}
+                placeholder="예: 경찰, 탐정, 괴도"
+                style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: 8, border: "1px solid rgba(96,165,250,.5)", background: "#080d16", color: C.text, fontSize: 13 }}
+              />
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 9 }}>
+                {["경찰", "경시청", "공안", "탐정", "괴도", "FBI", "검은 조직", "범인", "고등학생", "소년탐정단"].map((trait) => (
+                  <button key={trait} type="button" onClick={() => setCardEffectTrait(trait)} style={{ ...st.smallButton, borderColor: cardEffectTrait === trait ? C.gold : "rgba(255,255,255,.15)", color: cardEffectTrait === trait ? C.gold : C.text }}>{trait}</button>
+                ))}
+              </div>
+              <button type="button" style={{ ...st.button, width: "100%", marginTop: 12 }} disabled={loading || !cardEffectTrait.trim()} onClick={() => void runAction("card_effect_continue", { trait: cardEffectTrait.trim() })}>특징 지정 완료</button>
+            </>}
             {pending.type === "card_effect_selection" && pending.chooser_user_id === userId && <>
               {cardEffectVisibleCards.length > 0 && <div style={{ marginBottom: 12 }}>
                 <h3 style={{ margin: "0 0 7px", fontSize: 11, color: C.gold }}>확인한 카드 {cardEffectVisibleCards.length}장</h3>
@@ -1943,6 +1963,18 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
                     : "선택한 카드로 효과 처리를 계속합니다."}
                   onClick={() => void runAction("card_effect_continue", { selected_instance_ids: cardEffectSelectedIds })}
                 >{cardEffectOptionsReady && cardEffectOptions.length === 0 ? "대상 없음 · 단계 건너뛰기" : "선택 완료"}</button>
+              </div>
+            </>}
+            {pending.type === "card_effect_order" && Array.isArray(pending.revealed_cards) && pending.revealed_cards.length > 0 && <>
+              <h3 style={{ margin: "0 0 8px", color: C.gold, fontSize: 11 }}>상대 덱에서 공개된 카드 {pending.revealed_cards.length}장</h3>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(88px,1fr))", gap: 7, marginBottom: 12 }}>
+                {pending.revealed_cards.map((entry, index) => {
+                  const card = entry.card || entry;
+                  return <button key={entry.instance_id || card.instance_id || index} type="button" onClick={() => openDetails(card)} style={{ minWidth: 0, padding: 6, border: "1px solid rgba(252,211,77,.3)", borderRadius: 7, background: "#080d16", color: C.text, textAlign: "left" }}>
+                    <CardArt instance={card} />
+                    <span style={{ display: "block", marginTop: 4, fontSize: 9, overflowWrap: "anywhere" }}>{nameOf(card)}</span>
+                  </button>;
+                })}
               </div>
             </>}
             {pending.type === "card_effect_order" && pending.chooser_user_id === userId && <>
