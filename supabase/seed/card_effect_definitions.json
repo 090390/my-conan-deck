@@ -6707,19 +6707,37 @@
             "allOf": [
               {
                 "field": "card_type",
-                "value": "character",
-                "operator": "equals"
+                "operator": "equals",
+                "value": "character"
               },
               {
-                "field": "card_name",
-                "value": [
-                  "降谷零",
-                  "諸伏景光",
-                  "伊達航",
-                  "萩原研二",
-                  "松田陣平"
-                ],
-                "operator": "in"
+                "anyOf": [
+                  {
+                    "field": "card_name",
+                    "operator": "name_matches",
+                    "value": "降谷零"
+                  },
+                  {
+                    "field": "card_name",
+                    "operator": "name_matches",
+                    "value": "諸伏景光"
+                  },
+                  {
+                    "field": "card_name",
+                    "operator": "name_matches",
+                    "value": "伊達航"
+                  },
+                  {
+                    "field": "card_name",
+                    "operator": "name_matches",
+                    "value": "萩原研二"
+                  },
+                  {
+                    "field": "card_name",
+                    "operator": "name_matches",
+                    "value": "松田陣平"
+                  }
+                ]
               }
             ]
           },
