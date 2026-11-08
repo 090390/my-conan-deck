@@ -186,7 +186,7 @@ function checkStep(step, location, vars) {
 
   if (step.op === "reveal_until_match") checkFilter(step.match, location + ".match");
   if (step.op === "refill_deck_from_remove_area") need(step.shuffle === true, location + ": refill은 반드시 섞어야 합니다.");
-  if (step.op === "offer_reaction") need(Array.isArray(step.choices) && step.choices.length >= 2, location + ": 반응 choices가 필요합니다.");
+  if (step.op === "offer_reaction") need(Array.isArray(step.choices) && step.choices.length >= 1, location + ": 반응 choices가 필요합니다.");
   if (step.op === "grant_keyword") need(step.duration === "turn_end", location + ": 현재 grant_keyword는 turn_end 지속만 지원합니다.");
   if (step.op === "grant_bond_alias") need(step.duration === "turn_end", location + ": grant_bond_alias는 turn_end 지속이어야 합니다.");
   if (step.op === "modify_stat") {
