@@ -17,7 +17,7 @@ export const ALLOWED_OPS = new Set([
   "pay_cost", "set_mislead_value", "draw_cards", "gain_evidence", "ready_cards_that_used_keyword",
   "mark_keyword_activated", "shuffle_deck", "set_continuous_stat", "set_continuous_keyword",
   "rest_cards", "ready_source_character", "schedule_move_to_deck_bottom", "attach_top_card",
-  "flip_evidence", "win_game", "start_contact", "modify_contact_ap", "grant_bond_alias"
+  "flip_evidence", "win_game", "start_contact", "modify_contact_ap", "grant_bond_alias", "stun_action_character", "return_unselected_to_deck_top"
 ]);
 export const REQUIRED_FIELDS = {
   refill_deck_from_remove_area: ["includeRemainingDeck", "includeRemoveArea", "shuffle"],
@@ -45,7 +45,8 @@ export const REQUIRED_FIELDS = {
   rest_cards: ["target"], ready_source_character: [],
   schedule_move_to_deck_bottom: ["target"], attach_top_card: ["target"], flip_evidence: ["count"],
   win_game: [], start_contact: ["target", "allowActiveTarget", "allowNewlyPlayed"],
-  modify_contact_ap: ["amount"], grant_bond_alias: ["target", "name", "duration"]
+  modify_contact_ap: ["amount"], grant_bond_alias: ["target", "name", "duration"],
+  stun_action_character: [], return_unselected_to_deck_top: ["from", "selectedVariable"]
 };
 const ZONES = new Set(["deck", "hand", "field", "opponent_field", "remove_area", "evidence_area", "partner_area", "source_character", "deck_bottom", "both_fields", "opponent_hand", "attached_cards"]);
 const VALUE_FIELDS = new Set(["card_type", "level", "color", "keyword", "trait", "card_name", "card_id", "rarity", "face_up", "ap_current", "controller", "is_active", "status"]);
@@ -128,10 +129,10 @@ export function validateDslDefinition(def, expectedCardId, knownFacts = new Set(
       need(Number.isInteger(s.min) && s.min >= 0, `${at}: min은 0 이상의 정수여야 합니다.`);
       need(Number.isInteger(s.max) && s.max >= s.min && s.max <= 30, `${at}: max가 유효하지 않습니다.`);
     }
-    if (["move_cards", "reveal_cards", "move_unselected_to_deck_bottom", "move_unselected_to_zone", "attach_cards", "modify_stat", "filter_cards"].includes(s.op)) {
+    if (["move_cards", "reveal_cards", "move_unselected_to_deck_bottom", "move_unselected_to_zone", "return_unselected_to_deck_top", "attach_cards", "modify_stat", "filter_cards"].includes(s.op)) {
       if (typeof s.from === "string" && !ZONES.has(s.from)) need(vars.has(variableRoot(s.from)), `${at}: from 변수 '${s.from}'가 앞 단계에서 정의되지 않았습니다.`);
     }
-    if (["move_unselected_to_deck_bottom", "move_unselected_to_zone"].includes(s.op)) need(vars.has(variableRoot(s.selectedVariable)), `${at}: selectedVariable가 앞 단계에서 정의되지 않았습니다.`);
+    if (["move_unselected_to_deck_bottom", "move_unselected_to_zone", "return_unselected_to_deck_top"].includes(s.op)) need(vars.has(variableRoot(s.selectedVariable)), `${at}: selectedVariable가 앞 단계에서 정의되지 않았습니다.`);
     if (s.op === "pay_cost" && !["sleep_source_character", "sleep_selected_character"].includes(s.cost)) need(false, `${at}: 지원하지 않는 cost '${String(s.cost)}'`);
     if (s.op === "modify_stat" && s.duration !== "turn_end") need(false, `${at}: modify_stat은 현재 turn_end만 지원합니다.`);
     if (s.op === "grant_keyword" && s.duration !== "turn_end") need(false, `${at}: grant_keyword는 현재 turn_end만 지원합니다.`);
