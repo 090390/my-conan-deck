@@ -12842,7 +12842,31 @@
           "min": 0,
           "max": 1,
           "optional": true,
-          "saveAs": "target",
+          "saveAs": "remove_target",
+          "when": {
+            "fact": "player.field.character.count",
+            "operator": "greater_than_or_equal",
+            "value": 5
+          },
+          "filter": {
+            "field": "card_type",
+            "operator": "equals",
+            "value": "character"
+          },
+          "prompt": "리무브할 상대 캐릭터를 최대 1장 선택하세요."
+        },
+        {
+          "op": "select_cards",
+          "from": "opponent_field",
+          "min": 0,
+          "max": 1,
+          "optional": true,
+          "saveAs": "stun_target",
+          "when": {
+            "fact": "player.field.character.count",
+            "operator": "less_than",
+            "value": 5
+          },
           "filter": {
             "allOf": [
               {
@@ -12859,17 +12883,17 @@
               }
             ]
           },
-          "prompt": "스턴 또는 리무브할 상대 캐릭터를 최대 1장 선택하세요."
+          "prompt": "스턴할 상대 캐릭터를 최대 1장 선택하세요."
         },
         {
           "op": "move_cards",
-          "from": "target",
+          "from": "remove_target",
           "to": "remove_area",
           "targetOwner": "opponent",
           "when": {
             "allOf": [
               {
-                "fact": "vars.target.count",
+                "fact": "vars.remove_target.count",
                 "operator": "greater_than",
                 "value": 0
               },
@@ -12883,11 +12907,11 @@
         },
         {
           "op": "stun_cards",
-          "target": "target",
+          "target": "stun_target",
           "when": {
             "allOf": [
               {
-                "fact": "vars.target.count",
+                "fact": "vars.stun_target.count",
                 "operator": "greater_than",
                 "value": 0
               },
@@ -12901,8 +12925,8 @@
         }
       ],
       "reviewNotes": {
-        "rationale": "파트너 황 조건. 상대 캐릭터를 최대 1장 선택한다. 자신의 현장 캐릭터가 5장 이상이면 해당 캐릭터를 리무브하고, 5장 미만이면 스턴한다. 스턴된 캐릭터가 액티브화될 때는 슬립으로 대신 처리하는 기존 전역 스턴 규칙을 사용한다.",
-        "sourceText": "【パートナー黄】相手の現場にいるキャラを1枚まで選び、スタンさせる。（スタン状態のキャラをアクティブにする場合、代わりにスリープさせる）自分の現場にキャラが5枚以上いる場合、代わりにそのキャラをリムーブする。"
+        "rationale": "파트너 황 조건. 상대 현장 캐릭터를 최대 1장 선택한다. 자신의 현장 캐릭터가 5장 이상이면 스턴 상태 여부와 관계없이 해당 캐릭터를 리무브한다. 5장 미만이면 이미 스턴된 캐릭터는 선택할 수 없고, 선택한 캐릭터를 스턴한다. 스턴된 캐릭터가 액티브화될 때 슬립으로 대신 처리하는 전역 규칙은 기존 런타임을 사용한다.",
+        "sourceText": "【パートナー黄】相手の現場にいるキャラを1枚まで選び、スタンさせる。（スタン状態のキャラをアクティブにする場合、代わりにスリープさせる）自分の現場にキャラが5枚以上いる場合、代わりにそのキャラをリムーブ。"
       }
     },
     {
