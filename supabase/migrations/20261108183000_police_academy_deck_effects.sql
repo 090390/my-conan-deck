@@ -255,12 +255,139 @@ BEGIN
 
   -- 4) Preserve the entering controller on manually played characters, so field-watch effects distinguish own/enemy entries.
   v_definition := pg_get_functiondef('public.perform_private_turn_action_v2(uuid,text,jsonb)'::regprocedure);
-  v_old := $old$'method','manual','is_first_character_this_turn',v_first_entry,'source',v_source_card),$old$;
-  v_new := $new$'method','manual','is_first_character_this_turn',v_first_entry,'source',v_source_card,'controller_user_id',v_user::text),$new$;
+  v_old := $old
+  EXECUTE v_definition;
+
+  -- 5) Furuya's Bond with Hiromitsu permits contacting an active character of any level.
+  v_definition := pg_get_functiondef('public.perform_private_turn_action_v2_legacy(uuid,text,jsonb)'::regprocedure);
+  v_old := $old$       and NOT (
+         public.private_card_effect_matches_id_v1(v_attacker,'["0938"]'::jsonb)
+         AND public.private_card_effect_level_v1(v_target)>=7
+       ) then$old$;
+  v_new := $new$       and NOT (
+         (
+           public.private_card_effect_matches_id_v1(v_attacker,'["0938"]'::jsonb)
+           AND public.private_card_effect_level_v1(v_target)>=7
+         )
+         OR (
+           public.private_card_effect_matches_id_v1(v_attacker,'["1123"]'::jsonb)
+           AND EXISTS(
+             SELECT 1
+             FROM jsonb_array_elements(coalesce(v_board.field_cards,'[]'::jsonb)) bond_card(value)
+             WHERE public.private_card_effect_name_matches_v1(bond_card.value,'諸伏景光')
+           )
+         )
+       ) then$new$;
   IF position(v_old in v_definition) > 0 THEN
     v_definition := replace(v_definition, v_old, v_new);
   ELSIF position(v_new in v_definition) = 0 THEN
-    RAISE EXCEPTION 'manual character-entry controller anchor missing';
+    RAISE EXCEPTION 'active-contact bond rule anchor missing';
+  END IF;
+  EXECUTE v_definition;
+
+  -- 6) Synchronize the runtime catalog idempotently.
+  UPDATE public.private_card_effect_catalog_v1 c
+    SET definitions=(
+      SELECT coalesce(jsonb_agg(e.value),'[]'::jsonb)
+      FROM jsonb_array_elements(coalesce(c.definitions,'[]'::jsonb)) e(value)
+      WHERE NOT (e.value->>'effectId'=ANY(ARRAY[
+        'card-1121-field-watch-remove-level9-on-police-academy-enter',
+        'card-1121-bond-furuya-end-turn-recover-police',
+        'card-1121-activated-bond-target-ap-plus-2000',
+        'card-1122-partner-yellow-charge',
+        'card-1122-contact-removed-bond-followup-remove-level7',
+        'card-1123-continuous-charge',
+        'card-1123-bond-date-ready-at-turn-end',
+        'card-1123-bond-hagiwara-ap-plus-1000',
+        'card-1123-bond-matsuda-ap-plus-1000',
+        'card-1129-solution-character-ability-entry-draw',
+        'card-1129-hirameki-recover-police-academy-character',
+        'card-1133-bond-matsuda-ap-plus-1000',
+        'card-1133-on-enter-search-police-academy',
+        'card-0911-on-enter-investigate-three-and-grant-keywords',
+        'card-0148-partner-yellow-swift',
+        'card-0356-event-stun-or-remove-character'
+      ]))
+    ) || v_definitions,
+    updated_at=now()
+    WHERE c.catalog_id='main';
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'main card effect catalog row was not found';
+  END IF;
+END
+$migration$;
+method',CASE WHEN p_action='next_hint' THEN 'next_hint' ELSE 'manual' END,
+       'is_first_character_this_turn',v_first_entry,'source',v_source_card),$old$;
+  v_new := $new
+  EXECUTE v_definition;
+
+  -- 5) Furuya's Bond with Hiromitsu permits contacting an active character of any level.
+  v_definition := pg_get_functiondef('public.perform_private_turn_action_v2_legacy(uuid,text,jsonb)'::regprocedure);
+  v_old := $old$       and NOT (
+         public.private_card_effect_matches_id_v1(v_attacker,'["0938"]'::jsonb)
+         AND public.private_card_effect_level_v1(v_target)>=7
+       ) then$old$;
+  v_new := $new$       and NOT (
+         (
+           public.private_card_effect_matches_id_v1(v_attacker,'["0938"]'::jsonb)
+           AND public.private_card_effect_level_v1(v_target)>=7
+         )
+         OR (
+           public.private_card_effect_matches_id_v1(v_attacker,'["1123"]'::jsonb)
+           AND EXISTS(
+             SELECT 1
+             FROM jsonb_array_elements(coalesce(v_board.field_cards,'[]'::jsonb)) bond_card(value)
+             WHERE public.private_card_effect_name_matches_v1(bond_card.value,'諸伏景光')
+           )
+         )
+       ) then$new$;
+  IF position(v_old in v_definition) > 0 THEN
+    v_definition := replace(v_definition, v_old, v_new);
+  ELSIF position(v_new in v_definition) = 0 THEN
+    RAISE EXCEPTION 'active-contact bond rule anchor missing';
+  END IF;
+  EXECUTE v_definition;
+
+  -- 6) Synchronize the runtime catalog idempotently.
+  UPDATE public.private_card_effect_catalog_v1 c
+    SET definitions=(
+      SELECT coalesce(jsonb_agg(e.value),'[]'::jsonb)
+      FROM jsonb_array_elements(coalesce(c.definitions,'[]'::jsonb)) e(value)
+      WHERE NOT (e.value->>'effectId'=ANY(ARRAY[
+        'card-1121-field-watch-remove-level9-on-police-academy-enter',
+        'card-1121-bond-furuya-end-turn-recover-police',
+        'card-1121-activated-bond-target-ap-plus-2000',
+        'card-1122-partner-yellow-charge',
+        'card-1122-contact-removed-bond-followup-remove-level7',
+        'card-1123-continuous-charge',
+        'card-1123-bond-date-ready-at-turn-end',
+        'card-1123-bond-hagiwara-ap-plus-1000',
+        'card-1123-bond-matsuda-ap-plus-1000',
+        'card-1129-solution-character-ability-entry-draw',
+        'card-1129-hirameki-recover-police-academy-character',
+        'card-1133-bond-matsuda-ap-plus-1000',
+        'card-1133-on-enter-search-police-academy',
+        'card-0911-on-enter-investigate-three-and-grant-keywords',
+        'card-0148-partner-yellow-swift',
+        'card-0356-event-stun-or-remove-character'
+      ]))
+    ) || v_definitions,
+    updated_at=now()
+    WHERE c.catalog_id='main';
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'main card effect catalog row was not found';
+  END IF;
+END
+$migration$;
+method',CASE WHEN p_action='next_hint' THEN 'next_hint' ELSE 'manual' END,
+       'is_first_character_this_turn',v_first_entry,'source',v_source_card,
+       'controller_user_id',v_user::text),$new$;
+  IF position(v_new in v_definition) = 0 THEN
+    IF position(v_old in v_definition) > 0 THEN
+      v_definition := replace(v_definition, v_old, v_new);
+    ELSE
+      RAISE EXCEPTION 'manual character-entry controller anchor missing';
+    END IF;
   END IF;
   EXECUTE v_definition;
 
