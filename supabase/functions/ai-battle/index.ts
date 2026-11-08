@@ -1569,6 +1569,27 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
     }
   }
 
+  // Bond with Hiromitsu lets Furuya Rei contact an active opposing character.
+  // Only take the line when the contact can be won without consuming another resource.
+  const bondFuruyaAttacker = activeAttackers.find((card: any) => matchesInternalCardId(card, "1123"));
+  const hasBondHiromitsu = field.some((card: any) => matchesCardName(card, "모로후시 히로미츠"));
+  const bondActiveTarget = enemyField
+    .filter((card: any) => isCharacter(card) && isActive(card))
+    .sort((a: any, b: any) => cardAp(a) - cardAp(b))[0];
+  if (bondFuruyaAttacker && hasBondHiromitsu && bondActiveTarget
+    && cardAp(bondFuruyaAttacker) >= cardAp(bondActiveTarget)) {
+    return {
+      action: "declare_contact",
+      payload: {
+        attacker_instance_id: bondFuruyaAttacker.instance_id,
+        target_user_id: opponent.user_id,
+        target_instance_id: bondActiveTarget.instance_id,
+        allow_active_target: true,
+        allow_newly_played: hasCharge(bondFuruyaAttacker),
+      },
+    };
+  }
+
   const restedTarget = enemyField.filter((card: any) => isCharacter(card) && !isActive(card))
     .sort((a: any, b: any) => cardAp(a) - cardAp(b))[0];
   if (characterAttackers.length && restedTarget) {
@@ -1809,7 +1830,21 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
 
     let decision: any = null;
     if (pending?.chooser_user_id === battle.ai_user_id && String(pending?.type || "").startsWith("card_effect_")) {
-      if (pending.type === "card_effect_selection" || pending.type === "card_effect_order") {
+      if (pending.type === "card_effect_trait_selection") {
+        const enemyBoard = (Array.isArray(state?.boards) ? state.boards : [])
+          .find((board: any) => String(board?.user_id || "") !== String(battle.ai_user_id));
+        const enemyField = Array.isArray(enemyBoard?.field_cards) ? enemyBoard.field_cards : [];
+        // Prefer a trait already represented on the visible opponent field. When no
+        // visible clue exists, Police is a stable fallback for the Police Academy deck.
+        const traitCandidates = ["警察", "警視庁", "公安", "探偵", "怪盗", "黒ずくめの組織", "FBI", "犯人", "高校生", "少年探偵団"];
+        const rankedTraits = traitCandidates.map((trait: string, index: number) => ({
+          trait,
+          score: enemyField.filter((card: any) => hasTrait(card, trait)).length,
+          tieBreak: index,
+        })).sort((left: any, right: any) => right.score - left.score || left.tieBreak - right.tieBreak);
+        const selectedTrait = rankedTraits[0]?.trait || "警察";
+        decision = { action: "card_effect_continue", payload: { trait: selectedTrait } };
+      } else if (pending.type === "card_effect_selection" || pending.type === "card_effect_order") {
         const { data: effectOptions, error: optionsError } = await service.rpc("get_private_card_effect_options_for_ai_v1", {
           p_room_id: roomId, p_ai_user_id: battle.ai_user_id,
         });
