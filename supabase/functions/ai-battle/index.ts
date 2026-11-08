@@ -95,12 +95,14 @@ function cardCutInBonusForSubject(
     bonus += 1000;
   }
 
-  // B05095 / internal 0593: during its owner's turn, each Police character
-  // currently on that owner's field adds 1000 AP.
-  if (matchesInternalCardId(card, "0593") && isOwnerTurn) {
+  // B05095 / internal 0593: its entire bonus is 1000 AP per Police
+  // character on the owner's field. Do not retain the generic parser's first
+  // "+1000" token as a flat base bonus, and do not allow it outside the owner's turn.
+  if (matchesInternalCardId(card, "0593")) {
+    if (!isOwnerTurn) return 0;
     const policeCount = ownField.filter((entry: any) =>
       isCharacter(entry) && hasTrait(entry, "경찰")).length;
-    bonus += policeCount * 1000;
+    return policeCount * 1000;
   }
 
   // B10078 / internal 1134: AP+2000 only when its owner cuts in during their
@@ -1302,6 +1304,7 @@ function chooseTurnAction(state: any, aiId: string, lastNextHintTurnNumber: numb
   // B09107P cannot be solved normally; its dedicated activated ability is the
   // only win route and is evaluated later in the main-step decision sequence.
   if (isSolution && !isCulpritsCrimeCase
+    && !me.partner_rested
     && Number(me.evidence_count || 0) >= solveEvidenceThreshold) {
     return { action: "solve_case" };
   }
