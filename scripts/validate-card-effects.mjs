@@ -29,7 +29,7 @@ const allowedOps = new Set([
   "rest_cards", "ready_source_character", "schedule_move_to_deck_bottom",
   "calculate_hand_difference", "move_top_file_cards", "calculate_switch_count",
   "attach_top_card", "flip_evidence", "win_game", "start_contact",
-  "modify_contact_ap", "grant_bond_alias",
+  "modify_contact_ap", "grant_bond_alias", "stun_action_character", "return_unselected_to_deck_top",
 ]);
 const zoneNames = new Set([
   "deck", "hand", "field", "opponent_field", "remove_area", "evidence_area", "partner_area",
@@ -115,6 +115,8 @@ function checkStep(step, location, vars, def) {
     start_contact: ["target", "allowActiveTarget", "allowNewlyPlayed"],
     modify_contact_ap: ["amount"],
     grant_bond_alias: ["target", "name", "duration"],
+    stun_action_character: [],
+    return_unselected_to_deck_top: ["from", "selectedVariable"],
   };
   if (required[step.op]) need(has(step, required[step.op]), `${location}: ${step.op}의 필수 필드(${required[step.op].join(", ")})가 빠졌습니다.`);
 
@@ -136,11 +138,11 @@ function checkStep(step, location, vars, def) {
     if (step.uniqueBy !== undefined) need(step.uniqueBy === "card_name", `${location}: 현재 uniqueBy는 card_name만 지원합니다.`);
   }
 
-  if (["reveal_cards", "move_cards", "move_unselected_to_deck_bottom", "move_unselected_to_zone", "attach_cards", "modify_stat"].includes(step.op)) {
+  if (["reveal_cards", "move_cards", "move_unselected_to_deck_bottom", "move_unselected_to_zone", "return_unselected_to_deck_top", "attach_cards", "modify_stat"].includes(step.op)) {
     if (typeof step.from === "string" && !zoneNames.has(step.from)) {
       need(vars.has(variableRoot(step.from)), `${location}: 출처 변수 '${step.from}'가 앞 단계에 정의되지 않았습니다.`);
     }
-    if (step.op === "move_unselected_to_deck_bottom" || step.op === "move_unselected_to_zone") {
+    if (step.op === "move_unselected_to_deck_bottom" || step.op === "move_unselected_to_zone" || step.op === "return_unselected_to_deck_top") {
       need(vars.has(variableRoot(step.selectedVariable)), `${location}: 선택 변수 '${step.selectedVariable}'가 앞 단계에 정의되지 않았습니다.`);
     }
   }
