@@ -11930,14 +11930,32 @@
           "value": true
         },
         {
-          "fact": "entry.source.card_name",
-          "operator": "in",
-          "value": [
-            "降谷零",
-            "諸伏景光",
-            "伊達航",
-            "萩原研二",
-            "松田陣平"
+          "anyOf": [
+            {
+              "fact": "entry.source.card_name",
+              "operator": "name_matches",
+              "value": "降谷零"
+            },
+            {
+              "fact": "entry.source.card_name",
+              "operator": "name_matches",
+              "value": "諸伏景光"
+            },
+            {
+              "fact": "entry.source.card_name",
+              "operator": "name_matches",
+              "value": "伊達航"
+            },
+            {
+              "fact": "entry.source.card_name",
+              "operator": "name_matches",
+              "value": "萩原研二"
+            },
+            {
+              "fact": "entry.source.card_name",
+              "operator": "name_matches",
+              "value": "松田陣平"
+            }
           ]
         },
         {
@@ -12125,12 +12143,22 @@
                 "value": "character"
               },
               {
-                "field": "card_name",
-                "operator": "in",
-                "value": [
-                  "降谷零",
-                  "諸伏景光",
-                  "伊達航"
+                "anyOf": [
+                  {
+                    "field": "card_name",
+                    "operator": "name_matches",
+                    "value": "降谷零"
+                  },
+                  {
+                    "field": "card_name",
+                    "operator": "name_matches",
+                    "value": "諸伏景光"
+                  },
+                  {
+                    "field": "card_name",
+                    "operator": "name_matches",
+                    "value": "伊達航"
+                  }
                 ]
               }
             ]
@@ -12216,12 +12244,22 @@
           "optional": true,
           "saveAs": "bond_cost",
           "filter": {
-            "field": "card_name",
-            "operator": "in",
-            "value": [
-              "諸伏景光",
-              "萩原研二",
-              "松田陣平"
+            "anyOf": [
+              {
+                "field": "card_name",
+                "operator": "name_matches",
+                "value": "諸伏景光"
+              },
+              {
+                "field": "card_name",
+                "operator": "name_matches",
+                "value": "萩原研二"
+              },
+              {
+                "field": "card_name",
+                "operator": "name_matches",
+                "value": "松田陣平"
+              }
             ]
           },
           "prompt": "손패에서 모로후시 히로미츠/하기와라 켄지/마츠다 진페이 중 1장을 리무브할 수 있습니다."
@@ -12469,14 +12507,32 @@
           "optional": true,
           "saveAs": "recovered",
           "filter": {
-            "field": "card_name",
-            "operator": "in",
-            "value": [
-              "降谷零",
-              "諸伏景光",
-              "伊達航",
-              "萩原研二",
-              "松田陣平"
+            "anyOf": [
+              {
+                "field": "card_name",
+                "operator": "name_matches",
+                "value": "降谷零"
+              },
+              {
+                "field": "card_name",
+                "operator": "name_matches",
+                "value": "諸伏景光"
+              },
+              {
+                "field": "card_name",
+                "operator": "name_matches",
+                "value": "伊達航"
+              },
+              {
+                "field": "card_name",
+                "operator": "name_matches",
+                "value": "萩原研二"
+              },
+              {
+                "field": "card_name",
+                "operator": "name_matches",
+                "value": "松田陣平"
+              }
             ]
           },
           "prompt": "패에 추가할 경찰학교 동기 캐릭터를 최대 1장 선택하세요."
@@ -12570,14 +12626,32 @@
                 "value": "character"
               },
               {
-                "field": "card_name",
-                "operator": "in",
-                "value": [
-                  "降谷零",
-                  "諸伏景光",
-                  "伊達航",
-                  "萩原研二",
-                  "松田陣平"
+                "anyOf": [
+                  {
+                    "field": "card_name",
+                    "operator": "name_matches",
+                    "value": "降谷零"
+                  },
+                  {
+                    "field": "card_name",
+                    "operator": "name_matches",
+                    "value": "諸伏景光"
+                  },
+                  {
+                    "field": "card_name",
+                    "operator": "name_matches",
+                    "value": "伊達航"
+                  },
+                  {
+                    "field": "card_name",
+                    "operator": "name_matches",
+                    "value": "萩原研二"
+                  },
+                  {
+                    "field": "card_name",
+                    "operator": "name_matches",
+                    "value": "松田陣平"
+                  }
                 ]
               }
             ]
