@@ -92,7 +92,7 @@ BEGIN
     'public.private_card_effect_fact_v1(uuid,uuid,uuid,jsonb,jsonb,jsonb,text)'::regprocedure
   ) INTO v_definition;
 
-  v_old := $old$ IF p_fact LIKE 'vars.%' THEN $old$;
+  v_old := $old$IF p_fact LIKE 'vars.%' THEN$old$;
   v_new := $new$ IF p_fact LIKE 'vars.%.has_rarity_mr' THEN
    v_path := string_to_array(substr(p_fact,6),'.');
    v_path := v_path[1:array_length(v_path,1)-1];
