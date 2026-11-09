@@ -289,6 +289,12 @@ export default function AIBattlePanel({ deck, partnerId, eventId, cards = [], en
   const [deckListLoading, setDeckListLoading] = useState(true);
   const [deckListError, setDeckListError] = useState("");
   const [deckPickerOpen, setDeckPickerOpen] = useState(false);
+  const reviewedPublicDecks = publicDecks.filter((item) =>
+    REVIEWED_AI_DECK_IDS.has(String(item?.id))
+  );
+  const reviewedDeckIds = reviewedPublicDecks.map((item) => String(item.id));
+  const isReviewedOnlySelection = selectedDeckIds.length === reviewedDeckIds.length
+    && reviewedDeckIds.every((id) => selectedDeckIds.includes(id));
 
   useEffect(() => {
     let active = true;
@@ -411,20 +417,20 @@ export default function AIBattlePanel({ deck, partnerId, eventId, cards = [], en
         {deckPickerOpen && (
           <>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, padding: "10px 12px", borderTop: "1px solid rgba(148,163,184,.12)", background: "rgba(2,6,23,.35)" }}>
-              <span style={{ color: "#94a3b8", fontSize: 11 }}>기본값은 전체 선택입니다.</span>
+              <div style={{ color: "#94a3b8", fontSize: 11, lineHeight: 1.6 }}>
+                <span>기본값은 전체 선택입니다.</span>
+                <span style={{ display: "block", color: "#86efac", fontWeight: 750 }}>
+                  검토 완료 덱 {reviewedPublicDecks.length}개
+                </span>
+              </div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 <button type="button" style={{ ...buttonStyle, padding: "7px 10px", fontSize: 11 }} disabled={deckListLoading || publicDecks.length === 0 || selectedDeckIds.length === publicDecks.length} onClick={() => setSelectedDeckIds(publicDecks.map((item) => String(item.id)))}>전체 선택</button>
                 <button type="button" style={{ ...buttonStyle, padding: "7px 10px", fontSize: 11, background: "#1e293b", borderColor: "rgba(148,163,184,.28)" }} disabled={deckListLoading || selectedDeckIds.length === 0} onClick={() => setSelectedDeckIds([])}>전체 해제</button>
                 <button
                   type="button"
                   style={{ ...buttonStyle, padding: "7px 10px", fontSize: 11, background: "#14532d", borderColor: "rgba(134,239,172,.38)" }}
-                  disabled={deckListLoading || publicDecks.every((item) => !REVIEWED_AI_DECK_IDS.has(String(item.id))) || (
-                    selectedDeckIds.length === publicDecks.filter((item) => REVIEWED_AI_DECK_IDS.has(String(item.id))).length
-                    && publicDecks.filter((item) => REVIEWED_AI_DECK_IDS.has(String(item.id))).every((item) => selectedDeckIds.includes(String(item.id)))
-                  )}
-                  onClick={() => setSelectedDeckIds(publicDecks
-                    .filter((item) => REVIEWED_AI_DECK_IDS.has(String(item.id)))
-                    .map((item) => String(item.id)))}
+                  disabled={deckListLoading || reviewedDeckIds.length === 0 || isReviewedOnlySelection}
+                  onClick={() => setSelectedDeckIds(reviewedDeckIds)}
                 >
                   검토된 덱만 선택
                 </button>
@@ -454,7 +460,7 @@ export default function AIBattlePanel({ deck, partnerId, eventId, cards = [], en
                     <span style={{ minWidth: 0, flex: 1 }}>
                       <span style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6, color: "#e2e8f0", fontSize: 12, fontWeight: 800, overflowWrap: "anywhere" }}>
                         <span>{item.deck_name || "이름 없는 덱"}</span>
-                        {REVIEWED_AI_DECK_IDS.has(id) && <span style={{ padding: "2px 6px", border: "1px solid rgba(74,222,128,.45)", borderRadius: 999, color: "#86efac", fontSize: 9, fontWeight: 900, whiteSpace: "nowrap" }}>카드 검토 완료</span>}
+                        {REVIEWED_AI_DECK_IDS.has(id) && <span style={{ padding: "2px 6px", border: "1px solid rgba(74,222,128,.45)", borderRadius: 999, background: "rgba(22,163,74,.12)", color: "#86efac", fontSize: 9, fontWeight: 900, whiteSpace: "nowrap" }}>카드 검토 완료</span>}
                       </span>
                       <span style={{ display: "block", marginTop: 3, color: "#94a3b8", fontSize: 10, lineHeight: 1.6 }}>
                         제작자: {item.composer_name || "미상"}
