@@ -21,6 +21,7 @@ const REVIEWED_AI_DECK_IDS = new Set([
   "f59538fa-d17d-4da6-b8f9-44bcca43d30f", // FBI
   "1f8bd048-f356-4470-b4c6-08cdc9c21e74",
   "93e0a9dc-6422-4dc6-85bf-a993971ffd39", // 적 핸드리스 // 녹 헤카 컨트롤
+  "a7c77739-f7cf-4d90-9531-968821dae140", // 경동조
 ]);
 
 function exemptionId(card, fallback = "") {
@@ -414,6 +415,19 @@ export default function AIBattlePanel({ deck, partnerId, eventId, cards = [], en
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 <button type="button" style={{ ...buttonStyle, padding: "7px 10px", fontSize: 11 }} disabled={deckListLoading || publicDecks.length === 0 || selectedDeckIds.length === publicDecks.length} onClick={() => setSelectedDeckIds(publicDecks.map((item) => String(item.id)))}>전체 선택</button>
                 <button type="button" style={{ ...buttonStyle, padding: "7px 10px", fontSize: 11, background: "#1e293b", borderColor: "rgba(148,163,184,.28)" }} disabled={deckListLoading || selectedDeckIds.length === 0} onClick={() => setSelectedDeckIds([])}>전체 해제</button>
+                <button
+                  type="button"
+                  style={{ ...buttonStyle, padding: "7px 10px", fontSize: 11, background: "#14532d", borderColor: "rgba(134,239,172,.38)" }}
+                  disabled={deckListLoading || publicDecks.every((item) => !REVIEWED_AI_DECK_IDS.has(String(item.id))) || (
+                    selectedDeckIds.length === publicDecks.filter((item) => REVIEWED_AI_DECK_IDS.has(String(item.id))).length
+                    && publicDecks.filter((item) => REVIEWED_AI_DECK_IDS.has(String(item.id))).every((item) => selectedDeckIds.includes(String(item.id)))
+                  )}
+                  onClick={() => setSelectedDeckIds(publicDecks
+                    .filter((item) => REVIEWED_AI_DECK_IDS.has(String(item.id)))
+                    .map((item) => String(item.id)))}
+                >
+                  검토된 덱만 선택
+                </button>
               </div>
             </div>
             {deckListError && <p role="alert" style={{ margin: 0, padding: 12, color: "#fda4af", fontSize: 12 }}>{deckListError}</p>}
