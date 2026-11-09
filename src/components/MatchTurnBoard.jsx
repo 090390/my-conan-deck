@@ -669,8 +669,9 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
             }
           }
         }
-        // The new MR enters the field first: any older MR already in the MR partner area
-        // is then moved to Remove. After that, any MR that left the field is stored there.
+        // The database trigger enforces one MR/MRP across the field and MR partner area.
+        // Keep these recovery calls for older clients: displaced MRs stay in Remove when a
+        // newer MR/MRP already occupies the shared slot, rather than being stored again.
         for (const entry of enteredMrs) {
           try {
             const { data: recovered, error: recoveryError } = await supabase.rpc("remove_replaced_mr_partner_on_new_mr_v2", {
