@@ -287,7 +287,7 @@ function matchesDslFilter(card: any, filter: any): boolean {
             card?.cut_in_effect, card?.cutInEffect, source?.cut_in, source?.cutIn,
             card?.abilityJp, card?.abilityKo, card?.ability_jp, card?.ability_ko,
           ].filter((value) => typeof value === "string").join(" ");
-          return /カットイン|컷인|cut[\\s_-]*in/iu.test(printed);
+          return /カットイン|컷인|cut[\s_-]*in/iu.test(printed);
         }
         return false;
       }
@@ -1982,7 +1982,7 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
           && isFieldTargetSelection) {
           const hasRemoveAreaSynergy = (card: any) => {
             const serialized = JSON.stringify(card || {});
-            return /リムーブエリア|リムーブされた時|リムーブエリアにある|リムーブエリアから|リムーブした時|リムーブされた場合|리무브\\s*에이리어|리무브된\\s*때|리무브되었을\\s*때|리무브되면|리무브될\\s*때/iu.test(serialized);
+            return /リムーブエリア|リムーブされた時|リムーブエリアにある|リムーブエリアから|リムーブした時|リムーブされた場合|리무브\s*에이리어|리무브된\s*때|리무브되었을\s*때|리무브되면|리무브될\s*때/iu.test(serialized);
           };
           targetOptions = [...targetOptions].sort((left: any, right: any) => {
             const leftCard = left?.card || left;
