@@ -1952,10 +1952,16 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
                   const card = option.card || option;
                   const id = String(option.instance_id || card.instance_id || "");
                   const selected = cardEffectSelectedIds.includes(id);
+                  const faceUp = card?.face_up === true || card?.faceUp === true
+                    || card?.face_up === "true" || card?.faceUp === "true";
+                  const hiddenEvidence = Boolean(option?.is_hidden_evidence || card?.is_hidden_evidence)
+                    || (String(option?.zone || "") === "evidence_area"
+                      && String(option?.owner_user_id || "") !== String(userId || "")
+                      && !faceUp);
                   return <button key={id} type="button" aria-pressed={selected} onClick={() => setCardEffectSelectedIds((ids) => selected ? ids.filter((v) => v !== id) : (ids.length < Number(pending.max || 1) ? [...ids, id] : ids))} style={{ minWidth: 0, padding: 7, border: `2px solid ${selected ? C.gold : "rgba(255,255,255,.12)"}`, borderRadius: 8, background: selected ? "rgba(120,83,10,.25)" : "#080d16", color: C.text, textAlign: "left" }}>
-                    <CardArt instance={card} />
-                    <strong style={{ display: "block", marginTop: 5, fontSize: 10, lineHeight: 1.35, overflowWrap: "anywhere" }}>{selected ? "✓ " : ""}{nameOf(card)}</strong>
-                    <span style={{ display: "block", fontSize: 9, color: C.muted, marginTop: 3 }}>레벨 {card.cost ?? infoFor(card)?.cost ?? "-"} · AP {card.ap ?? "-"}</span>
+                    <CardArt instance={card} faceDown={hiddenEvidence} />
+                    <strong style={{ display: "block", marginTop: 5, fontSize: 10, lineHeight: 1.35, overflowWrap: "anywhere" }}>{selected ? "✓ " : ""}{hiddenEvidence ? "뒷면 증거" : nameOf(card)}</strong>
+                    <span style={{ display: "block", fontSize: 9, color: C.muted, marginTop: 3 }}>{hiddenEvidence ? "카드 내용 비공개" : `레벨 ${card.cost ?? infoFor(card)?.cost ?? "-"} · AP ${card.ap ?? "-"}`}</span>
                   </button>;
                 })}
                 {!cardEffectOptions.length && <p style={st.muted}>조건에 맞는 선택 대상이 없습니다. 단계 건너뛰기를 누르면 이 선택만 생략하고 게임을 계속합니다.</p>}
