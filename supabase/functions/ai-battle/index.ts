@@ -1973,6 +1973,30 @@ async function driveAiTurns(service: any, roomId: string, humanId: string) {
             }
           }
         }
+        // ID:0704 (Matsuda Jinpei) converts a selected opposing field character
+        // into face-up evidence (or routes an MR/MRP character to the opponent's
+        // MR partner area and grants a face-up top-deck evidence). Prefer targets
+        // that are difficult to leave on the field or that would be troublesome
+        // to give back to the opponent's remove area.
+        if (String(pending.effect_id || "") === "card-0704-activated-opponent-evidence-and-character"
+          && isFieldTargetSelection) {
+          const hasRemoveAreaSynergy = (card: any) => {
+            const serialized = JSON.stringify(card || {});
+            return /リムーブエリア|リムーブされた時|リムーブエリアにある|リムーブエリアから|リムーブした時|リムーブされた場合|리무브\\s*에이리어|리무브된\\s*때|리무브되었을\\s*때|리무브되면|리무브될\\s*때/iu.test(serialized);
+          };
+          targetOptions = [...targetOptions].sort((left: any, right: any) => {
+            const leftCard = left?.card || left;
+            const rightCard = right?.card || right;
+            const removeAreaPriority = Number(hasRemoveAreaSynergy(rightCard)) - Number(hasRemoveAreaSynergy(leftCard));
+            if (removeAreaPriority !== 0) return removeAreaPriority;
+            const activePriority = Number(isActive(rightCard)) - Number(isActive(leftCard));
+            if (activePriority !== 0) return activePriority;
+            const apDifference = cardAp(rightCard) - cardAp(leftCard);
+            if (apDifference !== 0) return apDifference;
+            return cardCost(rightCard) - cardCost(leftCard);
+          });
+        }
+
         const ids = targetOptions.map((option: any) => String(option?.instance_id || option?.card?.instance_id || "")).filter(Boolean);
         if (pending.type === "card_effect_order") {
           decision = { action: "card_effect_continue", payload: { selected_instance_ids: ids } };
