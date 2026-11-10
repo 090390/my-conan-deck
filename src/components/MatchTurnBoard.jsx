@@ -2088,8 +2088,12 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
               </div>
             ))}
           </div>
-          {pending.next_responder_user_id === userId ? <><p style={{ fontSize: 11, color: C.gold, margin: "12px 0 7px" }}>{userId === pending.target_user_id ? "현재 순서: 수비자 · 컷인 사용 여부를 선택해 주세요." : "현재 순서: 공격자 · 컷인 사용 여부를 선택해 주세요."}</p><div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6, marginBottom: 8, padding: 8, border: "1px solid rgba(96,165,250,.28)", borderRadius: 8, background: "rgba(30,58,95,.22)" }}><span style={{ fontSize: 10, color: "#bfdbfe", fontWeight: 800, marginRight: 3 }}>컨택 AP 수동 조정 · 컷인과 별도</span><button type="button" style={{ ...st.smallButton, background: "#1d4ed8" }} disabled={loading} onClick={() => { const raw = window.prompt("본인 컨택 카드에 더할 AP를 입력하세요. (예: 1000)", "1000"); if (raw === null) return; const amount = Math.abs(Number(String(raw).replace(/[,，\s]/gu, ""))); if (!Number.isSafeInteger(amount) || amount < 1 || amount > 100000) { setError("AP 변화량은 1~100000 사이의 정수로 입력해 주세요."); return; } void runAction("contact_adjust_ap", { amount }); }}>AP +N</button><button type="button" style={{ ...st.smallButton, background: "#374151" }} disabled={loading} onClick={() => { const raw = window.prompt("본인 컨택 카드에서 뺄 AP를 입력하세요. (예: 1000)", "1000"); if (raw === null) return; const amount = Math.abs(Number(String(raw).replace(/[,，\s]/gu, ""))); if (!Number.isSafeInteger(amount) || amount < 1 || amount > 100000) { setError("AP 변화량은 1~100000 사이의 정수로 입력해 주세요."); return; } void runAction("contact_adjust_ap", { amount: -amount }); }}>AP −N</button></div><div style={{ display: "grid", gap: 6 }}>{myHand.filter((card) => n(card.cut_in_bonus) > 0 || Boolean(String(infoFor(card)?.cutInEffect || card.cut_in_effect || "").trim()) || (blueCutInGranted && isBlueCard({ ...infoFor(card), ...card }))).map((card) => {
-            const effectText = String(infoFor(card)?.cutInEffect || card.cut_in_effect || "").trim();
+          {pending.next_responder_user_id === userId ? <><p style={{ fontSize: 11, color: C.gold, margin: "12px 0 7px" }}>{userId === pending.target_user_id ? "현재 순서: 수비자 · 컷인 사용 여부를 선택해 주세요." : "현재 순서: 공격자 · 컷인 사용 여부를 선택해 주세요."}</p><div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6, marginBottom: 8, padding: 8, border: "1px solid rgba(96,165,250,.28)", borderRadius: 8, background: "rgba(30,58,95,.22)" }}><span style={{ fontSize: 10, color: "#bfdbfe", fontWeight: 800, marginRight: 3 }}>컨택 AP 수동 조정 · 컷인과 별도</span><button type="button" style={{ ...st.smallButton, background: "#1d4ed8" }} disabled={loading} onClick={() => { const raw = window.prompt("본인 컨택 카드에 더할 AP를 입력하세요. (예: 1000)", "1000"); if (raw === null) return; const amount = Math.abs(Number(String(raw).replace(/[,，\s]/gu, ""))); if (!Number.isSafeInteger(amount) || amount < 1 || amount > 100000) { setError("AP 변화량은 1~100000 사이의 정수로 입력해 주세요."); return; } void runAction("contact_adjust_ap", { amount }); }}>AP +N</button><button type="button" style={{ ...st.smallButton, background: "#374151" }} disabled={loading} onClick={() => { const raw = window.prompt("본인 컨택 카드에서 뺄 AP를 입력하세요. (예: 1000)", "1000"); if (raw === null) return; const amount = Math.abs(Number(String(raw).replace(/[,，\s]/gu, ""))); if (!Number.isSafeInteger(amount) || amount < 1 || amount > 100000) { setError("AP 변화량은 1~100000 사이의 정수로 입력해 주세요."); return; } void runAction("contact_adjust_ap", { amount: -amount }); }}>AP −N</button></div><div style={{ display: "grid", gap: 6 }}>{myHand.filter((card) => n(card.cut_in_bonus) > 0
+            || Boolean(String(infoFor(card)?.cutInEffect || infoFor(card)?.cut_in || card.cut_in_effect || card.cut_in || card.sourceData?.cut_in || "").trim())
+            || cardHasRuleId({ ...infoFor(card), ...card }, "0893")
+            || cardHasRuleId({ ...infoFor(card), ...card }, "1117")
+            || (blueCutInGranted && isBlueCard({ ...infoFor(card), ...card }))).map((card) => {
+            const effectText = String(infoFor(card)?.cutInEffect || infoFor(card)?.cut_in || card.cut_in_effect || card.cut_in || card.sourceData?.cut_in || "").trim();
             const cardInfo = infoFor(card);
             const isCulpritScalingCutIn = cardHasRuleId({ ...cardInfo, ...card }, "0627");
             const culpritCardCount = isCulpritScalingCutIn ? myRemoveCards.filter((removedCard) => {
@@ -2103,6 +2107,14 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
             const isB10011CutIn = cardHasRuleId({ ...cardInfo, ...card }, "1073");
             const isB09059CutIn = cardHasRuleId({ ...cardInfo, ...card }, "1001");
             const isB05070CutIn = cardHasRuleId({ ...cardInfo, ...card }, "0570");
+            const isB08055CutIn = cardHasRuleId({ ...cardInfo, ...card }, "0893");
+            const isMiyanoSeraCutIn = cardHasRuleId({ ...cardInfo, ...card }, "1117");
+            const isB10058MiyanoSeraCutIn = isMiyanoSeraCutIn && String(card.key || card.card_num || card.cardNum || card.cardNumber || card.sourceData?.card_num || "").toUpperCase() === "B10058";
+            const hidemiCostOptions = isB08055CutIn ? myHand
+              .filter((entry) => String(entry.instance_id || "") !== String(card.instance_id || "")
+                && String(entry.card_type || entry.type || "").toLowerCase() === "character")
+              .slice().sort((a, b) => (n(b.ap) + n(b.ap_bonus)) - (n(a.ap) + n(a.ap_bonus))) : [];
+            const hidemiBestCostAp = hidemiCostOptions.length ? Math.max(0, n(hidemiCostOptions[0].ap) + n(hidemiCostOptions[0].ap_bonus)) : 0;
             const partnerCardInfo = cardsByKey.get(String(myBoard?.partner_key || "")) || {};
             const partnerColorText = String(partnerCardInfo?.color || partnerCardInfo?.colorKo || partnerCardInfo?.color_ja || "").normalize("NFKC").trim().toLocaleLowerCase();
             const isRedPartner = /^(?:red|적|적색|赤|赤色)$/iu.test(partnerColorText);
@@ -2126,8 +2138,11 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
             const canUseB11015CutIn = !isB11015CutIn || ownTurn;
             const canUseB10011CutIn = !isB10011CutIn || isKudoShinichiSubject || isMouriRanSubject;
             const canUseCutIn = canUseB10078PoliceCutIn && canUseB11015CutIn && canUseB10011CutIn;
+            const handCountForMiyanoSera = Math.max(0, myHand.length - (isB10058MiyanoSeraCutIn ? 1 : 0));
             const bonus = isCulpritScalingCutIn
               ? (culpritCardCount + 1) * 2000
+              : isB08055CutIn ? (ownTurn ? Math.floor(hidemiBestCostAp / 1000) * 1000 : 0)
+              : isMiyanoSeraCutIn ? (isRedPartner ? (handCountForMiyanoSera <= 2 ? 3000 : 1000) : 0)
               : isB09059CutIn ? (ownTurn ? Math.max(3000, n(card.cut_in_bonus)) : 0)
               : isB05070CutIn ? (isRedPartner ? Math.max(1000, n(card.cut_in_bonus)) : 0)
               : isB10078PoliceCutIn ? (canUseB10078PoliceCutIn ? 2000 : 0)
@@ -2136,8 +2151,26 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
               : (isB07003BlueCutIn ? Math.max(n(card.cut_in_bonus), 1000) : n(card.cut_in_bonus));
             const noEffectReason = isB09059CutIn && !ownTurn ? "상대 턴에는 효과가 없습니다."
               : isB05070CutIn && !isRedPartner ? "적색 파트너일 때만 AP +1000 효과가 적용됩니다."
+              : isB08055CutIn && !ownTurn ? "상대 턴에는 손패 비용과 AP 보정이 없습니다."
+              : isB08055CutIn && hidemiCostOptions.length === 0 ? "리무브할 손패 캐릭터가 없습니다."
+              : isMiyanoSeraCutIn && !isRedPartner ? "적색 파트너일 때 AP 보정이 적용됩니다."
               : "조건 미충족";
-            return <button key={card.instance_id} type="button" style={{ ...st.button, background: "#164e63", textAlign: "left", opacity: canUseCutIn ? 1 : .45 }} disabled={loading || !canUseCutIn} title={!canUseCutIn ? (isB10078PoliceCutIn ? "B10078: 자신의 턴 중 특징 [경찰] 캐릭터에 컷인할 때만 사용할 수 있습니다." : isB11015CutIn && !ownTurn ? "B11015: 자신의 턴에만 사용할 수 있습니다." : "B10011: 쿠도 신이치 또는 모리 란에만 사용할 수 있습니다.") : isB09059CutIn && !ownTurn ? "B09059P: 상대 턴에 사용해도 AP 보정은 없습니다." : isB05070CutIn && !isRedPartner ? "B05070: 적색 파트너가 아니므로 AP 보정과 추가 드로우가 없습니다." : ""} onClick={() => void runAction("contact_use_cutin", { instance_id: card.instance_id })}>
+            return <button key={card.instance_id} type="button" style={{ ...st.button, background: "#164e63", textAlign: "left", opacity: canUseCutIn ? 1 : .45 }} disabled={loading || !canUseCutIn} title={!canUseCutIn ? (isB10078PoliceCutIn ? "B10078: 자신의 턴 중 특징 [경찰] 캐릭터에 컷인할 때만 사용할 수 있습니다." : isB11015CutIn && !ownTurn ? "B11015: 자신의 턴에만 사용할 수 있습니다." : "B10011: 쿠도 신이치 또는 모리 란에만 사용할 수 있습니다.") : isB09059CutIn && !ownTurn ? "B09059P: 상대 턴에 AP 보정은 없습니다." : isB05070CutIn && !isRedPartner ? "B05070: 적색 파트너일 때만 AP +1000 효과가 적용됩니다." : isB08055CutIn ? "미야노 히데미: 자신의 턴에는 손패 캐릭터 1장을 선택해 리무브하면 그 카드의 AP 1000당 AP +1000. 상대 턴에는 효과 없이 사용할 수 있습니다." : isMiyanoSeraCutIn ? "세라 마스미: 적색 파트너일 때 AP +1000, 손패 조건 충족 시 +3000." : ""} onClick={() => {
+              if (isB08055CutIn && ownTurn) {
+                const choices = ["0. 비용 없이 사용", ...hidemiCostOptions.map((entry, index) => `${index + 1}. ${nameOf(entry)} (AP ${n(entry.ap) + n(entry.ap_bonus)})`)];
+                const raw = window.prompt(`AP 보정 비용으로 리무브할 손패 캐릭터를 선택하세요.\n${choices.join("\n")}`, hidemiCostOptions.length ? "1" : "0");
+                if (raw === null) return;
+                const selected = Number(String(raw).trim());
+                if (!Number.isInteger(selected) || selected < 0 || selected > hidemiCostOptions.length) {
+                  setError("목록에 표시된 번호를 입력해 주세요.");
+                  return;
+                }
+                const payload = { instance_id: card.instance_id, ...(selected > 0 ? { cost_instance_id: hidemiCostOptions[selected - 1].instance_id } : {}) };
+                void runAction("contact_use_cutin", payload);
+                return;
+              }
+              void runAction("contact_use_cutin", { instance_id: card.instance_id });
+            }}>
               <strong style={{ display: "block", marginBottom: 4 }}>{nameOf(card)} · {bonus > 0 ? `AP +${bonus}` : noEffectReason}</strong>
               <span style={{ display: "block", whiteSpace: "pre-wrap", overflowWrap: "anywhere", fontSize: 10, lineHeight: 1.5 }}>{effectText || (isB07003BlueCutIn ? "B07003P 효과: 청색 카드 컷인 AP +1000" : "컷인 효과 문구를 확인할 수 없습니다.")}</span>
             </button>;
