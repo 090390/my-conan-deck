@@ -13342,6 +13342,1192 @@
         "sourceText": "【해결편】【선언】【턴 1】〚뒷면인 증거 2개를 앞면으로 뒤집는다〛 - 내 덱의 카드를 위에서 2장 확인한다. 그 중에서 〚카드명 [후루야 레이] 또는 [모로후시 히로미츠] 또는 [다테 와타루] 또는 [하기와라 켄지] 또는 [마츠다 진페이]〛 중 1장까지 공개하여 패에 추가하고, 나머지는 리무브 에이리어로 옮긴다. 이 능력은 자신의 현장에 〚카드명 [후루야 레이]〛가 있을 때 선언할 수 있다.",
         "rationale": "해결편에서 턴 1회, 뒷면 증거 2장을 선택해 앞면으로 바꾼 뒤 덱 위 2장을 확인한다. 경찰학교 동기 캐릭터를 최대 1장 공개하여 손패에 넣고 나머지는 리무브한다. 후루야 레이의 현장 존재 조건을 활성화 가능 조건으로 검사."
       }
+    },
+    {
+      "steps": [
+        {
+          "op": "draw_cards",
+          "count": 1,
+          "destination": "hand"
+        }
+      ],
+      "cardIds": [
+        "1111"
+      ],
+      "trigger": {
+        "event": "player.turn_ended",
+        "timing": "after"
+      },
+      "effectId": "card-1111-end-turn-draw-if-original-abilityless-character",
+      "conditions": [
+        {
+          "fact": "player.field.has_original_abilityless_character",
+          "value": true,
+          "operator": "equals"
+        }
+      ],
+      "oncePerTurn": true
+    },
+    {
+      "steps": [
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 0,
+          "from": "opponent_field",
+          "filter": {
+            "field": "card_type",
+            "value": "character",
+            "operator": "equals"
+          },
+          "prompt": "턴 종료 시까지 레벨을 1 낮출 상대 캐릭터를 최대 1장 선택하세요.",
+          "saveAs": "level_target",
+          "optional": true
+        },
+        {
+          "op": "modify_stat",
+          "stat": "level",
+          "when": {
+            "fact": "vars.level_target.count",
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "amount": -1,
+          "target": "vars.level_target",
+          "duration": "turn_end"
+        }
+      ],
+      "cardIds": [
+        "1111"
+      ],
+      "trigger": {
+        "event": "character.entered_field",
+        "scope": "field_watch",
+        "timing": "after"
+      },
+      "effectId": "card-1111-own-turn-abilityless-entry-opponent-level-minus-one",
+      "conditions": [
+        {
+          "fact": "turn.is_source_controller_turn",
+          "value": true,
+          "operator": "equals"
+        },
+        {
+          "fact": "entry.controller_is_source_controller",
+          "value": true,
+          "operator": "equals"
+        },
+        {
+          "fact": "entry.source.has_original_abilityless_character",
+          "value": true,
+          "operator": "equals"
+        }
+      ]
+    },
+    {
+      "steps": [
+        {
+          "op": "pay_cost",
+          "cost": "sleep_source_character"
+        },
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 1,
+          "from": "hand",
+          "prompt": "비용으로 손패 1장을 선택해 리무브하세요.",
+          "saveAs": "hand_cost",
+          "optional": false
+        },
+        {
+          "op": "move_cards",
+          "to": "remove_area",
+          "from": "hand_cost"
+        },
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 0,
+          "from": "both_fields",
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "value": "character",
+                "operator": "equals"
+              },
+              {
+                "field": "level",
+                "value": 9,
+                "operator": "less_than_or_equal"
+              }
+            ]
+          },
+          "prompt": "리무브할 레벨 9 이하 캐릭터를 최대 1장 선택하세요.",
+          "saveAs": "target",
+          "optional": true
+        },
+        {
+          "op": "move_cards",
+          "to": "remove_area",
+          "from": "target",
+          "when": {
+            "fact": "vars.target.count",
+            "value": 0,
+            "operator": "greater_than"
+          }
+        }
+      ],
+      "cardIds": [
+        "1111"
+      ],
+      "trigger": {
+        "event": "character.activated_ability",
+        "timing": "after"
+      },
+      "effectId": "card-1111-activated-discard-hand-remove-level-nine-character",
+      "conditions": [
+        {
+          "fact": "turn.is_source_controller_turn",
+          "value": true,
+          "operator": "equals"
+        },
+        {
+          "fact": "player.hand.count",
+          "value": 1,
+          "operator": "greater_than_or_equal"
+        }
+      ],
+      "oncePerTurn": true,
+      "activationLabelKo": "슬립 · 손패 1장 리무브 · 레벨 9 이하 캐릭터 리무브"
+    },
+    {
+      "steps": [
+        {
+          "op": "pay_cost",
+          "cost": "sleep_source_character"
+        },
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 0,
+          "from": "hand",
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "value": "character",
+                "operator": "equals"
+              },
+              {
+                "anyOf": [
+                  {
+                    "field": "card_name",
+                    "value": "宮野エレーナ",
+                    "operator": "name_matches"
+                  },
+                  {
+                    "field": "card_name",
+                    "value": "宮野志保",
+                    "operator": "name_matches"
+                  },
+                  {
+                    "field": "card_name",
+                    "value": "宮野明美",
+                    "operator": "name_matches"
+                  }
+                ]
+              },
+              {
+                "field": "level",
+                "value": 7,
+                "operator": "less_than_or_equal"
+              }
+            ]
+          },
+          "prompt": "손패에서 미야노 엘레나, 미야노 시호, 미야노 아케미 중 1장까지 선택해 등장시킬 수 있습니다.",
+          "saveAs": "deployment",
+          "optional": true
+        },
+        {
+          "op": "calculate_switch_count",
+          "saveAs": "switch_needed",
+          "deploymentVariable": "vars.deployment"
+        },
+        {
+          "op": "select_cards",
+          "max": 0,
+          "min": 0,
+          "from": "field",
+          "when": {
+            "fact": "vars.switch_needed",
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "filter": {
+            "field": "card_type",
+            "value": "character",
+            "operator": "equals"
+          },
+          "prompt": "현장이 가득 찼습니다. 등장 자리를 만들기 위해 자신의 현장 캐릭터를 리무브하세요.",
+          "saveAs": "switch_targets",
+          "maxFrom": "vars.switch_needed",
+          "minFrom": "vars.switch_needed",
+          "optional": true
+        },
+        {
+          "op": "move_cards",
+          "to": "remove_area",
+          "from": "switch_targets",
+          "when": {
+            "fact": "vars.switch_targets.count",
+            "value": 0,
+            "operator": "greater_than"
+          }
+        },
+        {
+          "op": "move_cards",
+          "to": "field",
+          "from": "deployment",
+          "when": {
+            "fact": "vars.deployment.count",
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "entryMethod": "character_ability"
+        }
+      ],
+      "cardIds": [
+        "0894"
+      ],
+      "trigger": {
+        "event": "character.activated_ability",
+        "timing": "after"
+      },
+      "effectId": "card-0894-file-five-sleep-deploy-miyano-family",
+      "conditions": [
+        {
+          "fact": "player.file.count",
+          "value": 5,
+          "operator": "greater_than_or_equal"
+        }
+      ],
+      "oncePerTurn": true,
+      "activationLabelKo": "FILE5 · 슬립 · 손패의 미야노 가족 등장"
+    },
+    {
+      "steps": [
+        {
+          "op": "draw_cards",
+          "count": 1,
+          "destination": "hand"
+        },
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 0,
+          "from": "opponent_field",
+          "filter": {
+            "field": "card_type",
+            "value": "character",
+            "operator": "equals"
+          },
+          "prompt": "스턴시킬 상대 캐릭터를 최대 1장 선택하세요.",
+          "saveAs": "stun_target",
+          "optional": true
+        },
+        {
+          "op": "stun_cards",
+          "when": {
+            "fact": "vars.stun_target.count",
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "target": "vars.stun_target"
+        }
+      ],
+      "cardIds": [
+        "0896"
+      ],
+      "trigger": {
+        "event": "player.turn_ended",
+        "timing": "after"
+      },
+      "effectId": "card-0896-end-turn-level-seven-three-draw-stun",
+      "conditions": [
+        {
+          "fact": "turn.is_source_controller_turn",
+          "value": true,
+          "operator": "equals"
+        },
+        {
+          "fact": "player.field.count_level_7",
+          "value": 3,
+          "operator": "greater_than_or_equal"
+        }
+      ],
+      "oncePerTurn": true
+    },
+    {
+      "steps": [
+        {
+          "op": "offer_reaction",
+          "actor": "controller",
+          "prompt": "이 캐릭터를 슬립시키고 손패 1장과 FILE 맨 위의 일반 카드 1장을 리무브해도 될까요? 그렇게 하면 슬립/스턴 상태이며 레벨 8 이하인 캐릭터를 덱 맨 아래로 옮깁니다.",
+          "saveAs": "file8_choice",
+          "choices": [
+            "yes",
+            "no"
+          ],
+          "reactionId": "card-0896-file8-on-enter-cost"
+        },
+        {
+          "op": "pay_cost",
+          "cost": "sleep_source_character",
+          "when": {
+            "fact": "vars.file8_choice",
+            "value": "yes",
+            "operator": "equals"
+          }
+        },
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 1,
+          "from": "hand",
+          "when": {
+            "fact": "vars.file8_choice",
+            "value": "yes",
+            "operator": "equals"
+          },
+          "prompt": "비용으로 손패 1장을 선택해 리무브하세요.",
+          "saveAs": "hand_cost",
+          "optional": false
+        },
+        {
+          "op": "move_cards",
+          "to": "remove_area",
+          "from": "hand_cost",
+          "when": {
+            "fact": "vars.file8_choice",
+            "value": "yes",
+            "operator": "equals"
+          }
+        },
+        {
+          "op": "move_top_file_cards",
+          "to": "remove_area",
+          "when": {
+            "fact": "vars.file8_choice",
+            "value": "yes",
+            "operator": "equals"
+          },
+          "count": 1
+        },
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 0,
+          "from": "both_fields",
+          "when": {
+            "fact": "vars.file8_choice",
+            "value": "yes",
+            "operator": "equals"
+          },
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "value": "character",
+                "operator": "equals"
+              },
+              {
+                "field": "level",
+                "value": 8,
+                "operator": "less_than_or_equal"
+              },
+              {
+                "anyOf": [
+                  {
+                    "field": "status",
+                    "value": "rested",
+                    "operator": "equals"
+                  },
+                  {
+                    "field": "status",
+                    "value": "stunned",
+                    "operator": "equals"
+                  }
+                ]
+              }
+            ]
+          },
+          "prompt": "덱 맨 아래로 옮길, 레벨 8 이하의 슬립 또는 스턴 상태 캐릭터를 최대 1장 선택하세요.",
+          "saveAs": "bottom_target",
+          "optional": true
+        },
+        {
+          "op": "move_cards",
+          "to": "deck_bottom",
+          "from": "bottom_target",
+          "when": {
+            "allOf": [
+              {
+                "fact": "vars.file8_choice",
+                "value": "yes",
+                "operator": "equals"
+              },
+              {
+                "fact": "vars.bottom_target.count",
+                "value": 0,
+                "operator": "greater_than"
+              }
+            ]
+          }
+        }
+      ],
+      "cardIds": [
+        "0896"
+      ],
+      "trigger": {
+        "event": "character.entered_field",
+        "timing": "after"
+      },
+      "effectId": "card-0896-file-eight-on-enter-sleep-discard-return-stunned-or-rested",
+      "conditions": [
+        {
+          "fact": "player.file.count",
+          "value": 8,
+          "operator": "greater_than_or_equal"
+        },
+        {
+          "fact": "player.hand.count",
+          "value": 1,
+          "operator": "greater_than_or_equal"
+        },
+        {
+          "fact": "source.is_active",
+          "value": true,
+          "operator": "equals"
+        }
+      ]
+    },
+    {
+      "steps": [
+        {
+          "op": "set_continuous_stat",
+          "stat": "level",
+          "amount": 2,
+          "target": "source_character",
+          "duration": "while_condition_true",
+          "modifierId": "miyano-akemi-1055-solution-level-plus-two"
+        }
+      ],
+      "cardIds": [
+        "1055"
+      ],
+      "trigger": {
+        "event": "continuous.recalculate",
+        "timing": "continuous"
+      },
+      "effectId": "card-1055-solution-continuous-level-plus-two",
+      "conditions": [
+        {
+          "fact": "player.case_phase",
+          "value": "solution",
+          "operator": "equals"
+        }
+      ],
+      "continuous": true
+    },
+    {
+      "steps": [
+        {
+          "op": "grant_keyword",
+          "target": "source_character",
+          "keyword": "charge_case",
+          "duration": "turn_end",
+          "displayNameKo": "돌격[사건]"
+        }
+      ],
+      "cardIds": [
+        "1055"
+      ],
+      "trigger": {
+        "event": "character.entered_field",
+        "timing": "after"
+      },
+      "effectId": "card-1055-on-enter-level-seven-three-grant-charge-case",
+      "conditions": [
+        {
+          "fact": "player.field.count_level_7",
+          "value": 3,
+          "operator": "greater_than_or_equal"
+        }
+      ]
+    },
+    {
+      "steps": [
+        {
+          "op": "set_continuous_stat",
+          "stat": "level",
+          "amount": 3,
+          "target": "source_character",
+          "duration": "while_condition_true",
+          "modifierId": "miyano-akemi-0888-solution-level-plus-three"
+        }
+      ],
+      "cardIds": [
+        "0888"
+      ],
+      "trigger": {
+        "event": "continuous.recalculate",
+        "timing": "continuous"
+      },
+      "effectId": "card-0888-solution-continuous-level-plus-three",
+      "conditions": [
+        {
+          "fact": "player.case_phase",
+          "value": "solution",
+          "operator": "equals"
+        }
+      ],
+      "continuous": true
+    },
+    {
+      "steps": [
+        {
+          "op": "peek_top_cards",
+          "count": 3,
+          "saveAs": "seen",
+          "allowFewer": true
+        },
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 0,
+          "from": "seen",
+          "prompt": "공개하여 패에 넣을 카드 1장을 선택할 수 있습니다. 선택하지 않으면 공개한 카드는 전부 리무브 에이리어로 이동합니다.",
+          "saveAs": "selected",
+          "optional": true,
+          "displayVariable": "seen"
+        },
+        {
+          "op": "reveal_cards",
+          "to": [
+            "opponent"
+          ],
+          "from": "selected",
+          "when": {
+            "fact": "vars.selected.count",
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "awaitAcknowledgement": true
+        },
+        {
+          "op": "move_cards",
+          "to": "hand",
+          "from": "selected",
+          "when": {
+            "fact": "vars.selected.count",
+            "value": 0,
+            "operator": "greater_than"
+          }
+        },
+        {
+          "op": "move_unselected_to_zone",
+          "to": "remove_area",
+          "from": "seen",
+          "selectedVariable": "selected"
+        },
+        {
+          "op": "refill_deck_from_remove_area",
+          "when": {
+            "fact": "player.deck.count",
+            "value": 4,
+            "operator": "less_than"
+          },
+          "shuffle": true,
+          "includeRemoveArea": true,
+          "includeRemainingDeck": true
+        },
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 1,
+          "from": "hand",
+          "when": {
+            "allOf": [
+              {
+                "fact": "vars.selected.count",
+                "value": 0,
+                "operator": "greater_than"
+              },
+              {
+                "fact": "vars.selected.is_miyano_search_exempt",
+                "value": false,
+                "operator": "equals"
+              }
+            ]
+          },
+          "prompt": "모로호시 다이/미야노 시호/미야노 엘레나/미야노 아츠시 이외의 카드를 패에 추가했으므로, 손패 1장을 리무브하세요.",
+          "saveAs": "hand_cost",
+          "optional": false
+        },
+        {
+          "op": "move_cards",
+          "to": "remove_area",
+          "from": "hand_cost",
+          "when": {
+            "allOf": [
+              {
+                "fact": "vars.selected.count",
+                "value": 0,
+                "operator": "greater_than"
+              },
+              {
+                "fact": "vars.selected.is_miyano_search_exempt",
+                "value": false,
+                "operator": "equals"
+              }
+            ]
+          }
+        }
+      ],
+      "cardIds": [
+        "0888"
+      ],
+      "trigger": {
+        "event": "character.entered_field",
+        "timing": "after"
+      },
+      "effectId": "card-0888-on-enter-look-three-add-one-remove-rest-and-discard-if-not-family"
+    },
+    {
+      "steps": [
+        {
+          "op": "set_continuous_stat",
+          "stat": "level",
+          "amount": -2,
+          "target": "source_character",
+          "duration": "while_condition_true",
+          "modifierId": "miyano-shiho-akemi-1217-solution-level-minus-two"
+        }
+      ],
+      "cardIds": [
+        "1217"
+      ],
+      "trigger": {
+        "event": "continuous.recalculate",
+        "timing": "continuous"
+      },
+      "effectId": "card-1217-solution-own-turn-continuous-level-minus-two",
+      "conditions": [
+        {
+          "fact": "player.case_phase",
+          "value": "solution",
+          "operator": "equals"
+        },
+        {
+          "fact": "turn.is_source_controller_turn",
+          "value": true,
+          "operator": "equals"
+        }
+      ],
+      "continuous": true
+    },
+    {
+      "steps": [
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 1,
+          "from": "field",
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "value": "character",
+                "operator": "equals"
+              },
+              {
+                "field": "level",
+                "value": 7,
+                "operator": "equals"
+              },
+              {
+                "anyOf": [
+                  {
+                    "field": "status",
+                    "value": "active",
+                    "operator": "equals"
+                  },
+                  {
+                    "field": "status",
+                    "value": "rested",
+                    "operator": "equals"
+                  }
+                ]
+              }
+            ]
+          },
+          "prompt": "자신의 현장에서 레벨 7의 액티브 또는 슬립 상태 캐릭터 1장을 선택해 스턴시키세요.",
+          "saveAs": "stun_cost",
+          "optional": false,
+          "targetController": "self"
+        },
+        {
+          "op": "stun_cards",
+          "target": "vars.stun_cost"
+        },
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 0,
+          "from": "both_fields",
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "value": "character",
+                "operator": "equals"
+              },
+              {
+                "field": "level",
+                "value": 9,
+                "operator": "less_than_or_equal"
+              }
+            ]
+          },
+          "prompt": "리무브할 레벨 9 이하 캐릭터를 최대 1장 선택하세요.",
+          "saveAs": "remove_target",
+          "optional": true
+        },
+        {
+          "op": "move_cards",
+          "to": "remove_area",
+          "from": "remove_target",
+          "when": {
+            "fact": "vars.remove_target.count",
+            "value": 0,
+            "operator": "greater_than"
+          }
+        }
+      ],
+      "cardIds": [
+        "1217"
+      ],
+      "trigger": {
+        "event": "character.activated_ability",
+        "timing": "after"
+      },
+      "effectId": "card-1217-partner-red-activated-stun-level-seven-then-remove-level-nine",
+      "conditions": [
+        {
+          "fact": "player.partner.color",
+          "value": "red",
+          "operator": "equals"
+        },
+        {
+          "fact": "player.case_phase",
+          "value": "solution",
+          "operator": "equals"
+        },
+        {
+          "fact": "player.field.count_level_7_active_or_rested",
+          "value": 1,
+          "operator": "greater_than_or_equal"
+        }
+      ],
+      "oncePerTurn": true,
+      "activationLabelKo": "레벨 7 캐릭터 스턴 · 레벨 9 이하 캐릭터 리무브"
+    },
+    {
+      "steps": [
+        {
+          "op": "draw_cards",
+          "count": 2,
+          "destination": "hand"
+        },
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 1,
+          "from": "hand",
+          "prompt": "손패 1장을 선택해 리무브하세요.",
+          "saveAs": "hand_cost",
+          "optional": false
+        },
+        {
+          "op": "move_cards",
+          "to": "remove_area",
+          "from": "hand_cost"
+        }
+      ],
+      "cardIds": [
+        "1217"
+      ],
+      "trigger": {
+        "event": "player.turn_ended",
+        "timing": "after"
+      },
+      "effectId": "card-1217-end-turn-if-own-stunned-draw-two-discard-one",
+      "conditions": [
+        {
+          "fact": "turn.is_source_controller_turn",
+          "value": true,
+          "operator": "equals"
+        },
+        {
+          "fact": "player.field.has_stunned_character",
+          "value": true,
+          "operator": "equals"
+        }
+      ],
+      "oncePerTurn": true,
+      "allowPartnerArea": true
+    },
+    {
+      "steps": [
+        {
+          "op": "set_continuous_stat",
+          "stat": "level",
+          "amount": 1,
+          "target": "source_character",
+          "duration": "while_condition_true",
+          "modifierId": "miyano-elena-1227-solution-level-plus-one"
+        }
+      ],
+      "cardIds": [
+        "1227"
+      ],
+      "trigger": {
+        "event": "continuous.recalculate",
+        "timing": "continuous"
+      },
+      "effectId": "card-1227-solution-continuous-level-plus-one",
+      "conditions": [
+        {
+          "fact": "player.case_phase",
+          "value": "solution",
+          "operator": "equals"
+        }
+      ],
+      "continuous": true
+    },
+    {
+      "steps": [
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 1,
+          "from": "field",
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "value": "character",
+                "operator": "equals"
+              },
+              {
+                "field": "level",
+                "value": 7,
+                "operator": "equals"
+              },
+              {
+                "field": "status",
+                "value": "active",
+                "operator": "equals"
+              }
+            ]
+          },
+          "prompt": "자신의 현장에서 레벨 7의 액티브 상태 캐릭터 1장을 선택해 스턴시키세요.",
+          "saveAs": "stun_cost",
+          "optional": false,
+          "targetController": "self"
+        },
+        {
+          "op": "stun_cards",
+          "target": "vars.stun_cost"
+        },
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 0,
+          "from": "both_fields",
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "value": "character",
+                "operator": "equals"
+              },
+              {
+                "field": "ap_current",
+                "value": {
+                  "fact": "vars.stun_cost.0.card.ap_current"
+                },
+                "operator": "less_than_or_equal"
+              }
+            ]
+          },
+          "prompt": "방금 스턴시킨 캐릭터의 현재 AP 이하인 캐릭터를 최대 1장 선택해 리무브하세요.",
+          "saveAs": "remove_target",
+          "optional": true
+        },
+        {
+          "op": "move_cards",
+          "to": "remove_area",
+          "from": "remove_target",
+          "when": {
+            "fact": "vars.remove_target.count",
+            "value": 0,
+            "operator": "greater_than"
+          }
+        }
+      ],
+      "cardIds": [
+        "1227"
+      ],
+      "trigger": {
+        "event": "character.activated_ability",
+        "timing": "after"
+      },
+      "effectId": "card-1227-partner-red-solution-stun-active-level-seven-remove-at-most-equal-ap",
+      "conditions": [
+        {
+          "fact": "player.partner.color",
+          "value": "red",
+          "operator": "equals"
+        },
+        {
+          "fact": "player.case_phase",
+          "value": "solution",
+          "operator": "equals"
+        },
+        {
+          "fact": "player.field.count_level_7_active",
+          "value": 1,
+          "operator": "greater_than_or_equal"
+        }
+      ],
+      "oncePerTurn": true,
+      "activationLabelKo": "레벨 7 액티브 캐릭터 스턴 · 그 캐릭터 이하 AP 리무브"
+    },
+    {
+      "steps": [
+        {
+          "op": "set_continuous_stat",
+          "stat": "level",
+          "amount": -1,
+          "target": "source_character",
+          "duration": "while_condition_true",
+          "modifierId": "miyano-atsushi-1228-solution-level-minus-one"
+        }
+      ],
+      "cardIds": [
+        "1228"
+      ],
+      "trigger": {
+        "event": "continuous.recalculate",
+        "timing": "continuous"
+      },
+      "effectId": "card-1228-solution-own-turn-continuous-level-minus-one",
+      "conditions": [
+        {
+          "fact": "player.case_phase",
+          "value": "solution",
+          "operator": "equals"
+        },
+        {
+          "fact": "turn.is_source_controller_turn",
+          "value": true,
+          "operator": "equals"
+        }
+      ],
+      "continuous": true
+    },
+    {
+      "steps": [
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 0,
+          "from": "both_fields",
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "value": "character",
+                "operator": "equals"
+              },
+              {
+                "field": "ap_current",
+                "value": 8000,
+                "operator": "less_than_or_equal"
+              }
+            ]
+          },
+          "prompt": "리무브할 AP 8000 이하 캐릭터를 최대 1장 선택하세요.",
+          "saveAs": "remove_target",
+          "optional": true
+        },
+        {
+          "op": "move_cards",
+          "to": "remove_area",
+          "from": "remove_target",
+          "when": {
+            "fact": "vars.remove_target.count",
+            "value": 0,
+            "operator": "greater_than"
+          }
+        }
+      ],
+      "cardIds": [
+        "1228"
+      ],
+      "trigger": {
+        "event": "character.activated_ability",
+        "timing": "after"
+      },
+      "effectId": "card-1228-activated-remove-ap-eight-thousand-rested-or-stunned-source",
+      "oncePerTurn": true,
+      "activationTiming": "any",
+      "activationLabelKo": "AP 8000 이하 캐릭터 리무브",
+      "allowRestedSource": true,
+      "allowStunnedSource": true
+    },
+    {
+      "steps": [
+        {
+          "op": "peek_top_cards",
+          "count": 3,
+          "saveAs": "seen",
+          "allowFewer": true
+        },
+        {
+          "op": "select_cards",
+          "max": 1,
+          "min": 0,
+          "from": "seen",
+          "filter": {
+            "allOf": [
+              {
+                "field": "card_type",
+                "value": "character",
+                "operator": "equals"
+              },
+              {
+                "anyOf": [
+                  {
+                    "field": "card_name",
+                    "value": "宮野エレーナ",
+                    "operator": "name_matches"
+                  },
+                  {
+                    "field": "card_name",
+                    "value": "宮野明美",
+                    "operator": "name_matches"
+                  },
+                  {
+                    "field": "card_name",
+                    "value": "宮野志保",
+                    "operator": "name_matches"
+                  }
+                ]
+              }
+            ]
+          },
+          "prompt": "공개하여 패에 추가할 미야노 엘레나/미야노 아케미/미야노 시호 중 1장까지 선택하세요.",
+          "saveAs": "selected",
+          "optional": true,
+          "displayVariable": "seen"
+        },
+        {
+          "op": "reveal_cards",
+          "to": [
+            "opponent"
+          ],
+          "from": "selected",
+          "when": {
+            "fact": "vars.selected.count",
+            "value": 0,
+            "operator": "greater_than"
+          },
+          "awaitAcknowledgement": true
+        },
+        {
+          "op": "move_cards",
+          "to": "hand",
+          "from": "selected",
+          "when": {
+            "fact": "vars.selected.count",
+            "value": 0,
+            "operator": "greater_than"
+          }
+        },
+        {
+          "op": "move_unselected_to_zone",
+          "to": "remove_area",
+          "from": "seen",
+          "selectedVariable": "selected"
+        },
+        {
+          "op": "refill_deck_from_remove_area",
+          "when": {
+            "fact": "player.deck.count",
+            "value": 4,
+            "operator": "less_than"
+          },
+          "shuffle": true,
+          "includeRemoveArea": true,
+          "includeRemainingDeck": true
+        }
+      ],
+      "cardIds": [
+        "1228"
+      ],
+      "trigger": {
+        "event": "character.removed_from_field",
+        "timing": "after"
+      },
+      "effectId": "card-1228-partner-red-opponent-turn-removed-look-three-miyano-recover",
+      "conditions": [
+        {
+          "fact": "player.partner.color",
+          "value": "red",
+          "operator": "equals"
+        },
+        {
+          "fact": "turn.is_opponent_turn",
+          "value": true,
+          "operator": "equals"
+        }
+      ]
+    },
+    {
+      "steps": [
+        {
+          "op": "set_continuous_keyword",
+          "target": "source_character",
+          "keyword": "charge_character",
+          "duration": "while_condition_true",
+          "modifierId": "miyano-akemi-1055-intrinsic-charge-character"
+        }
+      ],
+      "cardIds": [
+        "1055"
+      ],
+      "trigger": {
+        "event": "continuous.recalculate",
+        "timing": "continuous"
+      },
+      "effectId": "card-1055-intrinsic-charge-character",
+      "cardNameJa": "宮野明美",
+      "cardNameKo": "미야노 아케미",
+      "conditions": [],
+      "continuous": true
     }
   ]
 }
