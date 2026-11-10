@@ -44,6 +44,13 @@ function cardCutInBonus(card: any): number {
   const bonus = Number(digits);
   return Number.isFinite(bonus) && bonus > 0 ? bonus : 0;
 }
+function cardPrintingCode(card: any): string {
+  const source = card?.sourceData && typeof card.sourceData === "object" ? card.sourceData : {};
+  const raw = card?.raw && typeof card.raw === "object" ? card.raw : {};
+  return String(card?.key ?? card?.card_num ?? card?.cardNum ?? card?.cardNumber
+    ?? source?.card_num ?? source?.cardNumber ?? raw?.card_num ?? raw?.cardNumber ?? "")
+    .trim().toLocaleUpperCase();
+}
 function cardCutInBonusForSubject(
   card: any,
   subject: any,
@@ -55,9 +62,17 @@ function cardCutInBonusForSubject(
   ownHand: any[] = [],
 ): number {
   let bonus = cardCutInBonus(card);
+  if (matchesInternalCardId(card, "0893")) {
+    if (!isOwnerTurn) return 0;
+    const costCard = ownHand
+      .filter((entry: any) => String(entry?.instance_id || "") !== String(card?.instance_id || "") && isCharacter(entry))
+      .sort((a: any, b: any) => cardAp(b) - cardAp(a))[0];
+    return costCard ? Math.floor(Math.max(0, cardAp(costCard)) / 1000) * 1000 : 0;
+  }
   if (matchesInternalCardId(card, "1117")) {
     if (partnerColor !== "red") return 0;
-    return Math.max(0, ownHand.length - 1) <= 2 ? 3000 : 1000;
+    const countThisCard = cardPrintingCode(card) === "B10058" ? 1 : 0;
+    return Math.max(0, ownHand.length - countThisCard) <= 2 ? 3000 : 1000;
   }
 
   // Card-specific legality modifiers. These are conditions for whether the cut-in
@@ -1217,16 +1232,24 @@ function chooseResponse(state: any, aiId: string) {
     const contactSubject = field.find((card: any) => String(card.instance_id || "") === contactSubjectId);
     const isAiOwnerTurn = state.current_turn_user_id === aiId;
     const partnerColor = normalizedColor(state.ai_partner_color || me?.partner_color || "");
+    const cutinHand = Array.isArray(state?.my_hand) ? state.my_hand : hand;
     const cutinBonus = (card: any) => cardCutInBonusForSubject(
       card, contactSubject, isAiOwnerTurn, partnerColor, field, removeArea, String(me?.event_key || ""),
-      Array.isArray(state?.my_hand) ? state.my_hand : [],
+      cutinHand,
     );
     const cutin = hand.filter((card: any) => {
       const bonus = cutinBonus(card);
       return bonus >= needed && bonus > 0;
     }).sort((a: any, b: any) => cutinBonus(a) - cutinBonus(b))[0];
     if (cutin && needed > 0) {
-      return { action: "contact_use_cutin", payload: { instance_id: cutin.instance_id } };
+      const payload: Record<string, unknown> = { instance_id: cutin.instance_id };
+      if (matchesInternalCardId(cutin, "0893") && isAiOwnerTurn) {
+        const costCard = cutinHand
+          .filter((entry: any) => String(entry?.instance_id || "") !== String(cutin?.instance_id || "") && isCharacter(entry))
+          .sort((a: any, b: any) => cardAp(b) - cardAp(a))[0];
+        if (costCard) payload.cost_instance_id = costCard.instance_id;
+      }
+      return { action: "contact_use_cutin", payload };
     }
     return { action: "contact_pass_cutin" };
   }
