@@ -2140,7 +2140,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
             const canUseCutIn = canUseB10078PoliceCutIn && canUseB11015CutIn && canUseB10011CutIn;
             const handCountForMiyanoSera = Math.max(0, myHand.length - (isB10058MiyanoSeraCutIn ? 1 : 0));
             const parsedCutInBonus = (() => {
-              const match = effectText.match(/(?:ＡＰ|AP)\\s*[＋+]\\s*([0-9０-９,，]+)/iu);
+              const match = effectText.match(/(?:ＡＰ|AP)\s*[＋+]\s*([0-9０-９,，]+)/iu);
               if (!match) return 0;
               const digits = match[1].replace(/[０-９]/gu, (digit) =>
                 String(digit.charCodeAt(0) - "０".charCodeAt(0))).replace(/[，,]/gu, "");
