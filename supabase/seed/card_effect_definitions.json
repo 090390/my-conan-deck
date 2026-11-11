@@ -14396,7 +14396,8 @@
       "activationTiming": "any",
       "activationLabelKo": "AP 8000 이하 캐릭터 리무브",
       "allowRestedSource": true,
-      "allowStunnedSource": true
+      "allowStunnedSource": true,
+      "requiresRestedOrStunnedSource": true
     },
     {
       "steps": [
