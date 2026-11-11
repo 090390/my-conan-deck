@@ -2139,6 +2139,14 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
             const canUseB10011CutIn = !isB10011CutIn || isKudoShinichiSubject || isMouriRanSubject;
             const canUseCutIn = canUseB10078PoliceCutIn && canUseB11015CutIn && canUseB10011CutIn;
             const handCountForMiyanoSera = Math.max(0, myHand.length - (isB10058MiyanoSeraCutIn ? 1 : 0));
+            const parsedCutInBonus = (() => {
+              const match = effectText.match(/(?:ＡＰ|AP)\\s*[＋+]\\s*([0-9０-９,，]+)/iu);
+              if (!match) return 0;
+              const digits = match[1].replace(/[０-９]/gu, (digit) =>
+                String(digit.charCodeAt(0) - "０".charCodeAt(0))).replace(/[，,]/gu, "");
+              const value = Number(digits);
+              return Number.isFinite(value) && value > 0 ? value : 0;
+            })();
             const bonus = isCulpritScalingCutIn
               ? (culpritCardCount + 1) * 2000
               : isB08055CutIn ? (ownTurn ? Math.floor(hidemiBestCostAp / 1000) * 1000 : 0)
@@ -2148,7 +2156,7 @@ export default function MatchTurnBoard({ roomId, userId, cards = [], inviteCode 
               : isB10078PoliceCutIn ? (canUseB10078PoliceCutIn ? 2000 : 0)
               : isB11015CutIn ? (isKudoShinichiSubject ? 3000 : 1000)
               : isB10011CutIn ? 2000
-              : (isB07003BlueCutIn ? Math.max(n(card.cut_in_bonus), 1000) : n(card.cut_in_bonus));
+              : (isB07003BlueCutIn ? Math.max(n(card.cut_in_bonus), parsedCutInBonus, 1000) : Math.max(n(card.cut_in_bonus), parsedCutInBonus));
             const noEffectReason = isB09059CutIn && !ownTurn ? "상대 턴에는 효과가 없습니다."
               : isB05070CutIn && !isRedPartner ? "적색 파트너일 때만 AP +1000 효과가 적용됩니다."
               : isB08055CutIn && !ownTurn ? "상대 턴에는 손패 비용과 AP 보정이 없습니다."
