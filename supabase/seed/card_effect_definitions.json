@@ -4108,7 +4108,8 @@
       "oncePerTurn": true,
       "activationLabelKo": "레벨 7 이하 캐릭터 리무브",
       "allowStunnedSource": true,
-      "allowRestedSource": true
+      "allowRestedSource": true,
+      "requiresRestedOrStunnedSource": true
     },
     {
       "steps": [
