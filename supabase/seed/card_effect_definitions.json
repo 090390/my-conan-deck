@@ -10754,54 +10754,13 @@
             "value": 0
           },
           "entryMethod": "character_ability"
-        },
-        {
-          "op": "rest_cards",
-          "target": "vars.deployment",
-          "when": {
-            "fact": "vars.deployment.count",
-            "operator": "greater_than",
-            "value": 0
-          }
-        },
-        {
-          "op": "ready_source_character",
-          "when": {
-            "allOf": [
-              {
-                "fact": "vars.deployment.count",
-                "operator": "greater_than",
-                "value": 0
-              },
-              {
-                "fact": "player.hand.count",
-                "operator": "less_than_or_equal",
-                "value": 2
-              }
-            ]
-          }
-        },
-        {
-          "op": "ready_cards",
-          "target": "vars.deployment",
-          "when": {
-            "allOf": [
-              {
-                "fact": "vars.deployment.count",
-                "operator": "greater_than",
-                "value": 0
-              },
-              {
-                "fact": "player.hand.count",
-                "operator": "less_than_or_equal",
-                "value": 2
-              }
-            ]
-          }
         }
       ],
       "oncePerTurn": true,
-      "activationLabelKo": "파일 1장과 손패 1장을 리무브해 적 캐릭터 재등장"
+      "activationLabelKo": "파일 1장과 손패 1장을 리무브해 적 캐릭터 재등장",
+      "reviewNotes": {
+        "interpretation": "FILE8 비용으로 혼도 히데미 본인을 슬립시키고, 손패 1장과 FILE 맨 위 카드 1장을 리무브한 뒤 리무브 에이리어의 레벨 7 이하 적 캐릭터를 최대 1장 액티브 상태로 등장시킵니다. 이 효과는 혼도 히데미를 다시 액티브로 만들거나 등장 캐릭터를 슬립시키지 않습니다."
+      }
     },
     {
       "effectId": "card-0797-on-enter-revive-red-level5",
